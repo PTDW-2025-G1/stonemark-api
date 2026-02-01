@@ -9,6 +9,7 @@ import pt.estga.support.ContactStatus;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.shared.exceptions.ContactNotFoundException;
+import pt.estga.user.entities.User;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -21,6 +22,11 @@ public class ContactRequestServiceHibernateImpl implements ContactRequestService
 
     @Override
     public ContactRequest create(ContactRequestDto dto) {
+        return create(dto, null);
+    }
+
+    @Override
+    public ContactRequest create(ContactRequestDto dto, Long submittedById) {
         ContactRequest contact = new ContactRequest();
 
         contact.setName(dto.name());
@@ -29,6 +35,7 @@ public class ContactRequestServiceHibernateImpl implements ContactRequestService
         contact.setMessage(dto.message());
         contact.setStatus(ContactStatus.PENDING);
         contact.setCreatedAt(Instant.now());
+        contact.setSubmittedBy(User.builder().id(submittedById).build());
 
         return repository.save(contact);
     }
@@ -38,6 +45,10 @@ public class ContactRequestServiceHibernateImpl implements ContactRequestService
         return repository.findAll(pageable);
     }
 
+    @Override
+    public Page<ContactRequest> findAllBySubmittedBy(Long submittedById, Pageable pageable) {
+        return repository.findBySubmittedById(submittedById, pageable);
+    }
 
     @Override
     public Optional<ContactRequest> findById(Long id) {

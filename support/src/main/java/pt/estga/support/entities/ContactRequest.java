@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import pt.estga.support.ContactStatus;
+import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
@@ -37,5 +38,8 @@ public class ContactRequest {
 
     @Enumerated(EnumType.STRING)
     private ContactStatus status = ContactStatus.PENDING;
-}
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User submittedBy;
+
+}
