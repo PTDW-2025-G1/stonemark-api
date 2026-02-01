@@ -1,4 +1,4 @@
-package pt.estga.user.controllers.management;
+package pt.estga.user.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,7 +25,7 @@ import pt.estga.user.services.UserService;
 @RequiredArgsConstructor
 @Tag(name = "User Management", description = "Endpoints for managing users (Admin).")
 @PreAuthorize("hasRole('ADMIN')")
-public class UserAdminController {
+public class AdminUserController {
 
     private final UserService service;
     private final UserMapper mapper;

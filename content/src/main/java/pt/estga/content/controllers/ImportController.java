@@ -14,7 +14,7 @@ import pt.estga.shared.dtos.MessageResponseDto;
 import java.io.InputStream;
 
 @RestController
-@RequestMapping("/api/v1/admin/import")
+@RequestMapping("/api/v1/admin")
 @PreAuthorize("hasRole('MODERATOR')")
 @RequiredArgsConstructor
 @Tag(name = "Imports", description = "Endpoints for importing data.")
@@ -23,7 +23,7 @@ public class ImportController {
     private final DivisionImportService divisionImportService;
     private final MonumentImportService monumentImportService;
 
-    @PostMapping(value = "/divisions/pbf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/divisions/import/pbf", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageResponseDto> importDivisionsFromPbf(
             @RequestParam("file") MultipartFile file
     ) throws Exception {
@@ -40,7 +40,7 @@ public class ImportController {
         return ResponseEntity.ok(new MessageResponseDto("Administrative divisions fully replaced. Imported " + count + " entries."));
     }
 
-    @PostMapping(value = "/monuments/geojson", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/monuments/import/geojson", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MessageResponseDto> importMonumentsFromGeoJson(
             @RequestParam("file") MultipartFile file
     ) throws Exception {

@@ -1,4 +1,4 @@
-package pt.estga.user.controllers.management;
+package pt.estga.user.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +23,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "User Contact Management", description = "Endpoints for managing user contacts by administrators.")
 @PreAuthorize("hasRole('ADMIN')")
-public class UserContactManagementController {
+public class AdminUserContactController {
 
     private final UserService userService;
     private final UserContactService userContactService;

@@ -1,0 +1,21 @@
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_ADDRESS}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+      mail.smtp.ssl.trust: smtp.gmail.com
+      mail.debug: false
+
+sms:
+  default:
+    region: PT
+
+vonage:
+  api-key: ${VONAGE_API_KEY}
+  api-secret: ${VONAGE_API_SECRET}
+  from-number: ${VONAGE_FROM_NUMBER}

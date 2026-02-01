@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    include: chatbot, notification, file, security
   servlet:
     multipart:
       max-file-size: 50MB
@@ -25,47 +27,10 @@ spring:
     console:
       enabled: true
       path: /h2-console
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: ${MAIL_ADDRESS}
-    password: ${MAIL_PASSWORD}
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-      mail.smtp.starttls.required: true
-      mail.smtp.ssl.trust: smtp.gmail.com
-      mail.debug: false
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: profile, email
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-            user-name-attribute: sub
   flyway:
     enabled: false
     baseline-on-migrate: true
     locations: classpath:db/migration
-
-storage:
-  provider: minio # or local
-  local:
-    root-path: uploads
-
-minio:
-  endpoint: http://localhost:9000
-  bucket-name: stonemark
-  access-key: ${MINIO_ROOT_USER}
-  secret-key: ${MINIO_ROOT_PASSWORD}
 
 vision:
   server:
@@ -75,7 +40,7 @@ logging:
   level:
     org.springframework: INFO
     pt.estga: DEBUG
-# todo: split into module specific configs
+
 application:
 #  base-url: http://localhost:8080
   base-url: https://api.stonemark.pt
@@ -83,51 +48,6 @@ application:
     base-url: http://localhost:4200
     auth-url: http://localhost:4201
 #  frontend-url: https://stonemark.pt
-  security:
-    jwt:
-      secret-key: ${JWT_SECRET_KEY}
-      access-token:
-        expiration: 90000000 # 15 minutes
-      refresh-token:
-        expiration: 2592000000 # 30 days
-    action-code:
-      email-verification:
-        expiration: 86400000 # 24 hours
-      password-reset:
-        expiration: 3600000 # 1 hour
-      two-factor:
-        expiration: 3600000 # 1 hour
-      telephone-verification:
-        expiration: 900000 # 15 minutes
-      device-verification:
-        expiration: 2592000000 # 30 days
-      chatbot-verification:
-        expiration: 900000 # 15 minutes
-    contact:
-      verification-required: true
-
-sms:
-  default:
-    region: PT
-
-telegram:
-  bot:
-    username: stonemarkbot
-    token: ${TELEGRAM_BOT_TOKEN}
-    webhook-path: /webhook/telegram
-    auth:
-      enabled: true
-
-whatsapp:
-  bot:
-    token: ${WHATSAPP_BOT_TOKEN}
-    webhook-path: /webhook/whatsapp
-    phone-number-id: 993756740480737
-
-vonage:
-  api-key: ${VONAGE_API_KEY}
-  api-secret: ${VONAGE_API_SECRET}
-  from-number: ${VONAGE_FROM_NUMBER}
 
 user:
   delete-after-days: 30
