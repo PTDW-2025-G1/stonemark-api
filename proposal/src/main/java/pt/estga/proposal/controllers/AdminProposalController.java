@@ -30,7 +30,7 @@ import pt.estga.proposal.services.ProposalQueryService;
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('REVIEWER')")
 @Tag(name = "Proposal Administration", description = "Endpoints for proposal administration and read operations.")
-public class ProposalAdminController {
+public class AdminProposalController {
 
     private final MarkOccurrenceProposalRepository proposalRepo;
     private final ProposalAdminMapper proposalAdminMapper;

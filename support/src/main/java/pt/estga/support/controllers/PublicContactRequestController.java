@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.services.ContactRequestService;
@@ -27,18 +28,18 @@ public class PublicContactRequestController {
     @PostMapping
     public ResponseEntity<ContactRequest> create(
             @Valid @RequestBody ContactRequestDto dto,
-            @AuthenticationPrincipal Long userId
+            @AuthenticationPrincipal AuthenticatedPrincipal principal
     ) {
-        ContactRequest created = service.create(dto, userId);
+        ContactRequest created = service.create(dto, principal.getId());
         return ResponseEntity.ok(created);
     }
 
     @GetMapping
     public ResponseEntity<Page<ContactRequest>> findAll(
-            @AuthenticationPrincipal Long userId,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             Pageable pageable
     ) {
-        Page<ContactRequest> requests = service.findAllBySubmittedBy(userId, pageable);
+        Page<ContactRequest> requests = service.findAllBySubmittedBy(principal.getId(), pageable);
         return ResponseEntity.ok(requests);
     }
 }

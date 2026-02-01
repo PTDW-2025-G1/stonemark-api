@@ -32,7 +32,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Tag(name = "Monuments Management", description = "Management endpoints for monuments.")
 @PreAuthorize("hasRole('MODERATOR')")
-public class MonumentAdminController {
+public class AdminMonumentController {
 
     private final MonumentService service;
     private final MonumentQueryService queryService;

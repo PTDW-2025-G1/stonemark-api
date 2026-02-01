@@ -22,7 +22,7 @@ import pt.estga.content.mappers.MarkOccurrenceMapper;
 import pt.estga.content.services.MarkOccurrenceQueryService;
 import pt.estga.content.services.MarkOccurrenceService;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
@@ -34,7 +34,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Tag(name = "Mark Occurrences Management", description = "Moderation endpoints for mark occurrences.")
 @PreAuthorize("hasRole('MODERATOR')")
-public class MarkOccurrenceAdminController {
+public class AdminMarkOccurrenceController {
 
     private final MarkOccurrenceService service;
     private final MarkOccurrenceQueryService queryService;
@@ -52,7 +52,7 @@ public class MarkOccurrenceAdminController {
     public ResponseEntity<MarkOccurrenceDto> createMarkOccurrence(
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MarkOccurrenceRequestDto markOccurrenceDto,
             @RequestPart(value = "file", required = false) MultipartFile file,
-            @AuthenticationPrincipal AppPrincipal principal
+            @AuthenticationPrincipal AuthenticatedPrincipal principal
     ) throws IOException {
         MarkOccurrence markOccurrence = mapper.toEntity(markOccurrenceDto);
 

@@ -18,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.shared.dtos.MessageResponseDto;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
@@ -48,7 +48,7 @@ public class AccountController {
                             schema = @Schema(implementation = UserDto.class)))
     })
     @GetMapping("/profile")
-    public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService
                 .findByIdWithContacts(principal.getId())
                 .orElseThrow();
@@ -60,7 +60,7 @@ public class AccountController {
             summary = "Get account security status",
             description = "Returns information about available authentication methods."
     )
-    public ResponseEntity<AccountSecurityStatusDto> getSecurityStatus(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<AccountSecurityStatusDto> getSecurityStatus(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService.findById(principal.getId()).orElseThrow();
         return ResponseEntity.ok(accountService.getSecurityStatus(user));
     }
@@ -75,7 +75,7 @@ public class AccountController {
     })
     @PutMapping("/profile")
     public ResponseEntity<MessageResponseDto> updateProfile(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
@@ -98,7 +98,7 @@ public class AccountController {
     })
     @PostMapping("/change-password")
     public ResponseEntity<MessageResponseDto> changePassword(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Password change request details", required = true)
             @Valid @RequestBody PasswordChangeRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
@@ -115,7 +115,7 @@ public class AccountController {
     })
     @PostMapping("/set-password")
     public ResponseEntity<MessageResponseDto> setPassword(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Password set request details", required = true)
             @Valid @RequestBody PasswordSetRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
@@ -125,7 +125,7 @@ public class AccountController {
 
     @PostMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> uploadPhoto(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @RequestParam("file") MultipartFile file
     ) throws IOException {
         User user = userService.findById(principal.getId()).orElseThrow();
@@ -143,7 +143,7 @@ public class AccountController {
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping
-    public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         userService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(new MessageResponseDto("Your account has been deleted successfully."));
     }

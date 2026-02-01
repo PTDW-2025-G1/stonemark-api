@@ -32,7 +32,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Tag(name = "Marks Moderation", description = "Moderation endpoints for marks.")
 @PreAuthorize("hasRole('MODERATOR')")
-public class MarkAdminController {
+public class AdminMarkController {
 
     private final MarkService service;
     private final MarkQueryService queryService;

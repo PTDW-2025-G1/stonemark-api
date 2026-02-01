@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.bookmark.dtos.BookmarkDto;
 import pt.estga.bookmark.services.BookmarkService;
 import pt.estga.shared.enums.TargetType;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 
 import java.util.List;
 
@@ -21,13 +21,13 @@ public class BookmarkController {
     private final BookmarkService service;
 
     @GetMapping
-    public List<BookmarkDto> getUserBookmarks(@AuthenticationPrincipal AppPrincipal principal) {
+    public List<BookmarkDto> getUserBookmarks(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         return service.getUserBookmarks(principal.getId());
     }
 
     @PostMapping("/{type}/{targetId}")
     public BookmarkDto create(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable TargetType type,
             @PathVariable Long targetId
     ) {
@@ -36,7 +36,7 @@ public class BookmarkController {
 
     @DeleteMapping("/{bookmarkId}")
     public ResponseEntity<Void> delete(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable Long bookmarkId
     ) {
         service.deleteBookmark(principal.getId(), bookmarkId);
@@ -45,7 +45,7 @@ public class BookmarkController {
 
     @GetMapping("/check/{type}/{targetId}")
     public boolean isBookmarked(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable TargetType type,
             @PathVariable Long targetId
     ) {

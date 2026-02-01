@@ -58,17 +58,6 @@ public class AdminUserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Check if a user exists by username", description = "Checks if a user exists with the given username.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Returns true if the user exists, false otherwise")
-    })
-    @GetMapping("/exists/by-username")
-    public ResponseEntity<Boolean> existsByUsername(
-            @Parameter(description = "Username to check for existence", required = true)
-            @RequestParam String username) {
-        return ResponseEntity.ok(service.existsByUsername(username));
-    }
-
     @Operation(summary = "Update a user", description = "Updates the details of an existing user.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User updated successfully",
@@ -87,7 +76,6 @@ public class AdminUserController {
         return ResponseEntity.ok(mapper.toDto(service.update(user)));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update user role", description = "Updates the role of a specific user. Requires ADMIN privileges.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User role updated successfully",

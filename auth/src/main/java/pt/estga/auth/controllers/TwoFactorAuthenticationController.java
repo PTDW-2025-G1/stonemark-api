@@ -19,7 +19,7 @@ import pt.estga.auth.dtos.TfaVerificationRequestDto;
 import pt.estga.auth.services.tfa.TotpService;
 import pt.estga.auth.services.tfa.TwoFactorAuthenticationService;
 import pt.estga.shared.dtos.MessageResponseDto;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 import pt.estga.user.enums.TfaMethod;
 import pt.estga.user.services.UserService;
@@ -44,7 +44,7 @@ public class TwoFactorAuthenticationController {
                     content = @Content(schema = @Schema(implementation = TfaSetupResponseDto.class)))
     })
     @PostMapping("/setup/totp")
-    public ResponseEntity<TfaSetupResponseDto> setupTotp(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<TfaSetupResponseDto> setupTotp(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService.findById(principal.getId()).orElseThrow();
         TfaSetupResponseDto response = totpService.setupTotpForUser(user);
         return ResponseEntity.ok(response);
@@ -60,7 +60,7 @@ public class TwoFactorAuthenticationController {
     })
     @PostMapping("/enable/totp")
     public ResponseEntity<?> enableTotp(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody TfaVerificationRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
         if (user.getTfaSecret() == null || !totpService.isCodeValid(user.getTfaSecret(), request.code())) {
@@ -80,7 +80,7 @@ public class TwoFactorAuthenticationController {
     })
     @PostMapping("/disable")
     public ResponseEntity<?> disableTfa(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody TfaVerificationRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
         if (user.getTfaMethod() == TfaMethod.NONE) {
@@ -104,7 +104,7 @@ public class TwoFactorAuthenticationController {
     })
     @PostMapping("/method")
     public ResponseEntity<?> setTfaMethod(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody SetTfaMethodRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
         if (request.tfaMethod() == TfaMethod.TOTP && user.getTfaSecret() == null) {
@@ -123,7 +123,7 @@ public class TwoFactorAuthenticationController {
                     content = @Content(schema = @Schema(implementation = MessageResponseDto.class)))
     })
     @PostMapping("/contact/request-code")
-    public ResponseEntity<?> requestContactTfaCode(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<?> requestContactTfaCode(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService.findById(principal.getId()).orElseThrow();
         try {
             twoFactorAuthenticationService.requestTfaContactCode(user);
@@ -135,7 +135,7 @@ public class TwoFactorAuthenticationController {
 
     @Operation(summary = "Get 2FA status")
     @GetMapping("/status")
-    public ResponseEntity<?> getTfaStatus(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<?> getTfaStatus(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService.findById(principal.getId()).orElseThrow();
         return ResponseEntity.ok(Map.of(
                 "enabled", user.getTfaMethod() != TfaMethod.NONE,
@@ -154,7 +154,7 @@ public class TwoFactorAuthenticationController {
     })
     @PostMapping("/contact/verify-code")
     public ResponseEntity<?> verifyContactTfaCode(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody TfaVerificationRequestDto request) {
         User user = userService.findById(principal.getId()).orElseThrow();
         try {

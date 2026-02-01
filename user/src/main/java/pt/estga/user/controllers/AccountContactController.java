@@ -15,7 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.aop.SensitiveOperation;
 import pt.estga.shared.dtos.MessageResponseDto;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.dtos.ContactDto;
 import pt.estga.user.dtos.UserContactDto;
 import pt.estga.user.entities.User;
@@ -48,7 +48,7 @@ public class AccountContactController {
     })
     @PostMapping
     public ResponseEntity<?> addContact(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Contact details to be added", required = true)
             @Valid @RequestBody ContactDto request) {
         User user = userService.findById(principal.getId())
@@ -64,7 +64,7 @@ public class AccountContactController {
                             schema = @Schema(implementation = UserContactDto.class)))
     })
     @GetMapping
-    public ResponseEntity<List<UserContactDto>> getContacts(@AuthenticationPrincipal AppPrincipal principal) {
+    public ResponseEntity<List<UserContactDto>> getContacts(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService.findByIdWithContacts(principal.getId())
                 .orElseThrow();
         List<UserContactDto> contactDtos = accountService.getContacts(user).stream()
@@ -93,7 +93,7 @@ public class AccountContactController {
     })
     @PostMapping("/{id}/verify")
     public ResponseEntity<?> requestContactVerification(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "The ID of the contact to verify", required = true)
             @PathVariable Long id) {
         User user = userService.findById(principal.getId())
@@ -114,7 +114,7 @@ public class AccountContactController {
     })
     @PatchMapping("/{contactId}/primary")
     public ResponseEntity<?> setPrimaryContact(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable Long contactId
     ) {
         User user = userService.findById(principal.getId())
@@ -133,7 +133,7 @@ public class AccountContactController {
     })
     @DeleteMapping("/{contactId}")
     public ResponseEntity<?> deleteContact(
-            @AuthenticationPrincipal AppPrincipal principal,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "The ID of the contact to be deleted", required = true)
             @PathVariable Long contactId) {
         User user = userService.findById(principal.getId())

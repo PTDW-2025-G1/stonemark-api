@@ -1,6 +1,9 @@
 package pt.estga.user.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,5 +29,16 @@ public class PublicUserController {
                 .map(mapper::toPublicDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Check if a user exists by username", description = "Checks if a user exists with the given username.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returns true if the user exists, false otherwise")
+    })
+    @GetMapping("/exists/by-username")
+    public ResponseEntity<Boolean> existsByUsername(
+            @Parameter(description = "Username to check for existence", required = true)
+            @RequestParam String username) {
+        return ResponseEntity.ok(service.existsByUsername(username));
     }
 }
