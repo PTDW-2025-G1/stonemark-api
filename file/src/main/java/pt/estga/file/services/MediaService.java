@@ -33,13 +33,13 @@ public interface MediaService {
     Resource loadFileById(Long fileId);
 
     /**
-     * Gets the content of a media file as a byte array.
+     * Loads a file as a {@link Resource} from the given MediaFile entity.
+     * Use this to avoid redundant DB lookups if the entity is already known.
      *
-     * @param fileId the id of the file to load
-     * @return the file content as a byte array
-     * @throws RuntimeException if the file cannot be loaded
+     * @param mediaFile the media file entity
+     * @return the loaded file as a {@link Resource}
      */
-    byte[] getMediaContent(Long fileId);
+    Resource loadFile(MediaFile mediaFile);
 
     /**
      * Finds a media file entity by its ID.

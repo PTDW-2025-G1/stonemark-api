@@ -1,4 +1,4 @@
-package pt.estga.file.services.processing;
+package pt.estga.file.services.impl;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +11,10 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
-import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.MediaProcessingService;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;

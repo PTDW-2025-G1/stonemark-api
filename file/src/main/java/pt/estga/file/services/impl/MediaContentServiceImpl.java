@@ -1,13 +1,13 @@
-package pt.estga.file.services;
+package pt.estga.file.services.impl;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.services.FileStorageService;
+import pt.estga.file.services.MediaContentService;
 import pt.estga.shared.exceptions.FileStorageException;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 

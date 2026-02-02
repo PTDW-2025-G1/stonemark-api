@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.file.events.MediaUploadedEvent;
-import pt.estga.file.services.processing.MediaProcessingService;
+import pt.estga.file.services.MediaProcessingService;
 
 @Component
 @RequiredArgsConstructor

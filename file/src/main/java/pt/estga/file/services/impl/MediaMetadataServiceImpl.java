@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.repositories.MediaFileRepository;
+import pt.estga.file.services.MediaMetadataService;
 
 import java.util.Optional;
 

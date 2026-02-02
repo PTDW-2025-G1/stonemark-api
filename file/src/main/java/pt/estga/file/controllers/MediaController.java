@@ -67,21 +67,22 @@ public class MediaController {
             @PathVariable Long id) {
         log.info("Request to get media with id: {}", id);
 
-        Optional<MediaFile> mediaFileOptional = mediaService.findById(id);
+        // Fetch metadata first
+        MediaFile mediaFile = mediaService.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Media not found with id: {}", id);
+                    return new FileNotFoundException("Media not found with id: " + id);
+                });
 
-        if (mediaFileOptional.isEmpty()) {
-            log.warn("Media not found with id: {}", id);
-            throw new FileNotFoundException("Media not found with id: " + id);
-        }
-
-        MediaFile mediaFile = mediaFileOptional.get();
         if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
             log.warn("MediaFile with id {} has no storage path.", id);
             throw new FileNotFoundException("Media file has no storage path");
         }
 
         log.info("Found media file, loading from path: {}", mediaFile.getStoragePath());
-        Resource resource = mediaService.loadFileById(id);
+        
+        // Use the new method to load resource directly from entity
+        Resource resource = mediaService.loadFile(mediaFile);
 
         MediaType mediaType = MediaTypeFactory.getMediaType(mediaFile.getOriginalFilename())
                 .orElse(MediaType.APPLICATION_OCTET_STREAM);

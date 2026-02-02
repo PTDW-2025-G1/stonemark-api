@@ -8,6 +8,9 @@ import pt.estga.file.enums.MediaVariantType;
 import java.util.Optional;
 
 public interface MediaVariantRepository extends JpaRepository<MediaVariant, Long> {
+
     boolean existsByMediaFileAndType(MediaFile mediaFile, MediaVariantType type);
-    Optional<MediaVariant> findByMediaFileAndType(MediaFile mediaFile, MediaVariantType type);
+    
+    Optional<MediaVariant> findByMediaFileIdAndType(Long mediaId, MediaVariantType type);
+
 }

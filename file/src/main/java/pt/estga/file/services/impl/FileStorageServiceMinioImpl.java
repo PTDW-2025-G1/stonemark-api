@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.impl;
 
 import io.minio.*;
 import io.minio.errors.MinioException;
@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.services.FileStorageService;
 import pt.estga.shared.exceptions.FileNotFoundException;
 import pt.estga.shared.exceptions.FileStorageException;
 

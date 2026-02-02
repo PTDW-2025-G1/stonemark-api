@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.impl;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,10 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
+import pt.estga.file.services.MediaContentService;
+import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.MediaService;
+import pt.estga.file.services.StoragePathStrategy;
 import pt.estga.shared.exceptions.FileNotFoundException;
 
 import java.io.FilterInputStream;
@@ -87,15 +91,15 @@ public class MediaServiceImpl implements MediaService {
         log.info("Loading file with ID: {}", fileId);
         MediaFile mediaFile = mediaMetadataService.findById(fileId)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
-        return mediaContentService.loadContent(mediaFile.getStoragePath());
+        return loadFile(mediaFile);
     }
 
     @Override
-    public byte[] getMediaContent(Long fileId) {
-        log.info("Getting content for file with ID: {}", fileId);
-        MediaFile mediaFile = mediaMetadataService.findById(fileId)
-                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
-        return mediaContentService.getContentBytes(mediaFile.getStoragePath());
+    public Resource loadFile(MediaFile mediaFile) {
+        if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
+            throw new FileNotFoundException("Media file has no storage path");
+        }
+        return mediaContentService.loadContent(mediaFile.getStoragePath());
     }
 
     @Override
