@@ -1,0 +1,12 @@
+target/
+.git/
+.mvn/
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+uploads/
+seed/
+**/.DS_Store
+**/Thumbs.db
