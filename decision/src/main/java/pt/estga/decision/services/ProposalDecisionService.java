@@ -1,5 +1,6 @@
 package pt.estga.decision.services;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ public abstract class ProposalDecisionService<T extends Proposal> {
     protected final ProposalDecisionAttemptRepository attemptRepo;
     protected final ProposalRepository<T> proposalRepo;
     protected final ApplicationEventPublisher eventPublisher;
+    @Getter
     protected final Class<T> proposalType;
 
     protected ProposalDecisionService(

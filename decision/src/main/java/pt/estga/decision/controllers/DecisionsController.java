@@ -12,17 +12,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.content.dtos.MonumentRequestDto;
 import pt.estga.decision.dtos.ActiveDecisionViewDto;
 import pt.estga.decision.dtos.ManualDecisionRequest;
 import pt.estga.decision.mappers.DecisionMapper;
 import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
-import pt.estga.decision.services.MarkOccurrenceProposalDecisionService;
-import pt.estga.proposal.services.MonumentCreationService;
+import pt.estga.decision.services.DecisionServiceFactory;
+import pt.estga.decision.services.ProposalDecisionService;
 import pt.estga.shared.exceptions.InvalidCredentialsException;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.services.UserService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin/proposals/{id}/decisions")
@@ -31,8 +32,7 @@ import pt.estga.user.services.UserService;
 @Tag(name = "Proposal Decisions", description = "Endpoints for managing proposal decisions.")
 public class DecisionsController {
 
-    private final MarkOccurrenceProposalDecisionService markOccurrenceProposalDecisionService;
-    private final MonumentCreationService monumentCreationService;
+    private final DecisionServiceFactory decisionServiceFactory;
     private final ProposalDecisionAttemptRepository attemptRepo;
     private final UserService userService;
     private final DecisionMapper decisionMapper;
@@ -50,6 +50,20 @@ public class DecisionsController {
                 .map(decisionMapper::toActiveDecisionViewDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Get decision history for proposal",
+               description = "Retrieves the history of decision attempts for a proposal.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Decision history retrieved successfully.",
+                    content = @Content(schema = @Schema(implementation = ActiveDecisionViewDto.class)))
+    })
+    @GetMapping("/history")
+    public ResponseEntity<List<ActiveDecisionViewDto>> getDecisionHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(attemptRepo.findByProposalIdOrderByDecidedAtDesc(id)
+                .stream()
+                .map(decisionMapper::toActiveDecisionViewDto)
+                .toList());
     }
 
     @Operation(summary = "Create a manual decision",
@@ -70,7 +84,9 @@ public class DecisionsController {
         }
         var moderator = userService.findById(principal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Moderator not found"));
-        markOccurrenceProposalDecisionService.makeManualDecision(id, request.outcome(), request.notes(), moderator);
+        
+        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        decisionService.makeManualDecision(id, request.outcome(), request.notes(), moderator);
         return ResponseEntity.ok().build();
     }
 
@@ -82,7 +98,8 @@ public class DecisionsController {
     })
     @PostMapping("/automatic/rerun")
     public ResponseEntity<Void> rerunAutomaticDecision(@PathVariable Long id) {
-        markOccurrenceProposalDecisionService.makeAutomaticDecision(id);
+        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        decisionService.makeAutomaticDecision(id);
         return ResponseEntity.ok().build();
     }
 
@@ -106,7 +123,8 @@ public class DecisionsController {
             return ResponseEntity.badRequest().build();
         }
         
-        markOccurrenceProposalDecisionService.activateDecision(attemptId);
+        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        decisionService.activateDecision(attemptId);
         return ResponseEntity.ok().build();
     }
 
@@ -118,22 +136,8 @@ public class DecisionsController {
     })
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivateDecision(@PathVariable Long id) {
-        markOccurrenceProposalDecisionService.deactivateDecision(id);
-        return ResponseEntity.ok().build();
-    }
-
-    @Operation(summary = "Create monument for proposal",
-               description = "Creates a new monument based on the proposal data.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Monument created successfully."),
-            @ApiResponse(responseCode = "404", description = "Proposal not found.")
-    })
-    @PostMapping("/monument")
-    public ResponseEntity<Void> createMonumentForProposal(
-            @PathVariable Long id,
-            @RequestBody @Valid MonumentRequestDto request
-    ) {
-        monumentCreationService.createMonumentFromProposal(id, request);
+        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        decisionService.deactivateDecision(id);
         return ResponseEntity.ok().build();
     }
 }
