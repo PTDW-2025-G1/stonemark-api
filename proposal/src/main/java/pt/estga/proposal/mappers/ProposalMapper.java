@@ -13,7 +13,6 @@ import pt.estga.proposal.entities.Proposal;
 public interface ProposalMapper {
 
     @Mapping(target = "title", source = "proposal", qualifiedByName = "generateTitle")
-    @Mapping(target = "type", source = "proposal", qualifiedByName = "determineType")
     @Mapping(target = "photoId", source = "proposal", qualifiedByName = "extractPhotoId")
     ProposalSummaryDto toSummaryDto(Proposal proposal);
 
@@ -27,18 +26,6 @@ public interface ProposalMapper {
             return "New Mark #" + proposal.getId();
         }
         return "Proposal #" + proposal.getId();
-    }
-
-    @Named("determineType")
-    default String determineType(Proposal proposal) {
-        if (proposal instanceof MarkOccurrenceProposal) {
-            return "MARK_OCCURRENCE";
-        } else if (proposal instanceof MonumentProposal) {
-            return "MONUMENT";
-        } else if (proposal instanceof MarkProposal) {
-            return "MARK";
-        }
-        return "UNKNOWN";
     }
 
     @Named("extractPhotoId")

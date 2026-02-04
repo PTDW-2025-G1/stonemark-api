@@ -7,6 +7,7 @@ import org.hibernate.annotations.Type;
 import pt.estga.content.entities.Mark;
 import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.proposal.enums.ProposalType;
 import pt.estga.shared.utils.PgVectorType;
 
 @Entity
@@ -37,4 +38,8 @@ public class MarkOccurrenceProposal extends Proposal {
     @Builder.Default
     private boolean newMark = true;
 
+    @Override
+    public ProposalType getType() {
+        return ProposalType.MARK_OCCURRENCE;
+    }
 }

@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Type;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.proposal.enums.ProposalType;
 import pt.estga.shared.utils.PgVectorType;
 
 @Entity
@@ -25,4 +26,8 @@ public class MarkProposal extends Proposal {
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile coverImage;
 
+    @Override
+    public ProposalType getType() {
+        return ProposalType.MARK;
+    }
 }

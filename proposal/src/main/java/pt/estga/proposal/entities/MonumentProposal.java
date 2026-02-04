@@ -3,6 +3,7 @@ package pt.estga.proposal.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import pt.estga.proposal.enums.ProposalType;
 import pt.estga.territory.entities.AdministrativeDivision;
 
 @Entity
@@ -29,4 +30,8 @@ public class MonumentProposal extends Proposal {
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision district;
 
+    @Override
+    public ProposalType getType() {
+        return ProposalType.MONUMENT;
+    }
 }

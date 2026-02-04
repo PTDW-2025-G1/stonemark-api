@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import pt.estga.proposal.enums.ProposalStatus;
+import pt.estga.proposal.enums.ProposalType;
 import pt.estga.proposal.enums.SubmissionSource;
 import pt.estga.shared.audit.AuditedEntity;
 import pt.estga.user.entities.User;
@@ -44,4 +45,6 @@ public abstract class Proposal extends AuditedEntity {
 
     @Enumerated(EnumType.STRING)
     private ProposalStatus status;
+
+    public abstract ProposalType getType();
 }
