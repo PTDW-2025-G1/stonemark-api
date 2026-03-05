@@ -1,45 +1,45 @@
 services:
-  app:
-    container_name: stonemark-api
-    image: stonemark-api:latest
-    build: .
-    environment:
-      # Database
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/stonemark
-      
-      # Storage
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_ENDPOINT: http://minio:9000
-      
-      # Security
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      
-      # Chatbot
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      WHATSAPP_BOT_TOKEN: ${WHATSAPP_BOT_TOKEN}
-      
-      # Notification
-      MAIL_ADDRESS: ${MAIL_ADDRESS}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      VONAGE_API_KEY: ${VONAGE_API_KEY}
-      VONAGE_API_SECRET: ${VONAGE_API_SECRET}
-      VONAGE_FROM_NUMBER: ${VONAGE_FROM_NUMBER}
-      
-      # Vision
-      VISION_SERVER_URL: http://vision:8000
-    ports:
-      - "8080:8080"
-    depends_on:
-      - database
-      - minio
-    networks:
-      - stonemark-network
-    restart: unless-stopped
+#  app:
+#    container_name: stonemark-api
+#    image: stonemark-api:latest
+#    build: .
+#    environment:
+#      # Database
+#      DB_USERNAME: ${DB_USERNAME}
+#      DB_PASSWORD: ${DB_PASSWORD}
+#      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/stonemark
+#
+#      # Storage
+#      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+#      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+#      MINIO_ENDPOINT: http://minio:9000
+#
+#      # Security
+#      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+#      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+#      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+#
+#      # Chatbot
+#      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+#      WHATSAPP_BOT_TOKEN: ${WHATSAPP_BOT_TOKEN}
+#
+#      # Notification
+#      MAIL_ADDRESS: ${MAIL_ADDRESS}
+#      MAIL_PASSWORD: ${MAIL_PASSWORD}
+#      VONAGE_API_KEY: ${VONAGE_API_KEY}
+#      VONAGE_API_SECRET: ${VONAGE_API_SECRET}
+#      VONAGE_FROM_NUMBER: ${VONAGE_FROM_NUMBER}
+#
+#      # Vision
+#      VISION_SERVER_URL: http://vision:8000
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - database
+#      - minio
+#    networks:
+#      - stonemark-network
+#    restart: unless-stopped
 
   database:
     container_name: stonemark-db

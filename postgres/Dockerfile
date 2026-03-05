@@ -9,3 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends postgresql-serv
     && apt-get remove -y build-essential git postgresql-server-dev-18 \
     && apt-get autoremove -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Configure PostgreSQL to load pgvector
+RUN echo "shared_preload_libraries = 'vector'" >> /etc/postgresql/postgresql.conf.sample

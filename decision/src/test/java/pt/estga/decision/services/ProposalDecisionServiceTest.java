@@ -11,10 +11,9 @@ import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
 import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
+import pt.estga.proposal.entities.MonumentProposal;
 import pt.estga.proposal.enums.ProposalStatus;
 import pt.estga.proposal.repositories.ProposalRepository;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -150,8 +149,7 @@ class ProposalDecisionServiceTest {
     void activateDecision_ShouldThrow_IfProposalTypeMismatch() {
         // Arrange
         Long attemptId = 100L;
-        // Create a different proposal type (anonymous subclass of Proposal for testing mismatch)
-        Proposal otherProposal = new Proposal() {}; 
+        MonumentProposal otherProposal = MonumentProposal.builder().id(1L).build();
         ProposalDecisionAttempt attempt = ProposalDecisionAttempt.builder()
                 .id(attemptId)
                 .proposal(otherProposal)

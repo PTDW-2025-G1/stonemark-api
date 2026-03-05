@@ -11,7 +11,7 @@ import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.content.entities.Monument;
 import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
+import pt.estga.proposal.entities.MonumentProposal;
 import pt.estga.proposal.services.chatbot.MarkOccurrenceProposalChatbotFlowService;
 
 import java.util.Collections;
@@ -47,7 +47,7 @@ class MonumentSuggestionHandlerTest {
     @Test
     void handle_ShouldReturnFailure_WhenProposalIsNotMarkOccurrenceProposal() {
         ChatbotContext context = new ChatbotContext();
-        context.getProposalContext().setProposal(new Proposal() {}); // Generic proposal
+        context.getProposalContext().setProposal(new MonumentProposal());
 
         HandlerOutcome outcome = handler.handle(context, BotInput.builder().build());
 
