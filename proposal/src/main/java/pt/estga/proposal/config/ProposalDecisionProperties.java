@@ -14,8 +14,13 @@ public class ProposalDecisionProperties {
     /**
      * Automatic Decision Thresholds.
      * Defines the score limits for automatically accepting or rejecting a proposal.
+     * With the new scoring system:
+     * - Base credibility: 0-100
+     * - Reputation boost: 0-40
+     * - New monument boost: 0-5
+     * - Total possible: ~145
      */
-    private Integer automaticAcceptanceThreshold = 150;
+    private Integer automaticAcceptanceThreshold = 100;
     private Integer automaticRejectionThreshold = 10;
     private Boolean requireManualReviewForNewMonuments = true;
 

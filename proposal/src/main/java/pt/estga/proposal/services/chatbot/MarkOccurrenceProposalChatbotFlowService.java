@@ -35,7 +35,7 @@ public class MarkOccurrenceProposalChatbotFlowService {
     private final MarkSearchService markSearchService;
     private final ApplicationEventPublisher eventPublisher;
 
-    private static final double COORDINATE_SEARCH_RANGE = 0.02;
+    private static final double COORDINATE_SEARCH_RANGE = 0.01;
 
     public MarkOccurrenceProposal startProposal(User user, SubmissionSource source) {
         log.info("Starting new chatbot proposal for user ID: {} with source: {}", user.getId(), source);

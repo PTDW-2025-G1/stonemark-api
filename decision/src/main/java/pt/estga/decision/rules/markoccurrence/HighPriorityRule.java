@@ -16,13 +16,20 @@ public class HighPriorityRule implements DecisionRule<MarkOccurrenceProposal> {
 
     @Override
     public DecisionRuleResult evaluate(MarkOccurrenceProposal proposal) {
-        if (proposal.getPriority() != null && proposal.getPriority() > properties.getAutomaticAcceptanceThreshold()) {
+        Integer priority = proposal.getPriority();
+
+        if (priority == null) {
+            return null; // Skip if no priority calculated
+        }
+
+        if (priority > properties.getAutomaticAcceptanceThreshold()) {
             return DecisionRuleResult.conclusive(
                     DecisionOutcome.ACCEPT,
                     true,
-                    "Priority " + proposal.getPriority() + " exceeds acceptance threshold."
+                    "Priority " + priority + " exceeds acceptance threshold."
             );
         }
+
         return null;
     }
 
