@@ -72,19 +72,41 @@ public class MarkOccurrenceProposalChatbotFlowService {
     }
 
     public List<Mark> suggestMarks(MarkOccurrenceProposal proposal) {
-        if (proposal.getEmbedding() != null && proposal.getEmbedding().length > 0) {
-            try {
-                List<String> markIds = markSearchService.searchMarks(proposal.getEmbedding());
-                return markIds.stream()
-                        .map(Long::valueOf)
-                        .map(markQueryService::findById)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
-            } catch (Exception e) {
-                log.warn("Mark search service failed for proposal. Proceeding without suggestions.", e);
-            }
+        log.info("Suggesting marks for proposal ID: {}", proposal.getId());
+
+        if (proposal.getEmbedding() == null) {
+            log.warn("Proposal has no embedding, cannot suggest marks. Proposal ID: {}", proposal.getId());
+            return List.of();
         }
-        return List.of();
+
+        if (proposal.getEmbedding().length == 0) {
+            log.warn("Proposal embedding is empty, cannot suggest marks. Proposal ID: {}", proposal.getId());
+            return List.of();
+        }
+
+        log.debug("Proposal has embedding with length: {}", proposal.getEmbedding().length);
+
+        try {
+            List<String> markIds = markSearchService.searchMarks(proposal.getEmbedding());
+            log.info("Mark search service returned {} mark IDs for proposal ID: {}", markIds.size(), proposal.getId());
+
+            if (markIds.isEmpty()) {
+                log.info("No similar marks found in search for proposal ID: {}", proposal.getId());
+                return List.of();
+            }
+
+            List<Mark> marks = markIds.stream()
+                    .map(Long::valueOf)
+                    .map(markQueryService::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+
+            log.info("Successfully loaded {} marks from {} IDs for proposal ID: {}", marks.size(), markIds.size(), proposal.getId());
+            return marks;
+        } catch (Exception e) {
+            log.error("Mark search service failed for proposal ID: {}. Proceeding without suggestions.", proposal.getId(), e);
+            return List.of();
+        }
     }
 }
