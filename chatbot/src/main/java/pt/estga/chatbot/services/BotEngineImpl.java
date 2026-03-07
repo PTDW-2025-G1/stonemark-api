@@ -57,7 +57,7 @@ public class BotEngineImpl implements BotEngine {
             context.setCurrentState(CoreState.START);
         }
 
-        if (!authenticationGuard.isActionAllowed(input, context.getCurrentState())) {
+        if (!authenticationGuard.isActionAllowed(input)) {
             return authenticationGuardHandler.requireVerification(context);
         }
 

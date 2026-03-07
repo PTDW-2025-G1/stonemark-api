@@ -7,13 +7,11 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.VerificationState;
-import pt.estga.chatbot.features.auth.RequiresAuthentication;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.features.verification.VerificationCallbackData;
 
 @Component
 @RequiredArgsConstructor
-@RequiresAuthentication(false)
 public class ChooseVerificationMethodHandler implements ConversationStateHandler {
 
     @Override

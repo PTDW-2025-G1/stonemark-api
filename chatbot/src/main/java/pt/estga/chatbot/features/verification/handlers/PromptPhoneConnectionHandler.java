@@ -3,13 +3,11 @@ package pt.estga.chatbot.features.verification.handlers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
-import pt.estga.chatbot.features.auth.RequiresAuthentication;
 import pt.estga.chatbot.features.verification.VerificationCallbackData;
 import pt.estga.chatbot.models.BotInput;
 
 @Component
 @RequiredArgsConstructor
-@RequiresAuthentication(false)
 public class PromptPhoneConnectionHandler implements ConversationStateHandler {
 
     @Override
