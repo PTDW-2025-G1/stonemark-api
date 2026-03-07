@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.EmojiKey;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.Message;
-import pt.estga.chatbot.services.TelegramNotificationService;
+import pt.estga.chatbot.models.Platform;
+import pt.estga.chatbot.services.MessengerNotificationService;
+import pt.estga.chatbot.services.MessengerNotificationServiceFactory;
 import pt.estga.verification.events.MessengerAccountConnectedEvent;
 
 @Component
@@ -16,20 +18,23 @@ import pt.estga.verification.events.MessengerAccountConnectedEvent;
 @Slf4j
 public class MessengerAccountConnectedListener {
 
-    private final TelegramNotificationService telegramNotificationService;
+    private final MessengerNotificationServiceFactory notificationServiceFactory;
 
     @EventListener
     @Async
     public void handleMessengerAccountConnected(MessengerAccountConnectedEvent event) {
-        log.info("Messenger account connected event received for user: {}, telegramId: {}",
-                event.getUserId(), event.getTelegramId());
+        log.info("Messenger account connected event received for user: {}, platform: {}, recipientId: {}",
+                event.getUserId(), event.getPlatform(), event.getRecipientId());
 
-        // Send success notification to the user's Telegram
-        telegramNotificationService.sendNotification(
-                event.getTelegramId(),
-                new Message(MessageKey.ACCOUNT_CONNECTED_NOTIFICATION, EmojiKey.TADA)
-        );
+        try {
+            Platform platform = Platform.valueOf(event.getPlatform());
+            MessengerNotificationService notificationService = notificationServiceFactory.getNotificationService(platform);
+            notificationService.sendNotificationWithMenu(
+                    event.getRecipientId(),
+                    new Message(MessageKey.ACCOUNT_CONNECTED_NOTIFICATION, EmojiKey.TADA)
+            );
+        } catch (IllegalArgumentException e) {
+            log.error("Unsupported platform in MessengerAccountConnectedEvent: {}", event.getPlatform(), e);
+        }
     }
 }
-
-

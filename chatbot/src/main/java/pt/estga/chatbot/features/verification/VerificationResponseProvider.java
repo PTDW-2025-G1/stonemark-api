@@ -48,6 +48,8 @@ public class VerificationResponseProvider implements ResponseProvider {
                 responses.add(BotResponse.builder()
                         .textNode(textService.get(new Message(MessageKey.CONNECT_MESSENGER_CODE, code)))
                         .build());
+                // Show actionable menu right after code delivery so user can keep interacting.
+                responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
                 yield responses;
             }
             case AWAITING_CONTACT -> createContactRequestResponse();

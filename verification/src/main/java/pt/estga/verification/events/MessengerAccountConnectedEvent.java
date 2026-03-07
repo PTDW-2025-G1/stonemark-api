@@ -6,12 +6,14 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class MessengerAccountConnectedEvent extends ApplicationEvent {
 
-    private final String telegramId;
+    private final String platform;
+    private final String recipientId;
     private final Long userId;
 
-    public MessengerAccountConnectedEvent(Object source, String telegramId, Long userId) {
+    public MessengerAccountConnectedEvent(Object source, String platform, String recipientId, Long userId) {
         super(source);
-        this.telegramId = telegramId;
+        this.platform = platform;
+        this.recipientId = recipientId;
         this.userId = userId;
     }
 }

@@ -66,32 +66,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
             try {
                 BotInput botInput = telegramAdapter.toBotInput(update);
                 if (botInput != null) {
-                    List<BotResponse> botResponses = conversationService.handleInput(botInput);
-                    if (botResponses != null) {
-                        // Use service account for sending messages back to Telegram
-                        AppPrincipal botPrincipal = AppPrincipal.builder()
-                                .id(BOT_SERVICE_ACCOUNT_ID)
-                                .type(PrincipalType.SERVICE)
-                                .identifier("TelegramBot")
-                                .password(null)
-                                .authorities(Collections.emptyList())
-                                .enabled(true)
-                                .accountNonLocked(true)
-                                .build();
-
-                        ServiceAccountUtils.runAsServiceAccount(botPrincipal, () -> {
-                            for (BotResponse response : botResponses) {
-                                List<PartialBotApiMethod<?>> methods = telegramAdapter.toBotApiMethod(botInput.getChatId(), response);
-                                if (methods != null) {
-                                    for (PartialBotApiMethod<?> method : methods) {
-                                        if (method instanceof BotApiMethod) execute((BotApiMethod<?>) method);
-                                        else if (method instanceof SendPhoto) execute((SendPhoto) method);
-                                    }
-                                }
-                            }
-                            return null;
-                        });
-                    }
+                    dispatchAndSend(botInput);
                 }
             } catch (Exception e) {
                 log.error("Error processing Telegram update", e);
@@ -102,6 +77,53 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
         // Telegram webhook can return null since responses are sent asynchronously
         return null;
+    }
+
+    // Reusable path for webhook and internal notifications that need dispatcher-driven output.
+    public void dispatchAndSend(BotInput botInput) {
+        List<BotResponse> botResponses = conversationService.handleInput(botInput);
+        if (botResponses == null) {
+            return;
+        }
+
+        AppPrincipal botPrincipal = AppPrincipal.builder()
+                .id(BOT_SERVICE_ACCOUNT_ID)
+                .type(PrincipalType.SERVICE)
+                .identifier("TelegramBot")
+                .password(null)
+                .authorities(Collections.emptyList())
+                .enabled(true)
+                .accountNonLocked(true)
+                .build();
+
+        try {
+            ServiceAccountUtils.runAsServiceAccount(botPrincipal, () -> {
+                sendBotResponses(botInput.getChatId(), botResponses);
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("Error dispatching and sending bot responses", e);
+        }
+    }
+
+    private void sendBotResponses(long chatId, List<BotResponse> botResponses) {
+        for (BotResponse response : botResponses) {
+            List<PartialBotApiMethod<?>> methods = telegramAdapter.toBotApiMethod(chatId, response);
+            if (methods == null) {
+                continue;
+            }
+            for (PartialBotApiMethod<?> method : methods) {
+                try {
+                    if (method instanceof BotApiMethod<?>) {
+                        execute((BotApiMethod<?>) method);
+                    } else if (method instanceof SendPhoto) {
+                        execute((SendPhoto) method);
+                    }
+                } catch (TelegramApiException e) {
+                    log.error("Error sending Telegram response", e);
+                }
+            }
+        }
     }
 
     @Override

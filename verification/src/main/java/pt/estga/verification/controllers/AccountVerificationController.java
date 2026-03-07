@@ -62,7 +62,7 @@ public class AccountVerificationController {
         userIdentityService.createOrUpdateTelegramIdentity(user, telegramId);
 
         // Publish event for chatbot to handle notification
-        eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, telegramId, user.getId()));
+        eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", telegramId, user.getId()));
 
         return ResponseEntity.ok(
                 TelegramVerificationResponseDto.success("Telegram account linked successfully")
