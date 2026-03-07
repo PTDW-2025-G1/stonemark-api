@@ -8,16 +8,10 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.services.FlowStrategy;
 
-import java.util.Map;
-
 import static pt.estga.chatbot.context.HandlerOutcome.*;
 
 @Component
 public class VerificationFlowStrategy implements FlowStrategy {
-
-    private static final Map<ConversationState, ConversationState> SUCCESS_TRANSITIONS = Map.ofEntries(
-            Map.entry(VerificationState.AWAITING_VERIFICATION_CODE, VerificationState.AWAITING_PHONE_CONNECTION_DECISION)
-    );
 
     @Override
     public boolean supports(ConversationState state) {
@@ -30,10 +24,10 @@ public class VerificationFlowStrategy implements FlowStrategy {
             return currentState;
         }
 
-        // Handle branching from AWAITING_VERIFICATION_METHOD
-        if (currentState == VerificationState.AWAITING_VERIFICATION_METHOD) {
-            if (outcome == VERIFY_WITH_CODE) return VerificationState.AWAITING_VERIFICATION_CODE;
-            if (outcome == VERIFY_WITH_PHONE) return VerificationState.AWAITING_CONTACT;
+        // After displaying code, don't automatically transition - wait for user action
+        if (currentState == VerificationState.DISPLAYING_VERIFICATION_CODE) {
+            // User can navigate to main menu or other actions from here
+            return CoreState.START;
         }
 
         // Handle branching from AWAITING_CONTACT
@@ -51,7 +45,7 @@ public class VerificationFlowStrategy implements FlowStrategy {
         }
 
         if (outcome == SUCCESS) {
-            return SUCCESS_TRANSITIONS.getOrDefault(currentState, CoreState.START);
+            return CoreState.START;
         }
 
         return currentState;

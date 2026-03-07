@@ -39,10 +39,18 @@ public class VerificationResponseProvider implements ResponseProvider {
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         VerificationState state = (VerificationState) context.getCurrentState();
         return switch (state) {
-            case AWAITING_VERIFICATION_METHOD -> createVerificationMethodResponse();
+            case DISPLAYING_VERIFICATION_CODE -> {
+                List<BotResponse> responses = new ArrayList<>();
+                // Main text with instructions
+                responses.add(buildSimpleMenuResponse(new Message(MessageKey.DISPLAY_VERIFICATION_CODE_TITLE, KEY)).getFirst());
+                // Code in separate message
+                String code = context.getVerificationCode();
+                responses.add(BotResponse.builder()
+                        .textNode(textService.get(new Message(MessageKey.DISPLAY_VERIFICATION_CODE, code)))
+                        .build());
+                yield responses;
+            }
             case AWAITING_CONTACT -> createContactRequestResponse();
-            case AWAITING_VERIFICATION_CODE ->
-                    buildSimpleMenuResponse(new Message(MessageKey.ENTER_VERIFICATION_CODE_PROMPT, NUMBERS));
             case AWAITING_PHONE_CONNECTION_DECISION -> {
                 List<BotResponse> responses = new ArrayList<>();
                 responses.add(buildSimpleMenuResponse(new Message(MessageKey.VERIFICATION_SUCCESS_CODE, context.getUserName(), TADA)).getFirst());
@@ -64,16 +72,6 @@ public class VerificationResponseProvider implements ResponseProvider {
         };
     }
 
-    private List<BotResponse> createVerificationMethodResponse() {
-        Menu menu = Menu.builder()
-                .titleNode(textService.get(new Message(MessageKey.CHOOSE_VERIFICATION_METHOD_PROMPT)))
-                .buttons(List.of(
-                        List.of(Button.builder().textNode(textService.get(new Message(MessageKey.VERIFY_WITH_CODE_BTN, NUMBERS))).callbackData(VerificationCallbackData.CHOOSE_VERIFY_WITH_CODE).build()),
-                        List.of(Button.builder().textNode(textService.get(new Message(MessageKey.VERIFY_WITH_PHONE_BTN, PHONE))).callbackData(VerificationCallbackData.CHOOSE_VERIFY_WITH_PHONE).build())
-                ))
-                .build();
-        return Collections.singletonList(BotResponse.builder().uiComponent(menu).build());
-    }
 
     private List<BotResponse> createContactRequestResponse() {
         ContactRequest contactRequest = ContactRequest.builder()

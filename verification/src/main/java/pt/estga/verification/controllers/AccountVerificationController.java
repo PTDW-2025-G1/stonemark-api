@@ -8,15 +8,16 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
+import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
 import pt.estga.verification.dtos.ConfirmationResponseDto;
+import pt.estga.verification.dtos.TelegramVerificationRequestDto;
+import pt.estga.verification.dtos.TelegramVerificationResponseDto;
 import pt.estga.verification.dtos.VerificationRequestDto;
-import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.services.ChatbotVerificationService;
 import pt.estga.verification.services.VerificationProcessingService;
 import pt.estga.shared.exceptions.VerificationErrorMessages;
 
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -28,6 +29,7 @@ public class AccountVerificationController {
     private final VerificationProcessingService verificationProcessingService;
     private final ChatbotVerificationService verificationService;
     private final UserService userService;
+    private final UserIdentityService userIdentityService;
 
     @PostMapping("/confirm")
     public ResponseEntity<ConfirmationResponseDto> confirm(@RequestBody VerificationRequestDto request) {
@@ -36,11 +38,28 @@ public class AccountVerificationController {
                 .orElseGet(() -> ResponseEntity.ok(ConfirmationResponseDto.success(VerificationErrorMessages.CONFIRMATION_SUCCESSFUL)));
     }
 
-    @PostMapping("/telegram/generate")
-    @Operation(summary = "Generate Telegram verification code", description = "Generates a code for the authenticated user to verify their Telegram account.")
-    public ResponseEntity<Map<String, String>> generateTelegramCode(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
+    @PostMapping("/telegram/verify")
+    @Operation(summary = "Verify Telegram code", description = "Verifies code from chatbot and links Telegram account to current session")
+    public ResponseEntity<TelegramVerificationResponseDto> verifyTelegramCode(
+            @RequestBody TelegramVerificationRequestDto request,
+            @AuthenticationPrincipal AuthenticatedPrincipal principal) {
+
+        Optional<String> telegramIdOpt = verificationService.verifyAndGetTelegramId(request.code());
+
+        if (telegramIdOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    TelegramVerificationResponseDto.error("Invalid or expired code")
+            );
+        }
+
+        String telegramId = telegramIdOpt.get();
         User user = userService.findById(principal.getId()).orElseThrow();
-        ActionCode actionCode = verificationService.generateTelegramVerificationCode(user);
-        return ResponseEntity.ok(Map.of("code", actionCode.getCode()));
+
+        // Create or update telegram identity
+        userIdentityService.createOrUpdateTelegramIdentity(user, telegramId);
+
+        return ResponseEntity.ok(
+                TelegramVerificationResponseDto.success("Telegram account linked successfully")
+        );
     }
 }
