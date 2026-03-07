@@ -77,9 +77,9 @@ public class ResponseFactory {
             };
         } else if (state instanceof VerificationState verificationState) {
             return switch (verificationState) {
-                case AWAITING_VERIFICATION_CODE -> new Message(MessageKey.INVALID_CODE_ERROR, WARNING);
+                case DISPLAYING_VERIFICATION_CODE -> new Message(MessageKey.ERROR_GENERIC, WARNING);
                 case AWAITING_CONTACT -> new Message(MessageKey.USER_NOT_FOUND_ERROR, WARNING);
-                case AWAITING_VERIFICATION_METHOD, AWAITING_PHONE_CONNECTION_DECISION ->
+                case AWAITING_PHONE_CONNECTION_DECISION ->
                         new Message(MessageKey.INVALID_SELECTION, WARNING);
                 default -> null;
             };

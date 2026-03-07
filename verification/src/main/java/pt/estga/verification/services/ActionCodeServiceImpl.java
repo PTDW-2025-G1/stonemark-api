@@ -95,7 +95,7 @@ public class ActionCodeServiceImpl implements ActionCodeService {
             case RESET_PASSWORD -> passwordResetExpiration;
             case TWO_FACTOR -> twoFactorExpiration;
             case DEVICE_VERIFICATION -> deviceVerificationExpiration;
-            case TELEGRAM_VERIFICATION -> chatbotVerificationExpiration;
+            case TELEGRAM_VERIFICATION, CHATBOT_VERIFICATION -> chatbotVerificationExpiration;
         };
     }
 }

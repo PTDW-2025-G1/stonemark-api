@@ -7,11 +7,9 @@ import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.VerificationState;
-import pt.estga.chatbot.features.auth.RequiresAuthentication;
 import pt.estga.chatbot.models.BotInput;
 
 @Component
-@RequiresAuthentication(false)
 public class PhoneConnectionSuccessHandler implements ConversationStateHandler {
 
     @Override

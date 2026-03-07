@@ -28,18 +28,16 @@ public class MessageKey {
     public static final String NO_BTN = "no_btn";
 
     // Authentication & Verification
-    public static final String AUTH_REQUIRED_TITLE = "auth_required_title";
-    public static final String VERIFY_ACCOUNT_BTN = "verify_account_btn";
+    public static final String CONNECT_ACCOUNT_BTN = "connect_account_btn";
     public static final String SHARE_PHONE_NUMBER_PROMPT = "share_phone_number_prompt";
-    public static final String VERIFICATION_SUCCESS_CODE = "verification_success_code";
+    public static final String MESSENGER_CONNECT_SUCCESS = "messenger_connect_success";
     public static final String USER_NOT_FOUND_ERROR = "user_not_found_error";
-    public static final String INVALID_CODE_ERROR = "invalid_code_error";
-    
-    public static final String ENTER_VERIFICATION_CODE_PROMPT = "enter_verification_code_prompt";
 
-    public static final String CHOOSE_VERIFICATION_METHOD_PROMPT = "choose_verification_method_prompt";
-    public static final String VERIFY_WITH_CODE_BTN = "verify_with_code_btn";
-    public static final String VERIFY_WITH_PHONE_BTN = "verify_with_phone_btn";
+    public static final String CONNECT_MESSENGER_INSTRUCTIONS = "connect_messenger_instructions";
+    public static final String CONNECT_MESSENGER_CODE = "connect_messenger_code";
+
+    public static final String ACCOUNT_CONNECTED_NOTIFICATION = "account_connected_notification";
+
     public static final String VERIFICATION_SUCCESS_PHONE = "verification_success_phone";
     public static final String PROMPT_CONNECT_PHONE = "prompt_connect_phone";
     public static final String PHONE_CONNECTION_SUCCESS = "phone_connection_success";
