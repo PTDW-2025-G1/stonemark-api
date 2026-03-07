@@ -3,6 +3,7 @@ package pt.estga.verification.controllers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import pt.estga.verification.dtos.ConfirmationResponseDto;
 import pt.estga.verification.dtos.TelegramVerificationRequestDto;
 import pt.estga.verification.dtos.TelegramVerificationResponseDto;
 import pt.estga.verification.dtos.VerificationRequestDto;
+import pt.estga.verification.events.MessengerAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 import pt.estga.verification.services.VerificationProcessingService;
 import pt.estga.shared.exceptions.VerificationErrorMessages;
@@ -30,6 +32,7 @@ public class AccountVerificationController {
     private final ChatbotVerificationService verificationService;
     private final UserService userService;
     private final UserIdentityService userIdentityService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @PostMapping("/confirm")
     public ResponseEntity<ConfirmationResponseDto> confirm(@RequestBody VerificationRequestDto request) {
@@ -57,6 +60,9 @@ public class AccountVerificationController {
 
         // Create or update telegram identity
         userIdentityService.createOrUpdateTelegramIdentity(user, telegramId);
+
+        // Publish event for chatbot to handle notification
+        eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, telegramId, user.getId()));
 
         return ResponseEntity.ok(
                 TelegramVerificationResponseDto.success("Telegram account linked successfully")

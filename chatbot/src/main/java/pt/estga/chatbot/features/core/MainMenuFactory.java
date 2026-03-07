@@ -3,6 +3,7 @@ package pt.estga.chatbot.features.core;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.config.ChatbotAuthProperties;
+import pt.estga.chatbot.constants.EmojiKey;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.BotInput;
@@ -28,22 +29,31 @@ public class MainMenuFactory {
         AuthService authService = authServiceFactory.getAuthService(input.getPlatform());
         boolean isAuthenticated = authService.isAuthenticated(input.getUserId());
 
-        List<Button> buttons = new ArrayList<>();
+        List<List<Button>> buttonRows = new ArrayList<>();
         boolean canStartProposal = chatbotAuthProperties.isOptional() || isAuthenticated;
 
+        // Each button in its own row for full width
         if (canStartProposal) {
-            buttons.add(Button.builder().textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))
-                    .callbackData(ProposalCallbackData.START_SUBMISSION).build());
+            buttonRows.add(List.of(
+                    Button.builder()
+                            .textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))
+                            .callbackData(ProposalCallbackData.START_SUBMISSION)
+                            .build()
+            ));
         }
 
         if (!isAuthenticated) {
-            buttons.add(Button.builder().textNode(textService.get(MessageKey.VERIFY_ACCOUNT_BTN))
-                    .callbackData(VerificationCallbackData.START_VERIFICATION).build());
+            buttonRows.add(List.of(
+                    Button.builder()
+                            .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN, EmojiKey.KEY))
+                            .callbackData(VerificationCallbackData.START_VERIFICATION)
+                            .build()
+            ));
         }
 
         return Menu.builder()
                 .titleNode(textService.get(MessageKey.HELP_OPTIONS_TITLE))
-                .buttons(List.of(buttons))
+                .buttons(buttonRows)
                 .build();
     }
 }

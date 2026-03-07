@@ -75,20 +75,16 @@ public class ConversationDispatcher {
                     .build();
             HandlerOutcome autoOutcome = nextHandler.handle(context, nextInput);
             log.debug("Automatic handler {} returned outcome: {}", nextHandler.getClass().getSimpleName(), autoOutcome);
+
+            // If automatic handler needs state transition, handle it recursively
+            if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
+                ConversationState autoNextState = proposalFlow.getNextState(context, nextState, autoOutcome);
+                log.info("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
+                context.setCurrentState(autoNextState);
+            }
         }
 
         // Generate a response for the NEW state (after automatic handlers have populated context).
-        List<BotResponse> responses = new ArrayList<>(responseFactory.createResponse(context, outcome, input));
-
-        // If the next state is automatic and has a recursive outcome, continue dispatching
-        if (nextHandler != null && nextHandler.isAutomatic()) {
-            BotInput nextInput = BotInput.builder()
-                    .userId(input.getUserId())
-                    .platform(input.getPlatform())
-                    .build();
-            responses.addAll(dispatch(context, nextInput));
-        }
-
-        return responses;
+        return new ArrayList<>(responseFactory.createResponse(context, outcome, input));
     }
 }

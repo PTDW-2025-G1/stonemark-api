@@ -42,18 +42,18 @@ public class VerificationResponseProvider implements ResponseProvider {
             case DISPLAYING_VERIFICATION_CODE -> {
                 List<BotResponse> responses = new ArrayList<>();
                 // Main text with instructions
-                responses.add(buildSimpleMenuResponse(new Message(MessageKey.DISPLAY_VERIFICATION_CODE_TITLE, KEY)).getFirst());
+                responses.add(buildSimpleMenuResponse(new Message(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS, KEY)).getFirst());
                 // Code in separate message
                 String code = context.getVerificationCode();
                 responses.add(BotResponse.builder()
-                        .textNode(textService.get(new Message(MessageKey.DISPLAY_VERIFICATION_CODE, code)))
+                        .textNode(textService.get(new Message(MessageKey.CONNECT_MESSENGER_CODE, code)))
                         .build());
                 yield responses;
             }
             case AWAITING_CONTACT -> createContactRequestResponse();
             case AWAITING_PHONE_CONNECTION_DECISION -> {
                 List<BotResponse> responses = new ArrayList<>();
-                responses.add(buildSimpleMenuResponse(new Message(MessageKey.VERIFICATION_SUCCESS_CODE, context.getUserName(), TADA)).getFirst());
+                responses.add(buildSimpleMenuResponse(new Message(MessageKey.MESSENGER_CONNECT_SUCCESS, context.getUserName(), TADA)).getFirst());
                 responses.add(createPhoneConnectionPrompt().getFirst());
                 yield responses;
             }
