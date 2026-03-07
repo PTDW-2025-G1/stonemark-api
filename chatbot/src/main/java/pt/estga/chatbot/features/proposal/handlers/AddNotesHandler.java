@@ -12,8 +12,6 @@ import pt.estga.proposal.services.chatbot.ProposalChatbotSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
-import java.io.IOException;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -37,11 +35,12 @@ public class AddNotesHandler implements ConversationStateHandler {
         }
 
         try {
-            // Get user
-            User user = userService.findById(context.getDomainUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            Long domainUserId = context.getDomainUserId();
+            User user = domainUserId != null
+                    ? userService.findById(domainUserId).orElse(null)
+                    : null;
 
-            // Submit the proposal with all collected data
+            // Submit the proposal with all collected data (authenticated or anonymous)
             chatbotSubmitService.submitFromChatbot(
                     markProposal,
                     context.getProposalContext().getPhotoData(),
@@ -54,7 +53,7 @@ public class AddNotesHandler implements ConversationStateHandler {
             context.clear();
 
             return HandlerOutcome.SUCCESS;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Failed to submit proposal from chatbot", e);
             return HandlerOutcome.FAILURE;
         }

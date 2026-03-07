@@ -37,21 +37,29 @@ public class ProposalChatbotSubmitService {
             User user,
             SubmissionSource source) throws IOException {
 
-        log.info("Submitting chatbot proposal for user ID: {} with source: {}", user.getId(), source);
+        if (photoData == null || photoData.length == 0) {
+            throw new IllegalArgumentException("Proposal photo is required");
+        }
+
+        String safeFilename = (photoFilename == null || photoFilename.isBlank())
+                ? "chatbot-upload.jpg"
+                : photoFilename;
+
+        Long userId = user != null ? user.getId() : null;
+        log.info("Submitting chatbot proposal for user ID: {} with source: {}", userId, source);
 
         // Save the photo
-        MediaFile mediaFile = mediaService.save(new ByteArrayInputStream(photoData), photoFilename);
+        MediaFile mediaFile = mediaService.save(new ByteArrayInputStream(photoData), safeFilename);
         proposal.setOriginalMediaFile(mediaFile);
 
-        // Set user and source
+        // Set optional user and source (anonymous chatbot submissions are allowed)
         proposal.setSubmittedBy(user);
-        proposal.setSubmissionSource(source);
+        proposal.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
 
-        // Publish event for async processing (e.g., detection) before submission
-        eventPublisher.publishEvent(new ProposalPhotoUploadedEvent(this, proposal));
+        // Submit the proposal (this persists it and gives it an ID)
+        MarkOccurrenceProposal submittedProposal = submissionService.submit(proposal);
 
-        // Submit the proposal
-        submissionService.submit(proposal);
+        // Publish event for async processing (e.g., detection) after submission
+        eventPublisher.publishEvent(new ProposalPhotoUploadedEvent(this, submittedProposal));
     }
 }
-
