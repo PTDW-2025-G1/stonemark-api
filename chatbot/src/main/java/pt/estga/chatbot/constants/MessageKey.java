@@ -19,25 +19,10 @@ public class MessageKey {
     public static final String REQUEST_LOCATION_PROMPT = "request_location_prompt";
     public static final String EXPECTING_LOCATION_ERROR = "expecting_location_error";
 
-    public static final String FOUND_MARKS_TITLE = "found_marks_title";
-    public static final String FOUND_SINGLE_MARK_TITLE = "found_single_mark_title";
-    public static final String MATCH_CONFIRMATION_TITLE = "match_confirmation_title";
-    public static final String PROPOSE_NEW_MARK_BTN = "propose_new_mark_btn";
-    public static final String MARK_CAPTION = "mark_caption";
-    public static final String MARK_DESCRIPTION = "mark_description";
-    public static final String MARK_SELECTED_CONFIRMATION = "mark_selected_confirmation";
-    public static final String IF_NONE_OF_ABOVE_OPTIONS_MATCH = "if_none_of_above_options_match";
     public static final String SKIP_BTN = "skip_btn";
-
-    public static final String FOUND_MONUMENTS_TITLE = "found_monuments_title";
-    public static final String MONUMENT_OPTION = "monument_option";
-    public static final String MONUMENT_CONFIRMATION_TITLE = "monument_confirmation_title";
-    public static final String NO_MONUMENTS_FOUND = "no_monuments_found";
 
     public static final String ADD_NOTES_PROMPT = "add_notes_prompt";
     public static final String SUBMISSION_SUCCESS = "submission_success";
-
-    public static final String SELECT_BTN = "select_btn";
 
     public static final String YES_BTN = "yes_btn";
     public static final String NO_BTN = "no_btn";
