@@ -4,11 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.ProposalState;
-
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -22,13 +20,32 @@ class ProposalFlowStrategyTest {
     }
 
     @Test
-    void getNextState_ShouldReturnAwaitingNotes_WhenNoMonumentsSuggested() {
-        ChatbotContext context = new ChatbotContext();
-        context.getProposalContext().setSuggestedMonumentIds(Collections.emptyList());
-
+    void getNextState_ShouldAdvanceFromStartToPhoto_WhenSuccess() {
         ConversationState nextState = strategy.getNextState(
-                context,
-                ProposalState.AWAITING_MONUMENT_SUGGESTIONS,
+                new ChatbotContext(),
+                ProposalState.PROPOSAL_START,
+                HandlerOutcome.SUCCESS
+        );
+
+        assertEquals(ProposalState.WAITING_FOR_PHOTO, nextState);
+    }
+
+    @Test
+    void getNextState_ShouldAdvanceFromPhotoToLocation_WhenSuccess() {
+        ConversationState nextState = strategy.getNextState(
+                new ChatbotContext(),
+                ProposalState.WAITING_FOR_PHOTO,
+                HandlerOutcome.SUCCESS
+        );
+
+        assertEquals(ProposalState.AWAITING_LOCATION, nextState);
+    }
+
+    @Test
+    void getNextState_ShouldAdvanceFromLocationToNotes_WhenSuccess() {
+        ConversationState nextState = strategy.getNextState(
+                new ChatbotContext(),
+                ProposalState.AWAITING_LOCATION,
                 HandlerOutcome.SUCCESS
         );
 
@@ -36,30 +53,24 @@ class ProposalFlowStrategyTest {
     }
 
     @Test
-    void getNextState_ShouldReturnWaitingForMonumentConfirmation_WhenOneMonumentSuggested() {
-        ChatbotContext context = new ChatbotContext();
-        context.getProposalContext().setSuggestedMonumentIds(List.of("1"));
-
+    void getNextState_ShouldAdvanceFromSubmittedToMainMenu_WhenSuccess() {
         ConversationState nextState = strategy.getNextState(
-                context,
-                ProposalState.AWAITING_MONUMENT_SUGGESTIONS,
+                new ChatbotContext(),
+                ProposalState.SUBMITTED,
                 HandlerOutcome.SUCCESS
         );
 
-        assertEquals(ProposalState.WAITING_FOR_MONUMENT_CONFIRMATION, nextState);
+        assertEquals(CoreState.MAIN_MENU, nextState);
     }
 
     @Test
-    void getNextState_ShouldReturnAwaitingMonumentSelection_WhenMultipleMonumentsSuggested() {
-        ChatbotContext context = new ChatbotContext();
-        context.getProposalContext().setSuggestedMonumentIds(List.of("1", "2"));
-
+    void getNextState_ShouldStayInSameState_WhenFailure() {
         ConversationState nextState = strategy.getNextState(
-                context,
-                ProposalState.AWAITING_MONUMENT_SUGGESTIONS,
-                HandlerOutcome.SUCCESS
+                new ChatbotContext(),
+                ProposalState.AWAITING_LOCATION,
+                HandlerOutcome.FAILURE
         );
 
-        assertEquals(ProposalState.AWAITING_MONUMENT_SELECTION, nextState);
+        assertEquals(ProposalState.AWAITING_LOCATION, nextState);
     }
 }
