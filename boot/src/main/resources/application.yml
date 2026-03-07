@@ -38,12 +38,10 @@ logging:
     pt.estga: DEBUG
 
 application:
-#  base-url: http://localhost:8080
   base-url: https://api.stonemark.pt
   frontend:
-    base-url: http://localhost:4200
-    auth-url: http://localhost:4201
-#  frontend-url: https://stonemark.pt
+    base-url: https://stonemark.pt
+    auth-url: https://auth.stonemark.pt
 
 user:
   delete-after-days: 30

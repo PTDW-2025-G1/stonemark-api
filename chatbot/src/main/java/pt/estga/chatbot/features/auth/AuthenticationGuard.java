@@ -1,6 +1,7 @@
 package pt.estga.chatbot.features.auth;
 
 import org.springframework.stereotype.Component;
+import pt.estga.chatbot.config.ChatbotAuthProperties;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.models.BotInput;
@@ -17,14 +18,25 @@ public class AuthenticationGuard {
 
     private final AuthServiceFactory authServiceFactory;
     private final Map<ConversationState, ConversationStateHandler> handlers;
+    private final ChatbotAuthProperties chatbotAuthProperties;
 
-    public AuthenticationGuard(AuthServiceFactory authServiceFactory, List<ConversationStateHandler> handlerList) {
+    public AuthenticationGuard(
+            AuthServiceFactory authServiceFactory,
+            ChatbotAuthProperties chatbotAuthProperties,
+            List<ConversationStateHandler> handlerList
+    ) {
         this.authServiceFactory = authServiceFactory;
+        this.chatbotAuthProperties = chatbotAuthProperties;
         this.handlers = handlerList.stream()
                 .collect(Collectors.toMap(ConversationStateHandler::canHandle, Function.identity()));
     }
 
     public boolean isActionAllowed(BotInput input, ConversationState currentState) {
+        // Global switch: when chatbot auth is optional, allow whole conversation flow.
+        if (chatbotAuthProperties.isOptional()) {
+            return true;
+        }
+
         // If the user is authenticated, always allow the action.
         if (isAuthenticated(input)) {
             return true;
@@ -39,7 +51,7 @@ public class AuthenticationGuard {
                 return annotation != null && !annotation.value();
             }
         }
-        
+
         // By default, deny access.
         return false;
     }

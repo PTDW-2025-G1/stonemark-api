@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import pt.estga.auth.services.LogoutService;
-import pt.estga.shared.enums.UserRole;
 
 import java.util.List;
 
@@ -26,6 +25,9 @@ public class SecurityConfig {
 
     @Value("${whatsapp.bot.webhook-path}")
     private String whatsappWebhookPath;
+
+    @Value("${chatbot.auth.optional:true}")
+    private boolean chatbotAuthOptional;
 
     private static final String[] OPEN_API_ROUTES = {
             "/",
@@ -64,14 +66,19 @@ public class SecurityConfig {
                     config.setAllowCredentials(true);
                     return config;
                 }))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(OPEN_API_ROUTES).permitAll()
-                        .requestMatchers(PUBLIC_ROUTE).permitAll()
-                        .requestMatchers(AUTH_ROUTE).permitAll()
-                        .requestMatchers(telegramWebhookPath).permitAll()
-                        .requestMatchers(whatsappWebhookPath).permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(OPEN_API_ROUTES).permitAll();
+                    auth.requestMatchers(PUBLIC_ROUTE).permitAll();
+                    auth.requestMatchers(AUTH_ROUTE).permitAll();
+
+                    if (chatbotAuthOptional) {
+                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                    } else {
+                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
+                    }
+
+                    auth.anyRequest().authenticated();
+                })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
