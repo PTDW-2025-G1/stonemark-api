@@ -12,5 +12,4 @@ public final class ProposalCallbackData {
     public static final String CONFIRM_MONUMENT_PREFIX = "confirm_monument:";
     public static final String CONFIRM_MARK_PREFIX = "confirm_mark:";
     public static final String SKIP_NOTES = "skip_notes";
-    public static final String SHARE_LOCATION = "share_location";
 }
