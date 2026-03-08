@@ -22,7 +22,7 @@ spring:
 application:
   security:
     keycloak:
-      enabled: ${KEYCLOAK_ENABLED:false}
+      enabled: true  # Keycloak-only mode (legacy auth removed)
     jwt:
       secret-key: ${JWT_SECRET_KEY}
       access-token:
