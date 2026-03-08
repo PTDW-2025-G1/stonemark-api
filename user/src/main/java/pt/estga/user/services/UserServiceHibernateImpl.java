@@ -27,11 +27,6 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    public Page<User> findAllWithContacts(Pageable pageable) {
-        return repository.findAllWithContacts(pageable);
-    }
-
-    @Override
     public Optional<User> findById(Long id) {
         return repository.findById(id);
     }
@@ -55,8 +50,8 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    public Optional<User> findByIdWithContacts(Long id) {
-        return repository.findByIdWithContacts(id);
+    public Optional<User> findByIdForProfile(Long id) {
+        return repository.findByIdForProfile(id);
     }
 
     @Override

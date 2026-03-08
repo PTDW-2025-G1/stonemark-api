@@ -71,7 +71,7 @@ class VerificationProcessingServiceTest {
     }
 
     @Test
-    void confirmCode_shouldActivateUserContact_whenCodeIsForEmailVerification() {
+    void confirmCode_shouldActivateContactVerification_whenCodeIsForEmailVerification() {
         String code = "validEmailCode";
         ActionCode actionCode = new ActionCode();
         actionCode.setType(ActionCodeType.EMAIL_VERIFICATION);
@@ -87,7 +87,7 @@ class VerificationProcessingServiceTest {
     }
 
     @Test
-    void confirmCode_shouldActivateUserContact_whenCodeIsForPhoneVerification() {
+    void confirmCode_shouldActivateContactVerification_whenCodeIsForPhoneVerification() {
         String code = "validPhoneCode";
         ActionCode actionCode = new ActionCode();
         actionCode.setType(ActionCodeType.PHONE_VERIFICATION);

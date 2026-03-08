@@ -12,8 +12,6 @@ public interface UserService {
 
     Page<User> findAll(Pageable pageable);
 
-    Page<User> findAllWithContacts(Pageable pageable);
-
     Optional<User> findById(Long id);
 
     Optional<User> findByUsername(String username);
@@ -22,7 +20,7 @@ public interface UserService {
 
     Optional<User> findByPhone(String phone);
 
-    Optional<User> findByIdWithContacts(Long id);
+    Optional<User> findByIdForProfile(Long id);
 
     Optional<User> findByIdWithIdentities(Long id);
 
