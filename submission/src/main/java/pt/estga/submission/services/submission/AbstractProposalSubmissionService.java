@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.ProposalRepository;
+import pt.estga.submission.repositories.SubmissionRepository;
 
 import java.time.Instant;
 
@@ -15,7 +15,7 @@ import java.time.Instant;
 @Slf4j
 public abstract class AbstractProposalSubmissionService<T extends Submission> {
 
-    private final ProposalRepository<T> repository;
+    private final SubmissionRepository<T> repository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional

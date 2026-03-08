@@ -14,7 +14,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 @Repository
-public interface MarkOccurrenceProposalRepository extends ProposalRepository<MarkOccurrenceSubmission> {
+public interface MarkOccurrenceSubmissionRepository extends SubmissionRepository<MarkOccurrenceSubmission> {
 
     @EntityGraph(attributePaths = {
             "originalMediaFile",
@@ -29,9 +29,9 @@ public interface MarkOccurrenceProposalRepository extends ProposalRepository<Mar
             "originalMediaFile",
             "existingMonument"
     })
-    @Query("SELECT p FROM MarkOccurrenceSubmission p WHERE " +
-           "(:statuses IS NULL OR p.status IN :statuses) AND " +
-           "(:submittedById IS NULL OR p.submittedBy.id = :submittedById)")
+    @Query("SELECT s FROM MarkOccurrenceSubmission s WHERE " +
+           "(:statuses IS NULL OR s.status IN :statuses) AND " +
+           "(:submittedById IS NULL OR s.submittedBy.id = :submittedById)")
     Page<MarkOccurrenceSubmission> findByFilters(
             @Param("statuses") Collection<SubmissionStatus> statuses,
             @Param("submittedById") Long submittedById,
@@ -44,7 +44,7 @@ public interface MarkOccurrenceProposalRepository extends ProposalRepository<Mar
             "originalMediaFile",
             "submittedBy"
     })
-    @Query("SELECT p FROM MarkOccurrenceSubmission p WHERE p.id = :id")
+    @Query("SELECT s FROM MarkOccurrenceSubmission s WHERE s.id = :id")
     Optional<MarkOccurrenceSubmission> findByIdWithRelations(@Param("id") Long id);
 
     @EntityGraph(attributePaths = {

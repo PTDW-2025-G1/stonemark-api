@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import pt.estga.submission.dtos.ProposalAdminListDto;
 import pt.estga.submission.dtos.ProposalFilter;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;
-import pt.estga.submission.mappers.ProposalAdminMapper;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.mappers.SubmissionAdminMapper;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.submission.services.ProposalQueryService;
 
 @RestController
@@ -32,8 +32,8 @@ import pt.estga.submission.services.ProposalQueryService;
 @Tag(name = "Submission Administration", description = "Endpoints for proposal administration and read operations.")
 public class AdminSubmissionController {
 
-    private final MarkOccurrenceProposalRepository proposalRepo;
-    private final ProposalAdminMapper proposalAdminMapper;
+    private final MarkOccurrenceSubmissionRepository proposalRepo;
+    private final SubmissionAdminMapper submissionAdminMapper;
     private final ProposalQueryService proposalQueryService;
 
     @Operation(summary = "List proposals for moderation",
@@ -52,7 +52,7 @@ public class AdminSubmissionController {
         }
 
         return ResponseEntity.ok(proposalRepo.findByFilters(statuses, filter.submittedById(), pageable)
-                .map(proposalAdminMapper::toAdminListDto));
+                .map(submissionAdminMapper::toAdminListDto));
     }
 
     @Operation(summary = "Get full proposal details",

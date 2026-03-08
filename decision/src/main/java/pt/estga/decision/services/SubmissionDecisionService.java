@@ -10,24 +10,24 @@ import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.repositories.ProposalRepository;
+import pt.estga.submission.repositories.SubmissionRepository;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
 @Slf4j
-public abstract class ProposalDecisionService<T extends Submission> {
+public abstract class SubmissionDecisionService<T extends Submission> {
 
     protected final SubmissionDecisionAttemptRepository attemptRepo;
-    protected final ProposalRepository<T> proposalRepo;
+    protected final SubmissionRepository<T> proposalRepo;
     protected final ApplicationEventPublisher eventPublisher;
     @Getter
     protected final Class<T> proposalType;
 
-    protected ProposalDecisionService(
+    protected SubmissionDecisionService(
             SubmissionDecisionAttemptRepository attemptRepo,
-            ProposalRepository<T> proposalRepo,
+            SubmissionRepository<T> proposalRepo,
             ApplicationEventPublisher eventPublisher,
             Class<T> proposalType
     ) {

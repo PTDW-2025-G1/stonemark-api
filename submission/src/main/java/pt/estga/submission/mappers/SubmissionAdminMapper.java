@@ -10,7 +10,7 @@ import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionType;
 
 @Mapper(componentModel = "spring")
-public interface ProposalAdminMapper {
+public interface SubmissionAdminMapper {
 
     @Mapping(target = "title", source = "submission", qualifiedByName = "generateTitle")
     @Mapping(target = "photoId", source = "submission", qualifiedByName = "extractPhotoId")

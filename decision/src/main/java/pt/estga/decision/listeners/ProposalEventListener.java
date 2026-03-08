@@ -12,11 +12,11 @@ import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.services.MarkOccurrenceService;
 import pt.estga.content.services.MonumentService;
 import pt.estga.decision.services.DecisionServiceFactory;
-import pt.estga.decision.services.ProposalDecisionService;
+import pt.estga.decision.services.SubmissionDecisionService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.events.SubmissionAcceptedEvent;
 import pt.estga.submission.events.SubmissionScoredEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 import java.io.IOException;
 
@@ -26,7 +26,7 @@ import java.io.IOException;
 public class ProposalEventListener {
 
     private final DecisionServiceFactory decisionServiceFactory;
-    private final MarkOccurrenceProposalRepository proposalRepo;
+    private final MarkOccurrenceSubmissionRepository proposalRepo;
     private final MonumentService monumentService;
     private final MarkOccurrenceService markOccurrenceService;
 
@@ -37,7 +37,7 @@ public class ProposalEventListener {
         var proposalId = event.getProposalId();
         log.info("Starting async automatic decision process for submission ID: {}", proposalId);
 
-        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(proposalId);
+        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(proposalId);
         decisionService.makeAutomaticDecision(proposalId);
         log.info("Completed async automatic decision process for submission ID: {}", proposalId);
     }

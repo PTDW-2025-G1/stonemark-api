@@ -11,7 +11,7 @@ import pt.estga.submission.dtos.ProposalWithRelationsDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 @Mapper(componentModel = "spring", uses = {MarkMapper.class, MonumentMapper.class})
-public interface MarkOccurrenceProposalMapper {
+public interface MarkOccurrenceSubmissionMapper {
 
     @Mapping(source = "originalMediaFile.id", target = "photoId")
     @Mapping(target = "title", source = "entity", qualifiedByName = "generateTitle")

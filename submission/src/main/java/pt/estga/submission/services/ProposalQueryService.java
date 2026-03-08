@@ -5,16 +5,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.mappers.MarkOccurrenceProposalMapper;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
 public class ProposalQueryService {
 
-    private final MarkOccurrenceProposalRepository proposalRepo;
-    private final MarkOccurrenceProposalMapper proposalMapper;
+    private final MarkOccurrenceSubmissionRepository proposalRepo;
+    private final MarkOccurrenceSubmissionMapper proposalMapper;
 
     @Transactional(readOnly = true)
     public ProposalWithRelationsDto getProposalDetails(Long proposalId) {

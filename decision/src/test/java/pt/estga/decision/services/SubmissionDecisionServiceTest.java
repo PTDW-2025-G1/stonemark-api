@@ -12,7 +12,7 @@ import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.repositories.ProposalRepository;
+import pt.estga.submission.repositories.SubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -28,16 +28,16 @@ class SubmissionDecisionServiceTest {
     private SubmissionDecisionAttemptRepository attemptRepo;
 
     @Mock
-    private ProposalRepository<MarkOccurrenceSubmission> proposalRepo;
+    private SubmissionRepository<MarkOccurrenceSubmission> proposalRepo;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     // Concrete implementation for testing abstract class
-    private static class TestProposalDecisionService extends ProposalDecisionService<MarkOccurrenceSubmission> {
-        public TestProposalDecisionService(
+    private static class TestSubmissionDecisionService extends SubmissionDecisionService<MarkOccurrenceSubmission> {
+        public TestSubmissionDecisionService(
                 SubmissionDecisionAttemptRepository attemptRepo,
-                ProposalRepository<MarkOccurrenceSubmission> proposalRepo,
+                SubmissionRepository<MarkOccurrenceSubmission> proposalRepo,
                 ApplicationEventPublisher eventPublisher
         ) {
             super(attemptRepo, proposalRepo, eventPublisher, MarkOccurrenceSubmission.class);
@@ -54,11 +54,11 @@ class SubmissionDecisionServiceTest {
         }
     }
 
-    private TestProposalDecisionService service;
+    private TestSubmissionDecisionService service;
 
     @BeforeEach
     void setUp() {
-        service = new TestProposalDecisionService(attemptRepo, proposalRepo, eventPublisher);
+        service = new TestSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher);
     }
 
     @Test

@@ -17,7 +17,7 @@ import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.mappers.MarkOccurrenceProposalMapper;
+import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.services.MarkOccurrenceProposalService;
 import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
@@ -31,7 +31,7 @@ public class MarkOccurrenceSubmissionController {
 
     private final MarkOccurrenceProposalService proposalService;
     private final MarkOccurrenceProposalSubmissionService submissionService;
-    private final MarkOccurrenceProposalMapper markOccurrenceProposalMapper;
+    private final MarkOccurrenceSubmissionMapper markOccurrenceSubmissionMapper;
 
     @Operation(summary = "List proposals by user",
             description = "Retrieves a paginated list of mark occurrence proposals submitted by the authenticated user.")
@@ -46,7 +46,7 @@ public class MarkOccurrenceSubmissionController {
     ) {
         User user = User.builder().id(principal.getId()).build();
         return proposalService.findByUser(user, PageRequest.of(page, size))
-                .map(markOccurrenceProposalMapper::toListDto);
+                .map(markOccurrenceSubmissionMapper::toListDto);
     }
 
     @Operation(summary = "List detailed proposals by user",
@@ -62,7 +62,7 @@ public class MarkOccurrenceSubmissionController {
     ) {
         User user = User.builder().id(principal.getId()).build();
         return proposalService.findByUser(user, PageRequest.of(page, size))
-                .map(markOccurrenceProposalMapper::toDto);
+                .map(markOccurrenceSubmissionMapper::toDto);
     }
 
     @Operation(summary = "Get proposal by ID",
@@ -75,7 +75,7 @@ public class MarkOccurrenceSubmissionController {
     @GetMapping("/{proposalId}")
     public ResponseEntity<MarkOccurrenceProposalDto> findById(@PathVariable Long proposalId) {
         return proposalService.findById(proposalId)
-                .map(markOccurrenceProposalMapper::toDto)
+                .map(markOccurrenceSubmissionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -93,6 +93,6 @@ public class MarkOccurrenceSubmissionController {
     ) {
         User user = User.builder().id(principal.getId()).build();
         MarkOccurrenceSubmission proposal = submissionService.createAndSubmit(dto, user);
-        return ResponseEntity.ok(markOccurrenceProposalMapper.toDto(proposal));
+        return ResponseEntity.ok(markOccurrenceSubmissionMapper.toDto(proposal));
     }
 }

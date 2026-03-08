@@ -11,7 +11,7 @@ import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.events.SubmissionAcceptedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -19,13 +19,13 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class MarkOccurrenceProposalDecisionService extends ProposalDecisionService<MarkOccurrenceSubmission> {
+public class MarkOccurrenceSubmissionDecisionService extends SubmissionDecisionService<MarkOccurrenceSubmission> {
 
     private final List<DecisionRule<MarkOccurrenceSubmission>> rules;
 
-    public MarkOccurrenceProposalDecisionService(
+    public MarkOccurrenceSubmissionDecisionService(
             SubmissionDecisionAttemptRepository attemptRepo,
-            MarkOccurrenceProposalRepository proposalRepo,
+            MarkOccurrenceSubmissionRepository proposalRepo,
             ApplicationEventPublisher eventPublisher,
             List<DecisionRule<MarkOccurrenceSubmission>> rules
     ) {

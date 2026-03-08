@@ -17,7 +17,7 @@ import pt.estga.decision.dtos.ManualDecisionRequest;
 import pt.estga.decision.mappers.DecisionMapper;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.services.DecisionServiceFactory;
-import pt.estga.decision.services.ProposalDecisionService;
+import pt.estga.decision.services.SubmissionDecisionService;
 import pt.estga.shared.exceptions.InvalidCredentialsException;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
@@ -85,7 +85,7 @@ public class DecisionsController {
         var moderator = userService.findById(principal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Moderator not found"));
         
-        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.makeManualDecision(id, request.outcome(), request.notes(), moderator);
         return ResponseEntity.ok().build();
     }
@@ -98,7 +98,7 @@ public class DecisionsController {
     })
     @PostMapping("/automatic/rerun")
     public ResponseEntity<Void> rerunAutomaticDecision(@PathVariable Long id) {
-        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.makeAutomaticDecision(id);
         return ResponseEntity.ok().build();
     }
@@ -123,7 +123,7 @@ public class DecisionsController {
             return ResponseEntity.badRequest().build();
         }
         
-        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.activateDecision(attemptId);
         return ResponseEntity.ok().build();
     }
@@ -136,7 +136,7 @@ public class DecisionsController {
     })
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivateDecision(@PathVariable Long id) {
-        ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.deactivateDecision(id);
         return ResponseEntity.ok().build();
     }

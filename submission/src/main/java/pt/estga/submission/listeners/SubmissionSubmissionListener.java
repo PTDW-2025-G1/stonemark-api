@@ -12,15 +12,15 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.events.SubmissionScoredEvent;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.ProposalRepository;
+import pt.estga.submission.repositories.SubmissionRepository;
 import pt.estga.submission.services.ProposalScoringService;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class ProposalSubmissionListener {
+public class SubmissionSubmissionListener {
 
-    private final ProposalRepository<Submission> proposalRepository;
+    private final SubmissionRepository<Submission> submissionRepository;
     private final ProposalScoringService scoringService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -32,7 +32,7 @@ public class ProposalSubmissionListener {
         log.info("Processing submission asynchronously for proposal ID: {}", proposalId);
 
         try {
-            proposalRepository.findById(proposalId).ifPresentOrElse(proposal -> {
+            submissionRepository.findById(proposalId).ifPresentOrElse(proposal -> {
                 try {
                     // Calculate scores
                     Integer priority = scoringService.calculatePriority(proposal);
@@ -41,7 +41,7 @@ public class ProposalSubmissionListener {
                     proposal.setPriority(priority);
                     proposal.setCredibilityScore(credibility);
                     
-                    proposalRepository.save(proposal);
+                    submissionRepository.save(proposal);
                     log.info("Scores updated for proposal ID: {}. Priority={}, Credibility={}", proposalId, priority, credibility);
 
                     // Publish event indicating scoring is complete

@@ -12,16 +12,16 @@ import pt.estga.detection.model.DetectionResult;
 import pt.estga.detection.service.DetectionService;
 import pt.estga.file.services.MediaService;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 import java.io.InputStream;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class ProposalEnrichmentListener {
+public class SubmissionEnrichmentListener {
 
-    private final MarkOccurrenceProposalRepository proposalRepo;
+    private final MarkOccurrenceSubmissionRepository proposalRepo;
     private final DetectionService detectionService;
     private final MediaService mediaService;
 

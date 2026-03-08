@@ -17,7 +17,7 @@ import pt.estga.decision.rules.DecisionRuleResult;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.events.SubmissionAcceptedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
     private SubmissionDecisionAttemptRepository attemptRepo;
 
     @Mock
-    private MarkOccurrenceProposalRepository proposalRepo;
+    private MarkOccurrenceSubmissionRepository proposalRepo;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -45,7 +45,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
     private DecisionRule<MarkOccurrenceSubmission> rule2;
 
     @InjectMocks
-    private MarkOccurrenceProposalDecisionService decisionService;
+    private MarkOccurrenceSubmissionDecisionService decisionService;
 
     @Test
     void makeAutomaticDecision_ShouldApplyFirstMatchingRule() {
@@ -55,7 +55,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         // Setup rules via constructor injection simulation (since we can't easily inject list into @InjectMocks)
         // We need to manually construct the service to inject the list of rules
         List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1, rule2);
-        decisionService = new MarkOccurrenceProposalDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
+        decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);
         when(rule2.getOrder()).thenReturn(20);
@@ -85,7 +85,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         // Arrange
         MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder().id(1L).build();
         List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1);
-        decisionService = new MarkOccurrenceProposalDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
+        decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);
         when(rule1.evaluate(proposal)).thenReturn(null); // No match
@@ -104,7 +104,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         // Arrange
         MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder().id(1L).build();
         List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1);
-        decisionService = new MarkOccurrenceProposalDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
+        decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);
         when(rule1.evaluate(proposal)).thenReturn(DecisionRuleResult.conclusive(DecisionOutcome.REJECT, true, "Rejected"));

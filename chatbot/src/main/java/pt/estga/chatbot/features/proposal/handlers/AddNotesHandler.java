@@ -8,7 +8,7 @@ import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.entities.Submission;
-import pt.estga.submission.services.chatbot.ProposalChatbotSubmitService;
+import pt.estga.submission.services.chatbot.SubmissionChatbotSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
@@ -17,7 +17,7 @@ import pt.estga.user.services.UserService;
 @Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final ProposalChatbotSubmitService chatbotSubmitService;
+    private final SubmissionChatbotSubmitService chatbotSubmitService;
     private final UserService userService;
 
     @Override

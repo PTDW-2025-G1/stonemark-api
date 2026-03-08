@@ -9,7 +9,7 @@ import pt.estga.submission.entities.MarkSubmission;
 import pt.estga.submission.entities.Submission;
 
 @Mapper(componentModel = "spring")
-public interface ProposalMapper {
+public interface SubmissionMapper {
 
     @Mapping(target = "title", source = "submission", qualifiedByName = "generateTitle")
     @Mapping(target = "photoId", source = "submission", qualifiedByName = "extractPhotoId")

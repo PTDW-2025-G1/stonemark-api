@@ -9,7 +9,7 @@ import pt.estga.content.entities.Monument;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.territory.dtos.GeocodingResultDto;
 import pt.estga.territory.services.ReverseGeocodingService;
@@ -21,7 +21,7 @@ public class MonumentCreationService {
 
     private final MonumentService monumentService;
     private final ReverseGeocodingService reverseGeocodingService;
-    private final MarkOccurrenceProposalRepository proposalRepo;
+    private final MarkOccurrenceSubmissionRepository proposalRepo;
     private final MonumentMapper monumentMapper;
 
     /**

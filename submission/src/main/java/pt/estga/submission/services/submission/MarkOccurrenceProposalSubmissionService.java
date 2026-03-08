@@ -9,7 +9,7 @@ import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 @Service
@@ -17,7 +17,7 @@ import pt.estga.user.entities.User;
 public class MarkOccurrenceProposalSubmissionService extends AbstractProposalSubmissionService<MarkOccurrenceSubmission> {
 
     public MarkOccurrenceProposalSubmissionService(
-            MarkOccurrenceProposalRepository repository,
+            MarkOccurrenceSubmissionRepository repository,
             ApplicationEventPublisher eventPublisher) {
         super(repository, eventPublisher);
     }

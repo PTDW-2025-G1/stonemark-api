@@ -13,7 +13,7 @@ import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
 import pt.estga.user.entities.User;
 
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.*;
 class MarkOccurrenceSubmissionSubmissionServiceTest {
 
     @Mock
-    private MarkOccurrenceProposalRepository repository;
+    private MarkOccurrenceSubmissionRepository repository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;

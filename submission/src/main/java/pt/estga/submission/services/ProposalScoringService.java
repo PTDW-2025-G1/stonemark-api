@@ -6,14 +6,14 @@ import pt.estga.submission.config.SubmissionDecisionProperties;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.projections.ProposalStatsProjection;
-import pt.estga.submission.repositories.ProposalRepository;
+import pt.estga.submission.repositories.SubmissionRepository;
 
 @Service
 @RequiredArgsConstructor
 public class ProposalScoringService {
 
     private final SubmissionDecisionProperties properties;
-    private final ProposalRepository<Submission> proposalRepository;
+    private final SubmissionRepository<Submission> submissionRepository;
 
     public Integer calculatePriority(Submission submission) {
         int priority = 0;
@@ -24,7 +24,7 @@ public class ProposalScoringService {
 
             // Boost for user reputation (based on previously approved proposals)
             if (submission.getSubmittedBy() != null) {
-                ProposalStatsProjection stats = proposalRepository.getStatsByUserId(submission.getSubmittedBy().getId());
+                ProposalStatsProjection stats = submissionRepository.getStatsByUserId(submission.getSubmittedBy().getId());
                 int approvedProposals = stats != null ? (int) stats.getAccepted() : 0;
                 int reputationBoost = Math.min(
                     approvedProposals * properties.getReputationBoostPerApprovedProposal(),

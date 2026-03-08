@@ -4,5 +4,5 @@ import org.springframework.stereotype.Repository;
 import pt.estga.submission.entities.MarkSubmission;
 
 @Repository
-public interface MarkProposalRepository extends ProposalRepository<MarkSubmission> {
+public interface MarkSubmissionRepository extends SubmissionRepository<MarkSubmission> {
 }

@@ -14,7 +14,7 @@ import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.events.SubmissionAcceptedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ class SubmissionEventListenerTest {
     private DecisionServiceFactory decisionServiceFactory;
 
     @Mock
-    private MarkOccurrenceProposalRepository proposalRepo;
+    private MarkOccurrenceSubmissionRepository proposalRepo;
 
     @Mock
     private MonumentService monumentService;

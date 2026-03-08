@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.submission.dtos.ProposalSummaryDto;
-import pt.estga.submission.mappers.ProposalMapper;
+import pt.estga.submission.mappers.SubmissionMapper;
 import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.submission.services.ProposalService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
@@ -26,7 +26,7 @@ import pt.estga.user.entities.User;
 public class SubmissionController {
 
     private final ProposalService proposalService;
-    private final ProposalMapper proposalMapper;
+    private final SubmissionMapper submissionMapper;
 
     @Operation(summary = "List all proposals by user",
             description = "Retrieves a paginated list of all proposals (any type) submitted by the authenticated user.")
@@ -41,7 +41,7 @@ public class SubmissionController {
     ) {
         User user = User.builder().id(principal.getId()).build();
         return proposalService.findByUser(user, PageRequest.of(page, size))
-                .map(proposalMapper::toSummaryDto);
+                .map(submissionMapper::toSummaryDto);
     }
 
     @Operation(summary = "Get user proposal statistics",
@@ -68,7 +68,7 @@ public class SubmissionController {
     @GetMapping("/{id}")
     public ResponseEntity<ProposalSummaryDto> findById(@PathVariable Long id) {
         return proposalService.findById(id)
-                .map(proposalMapper::toSummaryDto)
+                .map(submissionMapper::toSummaryDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

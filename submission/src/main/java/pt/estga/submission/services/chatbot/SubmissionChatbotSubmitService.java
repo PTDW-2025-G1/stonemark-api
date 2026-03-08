@@ -17,7 +17,7 @@ import java.io.IOException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProposalChatbotSubmitService {
+public class SubmissionChatbotSubmitService {
 
     private final MediaService mediaService;
     private final MarkOccurrenceProposalSubmissionService submissionService;

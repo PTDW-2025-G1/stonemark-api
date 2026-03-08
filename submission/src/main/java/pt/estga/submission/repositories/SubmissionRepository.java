@@ -11,17 +11,17 @@ import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.user.entities.User;
 
 @Repository
-public interface ProposalRepository<T extends Submission> extends JpaRepository<T, Long> {
+public interface SubmissionRepository<T extends Submission> extends JpaRepository<T, Long> {
 
     Page<T> findBySubmittedBy(User user, Pageable pageable);
 
     @Query("""
     SELECT
-        SUM(CASE WHEN p.status IN ('AUTO_ACCEPTED', 'MANUALLY_ACCEPTED') THEN 1 ELSE 0 END) as accepted,
-        SUM(CASE WHEN p.status IN ('SUBMITTED', 'UNDER_REVIEW') THEN 1 ELSE 0 END) as underReview,
-        SUM(CASE WHEN p.status IN ('AUTO_REJECTED', 'MANUALLY_REJECTED') THEN 1 ELSE 0 END) as rejected
-    FROM Submission p
-    WHERE p.submittedBy.id = :userId
+        SUM(CASE WHEN s.status IN ('AUTO_ACCEPTED', 'MANUALLY_ACCEPTED') THEN 1 ELSE 0 END) as accepted,
+        SUM(CASE WHEN s.status IN ('SUBMITTED', 'UNDER_REVIEW') THEN 1 ELSE 0 END) as underReview,
+        SUM(CASE WHEN s.status IN ('AUTO_REJECTED', 'MANUALLY_REJECTED') THEN 1 ELSE 0 END) as rejected
+    FROM Submission s
+    WHERE s.submittedBy.id = :userId
     """)
     ProposalStatsProjection getStatsByUserId(@Param("userId") Long userId);
 }

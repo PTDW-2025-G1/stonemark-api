@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -20,7 +20,7 @@ import java.util.Optional;
 @Slf4j
 public class MarkOccurrenceProposalServiceHibernateImpl implements MarkOccurrenceProposalService {
 
-    private final MarkOccurrenceProposalRepository repository;
+    private final MarkOccurrenceSubmissionRepository repository;
 
     @Override
     @Transactional(readOnly = true)
