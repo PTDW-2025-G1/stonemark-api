@@ -10,7 +10,7 @@ public class MessageKey {
     public static final String INVALID_SELECTION = "invalid_selection";
     public static final String HELP_OPTIONS_TITLE = "help_options_title";
 
-    // Proposal Flow
+    // Submission Flow
     public static final String PROPOSE_MARK_BTN = "propose_mark_btn";
     
     public static final String REQUEST_PHOTO_PROMPT = "request_photo_prompt";
@@ -19,42 +19,25 @@ public class MessageKey {
     public static final String REQUEST_LOCATION_PROMPT = "request_location_prompt";
     public static final String EXPECTING_LOCATION_ERROR = "expecting_location_error";
 
-    public static final String FOUND_MARKS_TITLE = "found_marks_title";
-    public static final String FOUND_SINGLE_MARK_TITLE = "found_single_mark_title";
-    public static final String MATCH_CONFIRMATION_TITLE = "match_confirmation_title";
-    public static final String PROPOSE_NEW_MARK_BTN = "propose_new_mark_btn";
-    public static final String MARK_CAPTION = "mark_caption";
-    public static final String MARK_DESCRIPTION = "mark_description";
-    public static final String MARK_SELECTED_CONFIRMATION = "mark_selected_confirmation";
-    public static final String IF_NONE_OF_ABOVE_OPTIONS_MATCH = "if_none_of_above_options_match";
     public static final String SKIP_BTN = "skip_btn";
-
-    public static final String FOUND_MONUMENTS_TITLE = "found_monuments_title";
-    public static final String MONUMENT_OPTION = "monument_option";
-    public static final String MONUMENT_CONFIRMATION_TITLE = "monument_confirmation_title";
-    public static final String NO_MONUMENTS_FOUND = "no_monuments_found";
 
     public static final String ADD_NOTES_PROMPT = "add_notes_prompt";
     public static final String SUBMISSION_SUCCESS = "submission_success";
-
-    public static final String SELECT_BTN = "select_btn";
 
     public static final String YES_BTN = "yes_btn";
     public static final String NO_BTN = "no_btn";
 
     // Authentication & Verification
-    public static final String AUTH_REQUIRED_TITLE = "auth_required_title";
-    public static final String VERIFY_ACCOUNT_BTN = "verify_account_btn";
+    public static final String CONNECT_ACCOUNT_BTN = "connect_account_btn";
     public static final String SHARE_PHONE_NUMBER_PROMPT = "share_phone_number_prompt";
-    public static final String VERIFICATION_SUCCESS_CODE = "verification_success_code";
+    public static final String MESSENGER_CONNECT_SUCCESS = "messenger_connect_success";
     public static final String USER_NOT_FOUND_ERROR = "user_not_found_error";
-    public static final String INVALID_CODE_ERROR = "invalid_code_error";
-    
-    public static final String ENTER_VERIFICATION_CODE_PROMPT = "enter_verification_code_prompt";
 
-    public static final String CHOOSE_VERIFICATION_METHOD_PROMPT = "choose_verification_method_prompt";
-    public static final String VERIFY_WITH_CODE_BTN = "verify_with_code_btn";
-    public static final String VERIFY_WITH_PHONE_BTN = "verify_with_phone_btn";
+    public static final String CONNECT_MESSENGER_INSTRUCTIONS = "connect_messenger_instructions";
+    public static final String CONNECT_MESSENGER_CODE = "connect_messenger_code";
+
+    public static final String ACCOUNT_CONNECTED_NOTIFICATION = "account_connected_notification";
+
     public static final String VERIFICATION_SUCCESS_PHONE = "verification_success_phone";
     public static final String PROMPT_CONNECT_PHONE = "prompt_connect_phone";
     public static final String PHONE_CONNECTION_SUCCESS = "phone_connection_success";

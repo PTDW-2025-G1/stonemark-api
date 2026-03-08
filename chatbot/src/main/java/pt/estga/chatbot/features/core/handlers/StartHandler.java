@@ -7,12 +7,10 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.features.auth.RequiresAuthentication;
 import pt.estga.chatbot.models.BotInput;
 
 @Component
 @RequiredArgsConstructor
-@RequiresAuthentication(false)
 public class StartHandler implements ConversationStateHandler {
 
     @Override

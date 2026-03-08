@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.decision.rules.DecisionRuleResult;
-import pt.estga.proposal.config.ProposalDecisionProperties;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
+import pt.estga.submission.config.SubmissionDecisionProperties;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 /**
  * Decision rule that handles proposals for new monuments/marks.
@@ -15,16 +15,16 @@ import pt.estga.proposal.entities.MarkOccurrenceProposal;
  */
 @Component
 @RequiredArgsConstructor
-public class NewMonumentRule implements DecisionRule<MarkOccurrenceProposal> {
+public class NewMonumentRule implements DecisionRule {
 
-    private final ProposalDecisionProperties properties;
+    private final SubmissionDecisionProperties properties;
 
     // Higher threshold for new monuments
     private static final int NEW_MONUMENT_ACCEPTANCE_THRESHOLD = 80;
 
     @Override
-    public DecisionRuleResult evaluate(MarkOccurrenceProposal proposal) {
-        // Check if this is a new monument/mark proposal
+    public DecisionRuleResult evaluate(MarkOccurrenceSubmission proposal) {
+        // Check if this is a new monument/mark submission
         boolean isNewMonument = proposal.getExistingMonument() == null;
         boolean isNewMark = proposal.isNewMark();
 

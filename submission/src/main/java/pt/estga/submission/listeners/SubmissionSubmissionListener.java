@@ -1,0 +1,58 @@
+package pt.estga.submission.listeners;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+import pt.estga.submission.events.SubmissionScoredEvent;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
+import pt.estga.submission.services.SubmissionScoringService;
+
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class SubmissionSubmissionListener {
+
+    private final MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
+    private final SubmissionScoringService scoringService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleProposalSubmitted(SubmissionSubmittedEvent event) {
+        Long proposalId = event.getProposalId();
+        log.info("Processing submission asynchronously for proposal ID: {}", proposalId);
+
+        try {
+            markOccurrenceSubmissionRepository.findById(proposalId).ifPresentOrElse(proposal -> {
+                try {
+                    // Calculate scores
+                    Integer priority = scoringService.calculatePriority(proposal);
+                    Integer credibility = scoringService.calculateCredibilityScore(proposal);
+
+                    proposal.setPriority(priority);
+                    proposal.setCredibilityScore(credibility);
+                    
+                    markOccurrenceSubmissionRepository.save(proposal);
+                    log.info("Scores updated for proposal ID: {}. Priority={}, Credibility={}", proposalId, priority, credibility);
+
+                    // Publish event indicating scoring is complete
+                    eventPublisher.publishEvent(new SubmissionScoredEvent(this, proposalId));
+
+                } catch (Exception e) {
+                    log.error("Error calculating scores for proposal ID: {}", proposalId, e);
+                    // In a real system, we might want to send this to a dead-letter queue or retry
+                }
+            }, () -> log.warn("Submission with ID {} not found during async submission processing", proposalId));
+        } catch (Exception e) {
+            log.error("Unexpected error in proposal submission listener for proposal ID: {}", proposalId, e);
+        }
+    }
+}

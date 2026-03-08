@@ -6,8 +6,6 @@ public final class VerificationCallbackData {
     }
 
     public static final String START_VERIFICATION = "start_verification";
-    public static final String CHOOSE_VERIFY_WITH_CODE = "choose_verify_with_code";
-    public static final String CHOOSE_VERIFY_WITH_PHONE = "choose_verify_with_phone";
     public static final String CONNECT_PHONE_YES = "connect_phone_yes";
     public static final String CONNECT_PHONE_NO = "connect_phone_no";
 }

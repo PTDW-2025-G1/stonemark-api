@@ -1,3 +1,7 @@
+chatbot:
+  auth:
+    optional: true
+
 telegram:
   bot:
     username: stonemarkbot

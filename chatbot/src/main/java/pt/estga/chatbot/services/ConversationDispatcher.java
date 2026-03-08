@@ -65,20 +65,26 @@ public class ConversationDispatcher {
         log.info("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         context.setCurrentState(nextState);
 
-        // Generate a response for the NEW state.
-        List<BotResponse> responses = new ArrayList<>(responseFactory.createResponse(context, outcome, input));
-
-        // If the next state is automatic, dispatch it immediately and accumulate the responses.
+        // If the next state is automatic, execute it first to populate context before generating response
         ConversationStateHandler nextHandler = handlers.get(nextState);
         if (nextHandler != null && nextHandler.isAutomatic()) {
-            // Create a new input that preserves the user and platform info, but is otherwise empty.
+            log.debug("Executing automatic handler: {} for state: {}", nextHandler.getClass().getSimpleName(), nextState);
             BotInput nextInput = BotInput.builder()
                     .userId(input.getUserId())
                     .platform(input.getPlatform())
                     .build();
-            responses.addAll(dispatch(context, nextInput));
+            HandlerOutcome autoOutcome = nextHandler.handle(context, nextInput);
+            log.debug("Automatic handler {} returned outcome: {}", nextHandler.getClass().getSimpleName(), autoOutcome);
+
+            // If automatic handler needs state transition, handle it recursively
+            if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
+                ConversationState autoNextState = proposalFlow.getNextState(context, nextState, autoOutcome);
+                log.info("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
+                context.setCurrentState(autoNextState);
+            }
         }
 
-        return responses;
+        // Generate a response for the NEW state (after automatic handlers have populated context).
+        return new ArrayList<>(responseFactory.createResponse(context, outcome, input));
     }
 }

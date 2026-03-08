@@ -33,6 +33,8 @@ public class ActionCode {
     @ManyToOne
     private UserContact userContact;
 
+    private String telegramId;
+
     private boolean consumed;
 
 }

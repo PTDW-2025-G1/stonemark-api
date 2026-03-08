@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 import pt.estga.chatbot.constants.SharedCallbackData;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.CoreState;
-import pt.estga.chatbot.features.auth.AuthResponseProvider;
-import pt.estga.chatbot.features.auth.AuthenticationGuard;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.shared.models.AppPrincipal;
@@ -24,8 +22,6 @@ public class BotEngineImpl implements BotEngine {
 
     private final ConversationDispatcher conversationDispatcher;
     private final Cache<String, ChatbotContext> conversationContexts;
-    private final AuthenticationGuard authenticationGuard;
-    private final AuthResponseProvider authenticationGuardHandler;
     private final AuthServiceFactory authServiceFactory;
 
     @Override
@@ -57,9 +53,6 @@ public class BotEngineImpl implements BotEngine {
             context.setCurrentState(CoreState.START);
         }
 
-        if (!authenticationGuard.isActionAllowed(input, context.getCurrentState())) {
-            return authenticationGuardHandler.requireVerification(context);
-        }
 
         return conversationDispatcher.dispatch(context, input);
     }

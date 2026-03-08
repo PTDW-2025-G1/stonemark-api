@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.user.entities.User;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.repositories.ActionCodeRepository;
@@ -26,17 +25,17 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
 
     @Override
     @Transactional
-    public ActionCode generateTelegramVerificationCode(User user) {
-        log.info("Generating Telegram verification code for user: {}", user.getId());
+    public ActionCode generateChatbotVerificationCode(String telegramId) {
+        log.info("Generating chatbot verification code for Telegram user: {}", telegramId);
 
-        // Invalidate existing codes for this user and type
-        actionCodeRepository.deleteByUserAndType(user, ActionCodeType.TELEGRAM_VERIFICATION);
+        // Invalidate existing codes for this telegram ID and type
+        actionCodeRepository.deleteByTelegramIdAndType(telegramId, ActionCodeType.CHATBOT_VERIFICATION);
 
         String code = generateRandomCode();
         ActionCode actionCode = ActionCode.builder()
                 .code(code)
-                .user(user)
-                .type(ActionCodeType.TELEGRAM_VERIFICATION)
+                .telegramId(telegramId)
+                .type(ActionCodeType.CHATBOT_VERIFICATION)
                 .expiresAt(Instant.now().plus(EXPIRATION_MINUTES, ChronoUnit.MINUTES))
                 .consumed(false)
                 .build();
@@ -46,8 +45,8 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
 
     @Override
     @Transactional
-    public Optional<User> verifyTelegramCode(String code, String telegramId) {
-        log.info("Verifying Telegram code: {}", code);
+    public Optional<String> verifyAndGetTelegramId(String code) {
+        log.info("Verifying chatbot code: {}", code);
 
         Optional<ActionCode> actionCodeOptional = actionCodeRepository.findByCode(code);
 
@@ -68,19 +67,19 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
             return Optional.empty();
         }
 
-        if (actionCode.getType() != ActionCodeType.TELEGRAM_VERIFICATION) {
+        if (actionCode.getType() != ActionCodeType.CHATBOT_VERIFICATION) {
             log.warn("Invalid code type: {}", actionCode.getType());
             return Optional.empty();
         }
 
-        User user = actionCode.getUser();
+        String telegramId = actionCode.getTelegramId();
 
         // Mark code as consumed
         actionCode.setConsumed(true);
         actionCodeRepository.save(actionCode);
 
-        log.info("Telegram verification successful for user: {}", user.getId());
-        return Optional.of(user);
+        log.info("Chatbot verification successful for Telegram user: {}", telegramId);
+        return Optional.of(telegramId);
     }
 
     private String generateRandomCode() {

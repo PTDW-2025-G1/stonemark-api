@@ -17,4 +17,6 @@ public interface ActionCodeRepository extends JpaRepository<ActionCode, String> 
 
     void deleteByUserAndType(User user, ActionCodeType type);
 
+    void deleteByTelegramIdAndType(String telegramId, ActionCodeType type);
+
 }

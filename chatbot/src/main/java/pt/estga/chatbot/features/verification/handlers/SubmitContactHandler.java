@@ -8,7 +8,6 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.VerificationState;
-import pt.estga.chatbot.features.auth.RequiresAuthentication;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.user.entities.User;
 import pt.estga.user.enums.ContactType;
@@ -21,7 +20,6 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@RequiresAuthentication(false)
 public class SubmitContactHandler implements ConversationStateHandler {
 
     private final UserContactService userContactService;

@@ -9,21 +9,12 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
-import pt.estga.proposal.enums.SubmissionSource;
-import pt.estga.proposal.services.chatbot.MarkOccurrenceProposalChatbotFlowService;
-import pt.estga.user.entities.User;
-import pt.estga.user.services.UserService;
-
-import java.io.IOException;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.enums.SubmissionSource;
 
 @Component
 @RequiredArgsConstructor
 public class InitialPhotoHandler implements ConversationStateHandler {
-
-    private final MarkOccurrenceProposalChatbotFlowService proposalFlowService;
-    private final UserService userService;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
@@ -31,36 +22,20 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        try {
-            Proposal proposal = context.getProposalContext().getProposal();
-            MarkOccurrenceProposal markProposal;
+        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
 
-            if (proposal == null) {
-                User user = userService.findById(context.getDomainUserId())
-                        .orElseThrow(() -> new RuntimeException("User not found"));
-                
-                markProposal = proposalFlowService.startProposal(
-                        user,
-                        mapPlatformToSubmissionSource(input.getPlatform())
-                );
-
-                context.getProposalContext().setProposal(markProposal);
-            } else if (proposal instanceof MarkOccurrenceProposal) {
-                markProposal = (MarkOccurrenceProposal) proposal;
-            } else {
-                return HandlerOutcome.FAILURE;
-            }
-
-            proposalFlowService.addPhoto(
-                    markProposal,
-                    input.getFileData(),
-                    input.getFileName()
-            );
-
-            return HandlerOutcome.SUCCESS;
-        } catch (IOException e) {
-            return HandlerOutcome.FAILURE;
+        // Initialize a submission object if not exists (but don't persist yet)
+        if (submission == null) {
+            MarkOccurrenceSubmission markProposal = new MarkOccurrenceSubmission();
+            context.getProposalContext().setSubmission(markProposal);
         }
+
+        // Store photo data and metadata in context (will be persisted at submission)
+        context.getProposalContext().setPhotoData(input.getFileData());
+        context.getProposalContext().setPhotoFilename(input.getFileName());
+        context.getProposalContext().setSubmissionSource(mapPlatformToSubmissionSource(input.getPlatform()));
+
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override

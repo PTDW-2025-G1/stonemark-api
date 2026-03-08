@@ -11,8 +11,8 @@ import pt.estga.content.entities.Monument;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRuleResult;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.proposal.config.ProposalDecisionProperties;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
+import pt.estga.submission.config.SubmissionDecisionProperties;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 class NewMonumentRuleTest {
 
     @Mock
-    private ProposalDecisionProperties properties;
+    private SubmissionDecisionProperties properties;
 
     @InjectMocks
     private NewMonumentRule rule;
@@ -35,7 +35,7 @@ class NewMonumentRuleTest {
     void evaluate_ShouldReturnNull_ForExistingMonumentAndMark() {
         // Arrange - neither new monument nor new mark
         Monument existingMonument = Monument.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .existingMonument(existingMonument)
                 .newMark(false)
@@ -53,7 +53,7 @@ class NewMonumentRuleTest {
         // Arrange
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(50)
                 .existingMonument(null) // New monument
@@ -75,7 +75,7 @@ class NewMonumentRuleTest {
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
         MediaFile mediaFile = MediaFile.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(85) // Above acceptance threshold (80)
                 .existingMonument(null)
@@ -101,7 +101,7 @@ class NewMonumentRuleTest {
         // Arrange
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(85)
                 .existingMonument(null)
@@ -124,7 +124,7 @@ class NewMonumentRuleTest {
         // Arrange
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(false);
 
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(50)
                 .existingMonument(null) // New monument
@@ -144,7 +144,7 @@ class NewMonumentRuleTest {
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
         Monument existingMonument = Monument.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(50)
                 .existingMonument(existingMonument) // Has monument
@@ -165,7 +165,7 @@ class NewMonumentRuleTest {
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
         // Missing media
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(85)
                 .existingMonument(null)
@@ -191,7 +191,7 @@ class NewMonumentRuleTest {
 
         // Missing latitude
         MediaFile mediaFile = MediaFile.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(85)
                 .existingMonument(null)
@@ -215,7 +215,7 @@ class NewMonumentRuleTest {
         when(properties.getRequireManualReviewForNewMonuments()).thenReturn(true);
 
         MediaFile mediaFile = MediaFile.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(80) // Exactly at threshold
                 .existingMonument(null)

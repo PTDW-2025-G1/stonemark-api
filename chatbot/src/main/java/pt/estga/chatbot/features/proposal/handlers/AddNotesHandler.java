@@ -1,29 +1,30 @@
 package pt.estga.chatbot.features.proposal.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
-import pt.estga.proposal.services.chatbot.MarkOccurrenceProposalChatbotFlowService;
-import pt.estga.proposal.services.submission.MarkOccurrenceProposalSubmissionService;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
+import pt.estga.user.entities.User;
+import pt.estga.user.services.UserService;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final MarkOccurrenceProposalChatbotFlowService proposalFlowService;
-    private final MarkOccurrenceProposalSubmissionService submissionService;
+    private final MarkOccurrenceSubmissionSubmitService submitService;
+    private final UserService userService;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        Proposal proposal = context.getProposalContext().getProposal();
-        if (!(proposal instanceof MarkOccurrenceProposal)) {
+        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
+        if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }
-        MarkOccurrenceProposal markProposal = (MarkOccurrenceProposal) proposal;
 
         // Handle "skip" or text input for notes
         if (input.getCallbackData() == null || !input.getCallbackData().equals(ProposalCallbackData.SKIP_NOTES)) {
@@ -32,13 +33,29 @@ public class AddNotesHandler implements ConversationStateHandler {
             }
         }
 
-        // Submit the proposal
-        submissionService.submit(markProposal);
-        
-        // Clean up the context
-        context.clear();
+        try {
+            Long domainUserId = context.getDomainUserId();
+            User user = domainUserId != null
+                    ? userService.findById(domainUserId).orElse(null)
+                    : null;
 
-        return HandlerOutcome.SUCCESS;
+            // Submit the submission with all collected data (authenticated or anonymous)
+            submitService.submitFromChatbot(
+                    markProposal,
+                    context.getProposalContext().getPhotoData(),
+                    context.getProposalContext().getPhotoFilename(),
+                    user,
+                    context.getProposalContext().getSubmissionSource()
+            );
+
+            // Clean up the context
+            context.clear();
+
+            return HandlerOutcome.SUCCESS;
+        } catch (Exception e) {
+            log.error("Failed to submit submission from chatbot", e);
+            return HandlerOutcome.FAILURE;
+        }
     }
 
     @Override
