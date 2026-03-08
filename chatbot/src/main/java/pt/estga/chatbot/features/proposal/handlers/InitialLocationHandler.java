@@ -7,8 +7,7 @@ import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 @Component
 public class InitialLocationHandler implements ConversationStateHandler {
@@ -19,8 +18,8 @@ public class InitialLocationHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        Proposal proposal = context.getProposalContext().getProposal();
-        if (!(proposal instanceof MarkOccurrenceProposal markProposal)) {
+        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
+        if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }
 

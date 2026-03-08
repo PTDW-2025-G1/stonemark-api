@@ -1,9 +1,0 @@
-package pt.estga.proposal.repositories;
-
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import pt.estga.proposal.entities.ProposalRefinement;
-
-@Repository
-public interface ProposalRefinementRepository extends JpaRepository<ProposalRefinement, Long> {
-}

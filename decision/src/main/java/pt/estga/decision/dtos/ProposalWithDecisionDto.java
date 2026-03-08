@@ -1,6 +1,6 @@
 package pt.estga.decision.dtos;
 
-import pt.estga.proposal.dtos.ProposalWithRelationsDto;
+import pt.estga.submission.dtos.ProposalWithRelationsDto;
 
 public record ProposalWithDecisionDto(
         ProposalWithRelationsDto proposal,
