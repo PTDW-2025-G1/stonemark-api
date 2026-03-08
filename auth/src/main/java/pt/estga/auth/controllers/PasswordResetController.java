@@ -12,47 +12,36 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.auth.dtos.PasswordResetRequestDto;
 import pt.estga.shared.dtos.MessageResponseDto;
 import pt.estga.verification.dtos.ResetPasswordRequestDto;
-import pt.estga.verification.services.VerificationInitiationService;
-import pt.estga.verification.services.VerificationProcessingService;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/auth/password-reset")
-@Tag(name = "Password Reset", description = "Endpoints for requesting and performing password resets.")
+@Tag(name = "Password Reset", description = "Password reset moved to Keycloak.")
 public class PasswordResetController {
 
-    private final VerificationInitiationService verificationInitiationService;
-    private final VerificationProcessingService verificationProcessingService;
-
-    @Operation(summary = "Request password reset",
-               description = "Initiates the password reset process by sending a verification code to the user's contact (email or phone number).")
+    @Operation(summary = "Request password reset (REMOVED)",
+               description = "Password reset is handled by Keycloak.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password reset initiated successfully. A verification code has been sent.",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid contact value or user not found.",
+            @ApiResponse(responseCode = "410", description = "Gone - use Keycloak reset flow.",
                     content = @Content(schema = @Schema(implementation = MessageResponseDto.class)))
     })
     @PostMapping("/request")
-    public ResponseEntity<?> requestPasswordReset(
+    public ResponseEntity<MessageResponseDto> requestPasswordReset(
             @RequestBody PasswordResetRequestDto request) {
-        verificationInitiationService.initiatePasswordReset(request.contactValue());
-        return ResponseEntity.ok(new MessageResponseDto("Password reset initiated. Check your contact for the verification code."));
+        return ResponseEntity.status(410)
+                .body(new MessageResponseDto("Password reset moved to Keycloak. Use Keycloak login page reset flow."));
     }
 
-    @Operation(summary = "Reset password",
-               description = "Resets the user's password using a valid verification token and a new password. The token is typically received via email or SMS.")
+    @Operation(summary = "Reset password (REMOVED)",
+               description = "Password reset is handled by Keycloak.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password reset successfully.",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Bad Request - Invalid token, expired token, or new password does not meet requirements.",
-                    content = @Content(schema = @Schema(implementation = MessageResponseDto.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - Token is invalid or revoked.",
+            @ApiResponse(responseCode = "410", description = "Gone - use Keycloak reset flow.",
                     content = @Content(schema = @Schema(implementation = MessageResponseDto.class)))
     })
     @PostMapping("/reset")
-    public ResponseEntity<?> resetPassword(
+    public ResponseEntity<MessageResponseDto> resetPassword(
             @RequestBody ResetPasswordRequestDto request) {
-        verificationProcessingService.processPasswordReset(request.token(), request.newPassword());
-        return ResponseEntity.ok(new MessageResponseDto("Password reset successfully."));
+        return ResponseEntity.status(410)
+                .body(new MessageResponseDto("Password reset moved to Keycloak. Use Keycloak login page reset flow."));
     }
 }

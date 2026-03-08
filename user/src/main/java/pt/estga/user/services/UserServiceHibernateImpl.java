@@ -130,7 +130,6 @@ public class UserServiceHibernateImpl implements UserService {
 
         user.setFirstName("deleted");
         user.setLastName("user");
-        user.setPassword(null);
         user.setUsername(null);
         user.setEmail(null);
         user.setPhone(null);

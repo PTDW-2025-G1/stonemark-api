@@ -26,7 +26,6 @@ public class User {
     private String firstName;
     private String lastName;
     private String username;
-    private String password;
 
     @Column(unique = true)
     private String email;
@@ -74,7 +73,6 @@ public class User {
                 && Objects.equals(firstName, user.firstName)
                 && Objects.equals(lastName, user.lastName)
                 && Objects.equals(username, user.username)
-                && Objects.equals(password, user.password)
                 && Objects.equals(email, user.email)
                 && Objects.equals(phone, user.phone)
                 && Objects.equals(keycloakSub, user.keycloakSub)
@@ -86,6 +84,6 @@ public class User {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, password, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
+        return Objects.hash(id, firstName, lastName, username, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
     }
 }

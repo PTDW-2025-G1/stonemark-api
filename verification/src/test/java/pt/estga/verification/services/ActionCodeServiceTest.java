@@ -38,7 +38,6 @@ class ActionCodeServiceTest {
         testUser = User.builder()
                 .id(1L)
                 .username("testuser")
-                .password("encodedPassword")
                 .build();
 
         recipient = "test@example.com";

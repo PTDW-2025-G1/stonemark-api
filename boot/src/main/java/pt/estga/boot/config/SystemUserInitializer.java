@@ -67,7 +67,6 @@ public class SystemUserInitializer {
                     .firstName("System")
                     .lastName("Administrator")
                     .username("system_admin")
-                    .password(passwordEncoder.encode("system_password_change_me"))
                     .role(UserRole.ADMIN)
                     .enabled(true)
                     .accountLocked(false)

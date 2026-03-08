@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import pt.estga.auth.services.LogoutService;
 
 import java.util.List;
 
@@ -48,7 +47,6 @@ public class SecurityConfig {
             "https://*.stonemark.pt"
     };
 
-    private final LogoutService logoutService;
     private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
 
     @Bean
@@ -86,7 +84,6 @@ public class SecurityConfig {
                 )
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
-                        .addLogoutHandler(logoutService)
                         .logoutSuccessHandler(
                                 (request, response, authentication) ->
                                         response.setStatus(HttpServletResponse.SC_OK)
