@@ -23,12 +23,14 @@ application:
   security:
     keycloak:
       enabled: true  # Keycloak-only mode (legacy auth removed)
+    # Legacy JWT settings removed - tokens managed by Keycloak
+    # Social auth (Google/Telegram) still uses legacy JWT temporarily
     jwt:
-      secret-key: ${JWT_SECRET_KEY}
+      secret-key: ${JWT_SECRET_KEY}  # Still needed for social auth
       access-token:
-        expiration: 90000000 # 15 minutes
+        expiration: 90000000 # 15 minutes - for social auth only
       refresh-token:
-        expiration: 2592000000 # 30 days
+        expiration: 2592000000 # 30 days - for social auth only
     action-code:
       email-verification:
         expiration: 86400000 # 24 hours
@@ -42,5 +44,3 @@ application:
         expiration: 2592000000 # 30 days
       chatbot-verification:
         expiration: 900000 # 15 minutes
-    contact:
-      verification-required: true

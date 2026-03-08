@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.auth.dtos.AuthenticationResponseDto;
+import pt.estga.auth.utils.LegacyJwtAuthHelper;
 import pt.estga.security.services.AccessTokenService;
 import pt.estga.security.services.JwtService;
 import pt.estga.security.services.RefreshTokenService;
@@ -22,7 +23,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Optional;
 
-import static pt.estga.auth.services.AuthenticationServiceSpringImpl.getAuthenticationResponseDto;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +47,9 @@ public class SocialAuthenticationServiceImpl implements SocialAuthenticationServ
             GoogleIdToken.Payload payload = idToken.getPayload();
             User user = upsertUserFromGooglePayload(payload);
 
-            return getAuthenticationResponseDto(user, false, false, jwtService, refreshTokenService, accessTokenService);
+            return LegacyJwtAuthHelper.generateAuthResponse(
+                    user, false, false, jwtService, refreshTokenService, accessTokenService
+            );
         } catch (GeneralSecurityException | IOException e) {
             log.error("Error while authenticating with Google", e);
             throw new RuntimeException("Google authentication failed.", e);

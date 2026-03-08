@@ -23,7 +23,6 @@ import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.services.AccountService;
-import pt.estga.user.services.PasswordService;
 import pt.estga.user.services.UserService;
 
 import java.io.IOException;
@@ -31,14 +30,13 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/v1/account")
 @RequiredArgsConstructor
-@Tag(name = "User Account", description = "Self-service operations for logged-in users.")
+@Tag(name = "User Account", description = "Self-service operations for logged-in users. Password management via Keycloak.")
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
     private final UserService userService;
     private final AccountService accountService;
     private final UserMapper mapper;
-    private final PasswordService passwordService;
     private final MediaService mediaService;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
@@ -89,39 +87,6 @@ public class AccountController {
         return ResponseEntity.ok(new MessageResponseDto("Your profile has been updated successfully."));
     }
 
-    @Operation(summary = "Change user password", description = "Changes the password for the authenticated user.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password changed successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid password change request")
-    })
-    @PostMapping("/change-password")
-    public ResponseEntity<MessageResponseDto> changePassword(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @Parameter(description = "Password change request details", required = true)
-            @Valid @RequestBody PasswordChangeRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        passwordService.changePassword(user, request);
-        return ResponseEntity.ok(new MessageResponseDto("Your password has been changed successfully."));
-    }
-
-    @Operation(summary = "Set user password", description = "Sets a new password for the authenticated user.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password set successfully",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = MessageResponseDto.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid password set request")
-    })
-    @PostMapping("/set-password")
-    public ResponseEntity<MessageResponseDto> setPassword(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @Parameter(description = "Password set request details", required = true)
-            @Valid @RequestBody PasswordSetRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        passwordService.setPassword(user, request);
-        return ResponseEntity.ok(new MessageResponseDto("Your password has been set successfully."));
-    }
 
     @PostMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserDto> uploadPhoto(
