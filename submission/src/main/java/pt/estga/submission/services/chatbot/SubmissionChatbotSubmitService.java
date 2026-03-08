@@ -8,7 +8,7 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
-import pt.estga.submission.services.submission.MarkOccurrenceSubmissionSubmissionService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmissionService;
 import pt.estga.user.entities.User;
 
 import java.io.ByteArrayInputStream;

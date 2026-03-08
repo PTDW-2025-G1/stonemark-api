@@ -1,5 +1,6 @@
-package pt.estga.submission.services.submission;
+package pt.estga.submission.services;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -9,17 +10,40 @@ import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.enums.SubmissionStatus;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
-@Service
-@Slf4j
-public class MarkOccurrenceSubmissionSubmissionService extends AbstractSubmissionSubmissionService<MarkOccurrenceSubmission> {
+import java.time.Instant;
 
-    public MarkOccurrenceSubmissionSubmissionService(
-            MarkOccurrenceSubmissionRepository repository,
-            ApplicationEventPublisher eventPublisher) {
-        super(repository, eventPublisher);
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MarkOccurrenceSubmissionSubmissionService {
+
+    private final MarkOccurrenceSubmissionRepository repository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Transactional
+    public MarkOccurrenceSubmission submit(MarkOccurrenceSubmission submission) {
+        log.info("Submitting submission of type: {}", submission.getClass().getSimpleName());
+
+        if (SubmissionStatus.SUBMITTED.equals(submission.getStatus())) {
+            log.warn("Submission is already submitted. Skipping submission logic.");
+            return submission;
+        }
+
+        submission.setSubmittedAt(Instant.now());
+        submission.setStatus(SubmissionStatus.SUBMITTED);
+
+        MarkOccurrenceSubmission savedSubmission = repository.save(submission);
+        log.info("Submission submitted successfully with ID: {}", savedSubmission.getId());
+
+        eventPublisher.publishEvent(new SubmissionSubmittedEvent(this, savedSubmission.getId()));
+        log.debug("Published SubmissionSubmittedEvent for submission ID: {}", savedSubmission.getId());
+
+        return savedSubmission;
     }
 
     @Transactional

@@ -19,7 +19,7 @@ import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.services.MarkOccurrenceSubmissionService;
-import pt.estga.submission.services.submission.MarkOccurrenceSubmissionSubmissionService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmissionService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 
