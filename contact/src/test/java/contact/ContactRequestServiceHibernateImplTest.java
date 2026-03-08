@@ -12,11 +12,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import pt.estga.support.ContactStatus;
-import pt.estga.support.dtos.ContactRequestDto;
-import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.repositories.ContactRequestRepository;
-import pt.estga.support.services.ContactRequestServiceHibernateImpl;
+import pt.estga.contact.ContactStatus;
+import pt.estga.contact.dtos.ContactRequestDto;
+import pt.estga.contact.entities.ContactRequest;
+import pt.estga.contact.repositories.ContactRequestRepository;
+import pt.estga.contact.services.ContactRequestServiceHibernateImpl;
 import pt.estga.shared.exceptions.ContactNotFoundException;
 
 import java.time.Instant;

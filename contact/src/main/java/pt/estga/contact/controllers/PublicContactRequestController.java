@@ -1,4 +1,4 @@
-package pt.estga.support.controllers;
+package pt.estga.contact.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.support.dtos.ContactRequestDto;
-import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.services.ContactRequestService;
+import pt.estga.contact.dtos.ContactRequestDto;
+import pt.estga.contact.entities.ContactRequest;
+import pt.estga.contact.services.ContactRequestService;
 
 @RestController
 @RequestMapping("/api/v1/public/contact-requests")

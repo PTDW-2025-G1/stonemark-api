@@ -1,10 +1,10 @@
-package pt.estga.support.services;
+package pt.estga.contact.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pt.estga.support.ContactStatus;
-import pt.estga.support.dtos.ContactRequestDto;
-import pt.estga.support.entities.ContactRequest;
+import pt.estga.contact.ContactStatus;
+import pt.estga.contact.dtos.ContactRequestDto;
+import pt.estga.contact.entities.ContactRequest;
 
 import java.util.Optional;
 

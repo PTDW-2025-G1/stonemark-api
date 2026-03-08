@@ -1,4 +1,4 @@
-package pt.estga.support.controllers;
+package pt.estga.contact.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +9,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.support.ContactStatus;
-import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.services.ContactRequestService;
+import pt.estga.contact.ContactStatus;
+import pt.estga.contact.entities.ContactRequest;
+import pt.estga.contact.services.ContactRequestService;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")

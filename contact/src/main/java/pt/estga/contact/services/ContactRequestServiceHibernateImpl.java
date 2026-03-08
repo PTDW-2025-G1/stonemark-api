@@ -1,13 +1,13 @@
-package pt.estga.support.services;
+package pt.estga.contact.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pt.estga.support.repositories.ContactRequestRepository;
-import pt.estga.support.ContactStatus;
-import pt.estga.support.dtos.ContactRequestDto;
-import pt.estga.support.entities.ContactRequest;
+import pt.estga.contact.repositories.ContactRequestRepository;
+import pt.estga.contact.ContactStatus;
+import pt.estga.contact.dtos.ContactRequestDto;
+import pt.estga.contact.entities.ContactRequest;
 import pt.estga.shared.exceptions.ContactNotFoundException;
 import pt.estga.user.entities.User;
 

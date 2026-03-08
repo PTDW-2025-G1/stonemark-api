@@ -1,9 +1,9 @@
-package pt.estga.support.entities;
+package pt.estga.contact.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import pt.estga.support.ContactStatus;
+import pt.estga.contact.ContactStatus;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
