@@ -34,7 +34,6 @@
         <module>chatbot</module>
         <module>verification</module>
         <module>report</module>
-        <module>security</module>
         <module>territory</module>
         <module>decision</module>
     </modules>
