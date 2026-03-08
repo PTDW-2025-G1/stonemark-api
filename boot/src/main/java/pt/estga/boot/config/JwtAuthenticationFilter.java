@@ -7,8 +7,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -25,6 +28,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final AppPrincipalFactory principalFactory;
+    private final DualAuthenticationManagerResolver dualAuthenticationManagerResolver;
+
+    @Value("${application.security.keycloak.enabled:false}")
+    private boolean keycloakEnabled;
 
     @Override
     protected void doFilterInternal(
@@ -47,6 +54,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // If Keycloak enabled, use dual-validator
+        if (keycloakEnabled) {
+            try {
+                AuthenticationManager authManager = dualAuthenticationManagerResolver.resolve(request);
+                var bearerToken = new BearerTokenAuthenticationToken(token);
+                var authentication = authManager.authenticate(bearerToken);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("Authenticated via dual-validator");
+            } catch (Exception e) {
+                log.debug("Dual-validator authentication failed: {}", e.getMessage());
+            }
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Legacy path (Keycloak disabled)
         // Check if it's a refresh token request
         boolean isRefreshRequest = request.getRequestURI().endsWith("/refresh");
         TokenType expectedType = isRefreshRequest ? TokenType.REFRESH : TokenType.ACCESS;
