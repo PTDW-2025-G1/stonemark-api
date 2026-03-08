@@ -47,7 +47,7 @@ public class ActionCodeServiceImpl implements ActionCodeService {
 
             long expirationMillis = getExpirationMillisFor(type);
 
-            String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
+            String code = RandomStringUtils.secure().nextAlphanumeric(6).toUpperCase();
 
             ActionCode actionCode = ActionCode.builder()
                     .code(code)

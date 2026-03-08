@@ -20,6 +20,8 @@ public interface UserService {
 
     Optional<User> findByPhone(String phone);
 
+    Optional<User> findByKeycloakSub(String keycloakSub);
+
     Optional<User> findByIdForProfile(Long id);
 
     Optional<User> findByIdWithIdentities(Long id);
@@ -29,6 +31,10 @@ public interface UserService {
     boolean existsByEmail(String email);
 
     boolean existsByPhone(String phone);
+
+    boolean existsByKeycloakSub(String keycloakSub);
+
+    void deactivateByKeycloakSub(String keycloakSub);
 
     User create(User user);
 

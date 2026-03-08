@@ -42,7 +42,7 @@ public class TwoFactorAuthenticationServiceImpl implements TwoFactorAuthenticati
             throw new IllegalStateException("User has no phone for SMS 2FA.");
         }
 
-        String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
+        String code = RandomStringUtils.secure().nextAlphanumeric(6).toUpperCase();
         saveActionCode(user, code);
         smsService.sendMessage(user.getPhone(), "Your 2FA code is: " + code);
     }
@@ -54,7 +54,7 @@ public class TwoFactorAuthenticationServiceImpl implements TwoFactorAuthenticati
             throw new IllegalStateException("User has no email for Email 2FA.");
         }
 
-        String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
+        String code = RandomStringUtils.secure().nextAlphanumeric(6).toUpperCase();
         saveActionCode(user, code);
 
         Map<String, Object> properties = new HashMap<>();
