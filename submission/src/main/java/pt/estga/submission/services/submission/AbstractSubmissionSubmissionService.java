@@ -13,7 +13,7 @@ import java.time.Instant;
 
 @RequiredArgsConstructor
 @Slf4j
-public abstract class AbstractProposalSubmissionService<T extends Submission> {
+public abstract class AbstractSubmissionSubmissionService<T extends Submission> {
 
     private final SubmissionRepository<T> repository;
     private final ApplicationEventPublisher eventPublisher;

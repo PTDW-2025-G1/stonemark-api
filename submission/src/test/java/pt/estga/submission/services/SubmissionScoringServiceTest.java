@@ -33,7 +33,7 @@ class SubmissionScoringServiceTest {
     private ProposalStatsProjection statsProjection;
 
     @InjectMocks
-    private ProposalScoringService scoringService;
+    private SubmissionScoringService scoringService;
 
     // ===== Credibility Score Tests =====
 

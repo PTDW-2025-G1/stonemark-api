@@ -18,8 +18,8 @@ import pt.estga.submission.dtos.MarkOccurrenceProposalDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
-import pt.estga.submission.services.MarkOccurrenceProposalService;
-import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionService;
+import pt.estga.submission.services.submission.MarkOccurrenceSubmissionSubmissionService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 
@@ -29,8 +29,8 @@ import pt.estga.user.entities.User;
 @Tag(name = "Mark Occurrence Proposals", description = "Endpoints for querying, retrieving, and submitting mark occurrence proposals.")
 public class MarkOccurrenceSubmissionController {
 
-    private final MarkOccurrenceProposalService proposalService;
-    private final MarkOccurrenceProposalSubmissionService submissionService;
+    private final MarkOccurrenceSubmissionService proposalService;
+    private final MarkOccurrenceSubmissionSubmissionService submissionService;
     private final MarkOccurrenceSubmissionMapper markOccurrenceSubmissionMapper;
 
     @Operation(summary = "List proposals by user",

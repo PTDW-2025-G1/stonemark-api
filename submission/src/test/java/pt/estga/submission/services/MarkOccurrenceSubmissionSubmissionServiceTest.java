@@ -14,7 +14,7 @@ import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
-import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
+import pt.estga.submission.services.submission.MarkOccurrenceSubmissionSubmissionService;
 import pt.estga.user.entities.User;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +32,7 @@ class MarkOccurrenceSubmissionSubmissionServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private MarkOccurrenceProposalSubmissionService submissionService;
+    private MarkOccurrenceSubmissionSubmissionService submissionService;
 
     @Test
     void createAndSubmit_ShouldCreateAndSubmitProposal() {

@@ -13,7 +13,7 @@ import pt.estga.submission.entities.Submission;
 import pt.estga.submission.events.SubmissionScoredEvent;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.SubmissionRepository;
-import pt.estga.submission.services.ProposalScoringService;
+import pt.estga.submission.services.SubmissionScoringService;
 
 @Component
 @RequiredArgsConstructor
@@ -21,7 +21,7 @@ import pt.estga.submission.services.ProposalScoringService;
 public class SubmissionSubmissionListener {
 
     private final SubmissionRepository<Submission> submissionRepository;
-    private final ProposalScoringService scoringService;
+    private final SubmissionScoringService scoringService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Async

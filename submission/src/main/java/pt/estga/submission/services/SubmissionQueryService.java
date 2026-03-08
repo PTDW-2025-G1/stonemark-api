@@ -11,7 +11,7 @@ import pt.estga.shared.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor
-public class ProposalQueryService {
+public class SubmissionQueryService {
 
     private final MarkOccurrenceSubmissionRepository proposalRepo;
     private final MarkOccurrenceSubmissionMapper proposalMapper;

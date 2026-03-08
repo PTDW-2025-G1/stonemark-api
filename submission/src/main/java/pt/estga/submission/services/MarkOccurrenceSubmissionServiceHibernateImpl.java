@@ -18,7 +18,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MarkOccurrenceProposalServiceHibernateImpl implements MarkOccurrenceProposalService {
+public class MarkOccurrenceSubmissionServiceHibernateImpl implements MarkOccurrenceSubmissionService {
 
     private final MarkOccurrenceSubmissionRepository repository;
 

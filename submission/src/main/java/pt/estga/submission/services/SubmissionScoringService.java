@@ -10,7 +10,7 @@ import pt.estga.submission.repositories.SubmissionRepository;
 
 @Service
 @RequiredArgsConstructor
-public class ProposalScoringService {
+public class SubmissionScoringService {
 
     private final SubmissionDecisionProperties properties;
     private final SubmissionRepository<Submission> submissionRepository;

@@ -19,7 +19,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ProposalServiceImpl implements ProposalService {
+public class SubmissionServiceImpl implements SubmissionService {
 
     private final SubmissionRepository<Submission> submissionRepository;
     private final CacheManager cacheManager;

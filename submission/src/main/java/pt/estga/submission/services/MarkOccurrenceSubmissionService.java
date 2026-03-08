@@ -7,17 +7,14 @@ import pt.estga.user.entities.User;
 
 import java.util.Optional;
 
-public interface MarkOccurrenceProposalService {
+public interface MarkOccurrenceSubmissionService {
 
-    // Specific methods for MarkOccurrenceSubmission
     Optional<MarkOccurrenceSubmission> findByIdWithRelations(Long id);
 
     MarkOccurrenceSubmission create(MarkOccurrenceSubmission proposal);
 
     MarkOccurrenceSubmission update(MarkOccurrenceSubmission proposal);
 
-    // We can keep these for convenience if they return the specific type,
-    // but implementation should delegate to the generic service or repository where appropriate.
     Page<MarkOccurrenceSubmission> findByUser(User user, Pageable pageable);
     
     Optional<MarkOccurrenceSubmission> findById(Long id);

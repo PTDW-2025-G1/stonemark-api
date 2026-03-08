@@ -8,7 +8,7 @@ import pt.estga.user.entities.User;
 
 import java.util.Optional;
 
-public interface ProposalService {
+public interface SubmissionService {
 
     Page<Submission> getAll(Pageable pageable);
 

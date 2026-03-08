@@ -36,7 +36,7 @@ class SubmissionServiceImplTest {
     private Cache cache;
 
     @InjectMocks
-    private ProposalServiceImpl proposalService;
+    private SubmissionServiceImpl proposalService;
 
     @Test
     void findById_ShouldReturnProposal_WhenExists() {

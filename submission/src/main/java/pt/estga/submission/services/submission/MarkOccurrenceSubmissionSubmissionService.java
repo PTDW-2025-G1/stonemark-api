@@ -14,9 +14,9 @@ import pt.estga.user.entities.User;
 
 @Service
 @Slf4j
-public class MarkOccurrenceProposalSubmissionService extends AbstractProposalSubmissionService<MarkOccurrenceSubmission> {
+public class MarkOccurrenceSubmissionSubmissionService extends AbstractSubmissionSubmissionService<MarkOccurrenceSubmission> {
 
-    public MarkOccurrenceProposalSubmissionService(
+    public MarkOccurrenceSubmissionSubmissionService(
             MarkOccurrenceSubmissionRepository repository,
             ApplicationEventPublisher eventPublisher) {
         super(repository, eventPublisher);
