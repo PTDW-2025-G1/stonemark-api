@@ -35,9 +35,21 @@ public class User {
     @Column(name = "keycloak_sub", unique = true)
     private String keycloakSub;
 
+    /**
+     * Snapshot of email verification status from Keycloak.
+     * This field is synchronized during JIT (Just-In-Time) provisioning from the Keycloak JWT token.
+     * Do NOT manually set this field - it is managed by Keycloak and synced on login.
+     * Source: JWT claim 'email_verified'
+     */
     @Builder.Default
     private boolean emailVerified = false;
 
+    /**
+     * Snapshot of phone verification status from Keycloak.
+     * This field is synchronized during JIT (Just-In-Time) provisioning from the Keycloak JWT token.
+     * Do NOT manually set this field - it is managed by Keycloak and synced on login.
+     * Source: JWT claim 'phone_number_verified'
+     */
     @Builder.Default
     private boolean phoneVerified = false;
 
