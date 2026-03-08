@@ -6,7 +6,6 @@ import org.mapstruct.Named;
 import pt.estga.proposal.dtos.ProposalAdminListDto;
 import pt.estga.proposal.entities.MarkOccurrenceProposal;
 import pt.estga.proposal.entities.MarkProposal;
-import pt.estga.proposal.entities.MonumentProposal;
 import pt.estga.proposal.entities.Proposal;
 import pt.estga.proposal.enums.ProposalType;
 
@@ -23,8 +22,6 @@ public interface ProposalAdminMapper {
     default String generateTitle(Proposal proposal) {
         if (proposal instanceof MarkOccurrenceProposal) {
             return "Mark Occurrence #" + proposal.getId();
-        } else if (proposal instanceof MonumentProposal) {
-            return "New Monument #" + proposal.getId();
         } else if (proposal instanceof MarkProposal) {
             return "New Mark #" + proposal.getId();
         }

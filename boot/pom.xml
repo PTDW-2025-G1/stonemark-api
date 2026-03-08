@@ -65,7 +65,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>proposal</artifactId>
+            <artifactId>submission</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

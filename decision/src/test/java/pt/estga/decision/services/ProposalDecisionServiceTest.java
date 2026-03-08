@@ -11,7 +11,6 @@ import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
 import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.MonumentProposal;
 import pt.estga.proposal.enums.ProposalStatus;
 import pt.estga.proposal.repositories.ProposalRepository;
 import pt.estga.user.entities.User;
@@ -143,21 +142,5 @@ class ProposalDecisionServiceTest {
         // Assert
         assertEquals(ProposalStatus.MANUALLY_REJECTED, proposal.getStatus());
         verify(proposalRepo).save(proposal);
-    }
-
-    @Test
-    void activateDecision_ShouldThrow_IfProposalTypeMismatch() {
-        // Arrange
-        Long attemptId = 100L;
-        MonumentProposal otherProposal = MonumentProposal.builder().id(1L).build();
-        ProposalDecisionAttempt attempt = ProposalDecisionAttempt.builder()
-                .id(attemptId)
-                .proposal(otherProposal)
-                .build();
-
-        when(attemptRepo.findById(attemptId)).thenReturn(Optional.of(attempt));
-
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> service.activateDecision(attemptId));
     }
 }
