@@ -12,7 +12,7 @@ import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.enums.SubmissionSource;
-import pt.estga.submission.events.ProposalSubmittedEvent;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
 import pt.estga.user.entities.User;
@@ -57,7 +57,7 @@ class MarkOccurrenceSubmissionSubmissionServiceTest {
         assertEquals(SubmissionStatus.SUBMITTED, result.getStatus());
         
         verify(repository).save(any(MarkOccurrenceSubmission.class));
-        verify(eventPublisher).publishEvent(any(ProposalSubmittedEvent.class));
+        verify(eventPublisher).publishEvent(any(SubmissionSubmittedEvent.class));
     }
 
     @Test

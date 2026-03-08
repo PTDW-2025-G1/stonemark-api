@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.decision.dtos.ActiveDecisionViewDto;
 import pt.estga.decision.dtos.ManualDecisionRequest;
 import pt.estga.decision.mappers.DecisionMapper;
-import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
+import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.decision.services.ProposalDecisionService;
 import pt.estga.shared.exceptions.InvalidCredentialsException;
@@ -33,7 +33,7 @@ import java.util.List;
 public class DecisionsController {
 
     private final DecisionServiceFactory decisionServiceFactory;
-    private final ProposalDecisionAttemptRepository attemptRepo;
+    private final SubmissionDecisionAttemptRepository attemptRepo;
     private final UserService userService;
     private final DecisionMapper decisionMapper;
 
@@ -46,7 +46,7 @@ public class DecisionsController {
     })
     @GetMapping("/active")
     public ResponseEntity<ActiveDecisionViewDto> getActiveDecision(@PathVariable Long id) {
-        return attemptRepo.findFirstByProposalIdOrderByDecidedAtDesc(id)
+        return attemptRepo.findFirstBySubmissionIdOrderByDecidedAtDesc(id)
                 .map(decisionMapper::toActiveDecisionViewDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -60,7 +60,7 @@ public class DecisionsController {
     })
     @GetMapping("/history")
     public ResponseEntity<List<ActiveDecisionViewDto>> getDecisionHistory(@PathVariable Long id) {
-        return ResponseEntity.ok(attemptRepo.findByProposalIdOrderByDecidedAtDesc(id)
+        return ResponseEntity.ok(attemptRepo.findBySubmissionIdOrderByDecidedAtDesc(id)
                 .stream()
                 .map(decisionMapper::toActiveDecisionViewDto)
                 .toList());

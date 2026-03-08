@@ -13,7 +13,7 @@ import pt.estga.content.services.MonumentService;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.events.ProposalAcceptedEvent;
+import pt.estga.submission.events.SubmissionAcceptedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 import pt.estga.user.entities.User;
 
@@ -70,7 +70,7 @@ class SubmissionEventListenerTest {
         when(markOccurrenceService.create(any(MarkOccurrence.class), isNull(), eq(40L)))
                 .thenReturn(MarkOccurrence.builder().id(99L).build());
 
-        listener.handleProposalAccepted(new ProposalAcceptedEvent(this, proposal));
+        listener.handleProposalAccepted(new SubmissionAcceptedEvent(this, proposal));
 
         verify(monumentService).update(monument);
         verify(markOccurrenceService).create(
@@ -89,7 +89,7 @@ class SubmissionEventListenerTest {
         MarkOccurrenceSubmission eventProposal = MarkOccurrenceSubmission.builder().id(1L).build();
         when(proposalRepo.findById(1L)).thenReturn(Optional.empty());
 
-        listener.handleProposalAccepted(new ProposalAcceptedEvent(this, eventProposal));
+        listener.handleProposalAccepted(new SubmissionAcceptedEvent(this, eventProposal));
 
         verify(monumentService, never()).update(any());
         verify(markOccurrenceService, never()).create(any(), any(), any());
@@ -97,7 +97,7 @@ class SubmissionEventListenerTest {
 
     @Test
     void handleProposalAccepted_ShouldDoNothingWhenEventProposalIsNull() throws IOException {
-        listener.handleProposalAccepted(new ProposalAcceptedEvent(this, null));
+        listener.handleProposalAccepted(new SubmissionAcceptedEvent(this, null));
 
         verify(proposalRepo, never()).findById(any());
         verify(monumentService, never()).update(any());

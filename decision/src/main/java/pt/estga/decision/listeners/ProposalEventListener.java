@@ -14,8 +14,8 @@ import pt.estga.content.services.MonumentService;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.decision.services.ProposalDecisionService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.events.ProposalAcceptedEvent;
-import pt.estga.submission.events.ProposalScoredEvent;
+import pt.estga.submission.events.SubmissionAcceptedEvent;
+import pt.estga.submission.events.SubmissionScoredEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class ProposalEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalScored(ProposalScoredEvent event) {
+    public void handleProposalScored(SubmissionScoredEvent event) {
         var proposalId = event.getProposalId();
         log.info("Starting async automatic decision process for submission ID: {}", proposalId);
 
@@ -45,9 +45,9 @@ public class ProposalEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalAccepted(ProposalAcceptedEvent event) {
+    public void handleProposalAccepted(SubmissionAcceptedEvent event) {
         if (event.getProposal() == null) {
-            log.warn("Received ProposalAcceptedEvent without submission payload");
+            log.warn("Received SubmissionAcceptedEvent without submission payload");
             return;
         }
 

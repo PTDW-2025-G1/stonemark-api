@@ -4,10 +4,10 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.decision.entities.ProposalDecisionAttempt;
+import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
-import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
+import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.repositories.ProposalRepository;
@@ -19,14 +19,14 @@ import java.time.Instant;
 @Slf4j
 public abstract class ProposalDecisionService<T extends Submission> {
 
-    protected final ProposalDecisionAttemptRepository attemptRepo;
+    protected final SubmissionDecisionAttemptRepository attemptRepo;
     protected final ProposalRepository<T> proposalRepo;
     protected final ApplicationEventPublisher eventPublisher;
     @Getter
     protected final Class<T> proposalType;
 
     protected ProposalDecisionService(
-            ProposalDecisionAttemptRepository attemptRepo,
+            SubmissionDecisionAttemptRepository attemptRepo,
             ProposalRepository<T> proposalRepo,
             ApplicationEventPublisher eventPublisher,
             Class<T> proposalType
@@ -41,7 +41,7 @@ public abstract class ProposalDecisionService<T extends Submission> {
      * Triggers the automatic decision logic for a submission by ID.
      */
     @Transactional
-    public ProposalDecisionAttempt makeAutomaticDecision(Long proposalId) {
+    public SubmissionDecisionAttempt makeAutomaticDecision(Long proposalId) {
         log.info("Processing automatic decision for submission ID: {}", proposalId);
         T proposal = getProposalOrThrow(proposalId);
         return makeAutomaticDecision(proposal);
@@ -52,19 +52,19 @@ public abstract class ProposalDecisionService<T extends Submission> {
      * Subclasses must implement the specific logic for automatic decision-making.
      */
     @Transactional
-    public abstract ProposalDecisionAttempt makeAutomaticDecision(T proposal);
+    public abstract SubmissionDecisionAttempt makeAutomaticDecision(T proposal);
 
     /**
      * Creates a manual decision for a submission.
      */
     @Transactional
-    public ProposalDecisionAttempt makeManualDecision(Long proposalId, DecisionOutcome outcome, String notes, User moderator) {
+    public SubmissionDecisionAttempt makeManualDecision(Long proposalId, DecisionOutcome outcome, String notes, User moderator) {
         log.info("Creating manual decision for submission ID: {}, Outcome: {}, Moderator ID: {}", proposalId, outcome, moderator.getId());
         T proposal = getProposalOrThrow(proposalId);
 
         validateManualDecision(proposal, outcome);
 
-        ProposalDecisionAttempt attempt = ProposalDecisionAttempt.builder()
+        SubmissionDecisionAttempt attempt = SubmissionDecisionAttempt.builder()
                 .submission(proposal)
                 .type(DecisionType.MANUAL)
                 .outcome(outcome)
@@ -89,7 +89,7 @@ public abstract class ProposalDecisionService<T extends Submission> {
      */
     @Transactional
     public void activateDecision(Long attemptId) {
-        ProposalDecisionAttempt attempt = attemptRepo.findById(attemptId)
+        SubmissionDecisionAttempt attempt = attemptRepo.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("Decision attempt not found with id: " + attemptId));
         
         if (!proposalType.isInstance(attempt.getSubmission())) {
@@ -123,7 +123,7 @@ public abstract class ProposalDecisionService<T extends Submission> {
 
     // ==== Helper Methods ====
 
-    protected ProposalDecisionAttempt saveAndApplyDecision(T proposal, ProposalDecisionAttempt attempt) {
+    protected SubmissionDecisionAttempt saveAndApplyDecision(T proposal, SubmissionDecisionAttempt attempt) {
         attemptRepo.save(attempt);
         log.debug("Saved decision attempt with ID: {}", attempt.getId());
 
@@ -140,7 +140,7 @@ public abstract class ProposalDecisionService<T extends Submission> {
 
     protected abstract void publishAcceptedEvent(T proposal);
 
-    private void applyDecisionToProposal(T proposal, ProposalDecisionAttempt decision) {
+    private void applyDecisionToProposal(T proposal, SubmissionDecisionAttempt decision) {
         if (decision.getType() == DecisionType.MANUAL) {
             proposal.setStatus(decision.getOutcome() == DecisionOutcome.ACCEPT
                     ? SubmissionStatus.MANUALLY_ACCEPTED

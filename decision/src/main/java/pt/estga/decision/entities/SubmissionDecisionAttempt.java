@@ -15,7 +15,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class ProposalDecisionAttempt {
+public class SubmissionDecisionAttempt {
 
     @Id
     @GeneratedValue

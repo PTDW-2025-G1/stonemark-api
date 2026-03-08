@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.submission.entities.Submission;
-import pt.estga.submission.events.ProposalScoredEvent;
-import pt.estga.submission.events.ProposalSubmittedEvent;
+import pt.estga.submission.events.SubmissionScoredEvent;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.ProposalRepository;
 import pt.estga.submission.services.ProposalScoringService;
 
@@ -27,7 +27,7 @@ public class ProposalSubmissionListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalSubmitted(ProposalSubmittedEvent event) {
+    public void handleProposalSubmitted(SubmissionSubmittedEvent event) {
         Long proposalId = event.getProposalId();
         log.info("Processing submission asynchronously for proposal ID: {}", proposalId);
 
@@ -45,7 +45,7 @@ public class ProposalSubmissionListener {
                     log.info("Scores updated for proposal ID: {}. Priority={}, Credibility={}", proposalId, priority, credibility);
 
                     // Publish event indicating scoring is complete
-                    eventPublisher.publishEvent(new ProposalScoredEvent(this, proposalId));
+                    eventPublisher.publishEvent(new SubmissionScoredEvent(this, proposalId));
 
                 } catch (Exception e) {
                     log.error("Error calculating scores for proposal ID: {}", proposalId, e);

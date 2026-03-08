@@ -11,8 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.detection.model.DetectionResult;
 import pt.estga.detection.service.DetectionService;
 import pt.estga.file.services.MediaService;
-import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.events.ProposalPhotoUploadedEvent;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.io.InputStream;
@@ -29,27 +28,28 @@ public class ProposalEnrichmentListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalPhotoUploaded(ProposalPhotoUploadedEvent event) {
-        MarkOccurrenceSubmission proposal = event.getProposal();
-        log.info("Async detection processing for proposal");
+    public void handleProposalSubmitted(SubmissionSubmittedEvent event) {
+        Long proposalId = event.getProposalId();
+        log.info("Async detection processing for submitted proposal ID: {}", proposalId);
 
-        try (InputStream detectionInputStream = mediaService.loadFileById(proposal.getOriginalMediaFile().getId()).getInputStream()) {
-            DetectionResult detectionResult = detectionService.detect(detectionInputStream, proposal.getOriginalMediaFile().getOriginalFilename());
-            if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
-                proposal.setEmbedding(detectionResult.embedding());
-                
-                // If the proposal has already been persisted (e.g. user finished flow quickly), update it in DB
-                if (proposal.getId() != null) {
-                    log.info("Submission already submitted (ID: {}), updating embedding in DB", proposal.getId());
-                    proposalRepo.save(proposal);
-                } else {
-                    log.info("Submission not yet submitted, embedding set in memory object");
-                }
-            } else {
-                log.info("No embedding detected for proposal");
+        proposalRepo.findById(proposalId).ifPresentOrElse(proposal -> {
+            if (proposal.getOriginalMediaFile() == null) {
+                log.info("Proposal ID {} has no original media file. Skipping enrichment.", proposalId);
+                return;
             }
-        } catch (Exception e) {
-            log.warn("Detection service failed for proposal. Proceeding without detection.", e);
-        }
+
+            try (InputStream detectionInputStream = mediaService.loadFileById(proposal.getOriginalMediaFile().getId()).getInputStream()) {
+                DetectionResult detectionResult = detectionService.detect(detectionInputStream, proposal.getOriginalMediaFile().getOriginalFilename());
+                if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
+                    proposal.setEmbedding(detectionResult.embedding());
+                    proposalRepo.save(proposal);
+                    log.info("Embedding updated for proposal ID: {}", proposalId);
+                } else {
+                    log.info("No embedding detected for proposal ID: {}", proposalId);
+                }
+            } catch (Exception e) {
+                log.warn("Detection service failed for proposal ID {}. Proceeding without detection.", proposalId, e);
+            }
+        }, () -> log.warn("Submitted proposal with ID {} not found during enrichment", proposalId));
     }
 }

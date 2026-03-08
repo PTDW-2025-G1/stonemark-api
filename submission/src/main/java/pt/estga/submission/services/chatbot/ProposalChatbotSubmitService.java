@@ -2,14 +2,12 @@ package pt.estga.submission.services.chatbot;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
-import pt.estga.submission.events.ProposalPhotoUploadedEvent;
 import pt.estga.submission.services.submission.MarkOccurrenceProposalSubmissionService;
 import pt.estga.user.entities.User;
 
@@ -23,7 +21,6 @@ public class ProposalChatbotSubmitService {
 
     private final MediaService mediaService;
     private final MarkOccurrenceProposalSubmissionService submissionService;
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Submits a proposal collected from the chatbot flow.
@@ -56,10 +53,7 @@ public class ProposalChatbotSubmitService {
         proposal.setSubmittedBy(user);
         proposal.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
 
-        // Submit the proposal (this persists it and gives it an ID)
-        MarkOccurrenceSubmission submittedProposal = submissionService.submit(proposal);
-
-        // Publish event for async processing (e.g., detection) after submission
-        eventPublisher.publishEvent(new ProposalPhotoUploadedEvent(this, submittedProposal));
+        // Submit the proposal (this persists it and emits SubmissionSubmittedEvent)
+        submissionService.submit(proposal);
     }
 }

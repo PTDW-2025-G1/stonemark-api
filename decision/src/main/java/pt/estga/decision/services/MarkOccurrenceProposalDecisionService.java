@@ -4,13 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.decision.entities.ProposalDecisionAttempt;
+import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
-import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
+import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.events.ProposalAcceptedEvent;
+import pt.estga.submission.events.SubmissionAcceptedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.time.Instant;
@@ -24,7 +24,7 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
     private final List<DecisionRule<MarkOccurrenceSubmission>> rules;
 
     public MarkOccurrenceProposalDecisionService(
-            ProposalDecisionAttemptRepository attemptRepo,
+            SubmissionDecisionAttemptRepository attemptRepo,
             MarkOccurrenceProposalRepository proposalRepo,
             ApplicationEventPublisher eventPublisher,
             List<DecisionRule<MarkOccurrenceSubmission>> rules
@@ -45,7 +45,7 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
      */
     @Override
     @Transactional
-    public ProposalDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal) {
+    public SubmissionDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal) {
         log.debug("Running automatic decision logic for submission ID: {}, Priority: {}", proposal.getId(), proposal.getPriority());
 
         DecisionOutcome outcome = DecisionOutcome.INCONCLUSIVE;
@@ -70,7 +70,7 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
 
         log.info("Automatic decision outcome for submission ID {}: {} (Confident: {})", proposal.getId(), outcome, confident);
 
-        var attempt = ProposalDecisionAttempt.builder()
+        var attempt = SubmissionDecisionAttempt.builder()
                 .submission(proposal)
                 .type(DecisionType.AUTOMATIC)
                 .outcome(outcome)
@@ -88,6 +88,6 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
 
     @Override
     protected void publishAcceptedEvent(MarkOccurrenceSubmission proposal) {
-        eventPublisher.publishEvent(new ProposalAcceptedEvent(this, proposal));
+        eventPublisher.publishEvent(new SubmissionAcceptedEvent(this, proposal));
     }
 }

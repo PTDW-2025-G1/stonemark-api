@@ -6,10 +6,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
-import pt.estga.decision.entities.ProposalDecisionAttempt;
+import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
-import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
+import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.repositories.ProposalRepository;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 class SubmissionDecisionServiceTest {
 
     @Mock
-    private ProposalDecisionAttemptRepository attemptRepo;
+    private SubmissionDecisionAttemptRepository attemptRepo;
 
     @Mock
     private ProposalRepository<MarkOccurrenceSubmission> proposalRepo;
@@ -36,7 +36,7 @@ class SubmissionDecisionServiceTest {
     // Concrete implementation for testing abstract class
     private static class TestProposalDecisionService extends ProposalDecisionService<MarkOccurrenceSubmission> {
         public TestProposalDecisionService(
-                ProposalDecisionAttemptRepository attemptRepo,
+                SubmissionDecisionAttemptRepository attemptRepo,
                 ProposalRepository<MarkOccurrenceSubmission> proposalRepo,
                 ApplicationEventPublisher eventPublisher
         ) {
@@ -44,7 +44,7 @@ class SubmissionDecisionServiceTest {
         }
 
         @Override
-        public ProposalDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal) {
+        public SubmissionDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal) {
             return null; // Not testing this here
         }
 
@@ -71,7 +71,7 @@ class SubmissionDecisionServiceTest {
         when(proposalRepo.findById(proposalId)).thenReturn(Optional.of(proposal));
 
         // Act
-        ProposalDecisionAttempt result = service.makeManualDecision(proposalId, DecisionOutcome.ACCEPT, "Looks good", moderator);
+        SubmissionDecisionAttempt result = service.makeManualDecision(proposalId, DecisionOutcome.ACCEPT, "Looks good", moderator);
 
         // Assert
         assertNotNull(result);
@@ -80,7 +80,7 @@ class SubmissionDecisionServiceTest {
         assertEquals(moderator, result.getDecidedBy());
         
         assertEquals(SubmissionStatus.MANUALLY_ACCEPTED, proposal.getStatus());
-        verify(attemptRepo).save(any(ProposalDecisionAttempt.class));
+        verify(attemptRepo).save(any(SubmissionDecisionAttempt.class));
         verify(proposalRepo).save(proposal);
     }
 
@@ -127,7 +127,7 @@ class SubmissionDecisionServiceTest {
         // Arrange
         Long attemptId = 100L;
         MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder().id(1L).build();
-        ProposalDecisionAttempt attempt = ProposalDecisionAttempt.builder()
+        SubmissionDecisionAttempt attempt = SubmissionDecisionAttempt.builder()
                 .id(attemptId)
                 .submission(proposal)
                 .type(DecisionType.MANUAL)

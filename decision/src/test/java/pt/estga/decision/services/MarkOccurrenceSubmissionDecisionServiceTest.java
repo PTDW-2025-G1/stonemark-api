@@ -8,15 +8,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
-import pt.estga.decision.entities.ProposalDecisionAttempt;
+import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
-import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
+import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.decision.rules.DecisionRuleResult;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.events.ProposalAcceptedEvent;
+import pt.estga.submission.events.SubmissionAcceptedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
 class MarkOccurrenceSubmissionDecisionServiceTest {
 
     @Mock
-    private ProposalDecisionAttemptRepository attemptRepo;
+    private SubmissionDecisionAttemptRepository attemptRepo;
 
     @Mock
     private MarkOccurrenceProposalRepository proposalRepo;
@@ -64,7 +64,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         when(rule1.evaluate(proposal)).thenReturn(DecisionRuleResult.conclusive(DecisionOutcome.ACCEPT, true, "Rule 1 matched"));
 
         // Act
-        ProposalDecisionAttempt result = decisionService.makeAutomaticDecision(proposal);
+        SubmissionDecisionAttempt result = decisionService.makeAutomaticDecision(proposal);
 
         // Assert
         assertNotNull(result);
@@ -74,10 +74,10 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         assertEquals("Rule 1 matched", result.getNotes());
 
         verify(rule2, never()).evaluate(any()); // Should stop after first match
-        verify(attemptRepo).save(any(ProposalDecisionAttempt.class));
+        verify(attemptRepo).save(any(SubmissionDecisionAttempt.class));
         verify(proposalRepo).save(proposal);
         assertEquals(SubmissionStatus.AUTO_ACCEPTED, proposal.getStatus());
-        verify(eventPublisher).publishEvent(any(ProposalAcceptedEvent.class));
+        verify(eventPublisher).publishEvent(any(SubmissionAcceptedEvent.class));
     }
 
     @Test
@@ -91,7 +91,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         when(rule1.evaluate(proposal)).thenReturn(null); // No match
 
         // Act
-        ProposalDecisionAttempt result = decisionService.makeAutomaticDecision(proposal);
+        SubmissionDecisionAttempt result = decisionService.makeAutomaticDecision(proposal);
 
         // Assert
         assertEquals(DecisionOutcome.INCONCLUSIVE, result.getOutcome());
@@ -114,6 +114,6 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
 
         // Assert
         assertEquals(SubmissionStatus.AUTO_REJECTED, proposal.getStatus());
-        verify(eventPublisher, never()).publishEvent(any(ProposalAcceptedEvent.class)); // Should NOT publish accepted event
+        verify(eventPublisher, never()).publishEvent(any(SubmissionAcceptedEvent.class)); // Should NOT publish accepted event
     }
 }

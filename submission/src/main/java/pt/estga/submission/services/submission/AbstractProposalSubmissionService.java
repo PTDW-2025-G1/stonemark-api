@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.events.ProposalSubmittedEvent;
+import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.ProposalRepository;
 
 import java.time.Instant;
@@ -33,8 +33,8 @@ public abstract class AbstractProposalSubmissionService<T extends Submission> {
         T savedProposal = repository.save(proposal);
         log.info("Submission submitted successfully with ID: {}", savedProposal.getId());
 
-        eventPublisher.publishEvent(new ProposalSubmittedEvent(this, savedProposal.getId()));
-        log.debug("Published ProposalSubmittedEvent for proposal ID: {}", savedProposal.getId());
+        eventPublisher.publishEvent(new SubmissionSubmittedEvent(this, savedProposal.getId()));
+        log.debug("Published SubmissionSubmittedEvent for proposal ID: {}", savedProposal.getId());
 
         return savedProposal;
     }
