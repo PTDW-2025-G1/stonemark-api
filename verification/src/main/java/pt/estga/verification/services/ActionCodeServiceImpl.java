@@ -91,7 +91,6 @@ public class ActionCodeServiceImpl implements ActionCodeService {
         return switch (type) {
             case EMAIL_VERIFICATION -> emailVerificationExpiration;
             case PHONE_VERIFICATION -> telephoneVerificationExpiration;
-            case RESET_PASSWORD -> passwordResetExpiration;
             case TWO_FACTOR -> twoFactorExpiration;
             case DEVICE_VERIFICATION -> deviceVerificationExpiration;
             case TELEGRAM_VERIFICATION, CHATBOT_VERIFICATION -> chatbotVerificationExpiration;

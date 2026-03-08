@@ -7,7 +7,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.task.TaskExecutor;
-import pt.estga.verification.services.commands.PasswordResetInitiationCommand;
 import pt.estga.verification.services.commands.VerificationCommand;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -15,9 +14,6 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class VerificationInitiationServiceTest {
-
-    @Mock
-    private PasswordResetInitiationCommand passwordResetInitiationCommand;
 
     @Mock
     private TaskExecutor taskExecutor;
@@ -42,17 +38,6 @@ class VerificationInitiationServiceTest {
         verificationInitiationService.initiate(mockVerificationCommand);
 
         verify(mockVerificationCommand, times(1)).execute(isNull());
-        verify(taskExecutor, times(1)).execute(mockRunnable);
-    }
-
-    @Test
-    void initiatePasswordReset_shouldExecutePasswordResetCommandAndSubmitToTaskExecutor() {
-        String contactValue = "test@example.com";
-        when(passwordResetInitiationCommand.execute(anyString())).thenReturn(mockRunnable);
-
-        verificationInitiationService.initiatePasswordReset(contactValue);
-
-        verify(passwordResetInitiationCommand, times(1)).execute(contactValue);
         verify(taskExecutor, times(1)).execute(mockRunnable);
     }
 }

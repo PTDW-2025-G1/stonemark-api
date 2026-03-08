@@ -37,8 +37,7 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
     // Define types that are valid for code confirmation
     private static final Set<ActionCodeType> VALID_CODE_CONFIRMATION_TYPES = Set.of(
             ActionCodeType.EMAIL_VERIFICATION,
-            ActionCodeType.PHONE_VERIFICATION,
-            ActionCodeType.RESET_PASSWORD
+            ActionCodeType.PHONE_VERIFICATION
     );
 
     /**
@@ -86,34 +85,5 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
         }
         log.debug("Using processor {} for code type: {}", processor.getClass().getSimpleName(), type);
         return processor.process(actionCode.getRecipient(), actionCode);
-    }
-
-    /**
-     * Password reset is no longer handled locally. Authentication credentials are managed by Keycloak.
-     */
-    @Transactional
-    @Override
-    public void processPasswordReset(String code, String newPassword) {
-        log.warn("Password reset requested for code {}, but local password management is disabled in Keycloak-only mode", code);
-        throw new IllegalStateException("Password reset is handled by Keycloak and is no longer available in this API.");
-    }
-
-    /**
-     * Validates a password reset code without processing the reset itself.
-     *
-     * @param code The password reset code string.
-     * @return An Optional containing the User if the code is valid and for password reset, otherwise empty.
-     */
-    @Override
-    public Optional<User> validatePasswordResetToken(String code) {
-        try {
-            ActionCode actionCode = actionCodeValidationService.getValidatedActionCode(code);
-            if (actionCode.getType() == ActionCodeType.RESET_PASSWORD) {
-                return Optional.of(actionCode.getUser());
-            }
-        } catch (InvalidActionCodeException | ActionCodeExpiredException | ActionCodeConsumedException e) {
-            log.debug("Validation failed for password reset token: {}", code, e);
-        }
-        return Optional.empty();
     }
 }

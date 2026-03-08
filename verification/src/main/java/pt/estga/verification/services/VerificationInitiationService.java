@@ -6,6 +6,4 @@ public interface VerificationInitiationService {
 
     void initiate(VerificationCommand<Void> command);
 
-    void initiatePasswordReset(String contactValue);
-
 }

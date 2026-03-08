@@ -3,7 +3,6 @@ package pt.estga.verification.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
-import pt.estga.verification.services.commands.PasswordResetInitiationCommand;
 import pt.estga.verification.services.commands.VerificationCommand;
 
 /**
@@ -15,7 +14,6 @@ import pt.estga.verification.services.commands.VerificationCommand;
 @RequiredArgsConstructor
 public class VerificationInitiationServiceImpl implements VerificationInitiationService {
 
-    private final PasswordResetInitiationCommand passwordResetInitiationCommand;
     private final TaskExecutor taskExecutor;
 
     /**
@@ -27,18 +25,6 @@ public class VerificationInitiationServiceImpl implements VerificationInitiation
     @Override
     public void initiate(VerificationCommand<Void> command) {
         Runnable task = command.execute(null);
-        taskExecutor.execute(task);
-    }
-
-    /**
-     * Initiates a password reset verification for a given contact value.
-     * This method now uses the injected {@link PasswordResetInitiationCommand}.
-     *
-     * @param contactValue The contact value (e.g., email or phone number) for which to initiate password reset.
-     */
-    @Override
-    public void initiatePasswordReset(String contactValue) {
-        Runnable task = passwordResetInitiationCommand.execute(contactValue);
         taskExecutor.execute(task);
     }
 }

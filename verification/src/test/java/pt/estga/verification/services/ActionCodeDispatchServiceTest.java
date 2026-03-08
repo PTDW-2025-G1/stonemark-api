@@ -67,7 +67,7 @@ class ActionCodeDispatchServiceTest {
 
     @Test
     void sendVerification_shouldNotDispatch_whenNoProcessorFound() {
-        ActionCode unknownTypeCode = ActionCode.builder().type(ActionCodeType.RESET_PASSWORD).build();
+        ActionCode unknownTypeCode = ActionCode.builder().type(ActionCodeType.DEVICE_VERIFICATION).build();
 
         actionCodeDispatchService.sendVerification(recipient, unknownTypeCode);
 

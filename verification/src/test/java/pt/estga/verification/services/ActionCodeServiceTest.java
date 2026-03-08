@@ -106,25 +106,6 @@ class ActionCodeServiceTest {
     }
 
     @Test
-    void createAndSave_shouldSetCorrectExpirationForPasswordReset() {
-        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.RESET_PASSWORD))
-                .thenReturn(Optional.empty());
-        when(actionCodeRepository.save(any(ActionCode.class)))
-                .thenAnswer(invocation -> {
-                    ActionCode ac = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(ac, "id", 3L);
-                    return ac;
-                });
-
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.RESET_PASSWORD);
-
-        assertNotNull(createdCode);
-        assertEquals(ActionCodeType.RESET_PASSWORD, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(29, ChronoUnit.MINUTES)));
-        assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(31, ChronoUnit.MINUTES)));
-    }
-
-    @Test
     void createAndSave_shouldSetCorrectExpirationForTwoFactor() {
         when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.TWO_FACTOR))
                 .thenReturn(Optional.empty());
