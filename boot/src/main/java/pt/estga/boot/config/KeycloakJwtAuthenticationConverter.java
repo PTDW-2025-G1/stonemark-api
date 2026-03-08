@@ -3,9 +3,9 @@ package pt.estga.boot.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
@@ -41,9 +41,8 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
                 .accountNonLocked(!user.isAccountLocked())
                 .build();
 
-        JwtAuthenticationToken authToken = new JwtAuthenticationToken(jwt, authorities, user.getUsername());
-        authToken.setDetails(principal);
-        return authToken;
+        // Return authentication with AppPrincipal as the principal (not in details)
+        return new UsernamePasswordAuthenticationToken(principal, null, authorities);
     }
 }
 
