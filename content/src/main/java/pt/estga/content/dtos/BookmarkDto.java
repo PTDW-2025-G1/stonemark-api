@@ -1,4 +1,4 @@
-package pt.estga.bookmark.dtos;
+package pt.estga.content.dtos;
 
 import pt.estga.shared.enums.TargetType;
 

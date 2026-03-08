@@ -32,7 +32,6 @@
         <module>submission</module>
         <module>support</module>
         <module>chatbot</module>
-        <module>bookmark</module>
         <module>verification</module>
         <module>report</module>
         <module>security</module>

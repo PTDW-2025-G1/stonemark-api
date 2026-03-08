@@ -1,6 +1,6 @@
-package pt.estga.bookmark.services;
+package pt.estga.content.services;
 
-import pt.estga.bookmark.dtos.BookmarkDto;
+import pt.estga.content.dtos.BookmarkDto;
 import pt.estga.shared.enums.TargetType;
 
 import java.util.List;
