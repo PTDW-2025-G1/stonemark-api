@@ -32,7 +32,7 @@ public class WhatsAppAuthService implements AuthService {
                             .id(user.getId())
                             .type(PrincipalType.USER)
                             .identifier(user.getUsername())
-                            .password(user.getPassword())
+                            .password(null)
                             .authorities(SecurityUtils.mapUserRolesToAuthorities(user.getRole()))
                             .enabled(user.isEnabled())
                             .accountNonLocked(!user.isAccountLocked())

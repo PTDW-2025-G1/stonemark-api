@@ -3,15 +3,13 @@ package pt.estga.verification.services;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.shared.exceptions.*;
+import pt.estga.user.entities.User;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.processors.VerificationProcessor;
-import pt.estga.shared.exceptions.*;
-import pt.estga.user.entities.User;
-import pt.estga.user.services.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -30,9 +28,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class VerificationProcessingServiceImpl implements VerificationProcessingService {
 
-    private final ActionCodeService actionCodeService;
-    private final UserService userService;
-    private final PasswordEncoder passwordEncoder;
     private final ActionCodeValidationService actionCodeValidationService;
     private final List<VerificationProcessor> purposeProcessors;
     private final UserVerificationActivationService userVerificationActivationService;
@@ -94,39 +89,13 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
     }
 
     /**
-     * Processes a password reset request using a valid code and a new password.
-     *
-     * @param code The password reset code.
-     * @param newPassword The new password for the user.
-     * @throws InvalidVerificationPurposeException if the code's type is not PASSWORD_RESET.
-     * @throws SamePasswordException if the new password is the same as the current password.
+     * Password reset is no longer handled locally. Authentication credentials are managed by Keycloak.
      */
     @Transactional
     @Override
     public void processPasswordReset(String code, String newPassword) {
-        log.info("Attempting to process password reset for code: {}", code);
-        ActionCode actionCode = actionCodeValidationService.getValidatedActionCode(code);
-        log.debug("Code {} validated for password reset. Type: {}", code, actionCode.getType());
-
-        if (actionCode.getType() != ActionCodeType.RESET_PASSWORD) {
-            log.warn("Invalid type for password reset code {}. Expected RESET_PASSWORD, got {}", code, actionCode.getType());
-            throw new InvalidVerificationPurposeException(VerificationErrorMessages.INVALID_TOKEN_PURPOSE_PASSWORD_RESET);
-        }
-
-        User user = actionCode.getUser();
-        log.debug("User associated with code {}: {}", code, user.getUsername());
-
-        if (passwordEncoder.matches(newPassword, user.getPassword())) {
-            log.warn("Attempted to reset password for user {} with same password.", user.getUsername());
-            throw new SamePasswordException(VerificationErrorMessages.SAME_PASSWORD);
-        }
-
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userService.update(user);
-        log.info("Password successfully reset for user {}", user.getUsername());
-
-        actionCodeService.consumeCode(actionCode);
-        log.debug("Code {} consumed after successful password reset.", code);
+        log.warn("Password reset requested for code {}, but local password management is disabled in Keycloak-only mode", code);
+        throw new IllegalStateException("Password reset is handled by Keycloak and is no longer available in this API.");
     }
 
     /**

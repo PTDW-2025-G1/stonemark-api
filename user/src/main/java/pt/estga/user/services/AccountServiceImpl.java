@@ -18,14 +18,9 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     public AccountSecurityStatusDto getSecurityStatus(User user) {
 
-        User managedUser = userService
-                .findById(user.getId())
-                .orElseThrow();
+        userService.findById(user.getId()).orElseThrow();
 
-        boolean hasPassword =
-                managedUser.getPassword() != null &&
-                !managedUser.getPassword().isBlank();
-
-        return new AccountSecurityStatusDto(hasPassword);
+        // Passwords are managed by Keycloak, not by local user records.
+        return new AccountSecurityStatusDto(false);
     }
 }

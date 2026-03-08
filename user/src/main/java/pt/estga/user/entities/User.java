@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.enums.UserRole;
-import pt.estga.user.enums.TfaMethod;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -26,7 +25,6 @@ public class User {
     private String firstName;
     private String lastName;
     private String username;
-    private String password;
 
     @Column(unique = true)
     private String email;
@@ -53,12 +51,6 @@ public class User {
     @Builder.Default
     private boolean enabled = false;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private TfaMethod tfaMethod = TfaMethod.NONE;
-    private String tfaSecret;
-
     @CreationTimestamp
     private Instant createdAt;
 
@@ -74,18 +66,15 @@ public class User {
                 && Objects.equals(firstName, user.firstName)
                 && Objects.equals(lastName, user.lastName)
                 && Objects.equals(username, user.username)
-                && Objects.equals(password, user.password)
                 && Objects.equals(email, user.email)
                 && Objects.equals(phone, user.phone)
                 && Objects.equals(keycloakSub, user.keycloakSub)
                 && role == user.role
-                && tfaMethod == user.tfaMethod
-                && Objects.equals(tfaSecret, user.tfaSecret)
                 && Objects.equals(createdAt, user.createdAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, password, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
+        return Objects.hash(id, firstName, lastName, username, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, createdAt);
     }
 }

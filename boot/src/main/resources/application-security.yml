@@ -21,14 +21,6 @@ spring:
 
 application:
   security:
-    keycloak:
-      enabled: ${KEYCLOAK_ENABLED:false}
-    jwt:
-      secret-key: ${JWT_SECRET_KEY}
-      access-token:
-        expiration: 90000000 # 15 minutes
-      refresh-token:
-        expiration: 2592000000 # 30 days
     action-code:
       email-verification:
         expiration: 86400000 # 24 hours
@@ -42,5 +34,3 @@ application:
         expiration: 2592000000 # 30 days
       chatbot-verification:
         expiration: 900000 # 15 minutes
-    contact:
-      verification-required: true
