@@ -12,12 +12,12 @@ import pt.estga.user.entities.User;
 import java.time.Instant;
 
 @Entity
-@Table(name = "proposal", indexes = {
-        @Index(name = "idx_proposal_submitted_by", columnList = "submitted_by_id"),
-        @Index(name = "idx_proposal_status", columnList = "status")
+@Table(name = "submission", indexes = {
+        @Index(name = "idx_submission_submitted_by", columnList = "submitted_by_id"),
+        @Index(name = "idx_submission_status", columnList = "status")
 })
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "proposal_type", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "submission_type", discriminatorType = DiscriminatorType.STRING)
 @Getter
 @Setter
 @AllArgsConstructor
