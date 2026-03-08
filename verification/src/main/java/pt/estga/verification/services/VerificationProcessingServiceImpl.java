@@ -35,7 +35,7 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
     private final PasswordEncoder passwordEncoder;
     private final ActionCodeValidationService actionCodeValidationService;
     private final List<VerificationProcessor> purposeProcessors;
-    private final UserContactActivationService userContactActivationService;
+    private final UserVerificationActivationService userVerificationActivationService;
 
     private Map<ActionCodeType, VerificationProcessor> processorMap;
 
@@ -79,8 +79,8 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
 
         // For email and phone verification, the action is to activate the user contact.
         if (type == ActionCodeType.EMAIL_VERIFICATION || type == ActionCodeType.PHONE_VERIFICATION) {
-            log.debug("Processing user contact activation for code type: {}", type);
-            return userContactActivationService.activateUserContact(actionCode);
+            log.debug("Processing user verification activation for code type: {}", type);
+            return userVerificationActivationService.activateContactVerification(actionCode);
         }
 
         // For other types (like password reset), use the specific processor.
@@ -90,8 +90,7 @@ public class VerificationProcessingServiceImpl implements VerificationProcessing
             throw new IllegalStateException("Internal configuration error: No processor registered for action code type: " + type);
         }
         log.debug("Using processor {} for code type: {}", processor.getClass().getSimpleName(), type);
-        // We pass null for UserContact as it's not available or needed in this confirmation context.
-        return processor.process(null, actionCode);
+        return processor.process(actionCode.getRecipient(), actionCode);
     }
 
     /**

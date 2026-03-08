@@ -1,15 +1,14 @@
 package pt.estga.verification.services;
 
-import pt.estga.user.entities.UserContact;
+import pt.estga.user.entities.User;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
-import pt.estga.user.entities.User;
 
 import java.util.Optional;
 
 public interface ActionCodeService {
 
-    ActionCode createAndSave(User user, UserContact userContact, ActionCodeType type);
+    ActionCode createAndSave(User user, String recipient, ActionCodeType type);
 
     Optional<ActionCode> findByCode(String code);
 

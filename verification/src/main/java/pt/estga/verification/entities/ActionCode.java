@@ -2,9 +2,8 @@ package pt.estga.verification.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.user.entities.UserContact;
-import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.user.entities.User;
+import pt.estga.verification.enums.ActionCodeType;
 
 import java.time.Instant;
 
@@ -30,8 +29,8 @@ public class ActionCode {
     @ManyToOne
     private User user;
 
-    @ManyToOne
-    private UserContact userContact;
+    // Optional explicit recipient (email/phone) used by dispatch flows.
+    private String recipient;
 
     private String telegramId;
 
