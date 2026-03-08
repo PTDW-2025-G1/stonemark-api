@@ -1,14 +1,14 @@
 package pt.estga.chatbot.context;
 
 import lombok.Data;
-import pt.estga.proposal.entities.Proposal;
-import pt.estga.proposal.enums.SubmissionSource;
+import pt.estga.submission.entities.Submission;
+import pt.estga.submission.enums.SubmissionSource;
 
 import java.util.List;
 
 @Data
 public class ProposalContext {
-    private Proposal proposal;
+    private Submission submission;
     private List<String> suggestedMarkIds;
     private List<String> suggestedMonumentIds;
 
@@ -18,7 +18,7 @@ public class ProposalContext {
     private SubmissionSource submissionSource;
 
     public void clear() {
-        this.proposal = null;
+        this.submission = null;
         this.suggestedMarkIds = null;
         this.suggestedMonumentIds = null;
         this.photoData = null;

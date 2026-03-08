@@ -6,9 +6,9 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
-import pt.estga.proposal.services.chatbot.ProposalChatbotSubmitService;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.entities.Submission;
+import pt.estga.submission.services.chatbot.ProposalChatbotSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
@@ -22,8 +22,8 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        Proposal proposal = context.getProposalContext().getProposal();
-        if (!(proposal instanceof MarkOccurrenceProposal markProposal)) {
+        Submission submission = context.getProposalContext().getSubmission();
+        if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }
 
@@ -40,7 +40,7 @@ public class AddNotesHandler implements ConversationStateHandler {
                     ? userService.findById(domainUserId).orElse(null)
                     : null;
 
-            // Submit the proposal with all collected data (authenticated or anonymous)
+            // Submit the submission with all collected data (authenticated or anonymous)
             chatbotSubmitService.submitFromChatbot(
                     markProposal,
                     context.getProposalContext().getPhotoData(),
@@ -54,7 +54,7 @@ public class AddNotesHandler implements ConversationStateHandler {
 
             return HandlerOutcome.SUCCESS;
         } catch (Exception e) {
-            log.error("Failed to submit proposal from chatbot", e);
+            log.error("Failed to submit submission from chatbot", e);
             return HandlerOutcome.FAILURE;
         }
     }

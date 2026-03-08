@@ -9,9 +9,9 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.entities.Proposal;
-import pt.estga.proposal.enums.SubmissionSource;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.entities.Submission;
+import pt.estga.submission.enums.SubmissionSource;
 
 @Component
 @RequiredArgsConstructor
@@ -23,13 +23,13 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        Proposal proposal = context.getProposalContext().getProposal();
+        Submission submission = context.getProposalContext().getSubmission();
 
-        // Initialize a proposal object if not exists (but don't persist yet)
-        if (proposal == null) {
-            MarkOccurrenceProposal markProposal = new MarkOccurrenceProposal();
-            context.getProposalContext().setProposal(markProposal);
-        } else if (!(proposal instanceof MarkOccurrenceProposal)) {
+        // Initialize a submission object if not exists (but don't persist yet)
+        if (submission == null) {
+            MarkOccurrenceSubmission markProposal = new MarkOccurrenceSubmission();
+            context.getProposalContext().setSubmission(markProposal);
+        } else if (!(submission instanceof MarkOccurrenceSubmission)) {
             return HandlerOutcome.FAILURE;
         }
 

@@ -5,17 +5,17 @@ import org.springframework.stereotype.Component;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.decision.rules.DecisionRuleResult;
-import pt.estga.proposal.config.ProposalDecisionProperties;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
+import pt.estga.submission.config.SubmissionDecisionProperties;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 @Component
 @RequiredArgsConstructor
-public class LowPriorityRule implements DecisionRule<MarkOccurrenceProposal> {
+public class LowPriorityRule implements DecisionRule<MarkOccurrenceSubmission> {
 
-    private final ProposalDecisionProperties properties;
+    private final SubmissionDecisionProperties properties;
 
     @Override
-    public DecisionRuleResult evaluate(MarkOccurrenceProposal proposal) {
+    public DecisionRuleResult evaluate(MarkOccurrenceSubmission proposal) {
         Integer priority = proposal.getPriority();
 
         if (priority == null) {

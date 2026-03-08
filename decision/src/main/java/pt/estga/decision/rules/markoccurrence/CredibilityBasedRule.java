@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRule;
 import pt.estga.decision.rules.DecisionRuleResult;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 /**
  * Decision rule that evaluates proposals based on their credibility score.
@@ -12,14 +12,14 @@ import pt.estga.proposal.entities.MarkOccurrenceProposal;
  * for proposals with good data quality and user reputation.
  */
 @Component
-public class CredibilityBasedRule implements DecisionRule<MarkOccurrenceProposal> {
+public class CredibilityBasedRule implements DecisionRule<MarkOccurrenceSubmission> {
 
     // Credibility thresholds for automatic decisions
     private static final int HIGH_CREDIBILITY_THRESHOLD = 60;  // 60% credibility for auto-acceptance
     private static final int LOW_CREDIBILITY_THRESHOLD = 20;   // Below 20% auto-reject
 
     @Override
-    public DecisionRuleResult evaluate(MarkOccurrenceProposal proposal) {
+    public DecisionRuleResult evaluate(MarkOccurrenceSubmission proposal) {
         Integer credibilityScore = proposal.getCredibilityScore();
 
         if (credibilityScore == null) {

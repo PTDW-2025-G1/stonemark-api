@@ -29,7 +29,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/proposals/{id}/decisions")
 @RequiredArgsConstructor
 @PreAuthorize("hasAuthority('REVIEWER')")
-@Tag(name = "Proposal Decisions", description = "Endpoints for managing proposal decisions.")
+@Tag(name = "Submission Decisions", description = "Endpoints for managing submission decisions.")
 public class DecisionsController {
 
     private final DecisionServiceFactory decisionServiceFactory;
@@ -37,8 +37,8 @@ public class DecisionsController {
     private final UserService userService;
     private final DecisionMapper decisionMapper;
 
-    @Operation(summary = "Get active decision for proposal",
-               description = "Retrieves the latest decision attempt for a proposal.")
+    @Operation(summary = "Get active decision for submission",
+               description = "Retrieves the latest decision attempt for a submission.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Active decision retrieved successfully.",
                     content = @Content(schema = @Schema(implementation = ActiveDecisionViewDto.class))),
@@ -52,8 +52,8 @@ public class DecisionsController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @Operation(summary = "Get decision history for proposal",
-               description = "Retrieves the history of decision attempts for a proposal.")
+    @Operation(summary = "Get decision history for submission",
+               description = "Retrieves the history of decision attempts for a submission.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Decision history retrieved successfully.",
                     content = @Content(schema = @Schema(implementation = ActiveDecisionViewDto.class)))
@@ -67,10 +67,10 @@ public class DecisionsController {
     }
 
     @Operation(summary = "Create a manual decision",
-               description = "Creates a manual decision for a proposal (Accept/Reject).")
+               description = "Creates a manual decision for a submission (Accept/Reject).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Manual decision created successfully."),
-            @ApiResponse(responseCode = "404", description = "Proposal not found."),
+            @ApiResponse(responseCode = "404", description = "Submission not found."),
             @ApiResponse(responseCode = "401", description = "Unauthorized.")
     })
     @PostMapping("/manual")
@@ -91,10 +91,10 @@ public class DecisionsController {
     }
 
     @Operation(summary = "Rerun automatic decision",
-               description = "Triggers the automatic decision logic again for a proposal.")
+               description = "Triggers the automatic decision logic again for a submission.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Automatic decision rerun successfully."),
-            @ApiResponse(responseCode = "404", description = "Proposal not found.")
+            @ApiResponse(responseCode = "404", description = "Submission not found.")
     })
     @PostMapping("/automatic/rerun")
     public ResponseEntity<Void> rerunAutomaticDecision(@PathVariable Long id) {
@@ -104,11 +104,11 @@ public class DecisionsController {
     }
 
     @Operation(summary = "Activate a previous decision",
-               description = "Reverts the proposal status to a previous decision attempt.")
+               description = "Reverts the submission status to a previous decision attempt.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Decision activated successfully."),
-            @ApiResponse(responseCode = "404", description = "Proposal or decision attempt not found."),
-            @ApiResponse(responseCode = "400", description = "Decision attempt does not belong to the proposal.")
+            @ApiResponse(responseCode = "404", description = "Submission or decision attempt not found."),
+            @ApiResponse(responseCode = "400", description = "Decision attempt does not belong to the submission.")
     })
     @PostMapping("/{attemptId}/activate")
     public ResponseEntity<Void> activateDecision(
@@ -118,8 +118,8 @@ public class DecisionsController {
         var attempt = attemptRepo.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("Decision attempt not found with id: " + attemptId));
         
-        if (!attempt.getProposal().getId().equals(id)) {
-            // Returning 400 Bad Request for mismatched proposal ID
+        if (!attempt.getSubmission().getId().equals(id)) {
+            // Returning 400 Bad Request for mismatched submission ID
             return ResponseEntity.badRequest().build();
         }
         
@@ -129,10 +129,10 @@ public class DecisionsController {
     }
 
     @Operation(summary = "Deactivate current decision",
-               description = "Reverts the proposal status to UNDER_REVIEW, effectively removing the current decision.")
+               description = "Reverts the submission status to UNDER_REVIEW, effectively removing the current decision.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Decision deactivated successfully."),
-            @ApiResponse(responseCode = "404", description = "Proposal not found.")
+            @ApiResponse(responseCode = "404", description = "Submission not found.")
     })
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivateDecision(@PathVariable Long id) {

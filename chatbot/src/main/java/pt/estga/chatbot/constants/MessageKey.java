@@ -10,7 +10,7 @@ public class MessageKey {
     public static final String INVALID_SELECTION = "invalid_selection";
     public static final String HELP_OPTIONS_TITLE = "help_options_title";
 
-    // Proposal Flow
+    // Submission Flow
     public static final String PROPOSE_MARK_BTN = "propose_mark_btn";
     
     public static final String REQUEST_PHOTO_PROMPT = "request_photo_prompt";

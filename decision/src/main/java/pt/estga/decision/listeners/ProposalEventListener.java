@@ -13,10 +13,10 @@ import pt.estga.content.services.MarkOccurrenceService;
 import pt.estga.content.services.MonumentService;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.decision.services.ProposalDecisionService;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.events.ProposalAcceptedEvent;
-import pt.estga.proposal.events.ProposalScoredEvent;
-import pt.estga.proposal.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.events.ProposalAcceptedEvent;
+import pt.estga.submission.events.ProposalScoredEvent;
+import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.io.IOException;
 
@@ -35,11 +35,11 @@ public class ProposalEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProposalScored(ProposalScoredEvent event) {
         var proposalId = event.getProposalId();
-        log.info("Starting async automatic decision process for proposal ID: {}", proposalId);
+        log.info("Starting async automatic decision process for submission ID: {}", proposalId);
 
         ProposalDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(proposalId);
         decisionService.makeAutomaticDecision(proposalId);
-        log.info("Completed async automatic decision process for proposal ID: {}", proposalId);
+        log.info("Completed async automatic decision process for submission ID: {}", proposalId);
     }
 
     @Async
@@ -47,30 +47,30 @@ public class ProposalEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProposalAccepted(ProposalAcceptedEvent event) {
         if (event.getProposal() == null) {
-            log.warn("Received ProposalAcceptedEvent without proposal payload");
+            log.warn("Received ProposalAcceptedEvent without submission payload");
             return;
         }
 
         var proposalId = event.getProposal().getId();
-        log.info("Starting async acceptance processing for proposal ID: {}", proposalId);
+        log.info("Starting async acceptance processing for submission ID: {}", proposalId);
 
         proposalRepo.findById(proposalId).ifPresentOrElse(proposal -> {
             activateExistingMonumentIfNeeded(proposal);
             createOccurrenceFromAcceptedProposal(proposal);
-            log.info("Completed async acceptance processing for proposal ID: {}", proposalId);
-        }, () -> log.error("Proposal with ID {} not found during async acceptance processing", proposalId));
+            log.info("Completed async acceptance processing for submission ID: {}", proposalId);
+        }, () -> log.error("Submission with ID {} not found during async acceptance processing", proposalId));
     }
 
-    private void activateExistingMonumentIfNeeded(MarkOccurrenceProposal proposal) {
+    private void activateExistingMonumentIfNeeded(MarkOccurrenceSubmission proposal) {
         if (proposal.getExistingMonument() != null && !proposal.getExistingMonument().getActive()) {
             var monument = proposal.getExistingMonument();
             monument.setActive(true);
             monumentService.update(monument);
-            log.info("Activated monument ID: {} as part of proposal acceptance", monument.getId());
+            log.info("Activated monument ID: {} as part of submission acceptance", monument.getId());
         }
     }
 
-    private void createOccurrenceFromAcceptedProposal(MarkOccurrenceProposal proposal) {
+    private void createOccurrenceFromAcceptedProposal(MarkOccurrenceSubmission proposal) {
         MarkOccurrence occurrence = MarkOccurrence.builder()
                 .mark(proposal.getExistingMark())
                 .monument(proposal.getExistingMonument())
@@ -82,9 +82,9 @@ public class ProposalEventListener {
 
         try {
             MarkOccurrence saved = markOccurrenceService.create(occurrence, null, coverId);
-            log.info("Created mark occurrence ID: {} from accepted proposal ID: {}", saved.getId(), proposal.getId());
+            log.info("Created mark occurrence ID: {} from accepted submission ID: {}", saved.getId(), proposal.getId());
         } catch (IOException e) {
-            log.error("Failed to create mark occurrence from accepted proposal ID: {}", proposal.getId(), e);
+            log.error("Failed to create mark occurrence from accepted submission ID: {}", proposal.getId(), e);
         }
     }
 }

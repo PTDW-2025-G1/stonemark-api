@@ -9,10 +9,9 @@ import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.ProposalDecisionAttemptRepository;
 import pt.estga.decision.rules.DecisionRule;
-import pt.estga.decision.rules.DecisionRuleResult;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
-import pt.estga.proposal.events.ProposalAcceptedEvent;
-import pt.estga.proposal.repositories.MarkOccurrenceProposalRepository;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.events.ProposalAcceptedEvent;
+import pt.estga.submission.repositories.MarkOccurrenceProposalRepository;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -20,34 +19,34 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class MarkOccurrenceProposalDecisionService extends ProposalDecisionService<MarkOccurrenceProposal> {
+public class MarkOccurrenceProposalDecisionService extends ProposalDecisionService<MarkOccurrenceSubmission> {
 
-    private final List<DecisionRule<MarkOccurrenceProposal>> rules;
+    private final List<DecisionRule<MarkOccurrenceSubmission>> rules;
 
     public MarkOccurrenceProposalDecisionService(
             ProposalDecisionAttemptRepository attemptRepo,
             MarkOccurrenceProposalRepository proposalRepo,
             ApplicationEventPublisher eventPublisher,
-            List<DecisionRule<MarkOccurrenceProposal>> rules
+            List<DecisionRule<MarkOccurrenceSubmission>> rules
     ) {
-        super(attemptRepo, proposalRepo, eventPublisher, MarkOccurrenceProposal.class);
+        super(attemptRepo, proposalRepo, eventPublisher, MarkOccurrenceSubmission.class);
         this.rules = rules;
     }
 
     /**
-     * Automatically evaluates a proposal based on a set of injected rules.
+     * Automatically evaluates a submission based on a set of injected rules.
      * <p>
      * The rules are evaluated in order (defined by {@link DecisionRule#getOrder()}).
      * The first rule to return a conclusive result determines the outcome.
      * If no rule matches, the outcome defaults to INCONCLUSIVE.
      *
-     * @param proposal The proposal to evaluate.
+     * @param proposal The submission to evaluate.
      * @return The created decision attempt.
      */
     @Override
     @Transactional
-    public ProposalDecisionAttempt makeAutomaticDecision(MarkOccurrenceProposal proposal) {
-        log.debug("Running automatic decision logic for proposal ID: {}, Priority: {}", proposal.getId(), proposal.getPriority());
+    public ProposalDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal) {
+        log.debug("Running automatic decision logic for submission ID: {}, Priority: {}", proposal.getId(), proposal.getPriority());
 
         DecisionOutcome outcome = DecisionOutcome.INCONCLUSIVE;
         var confident = false;
@@ -64,15 +63,15 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
                 outcome = result.outcome();
                 confident = result.confident();
                 notes = result.reason();
-                log.info("Rule '{}' matched for proposal ID {}: {}", rule.getClass().getSimpleName(), proposal.getId(), result);
+                log.info("Rule '{}' matched for submission ID {}: {}", rule.getClass().getSimpleName(), proposal.getId(), result);
                 break;
             }
         }
 
-        log.info("Automatic decision outcome for proposal ID {}: {} (Confident: {})", proposal.getId(), outcome, confident);
+        log.info("Automatic decision outcome for submission ID {}: {} (Confident: {})", proposal.getId(), outcome, confident);
 
         var attempt = ProposalDecisionAttempt.builder()
-                .proposal(proposal)
+                .submission(proposal)
                 .type(DecisionType.AUTOMATIC)
                 .outcome(outcome)
                 .confident(confident)
@@ -84,11 +83,11 @@ public class MarkOccurrenceProposalDecisionService extends ProposalDecisionServi
     }
 
     @Override
-    protected void validateManualDecision(MarkOccurrenceProposal proposal, DecisionOutcome outcome) {
+    protected void validateManualDecision(MarkOccurrenceSubmission proposal, DecisionOutcome outcome) {
     }
 
     @Override
-    protected void publishAcceptedEvent(MarkOccurrenceProposal proposal) {
+    protected void publishAcceptedEvent(MarkOccurrenceSubmission proposal) {
         eventPublisher.publishEvent(new ProposalAcceptedEvent(this, proposal));
     }
 }

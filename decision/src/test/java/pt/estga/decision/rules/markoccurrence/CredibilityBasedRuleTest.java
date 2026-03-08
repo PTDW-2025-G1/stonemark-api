@@ -6,7 +6,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRuleResult;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.proposal.entities.MarkOccurrenceProposal;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +22,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_WhenCredibilityScoreIsNull() {
         // Arrange
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(null)
                 .build();
@@ -38,7 +38,7 @@ class CredibilityBasedRuleTest {
     void evaluate_ShouldAccept_HighCredibilityWithCompleteData() {
         // Arrange
         MediaFile mediaFile = MediaFile.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(75) // Above high threshold (60)
                 .latitude(40.0)
@@ -60,7 +60,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldAccept_HighCredibilityWithLocationAndNotes() {
         // Arrange - has location + notes but no media
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(70)
                 .latitude(40.0)
@@ -81,7 +81,7 @@ class CredibilityBasedRuleTest {
     void evaluate_ShouldAccept_HighCredibilityWithLocationAndMedia() {
         // Arrange - has location + media but no notes
         MediaFile mediaFile = MediaFile.builder().id(1L).build();
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(65)
                 .latitude(40.0)
@@ -101,7 +101,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_HighCredibilityWithoutLocation() {
         // Arrange - high credibility but no location (critical data missing)
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(70)
                 .userNotes("Good notes")
@@ -117,7 +117,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_HighCredibilityWithoutMediaAndNotes() {
         // Arrange - has location but no media/notes
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(70)
                 .latitude(40.0)
@@ -134,7 +134,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReject_VeryLowCredibility() {
         // Arrange
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(10) // Below low threshold (20)
                 .build();
@@ -152,7 +152,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReject_ZeroCredibility() {
         // Arrange
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(0)
                 .build();
@@ -168,7 +168,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_BorderlineLowCredibility() {
         // Arrange - borderline case (between 20-60, no acceptance)
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(30)
                 .latitude(40.0)
@@ -185,7 +185,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_EdgeCaseHighThreshold() {
         // Arrange - exactly at threshold (60)
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(60)
                 .latitude(40.0)
@@ -204,7 +204,7 @@ class CredibilityBasedRuleTest {
     @Test
     void evaluate_ShouldReturnNull_EdgeCaseLowThreshold() {
         // Arrange - exactly at threshold (20)
-        MarkOccurrenceProposal proposal = MarkOccurrenceProposal.builder()
+        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
                 .id(1L)
                 .credibilityScore(20)
                 .build();
