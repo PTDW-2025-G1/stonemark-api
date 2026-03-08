@@ -16,6 +16,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithContacts(@Param("id") Long id);
 
@@ -27,6 +31,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findAllWithContacts(Pageable pageable);
 
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
 
     void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }

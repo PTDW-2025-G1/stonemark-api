@@ -18,11 +18,19 @@ public interface UserService {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
     Optional<User> findByIdWithContacts(Long id);
 
     Optional<User> findByIdWithIdentities(Long id);
 
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
 
     User create(User user);
 

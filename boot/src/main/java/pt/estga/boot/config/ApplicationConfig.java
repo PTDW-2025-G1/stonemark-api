@@ -23,9 +23,11 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> {
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException(username));
+        return loginIdentifier -> {
+            User user = userService.findByUsername(loginIdentifier)
+                    .or(() -> userService.findByEmail(loginIdentifier))
+                    .or(() -> userService.findByPhone(loginIdentifier))
+                    .orElseThrow(() -> new UsernameNotFoundException(loginIdentifier));
 
             return principalFactory.fromLoginUser(user);
         };

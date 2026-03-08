@@ -12,21 +12,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.auth.dtos.AuthenticationResponseDto;
-import pt.estga.auth.services.tfa.TwoFactorAuthenticationService;
 import pt.estga.auth.services.tfa.TotpService;
+import pt.estga.auth.services.tfa.TwoFactorAuthenticationService;
 import pt.estga.security.enums.TokenType;
 import pt.estga.security.services.AccessTokenService;
 import pt.estga.security.services.JwtService;
 import pt.estga.security.services.RefreshTokenService;
 import pt.estga.shared.enums.PrincipalType;
+import pt.estga.shared.enums.UserRole;
 import pt.estga.shared.exceptions.EmailVerificationRequiredException;
 import pt.estga.shared.exceptions.InvalidCredentialsException;
 import pt.estga.shared.exceptions.UsernameAlreadyTakenException;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.shared.enums.UserRole;
 import pt.estga.user.enums.TfaMethod;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserService;
 import pt.estga.verification.enums.ActionCodeType;
 
@@ -40,7 +38,6 @@ import java.util.Optional;
 public class AuthenticationServiceSpringImpl implements AuthenticationService {
 
     private final UserService userService;
-    private final UserContactService userContactService;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final JwtService jwtService;
@@ -60,6 +57,14 @@ public class AuthenticationServiceSpringImpl implements AuthenticationService {
 
         if (userService.existsByUsername(user.getUsername())) {
             throw new UsernameAlreadyTakenException("Username already in use");
+        }
+
+        if (user.getEmail() != null && userService.existsByEmail(user.getEmail())) {
+            throw new UsernameAlreadyTakenException("Email already in use");
+        }
+
+        if (user.getPhone() != null && userService.existsByPhone(user.getPhone())) {
+            throw new UsernameAlreadyTakenException("Phone already in use");
         }
 
         if (user.getRole() == null) {
@@ -106,9 +111,9 @@ public class AuthenticationServiceSpringImpl implements AuthenticationService {
         }
 
         User user = userService.findByUsername(usernameOrContact)
-                .orElseGet(() -> userContactService.findByValue(usernameOrContact)
-                        .map(UserContact::getUser)
-                        .orElseThrow(() -> new IllegalArgumentException("User not found")));
+                .or(() -> userService.findByEmail(usernameOrContact))
+                .or(() -> userService.findByPhone(usernameOrContact))
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (contactVerificationRequired && !user.isEnabled()) {
             throw new EmailVerificationRequiredException("Email verification required.");
@@ -117,11 +122,8 @@ public class AuthenticationServiceSpringImpl implements AuthenticationService {
         boolean tfaCodeSent = false;
         if (user.getTfaMethod() != TfaMethod.NONE) {
             if (tfaCode == null || tfaCode.isBlank()) {
-                // 2FA is enabled, but no code provided. Initiate sending a code based on method.
                 switch (user.getTfaMethod()) {
                     case TOTP:
-                        // For TOTP, the user is expected to provide the code from their app.
-                        // If no code is provided, we just indicate it's required.
                         break;
                     case SMS:
                         twoFactorAuthenticationService.generateAndSendSmsCode(user);
@@ -132,10 +134,9 @@ public class AuthenticationServiceSpringImpl implements AuthenticationService {
                         tfaCodeSent = true;
                         break;
                 }
-                return generateAuthenticationResponse(user, true, tfaCodeSent); // Indicate that 2FA is required
+                return generateAuthenticationResponse(user, true, tfaCodeSent);
             }
 
-            // A 2FA code was provided, verify it.
             boolean isCodeValid = switch (user.getTfaMethod()) {
                 case TOTP -> totpService.isCodeValid(user.getTfaSecret(), tfaCode);
                 case SMS, EMAIL ->

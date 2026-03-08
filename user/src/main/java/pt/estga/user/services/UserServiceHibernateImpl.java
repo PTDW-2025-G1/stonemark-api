@@ -45,6 +45,18 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByPhone(String phone) {
+        return repository.findByPhone(phone);
+    }
+
+    @Override
     public Optional<User> findByIdWithContacts(Long id) {
         return repository.findByIdWithContacts(id);
     }
@@ -57,6 +69,16 @@ public class UserServiceHibernateImpl implements UserService {
     @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        return repository.existsByPhone(phone);
     }
 
     @Override
@@ -96,6 +118,10 @@ public class UserServiceHibernateImpl implements UserService {
         user.setLastName("user");
         user.setPassword(null);
         user.setUsername(null);
+        user.setEmail(null);
+        user.setPhone(null);
+        user.setEmailVerified(false);
+        user.setPhoneVerified(false);
         user.setEnabled(false);
 
         repository.save(user);

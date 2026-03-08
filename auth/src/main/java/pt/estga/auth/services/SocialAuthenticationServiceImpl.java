@@ -10,17 +10,13 @@ import pt.estga.auth.dtos.AuthenticationResponseDto;
 import pt.estga.security.services.AccessTokenService;
 import pt.estga.security.services.JwtService;
 import pt.estga.security.services.RefreshTokenService;
-import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.user.entities.UserIdentity;
-import pt.estga.user.enums.ContactType;
-import pt.estga.user.enums.Provider;
 import pt.estga.shared.enums.UserRole;
+import pt.estga.user.entities.User;
+import pt.estga.user.entities.UserIdentity;
+import pt.estga.user.enums.Provider;
 import pt.estga.user.enums.TfaMethod;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
-
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -34,7 +30,6 @@ import static pt.estga.auth.services.AuthenticationServiceSpringImpl.getAuthenti
 public class SocialAuthenticationServiceImpl implements SocialAuthenticationService {
 
     private final UserService userService;
-    private final UserContactService userContactService;
     private final UserIdentityService userIdentityService;
     private final GoogleIdTokenVerifier googleIdTokenVerifier;
     private final JwtService jwtService;
@@ -44,7 +39,6 @@ public class SocialAuthenticationServiceImpl implements SocialAuthenticationServ
     @Override
     @Transactional
     public Optional<AuthenticationResponseDto> authenticateWithGoogle(String token) {
-        // Todo: make sure that it is impossible to link if gmail is already taken by another user
         try {
             GoogleIdToken idToken = googleIdTokenVerifier.verify(token);
             if (idToken == null) {
@@ -66,8 +60,7 @@ public class SocialAuthenticationServiceImpl implements SocialAuthenticationServ
 
         return userIdentityService.findByProviderAndValue(Provider.GOOGLE, googleId)
                 .map(UserIdentity::getUser)
-                .orElseGet(() -> userContactService.findByValue(email)
-                        .map(UserContact::getUser)
+                .orElseGet(() -> userService.findByEmail(email)
                         .orElseGet(() -> {
                             String firstName = (String) payload.get("given_name");
                             String lastName = (String) payload.get("family_name");
@@ -77,30 +70,24 @@ public class SocialAuthenticationServiceImpl implements SocialAuthenticationServ
                                     .username(username)
                                     .firstName(firstName)
                                     .lastName(lastName)
+                                    .email(email)
+                                    .emailVerified(Boolean.TRUE.equals(payload.getEmailVerified()))
                                     .role(UserRole.USER)
                                     .enabled(true)
                                     .tfaMethod(TfaMethod.NONE)
                                     .password(null)
                                     .build();
-                            
-                            User createdUser = userService.create(newUser);
-                            
-                            UserContact primaryEmail = UserContact.builder()
-                                    .type(ContactType.EMAIL)
-                                    .value(email)
-                                    .primary(true)
-                                    .verified(true)
-                                    .user(createdUser)
-                                    .build();
-                            userContactService.create(primaryEmail);
 
+                            User createdUser = userService.create(newUser);
                             userIdentityService.createAndAssociate(createdUser, Provider.GOOGLE, googleId);
                             return createdUser;
                         }));
     }
 
     private String generateUniqueUsername(String firstName, String lastName) {
-        String baseUsername = (firstName + lastName).toLowerCase().replaceAll("\\s+", "");
+        String normalizedFirst = firstName == null ? "user" : firstName;
+        String normalizedLast = lastName == null ? "social" : lastName;
+        String baseUsername = (normalizedFirst + normalizedLast).toLowerCase().replaceAll("\\s+", "");
         String username = baseUsername;
         int counter = 1;
         while (userService.existsByUsername(username)) {
