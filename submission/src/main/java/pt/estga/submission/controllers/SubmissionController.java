@@ -14,7 +14,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.submission.dtos.ProposalSummaryDto;
 import pt.estga.submission.mappers.SubmissionMapper;
-import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
@@ -42,20 +41,6 @@ public class SubmissionController {
         User user = User.builder().id(principal.getId()).build();
         return submissionRepository.findBySubmittedBy(user, PageRequest.of(page, size))
                 .map(submissionMapper::toSummaryDto);
-    }
-
-    @Operation(summary = "Get user proposal statistics",
-            description = "Retrieves global statistics about proposals for the authenticated user.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Statistics retrieved successfully.",
-                    content = @Content(schema = @Schema(implementation = ProposalStatsProjection.class)))
-    })
-    @GetMapping("/user/me/stats")
-    public ResponseEntity<ProposalStatsProjection> getUserStats(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal
-    ) {
-        User user = User.builder().id(principal.getId()).build();
-        return ResponseEntity.ok(submissionRepository.getStatsByUserId(user.getId()));
     }
 
     @Operation(summary = "Get proposal summary by ID",

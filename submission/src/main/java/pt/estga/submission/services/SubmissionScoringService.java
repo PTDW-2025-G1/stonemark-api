@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.submission.config.SubmissionDecisionProperties;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 @Service
@@ -22,10 +21,9 @@ public class SubmissionScoringService {
 
         // Boost for user reputation (based on previously approved proposals)
         if (submission.getSubmittedBy() != null) {
-            ProposalStatsProjection stats = markOccurrenceSubmissionRepository.getStatsByUserId(submission.getSubmittedBy().getId());
-            int approvedProposals = stats != null ? (int) stats.getAccepted() : 0;
+            long approvedProposals = markOccurrenceSubmissionRepository.countAcceptedByUserId(submission.getSubmittedBy().getId());
             int reputationBoost = Math.min(
-                approvedProposals * properties.getReputationBoostPerApprovedProposal(),
+                (int) approvedProposals * properties.getReputationBoostPerApprovedProposal(),
                 properties.getMaxReputationBoost()
             );
             priority += reputationBoost;

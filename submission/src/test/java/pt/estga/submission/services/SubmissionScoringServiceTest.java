@@ -11,7 +11,6 @@ import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.config.SubmissionDecisionProperties;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
@@ -28,8 +27,6 @@ class SubmissionScoringServiceTest {
     @Mock
     private MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
 
-    @Mock
-    private ProposalStatsProjection statsProjection;
 
     @InjectMocks
     private SubmissionScoringService scoringService;
@@ -168,8 +165,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 10 approved proposals
-        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
-        when(statsProjection.getAccepted()).thenReturn(10L);
+        when(markOccurrenceSubmissionRepository.countAcceptedByUserId(1L)).thenReturn(10L);
 
         // Act
         Integer priority = scoringService.calculatePriority(proposal);
@@ -198,8 +194,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 50 approved proposals (should cap at max boost)
-        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
-        when(statsProjection.getAccepted()).thenReturn(50L);
+        when(markOccurrenceSubmissionRepository.countAcceptedByUserId(1L)).thenReturn(50L);
 
         // Act
         Integer priority = scoringService.calculatePriority(proposal);
@@ -232,15 +227,15 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock no prior approved proposals
-        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
-        when(statsProjection.getAccepted()).thenReturn(0L);
+        // Mock no prior approved proposals
+        when(markOccurrenceSubmissionRepository.countAcceptedByUserId(1L)).thenReturn(0L);
 
         // Act
         Integer priority = scoringService.calculatePriority(proposal);
 
         // Assert
         // Credibility: 10
-        // Reputation: 0 * 2 = 0
+        // Reputation: 0 (triggered by newMark=true)
         // New monument: 5 (triggered by newMark=true)
         // Total: 10 + 0 + 5 = 15
         assertEquals(15, priority);
@@ -266,8 +261,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock no prior approved proposals
-        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
-        when(statsProjection.getAccepted()).thenReturn(0L);
+        when(markOccurrenceSubmissionRepository.countAcceptedByUserId(1L)).thenReturn(0L);
 
         // Act
         Integer priority = scoringService.calculatePriority(proposal);
@@ -330,8 +324,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 15 approved proposals
-        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
-        when(statsProjection.getAccepted()).thenReturn(15L);
+        when(markOccurrenceSubmissionRepository.countAcceptedByUserId(1L)).thenReturn(15L);
 
         // Act
         Integer priority = scoringService.calculatePriority(proposal);
