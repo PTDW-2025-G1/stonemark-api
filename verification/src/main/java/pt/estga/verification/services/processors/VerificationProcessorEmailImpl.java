@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.shared.models.Email;
 import pt.estga.shared.services.EmailService;
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 
@@ -18,12 +17,17 @@ public class VerificationProcessorEmailImpl implements VerificationProcessor {
     private final EmailService emailService;
 
     @Override
-    public Optional<String> process(UserContact userContact, ActionCode code) {
-        if (userContact == null) {
-            throw new IllegalArgumentException("UserContact cannot be null for email verification.");
+    public Optional<String> process(String recipient, ActionCode code) {
+        String to = (recipient != null && !recipient.isBlank())
+                ? recipient
+                : code.getRecipient();
+
+        if (to == null || to.isBlank()) {
+            throw new IllegalArgumentException("Recipient cannot be null for email verification.");
         }
+
         Email email = Email.builder()
-                .to(userContact.getValue())
+                .to(to)
                 .subject("Verify your email")
                 .template("email/email-verification")
                 .properties(Map.of("code", code.getCode()))

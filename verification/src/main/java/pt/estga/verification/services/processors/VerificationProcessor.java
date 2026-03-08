@@ -1,6 +1,5 @@
 package pt.estga.verification.services.processors;
 
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 
@@ -14,19 +13,11 @@ public interface VerificationProcessor {
 
     /**
      * Processes the given action code.
-     * The implementation will define the specific logic for a particular action code type.
      *
-     * @param userContact The {@link UserContact} associated with the verification. Can be null if not applicable.
+     * @param recipient Optional recipient (email/phone) for dispatch-oriented flows.
      * @param code The {@link ActionCode} to be processed.
-     * @return An {@link Optional<String>} which might contain a value (e.g., the code itself for password reset)
-     *         or be empty if no specific value needs to be returned.
      */
-    Optional<String> process(UserContact userContact, ActionCode code);
+    Optional<String> process(String recipient, ActionCode code);
 
-    /**
-     * Returns the {@link ActionCodeType} that this processor handles.
-     *
-     * @return The {@link ActionCodeType} enum value.
-     */
     ActionCodeType getType();
 }

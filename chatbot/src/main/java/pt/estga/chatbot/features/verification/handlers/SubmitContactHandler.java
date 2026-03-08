@@ -10,8 +10,6 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.user.entities.User;
-import pt.estga.user.enums.ContactType;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
 
@@ -22,7 +20,6 @@ import java.util.Optional;
 @Slf4j
 public class SubmitContactHandler implements ConversationStateHandler {
 
-    private final UserContactService userContactService;
     private final UserIdentityService userIdentityService;
     private final UserService userService;
 
@@ -36,11 +33,12 @@ public class SubmitContactHandler implements ConversationStateHandler {
         Long domainUserId = context.getDomainUserId();
 
         if (domainUserId != null) {
-            // User is already verified, just connect the phone number
             Optional<User> userOptional = userService.findById(domainUserId);
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                userContactService.createVerifiedContact(user, ContactType.TELEPHONE, phoneNumber);
+                user.setPhone(phoneNumber);
+                user.setPhoneVerified(true);
+                userService.update(user);
                 log.info("Successfully connected phone number for user {}", user.getUsername());
                 context.setCurrentState(VerificationState.PHONE_CONNECTION_SUCCESS);
                 return HandlerOutcome.SUCCESS;
@@ -49,14 +47,14 @@ public class SubmitContactHandler implements ConversationStateHandler {
                 return HandlerOutcome.FAILURE;
             }
         } else {
-            // New user verification
-            Optional<User> userOptional = userContactService.findUserByPhoneNumber(phoneNumber);
+            Optional<User> userOptional = userService.findByPhone(phoneNumber);
 
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                // Create a verified contact for the user
-                userContactService.createVerifiedContact(user, ContactType.TELEPHONE, phoneNumber);
-                // Associate the Telegram ID with the user
+                user.setPhone(phoneNumber);
+                user.setPhoneVerified(true);
+                userService.update(user);
+
                 userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
 
                 log.info("Successfully verified user {} and associated their Telegram ID.", user.getUsername());

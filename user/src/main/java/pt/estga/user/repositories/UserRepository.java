@@ -16,17 +16,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
     @Query("SELECT u FROM User u WHERE u.id = :id")
-    Optional<User> findByIdWithContacts(@Param("id") Long id);
+    Optional<User> findByIdForProfile(@Param("id") Long id);
 
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithIdentities(@Param("id") Long id);
 
-    @Query(value = "SELECT DISTINCT u FROM User u",
-           countQuery = "SELECT COUNT(u) FROM User u")
-    Page<User> findAllWithContacts(Pageable pageable);
-
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
 
     void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }

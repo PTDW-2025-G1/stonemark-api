@@ -6,13 +6,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.processors.VerificationProcessor;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -29,23 +28,20 @@ class ActionCodeDispatchServiceTest {
     @InjectMocks
     private ActionCodeDispatchServiceImpl actionCodeDispatchService;
 
-    private UserContact testUserContact;
-    private User testUser;
+    private String recipient;
 
     @BeforeEach
     void setUp() {
-        testUser = User.builder().id(1L).username("testuser").build();
-        testUserContact = UserContact.builder().id(1L).user(testUser).value("test@example.com").build();
+        recipient = "test@example.com";
 
-        // Configure mock processors
         when(emailVerificationProcessor.getType()).thenReturn(ActionCodeType.EMAIL_VERIFICATION);
         when(phoneVerificationProcessor.getType()).thenReturn(ActionCodeType.PHONE_VERIFICATION);
+        when(emailVerificationProcessor.process(any(), any())).thenReturn(Optional.empty());
+        when(phoneVerificationProcessor.process(any(), any())).thenReturn(Optional.empty());
 
-        // Manually inject the list of processors and call init()
         actionCodeDispatchService = new ActionCodeDispatchServiceImpl(List.of(emailVerificationProcessor, phoneVerificationProcessor));
         actionCodeDispatchService.init();
 
-        // Clear invocations after init to avoid interference with verifyNoInteractions
         clearInvocations(emailVerificationProcessor, phoneVerificationProcessor);
     }
 
@@ -53,9 +49,9 @@ class ActionCodeDispatchServiceTest {
     void sendVerification_shouldDispatchToCorrectProcessor_forEmailVerification() {
         ActionCode emailCode = ActionCode.builder().type(ActionCodeType.EMAIL_VERIFICATION).build();
 
-        actionCodeDispatchService.sendVerification(testUserContact, emailCode);
+        actionCodeDispatchService.sendVerification(recipient, emailCode);
 
-        verify(emailVerificationProcessor, times(1)).process(testUserContact, emailCode);
+        verify(emailVerificationProcessor, times(1)).process(recipient, emailCode);
         verifyNoInteractions(phoneVerificationProcessor);
     }
 
@@ -63,17 +59,17 @@ class ActionCodeDispatchServiceTest {
     void sendVerification_shouldDispatchToCorrectProcessor_forPhoneVerification() {
         ActionCode phoneCode = ActionCode.builder().type(ActionCodeType.PHONE_VERIFICATION).build();
 
-        actionCodeDispatchService.sendVerification(testUserContact, phoneCode);
+        actionCodeDispatchService.sendVerification(recipient, phoneCode);
 
-        verify(phoneVerificationProcessor, times(1)).process(testUserContact, phoneCode);
+        verify(phoneVerificationProcessor, times(1)).process(recipient, phoneCode);
         verifyNoInteractions(emailVerificationProcessor);
     }
 
     @Test
     void sendVerification_shouldNotDispatch_whenNoProcessorFound() {
-        ActionCode unknownTypeCode = ActionCode.builder().type(ActionCodeType.RESET_PASSWORD).build(); // Assuming RESET_PASSWORD has no processor in this setup
+        ActionCode unknownTypeCode = ActionCode.builder().type(ActionCodeType.RESET_PASSWORD).build();
 
-        actionCodeDispatchService.sendVerification(testUserContact, unknownTypeCode);
+        actionCodeDispatchService.sendVerification(recipient, unknownTypeCode);
 
         verifyNoInteractions(emailVerificationProcessor, phoneVerificationProcessor);
     }
@@ -81,13 +77,13 @@ class ActionCodeDispatchServiceTest {
     @Test
     void sendVerification_shouldPropagateException_whenProcessorThrowsException() {
         ActionCode emailCode = ActionCode.builder().type(ActionCodeType.EMAIL_VERIFICATION).build();
-        doThrow(new RuntimeException("Processor failed")).when(emailVerificationProcessor).process(testUserContact, emailCode);
+        doThrow(new RuntimeException("Processor failed")).when(emailVerificationProcessor).process(recipient, emailCode);
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> actionCodeDispatchService.sendVerification(testUserContact, emailCode));
+                () -> actionCodeDispatchService.sendVerification(recipient, emailCode));
 
         assertEquals("Processor failed", thrown.getMessage());
-        verify(emailVerificationProcessor, times(1)).process(testUserContact, emailCode);
+        verify(emailVerificationProcessor, times(1)).process(recipient, emailCode);
         verifyNoInteractions(phoneVerificationProcessor);
     }
 }

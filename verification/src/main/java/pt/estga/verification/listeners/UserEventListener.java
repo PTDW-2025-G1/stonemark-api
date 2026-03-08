@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import pt.estga.verification.enums.ActionCodeType;
-import pt.estga.verification.services.ActionCodeService;
 import pt.estga.user.events.EmailVerificationRequestedEvent;
 import pt.estga.user.events.TelephoneVerificationRequestedEvent;
+import pt.estga.verification.enums.ActionCodeType;
+import pt.estga.verification.services.ActionCodeService;
 import pt.estga.verification.services.VerificationDispatchService;
 import pt.estga.verification.services.VerificationInitiationService;
 import pt.estga.verification.services.commands.ActionCodeCommand;
@@ -25,16 +25,18 @@ public class UserEventListener {
     @Async
     @EventListener
     public void handleEmailVerificationRequested(EmailVerificationRequestedEvent event) {
-        log.info("Handling email - {} - verification event", event.getUserContact().getValue());
-        var command = new ActionCodeCommand(event.getUser(), event.getUserContact(), actionCodeService, verificationDispatchService, ActionCodeType.EMAIL_VERIFICATION);
+        String recipient = event.getEmail();
+        log.info("Handling email verification event for recipient {}", recipient);
+        var command = new ActionCodeCommand(event.getUser(), recipient, actionCodeService, verificationDispatchService, ActionCodeType.EMAIL_VERIFICATION);
         verificationInitiationService.initiate(command);
     }
 
     @Async
     @EventListener
     public void handleTelephoneVerificationRequested(TelephoneVerificationRequestedEvent event) {
-        log.info("Handling telephone - {} - verification event", event.getUserContact().getValue());
-        var command = new ActionCodeCommand(event.getUser(), event.getUserContact(), actionCodeService, verificationDispatchService, ActionCodeType.PHONE_VERIFICATION);
+        String recipient = event.getPhone();
+        log.info("Handling telephone verification event for recipient {}", recipient);
+        var command = new ActionCodeCommand(event.getUser(), recipient, actionCodeService, verificationDispatchService, ActionCodeType.PHONE_VERIFICATION);
         verificationInitiationService.initiate(command);
     }
 }

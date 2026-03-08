@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import pt.estga.shared.models.Email;
 import pt.estga.shared.services.EmailService;
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 
@@ -24,11 +23,7 @@ public class VerificationProcessorPasswordResetImpl implements VerificationProce
     private String resetPasswordUrl;
 
     @Override
-    public Optional<String> process(UserContact userContact, ActionCode code) {
-
-        if (userContact == null) {
-            return Optional.of(code.getCode());
-        }
+    public Optional<String> process(String recipient, ActionCode code) {
 
         String token = code.getCode();
         String resetLink = resetPasswordUrl + "?token=" + token;
@@ -38,8 +33,18 @@ public class VerificationProcessorPasswordResetImpl implements VerificationProce
                 code.getExpiresAt()
         ).toMinutes();
 
+        String to = (recipient != null && !recipient.isBlank())
+                ? recipient
+                : (code.getRecipient() != null && !code.getRecipient().isBlank())
+                ? code.getRecipient()
+                : code.getUser() != null ? code.getUser().getEmail() : null;
+
+        if (to == null || to.isBlank()) {
+            return Optional.of(token);
+        }
+
         Email email = Email.builder()
-                .to(userContact.getValue())
+                .to(to)
                 .subject("Reset your password")
                 .template("email/password-reset")
                 .properties(Map.of(

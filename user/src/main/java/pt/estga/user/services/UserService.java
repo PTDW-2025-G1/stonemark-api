@@ -12,17 +12,23 @@ public interface UserService {
 
     Page<User> findAll(Pageable pageable);
 
-    Page<User> findAllWithContacts(Pageable pageable);
-
     Optional<User> findById(Long id);
 
     Optional<User> findByUsername(String username);
 
-    Optional<User> findByIdWithContacts(Long id);
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
+    Optional<User> findByIdForProfile(Long id);
 
     Optional<User> findByIdWithIdentities(Long id);
 
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
 
     User create(User user);
 

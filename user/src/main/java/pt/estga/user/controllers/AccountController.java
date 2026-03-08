@@ -50,7 +50,7 @@ public class AccountController {
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         User user = userService
-                .findByIdWithContacts(principal.getId())
+                .findByIdForProfile(principal.getId())
                 .orElseThrow();
         return ResponseEntity.ok(mapper.toDto(user));
     }

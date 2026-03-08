@@ -6,18 +6,16 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.verification.entities.ActionCode;
-import pt.estga.verification.enums.ActionCodeType;
-import pt.estga.verification.repositories.ActionCodeRepository;
 import pt.estga.shared.exceptions.InvalidTokenException;
 import pt.estga.shared.models.Email;
 import pt.estga.shared.services.EmailService;
 import pt.estga.shared.services.SmsService;
 import pt.estga.user.entities.User;
-import pt.estga.user.enums.ContactType;
 import pt.estga.user.enums.TfaMethod;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserService;
+import pt.estga.verification.entities.ActionCode;
+import pt.estga.verification.enums.ActionCodeType;
+import pt.estga.verification.repositories.ActionCodeRepository;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -30,7 +28,6 @@ public class TwoFactorAuthenticationServiceImpl implements TwoFactorAuthenticati
 
     private final SmsService smsService;
     private final EmailService emailService;
-    private final UserContactService userContactService;
     private final ActionCodeRepository actionCodeRepository;
     private final UserService userService;
     private final TotpService totpService;
@@ -41,36 +38,33 @@ public class TwoFactorAuthenticationServiceImpl implements TwoFactorAuthenticati
     @Override
     @Transactional
     public void generateAndSendSmsCode(User user) {
+        if (user.getPhone() == null || user.getPhone().isBlank()) {
+            throw new IllegalStateException("User has no phone for SMS 2FA.");
+        }
+
         String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
         saveActionCode(user, code);
-
-        userContactService.findPrimary(user, ContactType.TELEPHONE)
-                .ifPresentOrElse(
-                        telephone -> smsService.sendMessage(telephone.getValue(), "Your 2FA code is: " + code),
-                        () -> { throw new IllegalStateException("User has no primary telephone for SMS 2FA."); }
-                );
+        smsService.sendMessage(user.getPhone(), "Your 2FA code is: " + code);
     }
 
     @Override
     @Transactional
     public void generateAndSendEmailCode(User user) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalStateException("User has no email for Email 2FA.");
+        }
+
         String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
         saveActionCode(user, code);
 
-        userContactService.findPrimary(user, ContactType.EMAIL)
-                .ifPresentOrElse(
-                        email -> {
-                            Map<String, Object> properties = new HashMap<>();
-                            properties.put("code", code);
-                            emailService.sendEmail(Email.builder()
-                                    .to(email.getValue())
-                                    .subject("Two-Factor Authentication Code")
-                                    .template("email/tfa-code.html")
-                                    .properties(properties)
-                                    .build());
-                        },
-                        () -> { throw new IllegalStateException("User has no primary username for Email 2FA."); }
-                );
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("code", code);
+        emailService.sendEmail(Email.builder()
+                .to(user.getEmail())
+                .subject("Two-Factor Authentication Code")
+                .template("email/tfa-code.html")
+                .properties(properties)
+                .build());
     }
 
     @Override

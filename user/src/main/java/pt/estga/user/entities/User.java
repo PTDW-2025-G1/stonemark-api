@@ -28,6 +28,18 @@ public class User {
     private String username;
     private String password;
 
+    @Column(unique = true)
+    private String email;
+
+    @Column(unique = true)
+    private String phone;
+
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    @Builder.Default
+    private boolean phoneVerified = false;
+
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private MediaFile photo;
 
@@ -51,11 +63,25 @@ public class User {
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return accountLocked == user.accountLocked && enabled == user.enabled && Objects.equals(id, user.id) && Objects.equals(firstName, user.firstName) && Objects.equals(lastName, user.lastName) && Objects.equals(username, user.username) && Objects.equals(password, user.password) && role == user.role && tfaMethod == user.tfaMethod && Objects.equals(tfaSecret, user.tfaSecret) && Objects.equals(createdAt, user.createdAt);
+        return accountLocked == user.accountLocked
+                && enabled == user.enabled
+                && emailVerified == user.emailVerified
+                && phoneVerified == user.phoneVerified
+                && Objects.equals(id, user.id)
+                && Objects.equals(firstName, user.firstName)
+                && Objects.equals(lastName, user.lastName)
+                && Objects.equals(username, user.username)
+                && Objects.equals(password, user.password)
+                && Objects.equals(email, user.email)
+                && Objects.equals(phone, user.phone)
+                && role == user.role
+                && tfaMethod == user.tfaMethod
+                && Objects.equals(tfaSecret, user.tfaSecret)
+                && Objects.equals(createdAt, user.createdAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, password, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
+        return Objects.hash(id, firstName, lastName, username, password, email, phone, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
     }
 }
