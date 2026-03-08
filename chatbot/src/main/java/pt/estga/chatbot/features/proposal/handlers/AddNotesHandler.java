@@ -7,7 +7,7 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.services.chatbot.SubmissionChatbotSubmitService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
@@ -16,7 +16,7 @@ import pt.estga.user.services.UserService;
 @Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final SubmissionChatbotSubmitService chatbotSubmitService;
+    private final MarkOccurrenceSubmissionSubmitService submitService;
     private final UserService userService;
 
     @Override
@@ -40,7 +40,7 @@ public class AddNotesHandler implements ConversationStateHandler {
                     : null;
 
             // Submit the submission with all collected data (authenticated or anonymous)
-            chatbotSubmitService.submitFromChatbot(
+            submitService.submitFromChatbot(
                     markProposal,
                     context.getProposalContext().getPhotoData(),
                     context.getProposalContext().getPhotoFilename(),

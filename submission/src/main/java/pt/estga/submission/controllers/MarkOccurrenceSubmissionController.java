@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
@@ -22,6 +23,8 @@ import pt.estga.submission.services.MarkOccurrenceSubmissionService;
 import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v1/public/proposals/mark-occurrences")
@@ -89,10 +92,11 @@ public class MarkOccurrenceSubmissionController {
     @PostMapping
     public ResponseEntity<MarkOccurrenceProposalDto> createAndSubmit(
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @RequestBody @Valid MarkOccurrenceProposalCreateDto dto
-    ) {
+            @RequestPart @Valid MarkOccurrenceProposalCreateDto dto,
+            @RequestPart(required = false) MultipartFile imageFile
+    ) throws IOException {
         User user = User.builder().id(principal.getId()).build();
-        MarkOccurrenceSubmission proposal = submissionService.createAndSubmit(dto, user);
+        MarkOccurrenceSubmission proposal = submissionService.createAndSubmit(dto, user, imageFile);
         return ResponseEntity.ok(markOccurrenceSubmissionMapper.toDto(proposal));
     }
 }

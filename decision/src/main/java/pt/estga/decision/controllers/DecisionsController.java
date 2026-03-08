@@ -85,7 +85,7 @@ public class DecisionsController {
         var moderator = userService.findById(principal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Moderator not found"));
         
-        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.makeManualDecision(id, request.outcome(), request.notes(), moderator);
         return ResponseEntity.ok().build();
     }
@@ -98,7 +98,7 @@ public class DecisionsController {
     })
     @PostMapping("/automatic/rerun")
     public ResponseEntity<Void> rerunAutomaticDecision(@PathVariable Long id) {
-        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.makeAutomaticDecision(id);
         return ResponseEntity.ok().build();
     }
@@ -123,7 +123,7 @@ public class DecisionsController {
             return ResponseEntity.badRequest().build();
         }
         
-        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.activateDecision(attemptId);
         return ResponseEntity.ok().build();
     }
@@ -136,7 +136,7 @@ public class DecisionsController {
     })
     @PostMapping("/deactivate")
     public ResponseEntity<Void> deactivateDecision(@PathVariable Long id) {
-        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(id);
+        SubmissionDecisionService decisionService = decisionServiceFactory.getServiceForProposalId(id);
         decisionService.deactivateDecision(id);
         return ResponseEntity.ok().build();
     }

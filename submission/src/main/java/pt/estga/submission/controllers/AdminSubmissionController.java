@@ -21,9 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 import pt.estga.submission.dtos.ProposalAdminListDto;
 import pt.estga.submission.dtos.ProposalFilter;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;
+import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.mappers.SubmissionAdminMapper;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
-import pt.estga.submission.services.SubmissionQueryService;
+import pt.estga.shared.exceptions.ResourceNotFoundException;
 
 @RestController
 @RequestMapping("/api/v1/admin/proposals")
@@ -34,7 +35,7 @@ public class AdminSubmissionController {
 
     private final MarkOccurrenceSubmissionRepository proposalRepo;
     private final SubmissionAdminMapper submissionAdminMapper;
-    private final SubmissionQueryService submissionQueryService;
+    private final MarkOccurrenceSubmissionMapper proposalMapper;
 
     @Operation(summary = "List proposals for moderation",
                description = "Retrieves a paginated list of proposals, optionally filtered by status.")
@@ -64,6 +65,8 @@ public class AdminSubmissionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProposalWithRelationsDto> getProposalDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(submissionQueryService.getProposalDetails(id));
+        var proposal = proposalRepo.findByIdWithRelations(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Submission not found with id: " + id));
+        return ResponseEntity.ok(proposalMapper.toWithRelationsDto(proposal));
     }
 }

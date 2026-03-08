@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.submission.dtos.ProposalSummaryDto;
 import pt.estga.submission.mappers.SubmissionMapper;
 import pt.estga.submission.projections.ProposalStatsProjection;
-import pt.estga.submission.services.SubmissionService;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 
@@ -25,7 +25,7 @@ import pt.estga.user.entities.User;
 @Tag(name = "Proposals (Generic)", description = "Generic endpoints for listing and querying all types of proposals.")
 public class SubmissionController {
 
-    private final SubmissionService submissionService;
+    private final MarkOccurrenceSubmissionRepository submissionRepository;
     private final SubmissionMapper submissionMapper;
 
     @Operation(summary = "List all proposals by user",
@@ -40,7 +40,7 @@ public class SubmissionController {
             @RequestParam(defaultValue = "6") int size
     ) {
         User user = User.builder().id(principal.getId()).build();
-        return submissionService.findByUser(user, PageRequest.of(page, size))
+        return submissionRepository.findBySubmittedBy(user, PageRequest.of(page, size))
                 .map(submissionMapper::toSummaryDto);
     }
 
@@ -55,7 +55,7 @@ public class SubmissionController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal
     ) {
         User user = User.builder().id(principal.getId()).build();
-        return ResponseEntity.ok(submissionService.getStatsByUser(user));
+        return ResponseEntity.ok(submissionRepository.getStatsByUserId(user.getId()));
     }
 
     @Operation(summary = "Get proposal summary by ID",
@@ -67,7 +67,7 @@ public class SubmissionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProposalSummaryDto> findById(@PathVariable Long id) {
-        return submissionService.findById(id)
+        return submissionRepository.findById(id)
                 .map(submissionMapper::toSummaryDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
