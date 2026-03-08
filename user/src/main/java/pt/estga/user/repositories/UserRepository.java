@@ -1,7 +1,5 @@
 package pt.estga.user.repositories;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,6 +18,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByPhone(String phone);
 
+    Optional<User> findByKeycloakSub(String keycloakSub);
+
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForProfile(@Param("id") Long id);
 
@@ -31,6 +31,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     boolean existsByPhone(String phone);
+
+    boolean existsByKeycloakSub(String keycloakSub);
 
     void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }

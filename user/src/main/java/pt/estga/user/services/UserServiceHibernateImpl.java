@@ -50,6 +50,12 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByKeycloakSub(String keycloakSub) {
+        return repository.findByKeycloakSub(keycloakSub);
+    }
+
+    @Override
     public Optional<User> findByIdForProfile(Long id) {
         return repository.findByIdForProfile(id);
     }
@@ -72,6 +78,11 @@ public class UserServiceHibernateImpl implements UserService {
     @Override
     public boolean existsByPhone(String phone) {
         return repository.existsByPhone(phone);
+    }
+
+    @Override
+    public boolean existsByKeycloakSub(String keycloakSub) {
+        return repository.existsByKeycloakSub(keycloakSub);
     }
 
     @Override

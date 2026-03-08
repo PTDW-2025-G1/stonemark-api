@@ -34,6 +34,9 @@ public class User {
     @Column(unique = true)
     private String phone;
 
+    @Column(name = "keycloak_sub", unique = true)
+    private String keycloakSub;
+
     @Builder.Default
     private boolean emailVerified = false;
 
@@ -74,6 +77,7 @@ public class User {
                 && Objects.equals(password, user.password)
                 && Objects.equals(email, user.email)
                 && Objects.equals(phone, user.phone)
+                && Objects.equals(keycloakSub, user.keycloakSub)
                 && role == user.role
                 && tfaMethod == user.tfaMethod
                 && Objects.equals(tfaSecret, user.tfaSecret)
@@ -82,6 +86,6 @@ public class User {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, password, email, phone, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
+        return Objects.hash(id, firstName, lastName, username, password, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, tfaMethod, tfaSecret, createdAt);
     }
 }
