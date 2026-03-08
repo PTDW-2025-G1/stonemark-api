@@ -86,6 +86,17 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
+    @Transactional
+    public void deactivateByKeycloakSub(String keycloakSub) {
+        User user = repository.findByKeycloakSub(keycloakSub)
+                .orElseThrow(() -> new RuntimeException("User not found for keycloakSub"));
+
+        user.setEnabled(false);
+        user.setAccountLocked(true);
+        repository.save(user);
+    }
+
+    @Override
     public User create(User user) {
         return repository.save(user);
     }
