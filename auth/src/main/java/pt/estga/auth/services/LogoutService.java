@@ -2,58 +2,40 @@ package pt.estga.auth.services;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import pt.estga.security.entities.RefreshToken;
-import pt.estga.security.services.AccessTokenService;
-import pt.estga.security.services.RefreshTokenService;
 
+/**
+ * Logout handler for Keycloak-authenticated sessions.
+ *
+ * Note: Keycloak uses stateless JWT tokens. True logout requires:
+ * 1. Frontend clears tokens from storage
+ * 2. Backend clears SecurityContext (done here)
+ * 3. For session revocation, redirect to Keycloak logout endpoint:
+ *    GET {keycloak}/realms/{realm}/protocol/openid-connect/logout
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class LogoutService implements LogoutHandler {
 
-    private final AccessTokenService accessTokenService;
-    private final RefreshTokenService refreshTokenService;
-
     @Override
-    @Transactional
     public void logout(
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication
     ) {
-        final String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.debug("No Authorization header or not a Bearer token");
-            return;
-        }
-
-        final String jwtToken = authHeader.substring(7).trim();
-
-        accessTokenService.findByToken(jwtToken).ifPresent(token -> {
-            accessTokenService.revokeToken(jwtToken);
-
-            RefreshToken refreshToken = token.getRefreshToken();
-            if (refreshToken != null) {
-                refreshTokenService.revokeToken(refreshToken);
-            }
-
-            log.debug("Revoked tokens for token id: {}", token.getId());
-        });
-
-        // Invalidate session if present
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-
+        // Clear Spring Security context
         SecurityContextHolder.clearContext();
+
+        log.debug("User logged out, SecurityContext cleared");
+
+        // Note: For full Keycloak logout (session revocation), frontend should redirect to:
+        // http://localhost:8081/realms/stonemark/protocol/openid-connect/logout
+        // with parameters: client_id, post_logout_redirect_uri, id_token_hint (optional)
     }
 }
