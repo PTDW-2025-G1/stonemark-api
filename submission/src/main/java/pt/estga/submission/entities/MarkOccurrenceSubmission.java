@@ -2,22 +2,50 @@ package pt.estga.submission.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.Type;
 import pt.estga.content.entities.Mark;
 import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.submission.enums.SubmissionType;
+import pt.estga.shared.audit.AuditedEntity;
 import pt.estga.shared.utils.PgVectorType;
+import pt.estga.submission.enums.SubmissionSource;
+import pt.estga.submission.enums.SubmissionStatus;
+import pt.estga.user.entities.User;
+
+import java.time.Instant;
 
 @Entity
-@DiscriminatorValue("MARK_OCCURRENCE")
+@Table(name = "mark_occurrence_submission", indexes = {
+        @Index(name = "idx_submission_submitted_by", columnList = "submitted_by_id"),
+        @Index(name = "idx_submission_status", columnList = "status")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@SuperBuilder
-public class MarkOccurrenceSubmission extends Submission {
+@Builder
+public class MarkOccurrenceSubmission extends AuditedEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String userNotes;
+
+    @Enumerated(EnumType.STRING)
+    private SubmissionSource submissionSource;
+
+    private Integer priority;
+
+    private Integer credibilityScore;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User submittedBy;
+
+    private Instant submittedAt;
+
+    @Enumerated(EnumType.STRING)
+    private SubmissionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Mark existingMark;
@@ -37,9 +65,4 @@ public class MarkOccurrenceSubmission extends Submission {
 
     @Builder.Default
     private boolean newMark = true;
-
-    @Override
-    public SubmissionType getType() {
-        return SubmissionType.MARK_OCCURRENCE;
-    }
 }

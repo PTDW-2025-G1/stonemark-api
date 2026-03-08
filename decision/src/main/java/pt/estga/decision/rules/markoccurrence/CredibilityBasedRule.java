@@ -12,7 +12,7 @@ import pt.estga.submission.entities.MarkOccurrenceSubmission;
  * for proposals with good data quality and user reputation.
  */
 @Component
-public class CredibilityBasedRule implements DecisionRule<MarkOccurrenceSubmission> {
+public class CredibilityBasedRule implements DecisionRule {
 
     // Credibility thresholds for automatic decisions
     private static final int HIGH_CREDIBILITY_THRESHOLD = 60;  // 60% credibility for auto-acceptance

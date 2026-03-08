@@ -19,17 +19,17 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class MarkOccurrenceSubmissionDecisionService extends SubmissionDecisionService<MarkOccurrenceSubmission> {
+public class MarkOccurrenceSubmissionDecisionService extends SubmissionDecisionService {
 
-    private final List<DecisionRule<MarkOccurrenceSubmission>> rules;
+    private final List<DecisionRule> rules;
 
     public MarkOccurrenceSubmissionDecisionService(
             SubmissionDecisionAttemptRepository attemptRepo,
             MarkOccurrenceSubmissionRepository proposalRepo,
             ApplicationEventPublisher eventPublisher,
-            List<DecisionRule<MarkOccurrenceSubmission>> rules
+            List<DecisionRule> rules
     ) {
-        super(attemptRepo, proposalRepo, eventPublisher, MarkOccurrenceSubmission.class);
+        super(attemptRepo, proposalRepo, eventPublisher);
         this.rules = rules;
     }
 

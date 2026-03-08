@@ -2,7 +2,7 @@ package pt.estga.decision.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.submission.entities.Submission;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.user.entities.User;
@@ -34,7 +34,7 @@ public class SubmissionDecisionAttempt {
     private Instant decidedAt;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    private Submission submission;
+    private MarkOccurrenceSubmission submission;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User decidedBy;

@@ -39,10 +39,10 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private DecisionRule<MarkOccurrenceSubmission> rule1;
+    private DecisionRule rule1;
 
     @Mock
-    private DecisionRule<MarkOccurrenceSubmission> rule2;
+    private DecisionRule rule2;
 
     @InjectMocks
     private MarkOccurrenceSubmissionDecisionService decisionService;
@@ -54,7 +54,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
         
         // Setup rules via constructor injection simulation (since we can't easily inject list into @InjectMocks)
         // We need to manually construct the service to inject the list of rules
-        List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1, rule2);
+        List<DecisionRule> rules = List.of(rule1, rule2);
         decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);
@@ -84,7 +84,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
     void makeAutomaticDecision_ShouldDefaultToInconclusive_WhenNoRuleMatches() {
         // Arrange
         MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder().id(1L).build();
-        List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1);
+        List<DecisionRule> rules = List.of(rule1);
         decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);
@@ -103,7 +103,7 @@ class MarkOccurrenceSubmissionDecisionServiceTest {
     void makeAutomaticDecision_ShouldHandleRejection() {
         // Arrange
         MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder().id(1L).build();
-        List<DecisionRule<MarkOccurrenceSubmission>> rules = List.of(rule1);
+        List<DecisionRule> rules = List.of(rule1);
         decisionService = new MarkOccurrenceSubmissionDecisionService(attemptRepo, proposalRepo, eventPublisher, rules);
 
         when(rule1.getOrder()).thenReturn(10);

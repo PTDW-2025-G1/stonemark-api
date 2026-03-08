@@ -20,7 +20,7 @@ import java.time.Instant;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MarkOccurrenceSubmissionSubmissionService {
+public class MarkOccurrenceSubmissionSubmitService {
 
     private final MarkOccurrenceSubmissionRepository repository;
     private final ApplicationEventPublisher eventPublisher;

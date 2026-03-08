@@ -11,9 +11,8 @@ import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.config.SubmissionDecisionProperties;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.entities.Submission;
 import pt.estga.submission.projections.ProposalStatsProjection;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +26,7 @@ class SubmissionScoringServiceTest {
     private SubmissionDecisionProperties properties;
 
     @Mock
-    private SubmissionRepository<Submission> submissionRepository;
+    private MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
 
     @Mock
     private ProposalStatsProjection statsProjection;
@@ -169,7 +168,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 10 approved proposals
-        when(submissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
         when(statsProjection.getAccepted()).thenReturn(10L);
 
         // Act
@@ -199,7 +198,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 50 approved proposals (should cap at max boost)
-        when(submissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
         when(statsProjection.getAccepted()).thenReturn(50L);
 
         // Act
@@ -233,7 +232,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock no prior approved proposals
-        when(submissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
         when(statsProjection.getAccepted()).thenReturn(0L);
 
         // Act
@@ -267,7 +266,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock no prior approved proposals
-        when(submissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
         when(statsProjection.getAccepted()).thenReturn(0L);
 
         // Act
@@ -331,7 +330,7 @@ class SubmissionScoringServiceTest {
                 .build();
 
         // Mock stats - user has 15 approved proposals
-        when(submissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(1L)).thenReturn(statsProjection);
         when(statsProjection.getAccepted()).thenReturn(15L);
 
         // Act

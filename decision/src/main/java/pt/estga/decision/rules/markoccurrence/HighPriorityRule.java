@@ -10,7 +10,7 @@ import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 @Component
 @RequiredArgsConstructor
-public class HighPriorityRule implements DecisionRule<MarkOccurrenceSubmission> {
+public class HighPriorityRule implements DecisionRule {
 
     private final SubmissionDecisionProperties properties;
 

@@ -1,13 +1,11 @@
 package pt.estga.decision.rules;
 
-import pt.estga.submission.entities.Submission;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 
 /**
  * Represents a single rule for evaluating a submission.
- *
- * @param <T> The type of submission this rule applies to.
  */
-public interface DecisionRule<T extends Submission> {
+public interface DecisionRule {
 
     /**
      * Evaluates the submission against this rule.
@@ -15,7 +13,7 @@ public interface DecisionRule<T extends Submission> {
      * @param proposal The submission to evaluate.
      * @return A DecisionRuleResult containing the outcome if the rule matches, or empty if it doesn't.
      */
-    DecisionRuleResult evaluate(T proposal);
+    DecisionRuleResult evaluate(MarkOccurrenceSubmission proposal);
 
     /**
      * Defines the order in which rules should be applied.

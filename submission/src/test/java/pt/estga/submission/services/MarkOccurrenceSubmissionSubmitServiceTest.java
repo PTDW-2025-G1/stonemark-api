@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class MarkOccurrenceSubmissionSubmissionServiceTest {
+class MarkOccurrenceSubmissionSubmitServiceTest {
 
     @Mock
     private MarkOccurrenceSubmissionRepository repository;
@@ -31,7 +31,7 @@ class MarkOccurrenceSubmissionSubmissionServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    private MarkOccurrenceSubmissionSubmissionService submissionService;
+    private MarkOccurrenceSubmissionSubmitService submissionService;
 
     @Test
     void createAndSubmit_ShouldCreateAndSubmitProposal() {

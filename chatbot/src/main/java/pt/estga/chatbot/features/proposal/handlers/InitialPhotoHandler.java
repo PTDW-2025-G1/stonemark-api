@@ -10,7 +10,6 @@ import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.entities.Submission;
 import pt.estga.submission.enums.SubmissionSource;
 
 @Component
@@ -23,14 +22,12 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        Submission submission = context.getProposalContext().getSubmission();
+        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
 
         // Initialize a submission object if not exists (but don't persist yet)
         if (submission == null) {
             MarkOccurrenceSubmission markProposal = new MarkOccurrenceSubmission();
             context.getProposalContext().setSubmission(markProposal);
-        } else if (!(submission instanceof MarkOccurrenceSubmission)) {
-            return HandlerOutcome.FAILURE;
         }
 
         // Store photo data and metadata in context (will be persisted at submission)

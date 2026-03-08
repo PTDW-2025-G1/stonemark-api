@@ -19,7 +19,7 @@ import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.services.MarkOccurrenceSubmissionService;
-import pt.estga.submission.services.MarkOccurrenceSubmissionSubmissionService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 
@@ -30,7 +30,7 @@ import pt.estga.user.entities.User;
 public class MarkOccurrenceSubmissionController {
 
     private final MarkOccurrenceSubmissionService proposalService;
-    private final MarkOccurrenceSubmissionSubmissionService submissionService;
+    private final MarkOccurrenceSubmissionSubmitService submissionService;
     private final MarkOccurrenceSubmissionMapper markOccurrenceSubmissionMapper;
 
     @Operation(summary = "List proposals by user",

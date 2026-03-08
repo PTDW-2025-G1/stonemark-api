@@ -12,7 +12,7 @@ import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -28,19 +28,19 @@ class SubmissionDecisionServiceTest {
     private SubmissionDecisionAttemptRepository attemptRepo;
 
     @Mock
-    private SubmissionRepository<MarkOccurrenceSubmission> proposalRepo;
+    private MarkOccurrenceSubmissionRepository proposalRepo;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
     // Concrete implementation for testing abstract class
-    private static class TestSubmissionDecisionService extends SubmissionDecisionService<MarkOccurrenceSubmission> {
+    private static class TestSubmissionDecisionService extends SubmissionDecisionService {
         public TestSubmissionDecisionService(
                 SubmissionDecisionAttemptRepository attemptRepo,
-                SubmissionRepository<MarkOccurrenceSubmission> proposalRepo,
+                MarkOccurrenceSubmissionRepository proposalRepo,
                 ApplicationEventPublisher eventPublisher
         ) {
-            super(attemptRepo, proposalRepo, eventPublisher, MarkOccurrenceSubmission.class);
+            super(attemptRepo, proposalRepo, eventPublisher);
         }
 
         @Override

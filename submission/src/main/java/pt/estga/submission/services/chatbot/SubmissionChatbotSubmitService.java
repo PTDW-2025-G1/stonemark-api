@@ -8,7 +8,7 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
-import pt.estga.submission.services.MarkOccurrenceSubmissionSubmissionService;
+import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
 import pt.estga.user.entities.User;
 
 import java.io.ByteArrayInputStream;
@@ -20,7 +20,7 @@ import java.io.IOException;
 public class SubmissionChatbotSubmitService {
 
     private final MediaService mediaService;
-    private final MarkOccurrenceSubmissionSubmissionService submissionService;
+    private final MarkOccurrenceSubmissionSubmitService submissionService;
 
     /**
      * Submits a proposal collected from the chatbot flow.

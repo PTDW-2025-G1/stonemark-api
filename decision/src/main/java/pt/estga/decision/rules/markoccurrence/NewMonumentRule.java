@@ -15,7 +15,7 @@ import pt.estga.submission.entities.MarkOccurrenceSubmission;
  */
 @Component
 @RequiredArgsConstructor
-public class NewMonumentRule implements DecisionRule<MarkOccurrenceSubmission> {
+public class NewMonumentRule implements DecisionRule {
 
     private final SubmissionDecisionProperties properties;
 

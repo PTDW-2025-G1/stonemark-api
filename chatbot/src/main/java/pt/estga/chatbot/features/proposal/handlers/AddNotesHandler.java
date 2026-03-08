@@ -7,7 +7,6 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.entities.Submission;
 import pt.estga.submission.services.chatbot.SubmissionChatbotSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
@@ -22,7 +21,7 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        Submission submission = context.getProposalContext().getSubmission();
+        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
         if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }

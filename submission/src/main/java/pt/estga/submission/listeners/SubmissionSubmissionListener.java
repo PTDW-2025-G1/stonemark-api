@@ -9,10 +9,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import pt.estga.submission.entities.Submission;
 import pt.estga.submission.events.SubmissionScoredEvent;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.submission.services.SubmissionScoringService;
 
 @Component
@@ -20,7 +19,7 @@ import pt.estga.submission.services.SubmissionScoringService;
 @Slf4j
 public class SubmissionSubmissionListener {
 
-    private final SubmissionRepository<Submission> submissionRepository;
+    private final MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
     private final SubmissionScoringService scoringService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -32,7 +31,7 @@ public class SubmissionSubmissionListener {
         log.info("Processing submission asynchronously for proposal ID: {}", proposalId);
 
         try {
-            submissionRepository.findById(proposalId).ifPresentOrElse(proposal -> {
+            markOccurrenceSubmissionRepository.findById(proposalId).ifPresentOrElse(proposal -> {
                 try {
                     // Calculate scores
                     Integer priority = scoringService.calculatePriority(proposal);
@@ -41,7 +40,7 @@ public class SubmissionSubmissionListener {
                     proposal.setPriority(priority);
                     proposal.setCredibilityScore(credibility);
                     
-                    submissionRepository.save(proposal);
+                    markOccurrenceSubmissionRepository.save(proposal);
                     log.info("Scores updated for proposal ID: {}. Priority={}, Credibility={}", proposalId, priority, credibility);
 
                     // Publish event indicating scoring is complete

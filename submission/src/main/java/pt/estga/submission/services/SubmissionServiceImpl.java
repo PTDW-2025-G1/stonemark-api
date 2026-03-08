@@ -9,9 +9,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.submission.entities.Submission;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.projections.ProposalStatsProjection;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -21,46 +21,46 @@ import java.util.Optional;
 @Slf4j
 public class SubmissionServiceImpl implements SubmissionService {
 
-    private final SubmissionRepository<Submission> submissionRepository;
+    private final MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
     private final CacheManager cacheManager;
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Submission> getAll(Pageable pageable) {
-        return submissionRepository.findAll(pageable);
+    public Page<MarkOccurrenceSubmission> getAll(Pageable pageable) {
+        return markOccurrenceSubmissionRepository.findAll(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "proposals", key = "#id")
-    public Optional<Submission> findById(Long id) {
-        return submissionRepository.findById(id);
+    public Optional<MarkOccurrenceSubmission> findById(Long id) {
+        return markOccurrenceSubmissionRepository.findById(id);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<Submission> findByUser(User user, Pageable pageable) {
-        return submissionRepository.findBySubmittedBy(user, pageable);
+    public Page<MarkOccurrenceSubmission> findByUser(User user, Pageable pageable) {
+        return markOccurrenceSubmissionRepository.findBySubmittedBy(user, pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
     @Cacheable(value = "proposalStats", key = "#user.id")
     public ProposalStatsProjection getStatsByUser(User user) {
-        return submissionRepository.getStatsByUserId(user.getId());
+        return markOccurrenceSubmissionRepository.getStatsByUserId(user.getId());
     }
 
     @Override
     @Transactional
     @CacheEvict(value = "proposals", key = "#id")
     public void delete(Long id) {
-        submissionRepository.findById(id).ifPresent(proposal -> {
+        markOccurrenceSubmissionRepository.findById(id).ifPresent(proposal -> {
             // Also evict stats for the user who submitted the proposal
             if (proposal.getSubmittedBy() != null) {
                 Optional.ofNullable(cacheManager.getCache("proposalStats"))
                         .ifPresent(cache -> cache.evict(proposal.getSubmittedBy().getId()));
             }
-            submissionRepository.delete(proposal);
+            markOccurrenceSubmissionRepository.delete(proposal);
         });
     }
 }

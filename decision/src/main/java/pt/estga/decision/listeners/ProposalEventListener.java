@@ -37,7 +37,7 @@ public class ProposalEventListener {
         var proposalId = event.getProposalId();
         log.info("Starting async automatic decision process for submission ID: {}", proposalId);
 
-        SubmissionDecisionService<?> decisionService = decisionServiceFactory.getServiceForProposalId(proposalId);
+        SubmissionDecisionService decisionService = decisionServiceFactory.getServiceForProposalId(proposalId);
         decisionService.makeAutomaticDecision(proposalId);
         log.info("Completed async automatic decision process for submission ID: {}", proposalId);
     }

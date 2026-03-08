@@ -12,9 +12,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.entities.Submission;
 import pt.estga.submission.projections.ProposalStatsProjection;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Collections;
@@ -27,7 +26,7 @@ import static org.mockito.Mockito.*;
 class SubmissionServiceImplTest {
 
     @Mock
-    private SubmissionRepository<Submission> submissionRepository;
+    private MarkOccurrenceSubmissionRepository markOccurrenceSubmissionRepository;
 
     @Mock
     private CacheManager cacheManager;
@@ -42,12 +41,12 @@ class SubmissionServiceImplTest {
     void findById_ShouldReturnProposal_WhenExists() {
         // Arrange
         Long id = 1L;
-        Submission submission = new MarkOccurrenceSubmission();
+        MarkOccurrenceSubmission submission = new MarkOccurrenceSubmission();
         submission.setId(id);
-        when(submissionRepository.findById(id)).thenReturn(Optional.of(submission));
+        when(markOccurrenceSubmissionRepository.findById(id)).thenReturn(Optional.of(submission));
 
         // Act
-        Optional<Submission> result = proposalService.findById(id);
+        Optional<MarkOccurrenceSubmission> result = proposalService.findById(id);
 
         // Assert
         assertTrue(result.isPresent());
@@ -59,15 +58,15 @@ class SubmissionServiceImplTest {
         // Arrange
         User user = User.builder().id(1L).build();
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Submission> page = new PageImpl<>(Collections.emptyList());
-        when(submissionRepository.findBySubmittedBy(user, pageable)).thenReturn(page);
+        Page<MarkOccurrenceSubmission> page = new PageImpl<>(Collections.emptyList());
+        when(markOccurrenceSubmissionRepository.findBySubmittedBy(user, pageable)).thenReturn(page);
 
         // Act
-        Page<Submission> result = proposalService.findByUser(user, pageable);
+        Page<MarkOccurrenceSubmission> result = proposalService.findByUser(user, pageable);
 
         // Assert
         assertNotNull(result);
-        verify(submissionRepository).findBySubmittedBy(user, pageable);
+        verify(markOccurrenceSubmissionRepository).findBySubmittedBy(user, pageable);
     }
 
     @Test
@@ -75,14 +74,14 @@ class SubmissionServiceImplTest {
         // Arrange
         User user = User.builder().id(1L).build();
         ProposalStatsProjection stats = mock(ProposalStatsProjection.class);
-        when(submissionRepository.getStatsByUserId(user.getId())).thenReturn(stats);
+        when(markOccurrenceSubmissionRepository.getStatsByUserId(user.getId())).thenReturn(stats);
 
         // Act
         ProposalStatsProjection result = proposalService.getStatsByUser(user);
 
         // Assert
         assertNotNull(result);
-        verify(submissionRepository).getStatsByUserId(user.getId());
+        verify(markOccurrenceSubmissionRepository).getStatsByUserId(user.getId());
     }
 
     @Test
@@ -90,18 +89,18 @@ class SubmissionServiceImplTest {
         // Arrange
         Long id = 1L;
         User user = User.builder().id(10L).build();
-        Submission submission = new MarkOccurrenceSubmission();
+        MarkOccurrenceSubmission submission = new MarkOccurrenceSubmission();
         submission.setId(id);
         submission.setSubmittedBy(user);
 
-        when(submissionRepository.findById(id)).thenReturn(Optional.of(submission));
+        when(markOccurrenceSubmissionRepository.findById(id)).thenReturn(Optional.of(submission));
         when(cacheManager.getCache("proposalStats")).thenReturn(cache);
 
         // Act
         proposalService.delete(id);
 
         // Assert
-        verify(submissionRepository).delete(submission);
+        verify(markOccurrenceSubmissionRepository).delete(submission);
         verify(cache).evict(user.getId());
     }
 }

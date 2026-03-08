@@ -1,6 +1,5 @@
 package pt.estga.decision.services;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,33 +7,29 @@ import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
-import pt.estga.submission.entities.Submission;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
-import pt.estga.submission.repositories.SubmissionRepository;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
 @Slf4j
-public abstract class SubmissionDecisionService<T extends Submission> {
+public abstract class SubmissionDecisionService {
 
     protected final SubmissionDecisionAttemptRepository attemptRepo;
-    protected final SubmissionRepository<T> proposalRepo;
+    protected final MarkOccurrenceSubmissionRepository proposalRepo;
     protected final ApplicationEventPublisher eventPublisher;
-    @Getter
-    protected final Class<T> proposalType;
 
     protected SubmissionDecisionService(
             SubmissionDecisionAttemptRepository attemptRepo,
-            SubmissionRepository<T> proposalRepo,
-            ApplicationEventPublisher eventPublisher,
-            Class<T> proposalType
+            MarkOccurrenceSubmissionRepository proposalRepo,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.attemptRepo = attemptRepo;
         this.proposalRepo = proposalRepo;
         this.eventPublisher = eventPublisher;
-        this.proposalType = proposalType;
     }
 
     /**
@@ -43,7 +38,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
     @Transactional
     public SubmissionDecisionAttempt makeAutomaticDecision(Long proposalId) {
         log.info("Processing automatic decision for submission ID: {}", proposalId);
-        T proposal = getProposalOrThrow(proposalId);
+        MarkOccurrenceSubmission proposal = getProposalOrThrow(proposalId);
         return makeAutomaticDecision(proposal);
     }
 
@@ -52,7 +47,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
      * Subclasses must implement the specific logic for automatic decision-making.
      */
     @Transactional
-    public abstract SubmissionDecisionAttempt makeAutomaticDecision(T proposal);
+    public abstract SubmissionDecisionAttempt makeAutomaticDecision(MarkOccurrenceSubmission proposal);
 
     /**
      * Creates a manual decision for a submission.
@@ -60,7 +55,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
     @Transactional
     public SubmissionDecisionAttempt makeManualDecision(Long proposalId, DecisionOutcome outcome, String notes, User moderator) {
         log.info("Creating manual decision for submission ID: {}, Outcome: {}, Moderator ID: {}", proposalId, outcome, moderator.getId());
-        T proposal = getProposalOrThrow(proposalId);
+        MarkOccurrenceSubmission proposal = getProposalOrThrow(proposalId);
 
         validateManualDecision(proposal, outcome);
 
@@ -80,7 +75,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
     /**
      * Optional validation hook for manual decisions.
      */
-    protected void validateManualDecision(T proposal, DecisionOutcome outcome) {
+    protected void validateManualDecision(MarkOccurrenceSubmission proposal, DecisionOutcome outcome) {
         // Default implementation does nothing
     }
 
@@ -92,11 +87,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
         SubmissionDecisionAttempt attempt = attemptRepo.findById(attemptId)
                 .orElseThrow(() -> new ResourceNotFoundException("Decision attempt not found with id: " + attemptId));
         
-        if (!proposalType.isInstance(attempt.getSubmission())) {
-            throw new IllegalArgumentException("Decision attempt " + attemptId + " does not belong to a submission of type " + proposalType.getSimpleName());
-        }
-
-        T proposal = proposalType.cast(attempt.getSubmission());
+        MarkOccurrenceSubmission proposal = attempt.getSubmission();
         log.info("Activating decision attempt ID: {} for submission ID: {}", attemptId, proposal.getId());
 
         saveAndApplyDecision(proposal, attempt);
@@ -107,7 +98,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
      */
     @Transactional
     public void deactivateDecision(Long proposalId) {
-        T proposal = getProposalOrThrow(proposalId);
+        MarkOccurrenceSubmission proposal = getProposalOrThrow(proposalId);
         log.info("Deactivating decision for submission ID: {}", proposalId);
 
         if (proposal.getStatus() == SubmissionStatus.UNDER_REVIEW || proposal.getStatus() == SubmissionStatus.SUBMITTED) {
@@ -123,7 +114,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
 
     // ==== Helper Methods ====
 
-    protected SubmissionDecisionAttempt saveAndApplyDecision(T proposal, SubmissionDecisionAttempt attempt) {
+    protected SubmissionDecisionAttempt saveAndApplyDecision(MarkOccurrenceSubmission proposal, SubmissionDecisionAttempt attempt) {
         attemptRepo.save(attempt);
         log.debug("Saved decision attempt with ID: {}", attempt.getId());
 
@@ -138,9 +129,9 @@ public abstract class SubmissionDecisionService<T extends Submission> {
         return attempt;
     }
 
-    protected abstract void publishAcceptedEvent(T proposal);
+    protected abstract void publishAcceptedEvent(MarkOccurrenceSubmission proposal);
 
-    private void applyDecisionToProposal(T proposal, SubmissionDecisionAttempt decision) {
+    private void applyDecisionToProposal(MarkOccurrenceSubmission proposal, SubmissionDecisionAttempt decision) {
         if (decision.getType() == DecisionType.MANUAL) {
             proposal.setStatus(decision.getOutcome() == DecisionOutcome.ACCEPT
                     ? SubmissionStatus.MANUALLY_ACCEPTED
@@ -158,7 +149,7 @@ public abstract class SubmissionDecisionService<T extends Submission> {
         }
     }
 
-    protected T getProposalOrThrow(Long id) {
+    protected MarkOccurrenceSubmission getProposalOrThrow(Long id) {
         return proposalRepo.findById(id)
                 .orElseThrow(() -> {
                     log.error("Submission with ID {} not found", id);

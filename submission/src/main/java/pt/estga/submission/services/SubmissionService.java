@@ -2,7 +2,7 @@ package pt.estga.submission.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pt.estga.submission.entities.Submission;
+import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.projections.ProposalStatsProjection;
 import pt.estga.user.entities.User;
 
@@ -10,11 +10,11 @@ import java.util.Optional;
 
 public interface SubmissionService {
 
-    Page<Submission> getAll(Pageable pageable);
+    Page<MarkOccurrenceSubmission> getAll(Pageable pageable);
 
-    Optional<Submission> findById(Long id);
+    Optional<MarkOccurrenceSubmission> findById(Long id);
 
-    Page<Submission> findByUser(User user, Pageable pageable);
+    Page<MarkOccurrenceSubmission> findByUser(User user, Pageable pageable);
 
     ProposalStatsProjection getStatsByUser(User user);
 
