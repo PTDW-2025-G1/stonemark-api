@@ -26,10 +26,6 @@ public class VerificationProcessorPasswordResetImpl implements VerificationProce
     @Override
     public Optional<String> process(UserContact userContact, ActionCode code) {
 
-        if (userContact == null) {
-            return Optional.of(code.getCode());
-        }
-
         String token = code.getCode();
         String resetLink = resetPasswordUrl + "?token=" + token;
 
@@ -38,8 +34,16 @@ public class VerificationProcessorPasswordResetImpl implements VerificationProce
                 code.getExpiresAt()
         ).toMinutes();
 
+        String recipient = userContact != null
+                ? userContact.getValue()
+                : code.getUser() != null ? code.getUser().getEmail() : null;
+
+        if (recipient == null || recipient.isBlank()) {
+            return Optional.of(token);
+        }
+
         Email email = Email.builder()
-                .to(userContact.getValue())
+                .to(recipient)
                 .subject("Reset your password")
                 .template("email/password-reset")
                 .properties(Map.of(

@@ -7,4 +7,6 @@ public interface VerificationDispatchService {
 
     void sendVerification(UserContact userContact, ActionCode actionCode);
 
+    void sendVerification(String recipient, ActionCode actionCode);
+
 }

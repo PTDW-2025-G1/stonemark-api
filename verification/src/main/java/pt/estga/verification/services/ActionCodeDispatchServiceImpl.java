@@ -32,7 +32,18 @@ public class ActionCodeDispatchServiceImpl implements ActionCodeDispatchService 
 
     @Override
     public void sendVerification(UserContact userContact, ActionCode code) {
-        log.info("ActionCodeDispatchService: Sending verification for contact {} with code type {}", userContact.getValue(), code.getType());
+        String recipient = userContact != null ? userContact.getValue() : code.getUser() != null ? code.getUser().getEmail() : "unknown";
+        log.info("ActionCodeDispatchService: Sending verification for recipient {} with code type {}", recipient, code.getType());
+        dispatchInternal(userContact, code);
+    }
+
+    @Override
+    public void sendVerification(String recipient, ActionCode code) {
+        log.info("ActionCodeDispatchService: Sending verification for recipient {} with code type {}", recipient, code.getType());
+        dispatchInternal(null, code);
+    }
+
+    private void dispatchInternal(UserContact userContact, ActionCode code) {
         try {
             VerificationProcessor processor = processorsMap.get(code.getType());
             if (processor == null) {
@@ -41,9 +52,9 @@ public class ActionCodeDispatchServiceImpl implements ActionCodeDispatchService 
             }
             log.info("Found processor {} for type {}", processor.getClass().getSimpleName(), code.getType());
             processor.process(userContact, code);
-            log.info("ActionCodeDispatchService: Successfully processed verification for contact {}", userContact.getValue());
+            log.info("ActionCodeDispatchService: Successfully processed verification for action code {}", code.getId());
         } catch (Exception e) {
-            log.error("Error during action code dispatch for contact {}", userContact.getValue(), e);
+            log.error("Error during action code dispatch for action code {}", code.getId(), e);
             throw e;
         }
     }
