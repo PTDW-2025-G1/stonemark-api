@@ -11,7 +11,6 @@ import pt.estga.shared.enums.UserRole;
 import pt.estga.user.entities.ServiceAccount;
 import pt.estga.user.entities.User;
 import pt.estga.user.enums.ServiceRole;
-import pt.estga.user.enums.TfaMethod;
 import pt.estga.user.services.ServiceAccountService;
 import pt.estga.user.services.UserService;
 
@@ -70,7 +69,6 @@ public class SystemUserInitializer {
                     .role(UserRole.ADMIN)
                     .enabled(true)
                     .accountLocked(false)
-                    .tfaMethod(TfaMethod.NONE)
                     .build();
 
             userService.create(systemAdmin);

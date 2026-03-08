@@ -27,7 +27,6 @@
         <module>detection</module>
         <module>file</module>
         <module>user</module>
-        <module>auth</module>
         <module>shared</module>
         <module>submission</module>
         <module>support</module>

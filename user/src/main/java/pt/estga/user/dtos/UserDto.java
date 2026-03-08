@@ -1,8 +1,8 @@
 package pt.estga.user.dtos;
 
 import lombok.*;
+import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.shared.enums.UserRole;
-import pt.estga.user.enums.TfaMethod;
 
 import java.time.Instant;
 
@@ -12,10 +12,11 @@ public record UserDto(
         String firstName,
         String lastName,
         String username,
+        String email,
+        String phone,
+        boolean emailVerified,
+        boolean phoneVerified,
+        MediaFileDto photo,
         UserRole role,
-        Instant createdAt,
-        TfaMethod tfaMethod,
-        boolean accountLocked,
-        boolean enabled,
-        Long photoId
+        Instant createdAt
 ) { }
