@@ -33,19 +33,6 @@ public class AccountSocialService {
                 .findById(user.getId())
                 .orElseThrow();
 
-        boolean hasPassword =
-                managedUser.getPassword() != null &&
-                        !managedUser.getPassword().isBlank();
-
-        List<UserIdentity> identities = userIdentityRepository.findByUser(managedUser);
-        boolean isLastProvider = identities.size() <= 1;
-
-        if (!hasPassword && isLastProvider) {
-            throw new IllegalStateException(
-                    "You must set a password before disconnecting the last authentication provider."
-            );
-        }
-
         userIdentityService.deleteByUserAndProvider(managedUser, provider);
     }
 

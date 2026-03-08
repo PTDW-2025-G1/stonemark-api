@@ -14,15 +14,13 @@ spring:
             token-uri: https://oauth2.googleapis.com/token
             user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
             user-name-attribute: sub
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/stonemark}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/stonemark/protocol/openid-connect/certs}
 
 application:
   security:
-    jwt:
-      secret-key: ${JWT_SECRET_KEY}
-      access-token:
-        expiration: 90000000 # 15 minutes
-      refresh-token:
-        expiration: 2592000000 # 30 days
     action-code:
       email-verification:
         expiration: 86400000 # 24 hours
@@ -36,5 +34,3 @@ application:
         expiration: 2592000000 # 30 days
       chatbot-verification:
         expiration: 900000 # 15 minutes
-    contact:
-      verification-required: true

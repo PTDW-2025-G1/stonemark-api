@@ -8,7 +8,7 @@ import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.entities.User;
 
-@Mapper(componentModel = "spring", uses = UserContactMapper.class)
+@Mapper(componentModel = "spring")
 public interface UserMapper {
 
     @Mapping(target = "photoId", source = "photo.id")

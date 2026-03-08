@@ -8,7 +8,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.repositories.ActionCodeRepository;
@@ -32,28 +31,23 @@ class ActionCodeServiceTest {
     private ActionCodeServiceImpl actionCodeService;
 
     private User testUser;
-    private UserContact testUserContact;
+    private String recipient;
 
     @BeforeEach
     void setUp() {
         testUser = User.builder()
                 .id(1L)
                 .username("testuser")
-                .password("encodedPassword")
                 .build();
 
-        testUserContact = UserContact.builder()
-                .id(1L)
-                .user(testUser)
-                .value("test@example.com")
-                .build();
+        recipient = "test@example.com";
 
-        // Inject @Value properties using ReflectionTestUtils
-        ReflectionTestUtils.setField(actionCodeService, "emailVerificationExpiration", 3600000L); // 1 hour
-        ReflectionTestUtils.setField(actionCodeService, "passwordResetExpiration", 1800000L); // 30 minutes
-        ReflectionTestUtils.setField(actionCodeService, "twoFactorExpiration", 300000L); // 5 minutes
-        ReflectionTestUtils.setField(actionCodeService, "telephoneVerificationExpiration", 600000L); // 10 minutes
-        ReflectionTestUtils.setField(actionCodeService, "deviceVerificationExpiration", 86400000L); // 24 hours
+        ReflectionTestUtils.setField(actionCodeService, "emailVerificationExpiration", 3600000L);
+        ReflectionTestUtils.setField(actionCodeService, "passwordResetExpiration", 1800000L);
+        ReflectionTestUtils.setField(actionCodeService, "twoFactorExpiration", 300000L);
+        ReflectionTestUtils.setField(actionCodeService, "telephoneVerificationExpiration", 600000L);
+        ReflectionTestUtils.setField(actionCodeService, "deviceVerificationExpiration", 86400000L);
+        ReflectionTestUtils.setField(actionCodeService, "chatbotVerificationExpiration", 900000L);
     }
 
     @Test
@@ -63,20 +57,21 @@ class ActionCodeServiceTest {
         when(actionCodeRepository.save(any(ActionCode.class)))
                 .thenAnswer(invocation -> {
                     ActionCode ac = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(ac, "id", 1L); // Simulate ID being set by DB
+                    ReflectionTestUtils.setField(ac, "id", 1L);
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.EMAIL_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION);
 
         assertNotNull(createdCode);
         assertEquals(testUser, createdCode.getUser());
+        assertEquals(recipient, createdCode.getRecipient());
         assertEquals(ActionCodeType.EMAIL_VERIFICATION, createdCode.getType());
         assertFalse(createdCode.isConsumed());
         assertNotNull(createdCode.getCode());
         assertEquals(6, createdCode.getCode().length());
-        assertTrue(createdCode.getCode().matches("[A-Z0-9]+")); // Alphanumeric and uppercase
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(59, ChronoUnit.MINUTES))); // Roughly 1 hour expiration
+        assertTrue(createdCode.getCode().matches("[A-Z0-9]+"));
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(59, ChronoUnit.MINUTES)));
         verify(actionCodeRepository, never()).delete(any(ActionCode.class));
         verify(actionCodeRepository, times(1)).save(any(ActionCode.class));
     }
@@ -101,10 +96,11 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.EMAIL_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION);
 
         assertNotNull(createdCode);
-        assertNotEquals(existingCode.getCode(), createdCode.getCode()); // New code should be different
+        assertEquals(recipient, createdCode.getRecipient());
+        assertNotEquals(existingCode.getCode(), createdCode.getCode());
         verify(actionCodeRepository, times(1)).delete(existingCode);
         verify(actionCodeRepository, times(1)).save(any(ActionCode.class));
     }
@@ -120,11 +116,11 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.RESET_PASSWORD);
 
         assertNotNull(createdCode);
         assertEquals(ActionCodeType.RESET_PASSWORD, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(29, ChronoUnit.MINUTES))); // Roughly 30 minutes
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(29, ChronoUnit.MINUTES)));
         assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(31, ChronoUnit.MINUTES)));
     }
 
@@ -139,11 +135,11 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.TWO_FACTOR);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.TWO_FACTOR);
 
         assertNotNull(createdCode);
         assertEquals(ActionCodeType.TWO_FACTOR, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(4, ChronoUnit.MINUTES))); // Roughly 5 minutes
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(4, ChronoUnit.MINUTES)));
         assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(6, ChronoUnit.MINUTES)));
     }
 
@@ -158,11 +154,11 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.PHONE_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.PHONE_VERIFICATION);
 
         assertNotNull(createdCode);
         assertEquals(ActionCodeType.PHONE_VERIFICATION, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(9, ChronoUnit.MINUTES))); // Roughly 10 minutes
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(9, ChronoUnit.MINUTES)));
         assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(11, ChronoUnit.MINUTES)));
     }
 
@@ -177,11 +173,11 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.DEVICE_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.DEVICE_VERIFICATION);
 
         assertNotNull(createdCode);
         assertEquals(ActionCodeType.DEVICE_VERIFICATION, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(23, ChronoUnit.HOURS))); // Roughly 24 hours
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(23, ChronoUnit.HOURS)));
         assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(25, ChronoUnit.HOURS)));
     }
 
@@ -193,7 +189,7 @@ class ActionCodeServiceTest {
                 .thenThrow(new RuntimeException("DB error"));
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.EMAIL_VERIFICATION));
+                () -> actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION));
 
         assertEquals("DB error", thrown.getMessage());
         verify(actionCodeRepository, times(1)).save(any(ActionCode.class));

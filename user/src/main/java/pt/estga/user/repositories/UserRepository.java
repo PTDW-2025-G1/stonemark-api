@@ -1,7 +1,5 @@
 package pt.estga.user.repositories;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,17 +14,25 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
+    Optional<User> findByKeycloakSub(String keycloakSub);
+
     @Query("SELECT u FROM User u WHERE u.id = :id")
-    Optional<User> findByIdWithContacts(@Param("id") Long id);
+    Optional<User> findByIdForProfile(@Param("id") Long id);
 
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdWithIdentities(@Param("id") Long id);
 
-    @Query(value = "SELECT DISTINCT u FROM User u",
-           countQuery = "SELECT COUNT(u) FROM User u")
-    Page<User> findAllWithContacts(Pageable pageable);
-
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
+
+    boolean existsByKeycloakSub(String keycloakSub);
 
     void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }

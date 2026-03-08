@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.shared.enums.UserRole;
 import pt.estga.user.repositories.UserRepository;
-import pt.estga.user.repositories.UserContactRepository;
 import pt.estga.user.repositories.UserIdentityRepository;
 import pt.estga.user.entities.User;
 
@@ -20,17 +19,11 @@ import java.util.Optional;
 public class UserServiceHibernateImpl implements UserService {
 
     private final UserRepository repository;
-    private final UserContactRepository userContactRepository;
     private final UserIdentityRepository userIdentityRepository;
 
     @Override
     public Page<User> findAll(Pageable pageable) {
         return repository.findAll(pageable);
-    }
-
-    @Override
-    public Page<User> findAllWithContacts(Pageable pageable) {
-        return repository.findAllWithContacts(pageable);
     }
 
     @Override
@@ -45,8 +38,26 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    public Optional<User> findByIdWithContacts(Long id) {
-        return repository.findByIdWithContacts(id);
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByPhone(String phone) {
+        return repository.findByPhone(phone);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<User> findByKeycloakSub(String keycloakSub) {
+        return repository.findByKeycloakSub(keycloakSub);
+    }
+
+    @Override
+    public Optional<User> findByIdForProfile(Long id) {
+        return repository.findByIdForProfile(id);
     }
 
     @Override
@@ -57,6 +68,32 @@ public class UserServiceHibernateImpl implements UserService {
     @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        return repository.existsByPhone(phone);
+    }
+
+    @Override
+    public boolean existsByKeycloakSub(String keycloakSub) {
+        return repository.existsByKeycloakSub(keycloakSub);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateByKeycloakSub(String keycloakSub) {
+        User user = repository.findByKeycloakSub(keycloakSub)
+                .orElseThrow(() -> new RuntimeException("User not found for keycloakSub"));
+
+        user.setEnabled(false);
+        user.setAccountLocked(true);
+        repository.save(user);
     }
 
     @Override
@@ -89,13 +126,15 @@ public class UserServiceHibernateImpl implements UserService {
     public void softDeleteUser(Long id) {
         User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
-        userContactRepository.deleteByUser(user);
         userIdentityRepository.deleteByUser(user);
 
         user.setFirstName("deleted");
         user.setLastName("user");
-        user.setPassword(null);
         user.setUsername(null);
+        user.setEmail(null);
+        user.setPhone(null);
+        user.setEmailVerified(false);
+        user.setPhoneVerified(false);
         user.setEnabled(false);
 
         repository.save(user);

@@ -5,10 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import pt.estga.shared.exceptions.*;
 import pt.estga.user.entities.User;
-import pt.estga.user.services.UserService;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.processors.VerificationProcessor;
@@ -17,27 +15,17 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.ArgumentMatchers.eq; // Import eq
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class VerificationProcessingServiceTest {
 
     @Mock
-    private ActionCodeService actionCodeService;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
-    @Mock
     private ActionCodeValidationService actionCodeValidationService;
 
     @Mock
-    private UserContactActivationService userContactActivationService;
+    private UserVerificationActivationService userVerificationActivationService;
 
     @Mock
     private VerificationProcessor emailVerificationProcessor;
@@ -52,14 +40,10 @@ class VerificationProcessingServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Initialize with all known processors
         VerificationProcessingServiceImpl serviceImpl = new VerificationProcessingServiceImpl(
-                actionCodeService,
-                userService,
-                passwordEncoder,
                 actionCodeValidationService,
                 List.of(emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor),
-                userContactActivationService
+                userVerificationActivationService
         );
         when(emailVerificationProcessor.getType()).thenReturn(ActionCodeType.EMAIL_VERIFICATION);
         when(resetPasswordProcessor.getType()).thenReturn(ActionCodeType.RESET_PASSWORD);
@@ -67,40 +51,40 @@ class VerificationProcessingServiceTest {
         serviceImpl.init();
         verificationProcessingService = serviceImpl;
 
-        clearInvocations(actionCodeService, userService, passwordEncoder, actionCodeValidationService,
-                userContactActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
+        clearInvocations(actionCodeValidationService,
+                userVerificationActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
     }
 
     @Test
-    void confirmCode_shouldActivateUserContact_whenCodeIsForEmailVerification() {
+    void confirmCode_shouldActivateContactVerification_whenCodeIsForEmailVerification() {
         String code = "validEmailCode";
         ActionCode actionCode = new ActionCode();
         actionCode.setType(ActionCodeType.EMAIL_VERIFICATION);
 
         when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-        when(userContactActivationService.activateUserContact(actionCode)).thenReturn(Optional.empty());
+        when(userVerificationActivationService.activateContactVerification(actionCode)).thenReturn(Optional.empty());
 
         Optional<String> result = verificationProcessingService.confirmCode(code);
 
         assertTrue(result.isEmpty());
-        verify(userContactActivationService).activateUserContact(actionCode);
+        verify(userVerificationActivationService).activateContactVerification(actionCode);
         verifyNoInteractions(emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
     }
 
     @Test
-    void confirmCode_shouldActivateUserContact_whenCodeIsForPhoneVerification() {
+    void confirmCode_shouldActivateContactVerification_whenCodeIsForPhoneVerification() {
         String code = "validPhoneCode";
         ActionCode actionCode = new ActionCode();
         actionCode.setType(ActionCodeType.PHONE_VERIFICATION);
 
         when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-        when(userContactActivationService.activateUserContact(actionCode)).thenReturn(Optional.of("someValue"));
+        when(userVerificationActivationService.activateContactVerification(actionCode)).thenReturn(Optional.of("someValue"));
 
         Optional<String> result = verificationProcessingService.confirmCode(code);
 
         assertTrue(result.isPresent());
         assertEquals("someValue", result.get());
-        verify(userContactActivationService).activateUserContact(actionCode);
+        verify(userVerificationActivationService).activateContactVerification(actionCode);
         verifyNoInteractions(emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
     }
 
@@ -109,16 +93,17 @@ class VerificationProcessingServiceTest {
         String code = "validResetCode";
         ActionCode actionCode = new ActionCode();
         actionCode.setType(ActionCodeType.RESET_PASSWORD);
+        actionCode.setRecipient("user@example.com");
 
         when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-        when(resetPasswordProcessor.process(isNull(), eq(actionCode))).thenReturn(Optional.of(code));
+        when(resetPasswordProcessor.process(eq("user@example.com"), eq(actionCode))).thenReturn(Optional.of(code));
 
         Optional<String> result = verificationProcessingService.confirmCode(code);
 
         assertTrue(result.isPresent());
         assertEquals(code, result.get());
-        verify(resetPasswordProcessor).process(isNull(), eq(actionCode));
-        verifyNoInteractions(userContactActivationService, emailVerificationProcessor, phoneVerificationProcessor);
+        verify(resetPasswordProcessor).process(eq("user@example.com"), eq(actionCode));
+        verifyNoInteractions(userVerificationActivationService, emailVerificationProcessor, phoneVerificationProcessor);
     }
 
     @Test
@@ -130,93 +115,43 @@ class VerificationProcessingServiceTest {
         when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
 
         assertThrows(InvalidVerificationPurposeException.class, () -> verificationProcessingService.confirmCode(code));
-        verifyNoInteractions(userContactActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
+        verifyNoInteractions(userVerificationActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
     }
 
     @Test
     void confirmCode_shouldThrowIllegalStateException_whenProcessorIsMissingForValidType() {
-        // Re-initialize service with a missing processor for RESET_PASSWORD
         VerificationProcessingServiceImpl serviceImpl = new VerificationProcessingServiceImpl(
-                actionCodeService,
-                userService,
-                passwordEncoder,
                 actionCodeValidationService,
                 List.of(emailVerificationProcessor, phoneVerificationProcessor),
-                userContactActivationService
+                userVerificationActivationService
         );
         when(emailVerificationProcessor.getType()).thenReturn(ActionCodeType.EMAIL_VERIFICATION);
         when(phoneVerificationProcessor.getType()).thenReturn(ActionCodeType.PHONE_VERIFICATION);
         serviceImpl.init();
         verificationProcessingService = serviceImpl;
 
-        // Clear invocations for this specific setup as well
-        clearInvocations(actionCodeService, userService, passwordEncoder, actionCodeValidationService,
-                userContactActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
-
+        clearInvocations(actionCodeValidationService,
+                userVerificationActivationService, emailVerificationProcessor, resetPasswordProcessor, phoneVerificationProcessor);
 
         String code = "codeForMissingProcessor";
         ActionCode actionCode = new ActionCode();
-        actionCode.setType(ActionCodeType.RESET_PASSWORD); // This type is valid for confirmation but its processor is missing
+        actionCode.setType(ActionCodeType.RESET_PASSWORD);
 
         when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
 
         assertThrows(IllegalStateException.class, () -> verificationProcessingService.confirmCode(code));
-        verifyNoInteractions(userContactActivationService, emailVerificationProcessor, phoneVerificationProcessor);
+        verifyNoInteractions(userVerificationActivationService, emailVerificationProcessor, phoneVerificationProcessor);
     }
 
     @Test
-    void processPasswordReset_shouldResetPassword_whenCodeIsValid() {
+    void processPasswordReset_shouldThrowIllegalStateException_inKeycloakOnlyMode() {
         String code = "validResetCode";
         String newPassword = "newPassword";
-        User user = new User();
-        user.setUsername("testUser");
-        user.setPassword("oldEncodedPassword");
-        ActionCode actionCode = new ActionCode();
-        actionCode.setUser(user);
-        actionCode.setType(ActionCodeType.RESET_PASSWORD);
 
-        when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-        when(passwordEncoder.matches(newPassword, "oldEncodedPassword")).thenReturn(false);
-        when(passwordEncoder.encode(newPassword)).thenReturn("newEncodedPassword");
-
-        verificationProcessingService.processPasswordReset(code, newPassword);
-
-        verify(userService).update(user);
-        assertEquals("newEncodedPassword", user.getPassword());
-        verify(actionCodeService).consumeCode(actionCode);
-    }
-
-    @Test
-    void processPasswordReset_shouldThrowInvalidVerificationPurposeException_whenCodeTypeIsInvalid() {
-        String code = "invalidTypeCode";
-        String newPassword = "newPassword";
-        ActionCode actionCode = new ActionCode();
-        actionCode.setType(ActionCodeType.EMAIL_VERIFICATION);
-
-        when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-
-        assertThrows(InvalidVerificationPurposeException.class,
+        assertThrows(IllegalStateException.class,
                 () -> verificationProcessingService.processPasswordReset(code, newPassword));
-        verifyNoInteractions(userService, passwordEncoder, actionCodeService);
-    }
 
-    @Test
-    void processPasswordReset_shouldThrowSamePasswordException_whenPasswordIsTheSame() {
-        String code = "validResetCode";
-        String newPassword = "samePassword";
-        User user = new User();
-        user.setUsername("testUser");
-        user.setPassword("encodedSamePassword");
-        ActionCode actionCode = new ActionCode();
-        actionCode.setUser(user);
-        actionCode.setType(ActionCodeType.RESET_PASSWORD);
-
-        when(actionCodeValidationService.getValidatedActionCode(code)).thenReturn(actionCode);
-        when(passwordEncoder.matches(newPassword, "encodedSamePassword")).thenReturn(true);
-
-        assertThrows(SamePasswordException.class,
-                () -> verificationProcessingService.processPasswordReset(code, newPassword));
-        verifyNoInteractions(userService, actionCodeService);
+        verifyNoInteractions(actionCodeValidationService);
     }
 
     @Test

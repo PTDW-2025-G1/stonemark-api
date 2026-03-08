@@ -3,17 +3,16 @@ package pt.estga.user.events;
 import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
 
 @Getter
 public class EmailVerificationRequestedEvent extends ApplicationEvent {
 
     private final User user;
-    private final UserContact userContact;
+    private final String email;
 
-    public EmailVerificationRequestedEvent(Object source, User user, UserContact userContact) {
+    public EmailVerificationRequestedEvent(Object source, User user, String email) {
         super(source);
         this.user = user;
-        this.userContact = userContact;
+        this.email = email;
     }
 }

@@ -2,7 +2,6 @@ package pt.estga.verification.services.processors;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pt.estga.user.entities.UserContact;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.UserActivationService;
@@ -23,12 +22,12 @@ public class VerificationProcessorTelephoneImpl implements VerificationProcessor
      * Processes the action code for telephone verification.
      * It enables the associated user and consumes the code.
      *
-     * @param userContact The {@link UserContact} to process.
+     * @param recipient The recipient to process.
      * @param code The {@link ActionCode} to process.
      * @return An empty Optional, as enabling a user typically doesn't return a string.
      */
     @Override
-    public Optional<String> process(UserContact userContact, ActionCode code) {
+    public Optional<String> process(String recipient, ActionCode code) {
         return userActivationService.activateUserAndConsumeCode(code);
     }
 

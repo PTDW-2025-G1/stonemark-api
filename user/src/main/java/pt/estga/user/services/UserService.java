@@ -12,17 +12,29 @@ public interface UserService {
 
     Page<User> findAll(Pageable pageable);
 
-    Page<User> findAllWithContacts(Pageable pageable);
-
     Optional<User> findById(Long id);
 
     Optional<User> findByUsername(String username);
 
-    Optional<User> findByIdWithContacts(Long id);
+    Optional<User> findByEmail(String email);
+
+    Optional<User> findByPhone(String phone);
+
+    Optional<User> findByKeycloakSub(String keycloakSub);
+
+    Optional<User> findByIdForProfile(Long id);
 
     Optional<User> findByIdWithIdentities(Long id);
 
     boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByPhone(String phone);
+
+    boolean existsByKeycloakSub(String keycloakSub);
+
+    void deactivateByKeycloakSub(String keycloakSub);
 
     User create(User user);
 
