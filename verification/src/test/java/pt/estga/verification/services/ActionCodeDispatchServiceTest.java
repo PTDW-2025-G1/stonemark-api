@@ -20,10 +20,7 @@ import static org.mockito.Mockito.*;
 class ActionCodeDispatchServiceTest {
 
     @Mock
-    private VerificationProcessor emailVerificationProcessor;
-
-    @Mock
-    private VerificationProcessor phoneVerificationProcessor;
+    private VerificationProcessor telegramVerificationProcessor;
 
     @InjectMocks
     private ActionCodeDispatchServiceImpl actionCodeDispatchService;
@@ -32,37 +29,24 @@ class ActionCodeDispatchServiceTest {
 
     @BeforeEach
     void setUp() {
-        recipient = "test@example.com";
+        recipient = "123456789";
 
-        when(emailVerificationProcessor.getType()).thenReturn(ActionCodeType.EMAIL_VERIFICATION);
-        when(phoneVerificationProcessor.getType()).thenReturn(ActionCodeType.PHONE_VERIFICATION);
-        when(emailVerificationProcessor.process(any(), any())).thenReturn(Optional.empty());
-        when(phoneVerificationProcessor.process(any(), any())).thenReturn(Optional.empty());
+        when(telegramVerificationProcessor.getType()).thenReturn(ActionCodeType.TELEGRAM_VERIFICATION);
+        when(telegramVerificationProcessor.process(any(), any())).thenReturn(Optional.empty());
 
-        actionCodeDispatchService = new ActionCodeDispatchServiceImpl(List.of(emailVerificationProcessor, phoneVerificationProcessor));
+        actionCodeDispatchService = new ActionCodeDispatchServiceImpl(List.of(telegramVerificationProcessor));
         actionCodeDispatchService.init();
 
-        clearInvocations(emailVerificationProcessor, phoneVerificationProcessor);
+        clearInvocations(telegramVerificationProcessor);
     }
 
     @Test
-    void sendVerification_shouldDispatchToCorrectProcessor_forEmailVerification() {
-        ActionCode emailCode = ActionCode.builder().type(ActionCodeType.EMAIL_VERIFICATION).build();
+    void sendVerification_shouldDispatchToCorrectProcessor_forTelegramVerification() {
+        ActionCode telegramCode = ActionCode.builder().type(ActionCodeType.TELEGRAM_VERIFICATION).build();
 
-        actionCodeDispatchService.sendVerification(recipient, emailCode);
+        actionCodeDispatchService.sendVerification(recipient, telegramCode);
 
-        verify(emailVerificationProcessor, times(1)).process(recipient, emailCode);
-        verifyNoInteractions(phoneVerificationProcessor);
-    }
-
-    @Test
-    void sendVerification_shouldDispatchToCorrectProcessor_forPhoneVerification() {
-        ActionCode phoneCode = ActionCode.builder().type(ActionCodeType.PHONE_VERIFICATION).build();
-
-        actionCodeDispatchService.sendVerification(recipient, phoneCode);
-
-        verify(phoneVerificationProcessor, times(1)).process(recipient, phoneCode);
-        verifyNoInteractions(emailVerificationProcessor);
+        verify(telegramVerificationProcessor, times(1)).process(recipient, telegramCode);
     }
 
     @Test
@@ -71,19 +55,18 @@ class ActionCodeDispatchServiceTest {
 
         actionCodeDispatchService.sendVerification(recipient, unknownTypeCode);
 
-        verifyNoInteractions(emailVerificationProcessor, phoneVerificationProcessor);
+        verifyNoInteractions(telegramVerificationProcessor);
     }
 
     @Test
     void sendVerification_shouldPropagateException_whenProcessorThrowsException() {
-        ActionCode emailCode = ActionCode.builder().type(ActionCodeType.EMAIL_VERIFICATION).build();
-        doThrow(new RuntimeException("Processor failed")).when(emailVerificationProcessor).process(recipient, emailCode);
+        ActionCode telegramCode = ActionCode.builder().type(ActionCodeType.TELEGRAM_VERIFICATION).build();
+        doThrow(new RuntimeException("Processor failed")).when(telegramVerificationProcessor).process(recipient, telegramCode);
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> actionCodeDispatchService.sendVerification(recipient, emailCode));
+                () -> actionCodeDispatchService.sendVerification(recipient, telegramCode));
 
         assertEquals("Processor failed", thrown.getMessage());
-        verify(emailVerificationProcessor, times(1)).process(recipient, emailCode);
-        verifyNoInteractions(phoneVerificationProcessor);
+        verify(telegramVerificationProcessor, times(1)).process(recipient, telegramCode);
     }
 }

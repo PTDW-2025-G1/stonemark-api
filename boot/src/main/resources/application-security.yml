@@ -22,14 +22,8 @@ spring:
 application:
   security:
     action-code:
-      email-verification:
-        expiration: 86400000 # 24 hours
-      password-reset:
-        expiration: 3600000 # 1 hour
       two-factor:
         expiration: 3600000 # 1 hour
-      telephone-verification:
-        expiration: 900000 # 15 minutes
       device-verification:
         expiration: 2592000000 # 30 days
       chatbot-verification:

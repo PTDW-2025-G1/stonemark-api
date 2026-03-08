@@ -44,7 +44,7 @@ class UserActivationServiceTest {
                 .id(10L)
                 .code("ACTIVATIONCODE")
                 .user(testUser)
-                .type(ActionCodeType.EMAIL_VERIFICATION)
+                .type(ActionCodeType.TELEGRAM_VERIFICATION)
                 .build();
     }
 

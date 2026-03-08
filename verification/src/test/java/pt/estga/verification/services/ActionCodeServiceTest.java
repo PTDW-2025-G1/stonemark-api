@@ -42,17 +42,14 @@ class ActionCodeServiceTest {
 
         recipient = "test@example.com";
 
-        ReflectionTestUtils.setField(actionCodeService, "emailVerificationExpiration", 3600000L);
-        ReflectionTestUtils.setField(actionCodeService, "passwordResetExpiration", 1800000L);
         ReflectionTestUtils.setField(actionCodeService, "twoFactorExpiration", 300000L);
-        ReflectionTestUtils.setField(actionCodeService, "telephoneVerificationExpiration", 600000L);
         ReflectionTestUtils.setField(actionCodeService, "deviceVerificationExpiration", 86400000L);
         ReflectionTestUtils.setField(actionCodeService, "chatbotVerificationExpiration", 900000L);
     }
 
     @Test
     void createAndSave_shouldCreateAndSaveNewCode_whenNoExistingCode() {
-        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.EMAIL_VERIFICATION))
+        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.TELEGRAM_VERIFICATION))
                 .thenReturn(Optional.empty());
         when(actionCodeRepository.save(any(ActionCode.class)))
                 .thenAnswer(invocation -> {
@@ -61,17 +58,17 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.TELEGRAM_VERIFICATION);
 
         assertNotNull(createdCode);
         assertEquals(testUser, createdCode.getUser());
         assertEquals(recipient, createdCode.getRecipient());
-        assertEquals(ActionCodeType.EMAIL_VERIFICATION, createdCode.getType());
+        assertEquals(ActionCodeType.TELEGRAM_VERIFICATION, createdCode.getType());
         assertFalse(createdCode.isConsumed());
         assertNotNull(createdCode.getCode());
         assertEquals(6, createdCode.getCode().length());
         assertTrue(createdCode.getCode().matches("[A-Z0-9]+"));
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(59, ChronoUnit.MINUTES)));
+        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(14, ChronoUnit.MINUTES)));
         verify(actionCodeRepository, never()).delete(any(ActionCode.class));
         verify(actionCodeRepository, times(1)).save(any(ActionCode.class));
     }
@@ -81,13 +78,13 @@ class ActionCodeServiceTest {
         ActionCode existingCode = ActionCode.builder()
                 .id(10L)
                 .user(testUser)
-                .type(ActionCodeType.EMAIL_VERIFICATION)
+                .type(ActionCodeType.TELEGRAM_VERIFICATION)
                 .code("OLDCODE")
                 .consumed(false)
                 .expiresAt(Instant.now().minusSeconds(100))
                 .build();
 
-        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.EMAIL_VERIFICATION))
+        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.TELEGRAM_VERIFICATION))
                 .thenReturn(Optional.of(existingCode));
         when(actionCodeRepository.save(any(ActionCode.class)))
                 .thenAnswer(invocation -> {
@@ -96,7 +93,7 @@ class ActionCodeServiceTest {
                     return ac;
                 });
 
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION);
+        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.TELEGRAM_VERIFICATION);
 
         assertNotNull(createdCode);
         assertEquals(recipient, createdCode.getRecipient());
@@ -125,25 +122,6 @@ class ActionCodeServiceTest {
     }
 
     @Test
-    void createAndSave_shouldSetCorrectExpirationForPhoneVerification() {
-        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.PHONE_VERIFICATION))
-                .thenReturn(Optional.empty());
-        when(actionCodeRepository.save(any(ActionCode.class)))
-                .thenAnswer(invocation -> {
-                    ActionCode ac = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(ac, "id", 5L);
-                    return ac;
-                });
-
-        ActionCode createdCode = actionCodeService.createAndSave(testUser, recipient, ActionCodeType.PHONE_VERIFICATION);
-
-        assertNotNull(createdCode);
-        assertEquals(ActionCodeType.PHONE_VERIFICATION, createdCode.getType());
-        assertTrue(createdCode.getExpiresAt().isAfter(Instant.now().plus(9, ChronoUnit.MINUTES)));
-        assertTrue(createdCode.getExpiresAt().isBefore(Instant.now().plus(11, ChronoUnit.MINUTES)));
-    }
-
-    @Test
     void createAndSave_shouldSetCorrectExpirationForDeviceVerification() {
         when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.DEVICE_VERIFICATION))
                 .thenReturn(Optional.empty());
@@ -164,13 +142,13 @@ class ActionCodeServiceTest {
 
     @Test
     void createAndSave_shouldPropagateException_whenRepositoryFails() {
-        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.EMAIL_VERIFICATION))
+        when(actionCodeRepository.findByUserAndType(testUser, ActionCodeType.TELEGRAM_VERIFICATION))
                 .thenReturn(Optional.empty());
         when(actionCodeRepository.save(any(ActionCode.class)))
                 .thenThrow(new RuntimeException("DB error"));
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> actionCodeService.createAndSave(testUser, recipient, ActionCodeType.EMAIL_VERIFICATION));
+                () -> actionCodeService.createAndSave(testUser, recipient, ActionCodeType.TELEGRAM_VERIFICATION));
 
         assertEquals("DB error", thrown.getMessage());
         verify(actionCodeRepository, times(1)).save(any(ActionCode.class));

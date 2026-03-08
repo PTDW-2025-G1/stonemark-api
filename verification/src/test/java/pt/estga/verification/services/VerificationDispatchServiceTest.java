@@ -29,11 +29,11 @@ class VerificationDispatchServiceTest {
 
     @BeforeEach
     void setUp() {
-        recipient = "test@example.com";
+        recipient = "123456789";
         testActionCode = ActionCode.builder()
                 .id(10L)
                 .code("CODE123")
-                .type(ActionCodeType.EMAIL_VERIFICATION)
+                .type(ActionCodeType.TELEGRAM_VERIFICATION)
                 .recipient(recipient)
                 .build();
     }

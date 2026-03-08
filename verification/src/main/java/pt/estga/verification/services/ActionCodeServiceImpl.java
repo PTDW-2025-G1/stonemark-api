@@ -20,17 +20,8 @@ public class ActionCodeServiceImpl implements ActionCodeService {
 
     private final ActionCodeRepository actionCodeRepository;
 
-    @Value("${application.security.action-code.email-verification.expiration}")
-    private long emailVerificationExpiration;
-
-    @Value("${application.security.action-code.password-reset.expiration}")
-    private long passwordResetExpiration;
-
     @Value("${application.security.action-code.two-factor.expiration}")
     private long twoFactorExpiration;
-
-    @Value("${application.security.action-code.telephone-verification.expiration}")
-    private long telephoneVerificationExpiration;
 
     @Value("${application.security.action-code.device-verification.expiration}")
     private long deviceVerificationExpiration;
@@ -89,8 +80,6 @@ public class ActionCodeServiceImpl implements ActionCodeService {
 
     private long getExpirationMillisFor(ActionCodeType type) {
         return switch (type) {
-            case EMAIL_VERIFICATION -> emailVerificationExpiration;
-            case PHONE_VERIFICATION -> telephoneVerificationExpiration;
             case TWO_FACTOR -> twoFactorExpiration;
             case DEVICE_VERIFICATION -> deviceVerificationExpiration;
             case TELEGRAM_VERIFICATION, CHATBOT_VERIFICATION -> chatbotVerificationExpiration;

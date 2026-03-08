@@ -35,7 +35,7 @@ class ActionCodeValidationServiceTest {
     void setUp() {
         validActionCode = ActionCode.builder()
                 .code(TEST_CODE)
-                .type(ActionCodeType.EMAIL_VERIFICATION)
+                .type(ActionCodeType.TELEGRAM_VERIFICATION)
                 .expiresAt(Instant.now().plusSeconds(3600)) // 1 hour from now
                 .consumed(false)
                 .build();
