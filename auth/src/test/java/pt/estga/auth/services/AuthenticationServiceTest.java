@@ -10,6 +10,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import pt.estga.auth.dtos.AuthenticationResponseDto;
+import pt.estga.auth.services.tfa.TotpService;
+import pt.estga.auth.services.tfa.TwoFactorAuthenticationService;
 import pt.estga.security.entities.RefreshToken;
 import pt.estga.security.enums.TokenType;
 import pt.estga.security.services.AccessTokenService;
@@ -17,21 +19,17 @@ import pt.estga.security.services.JwtService;
 import pt.estga.security.services.RefreshTokenService;
 import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.enums.UserRole;
-import pt.estga.verification.enums.ActionCodeType;
-import pt.estga.auth.services.tfa.TwoFactorAuthenticationService;
-import pt.estga.auth.services.tfa.TotpService;
+import pt.estga.shared.exceptions.InvalidCredentialsException;
 import pt.estga.shared.exceptions.UsernameAlreadyTakenException;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
 import pt.estga.user.enums.TfaMethod;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserService;
+import pt.estga.verification.enums.ActionCodeType;
 
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,9 +37,6 @@ class AuthenticationServiceTest {
 
     @Mock
     private UserService userService;
-
-    @Mock
-    private UserContactService userContactService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -68,7 +63,6 @@ class AuthenticationServiceTest {
     private AuthenticationServiceSpringImpl authenticationService;
 
     private User user;
-    private UserContact userContact;
 
     @BeforeEach
     void setUp() {
@@ -78,19 +72,17 @@ class AuthenticationServiceTest {
         user.setLastName("User");
         user.setPassword("password");
         user.setUsername("user228");
+        user.setEmail("test@example.com");
         user.setRole(UserRole.USER);
         user.setTfaMethod(TfaMethod.NONE);
-
-        userContact = new UserContact();
-        userContact.setUser(user);
-        userContact.setValue("test@example.com");
     }
 
     @Test
     void register_shouldCreateUserAndReturnAuthResponse_whenGivenValidData() {
         when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
         when(userService.create(any(User.class))).thenReturn(user);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = authenticationService.register(user);
 
@@ -111,10 +103,7 @@ class AuthenticationServiceTest {
     void register_shouldThrowUsernameAlreadyTakenException_whenUsernameExists() {
         when(userService.existsByUsername(user.getUsername())).thenReturn(true);
 
-        assertThrows(UsernameAlreadyTakenException.class, () -> {
-            authenticationService.register(user);
-        });
-
+        assertThrows(UsernameAlreadyTakenException.class, () -> authenticationService.register(user));
         verify(userService, never()).create(any(User.class));
     }
 
@@ -122,8 +111,10 @@ class AuthenticationServiceTest {
     void authenticate_shouldReturnAuthenticationResponse_whenCredentialsAreValid() {
         user.setTfaMethod(TfaMethod.NONE);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", null);
 
@@ -138,19 +129,19 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void authenticate_shouldReturnEmpty_whenCredentialsAreInvalid() {
+    void authenticate_shouldThrowInvalidCredentials_whenCredentialsAreInvalid() {
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
 
-        Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "wrongpassword", null);
-
-        assertFalse(response.isPresent());
+        assertThrows(InvalidCredentialsException.class,
+                () -> authenticationService.authenticate("test@example.com", "wrongpassword", null));
     }
 
     @Test
     void authenticate_shouldReturnTfaRequired_whenTfaTotpIsEnabledAndNoCodeProvided() {
         user.setTfaMethod(TfaMethod.TOTP);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", null);
 
@@ -165,7 +156,8 @@ class AuthenticationServiceTest {
     void authenticate_shouldReturnTfaRequiredAndCodeSent_whenTfaSmsIsEnabledAndNoCodeProvided() {
         user.setTfaMethod(TfaMethod.SMS);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", null);
 
@@ -181,7 +173,8 @@ class AuthenticationServiceTest {
     void authenticate_shouldReturnTfaRequiredAndCodeSent_whenTfaEmailIsEnabledAndNoCodeProvided() {
         user.setTfaMethod(TfaMethod.EMAIL);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", null);
 
@@ -198,9 +191,11 @@ class AuthenticationServiceTest {
         user.setTfaMethod(TfaMethod.TOTP);
         user.setTfaSecret("secret");
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(totpService.isCodeValid("secret", "123456")).thenReturn(true);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "123456");
 
@@ -214,9 +209,11 @@ class AuthenticationServiceTest {
     void authenticate_shouldReturnAuthenticationResponse_whenTfaSmsIsEnabledAndCodeIsValid() {
         user.setTfaMethod(TfaMethod.SMS);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(twoFactorAuthenticationService.verifyCode(user, "123456", ActionCodeType.TWO_FACTOR)).thenReturn(true);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "123456");
 
@@ -230,9 +227,11 @@ class AuthenticationServiceTest {
     void authenticate_shouldReturnAuthenticationResponse_whenTfaEmailIsEnabledAndCodeIsValid() {
         user.setTfaMethod(TfaMethod.EMAIL);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(twoFactorAuthenticationService.verifyCode(user, "123456", ActionCodeType.TWO_FACTOR)).thenReturn(true);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(user.getId()), eq(user.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "123456");
 
@@ -243,40 +242,40 @@ class AuthenticationServiceTest {
     }
 
     @Test
-    void authenticate_shouldReturnEmpty_whenTfaTotpIsEnabledAndCodeIsInvalid() {
+    void authenticate_shouldThrowInvalidCredentials_whenTfaTotpIsEnabledAndCodeIsInvalid() {
         user.setTfaMethod(TfaMethod.TOTP);
         user.setTfaSecret("secret");
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(totpService.isCodeValid("secret", "wrong-code")).thenReturn(false);
 
-        Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "wrong-code");
-
-        assertFalse(response.isPresent());
+        assertThrows(InvalidCredentialsException.class,
+                () -> authenticationService.authenticate("test@example.com", "password", "wrong-code"));
     }
 
     @Test
-    void authenticate_shouldReturnEmpty_whenTfaSmsIsEnabledAndCodeIsInvalid() {
+    void authenticate_shouldThrowInvalidCredentials_whenTfaSmsIsEnabledAndCodeIsInvalid() {
         user.setTfaMethod(TfaMethod.SMS);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(twoFactorAuthenticationService.verifyCode(user, "wrong-code", ActionCodeType.TWO_FACTOR)).thenReturn(false);
 
-        Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "wrong-code");
-
-        assertFalse(response.isPresent());
+        assertThrows(InvalidCredentialsException.class,
+                () -> authenticationService.authenticate("test@example.com", "password", "wrong-code"));
     }
 
     @Test
-    void authenticate_shouldReturnEmpty_whenTfaEmailIsEnabledAndCodeIsInvalid() {
+    void authenticate_shouldThrowInvalidCredentials_whenTfaEmailIsEnabledAndCodeIsInvalid() {
         user.setTfaMethod(TfaMethod.EMAIL);
 
-        when(userContactService.findByValue("test@example.com")).thenReturn(Optional.of(userContact));
+        when(userService.findByUsername("test@example.com")).thenReturn(Optional.empty());
+        when(userService.findByEmail("test@example.com")).thenReturn(Optional.of(user));
         when(twoFactorAuthenticationService.verifyCode(user, "wrong-code", ActionCodeType.TWO_FACTOR)).thenReturn(false);
 
-        Optional<AuthenticationResponseDto> response = authenticationService.authenticate("test@example.com", "password", "wrong-code");
-
-        assertFalse(response.isPresent());
+        assertThrows(InvalidCredentialsException.class,
+                () -> authenticationService.authenticate("test@example.com", "password", "wrong-code"));
     }
 
     @Test
@@ -322,3 +321,4 @@ class AuthenticationServiceTest {
         verify(accessTokenService).revokeAllByUserId(user.getId());
     }
 }
+

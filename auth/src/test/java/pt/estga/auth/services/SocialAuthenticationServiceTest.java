@@ -15,14 +15,11 @@ import pt.estga.security.services.AccessTokenService;
 import pt.estga.security.services.JwtService;
 import pt.estga.security.services.RefreshTokenService;
 import pt.estga.shared.enums.PrincipalType;
-import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.user.entities.UserIdentity;
-import pt.estga.user.enums.ContactType;
-import pt.estga.user.enums.Provider;
 import pt.estga.shared.enums.UserRole;
+import pt.estga.user.entities.User;
+import pt.estga.user.entities.UserIdentity;
+import pt.estga.user.enums.Provider;
 import pt.estga.user.enums.TfaMethod;
-import pt.estga.user.services.UserContactService;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
 
@@ -41,8 +38,6 @@ class SocialAuthenticationServiceTest {
 
     @Mock
     private UserService userService;
-    @Mock
-    private UserContactService userContactService;
     @Mock
     private UserIdentityService userIdentityService;
     @Mock
@@ -68,16 +63,16 @@ class SocialAuthenticationServiceTest {
     private static final String LAST_NAME = "User";
 
     private User createTestUser() {
-        User user = User.builder()
+        return User.builder()
                 .id(1L)
                 .username(USER_EMAIL)
+                .email(USER_EMAIL)
                 .firstName(FIRST_NAME)
                 .lastName(LAST_NAME)
                 .role(UserRole.USER)
                 .enabled(true)
                 .tfaMethod(TfaMethod.NONE)
                 .build();
-        return user;
     }
 
     @Test
@@ -88,14 +83,16 @@ class SocialAuthenticationServiceTest {
         when(googleIdTokenVerifier.verify(GOOGLE_TOKEN)).thenReturn(googleIdToken);
         when(googleIdToken.getPayload()).thenReturn(payload);
         when(payload.getEmail()).thenReturn(USER_EMAIL);
+        when(payload.getEmailVerified()).thenReturn(true);
         when(payload.getSubject()).thenReturn(GOOGLE_ID);
         when(payload.get("given_name")).thenReturn(FIRST_NAME);
         when(payload.get("family_name")).thenReturn(LAST_NAME);
         when(userIdentityService.findByProviderAndValue(Provider.GOOGLE, GOOGLE_ID)).thenReturn(Optional.empty());
-        when(userContactService.findByValue(USER_EMAIL)).thenReturn(Optional.empty());
+        when(userService.findByEmail(USER_EMAIL)).thenReturn(Optional.empty());
         when(userService.create(any(User.class))).thenReturn(newUser);
         when(userIdentityService.createAndAssociate(any(User.class), eq(Provider.GOOGLE), eq(GOOGLE_ID))).thenReturn(newIdentity);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(newUser.getId()), eq(newUser.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(newUser.getId()), eq(newUser.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = socialAuthenticationService.authenticateWithGoogle(GOOGLE_TOKEN);
 
@@ -107,7 +104,7 @@ class SocialAuthenticationServiceTest {
     }
 
     @Test
-    void authenticateWithGoogle_shouldReturnAuthResponse_whenExistingUser() throws GeneralSecurityException, IOException {
+    void authenticateWithGoogle_shouldReturnAuthResponse_whenExistingIdentityUser() throws GeneralSecurityException, IOException {
         User existingUser = createTestUser();
         UserIdentity existingIdentity = UserIdentity.builder().provider(Provider.GOOGLE).value(GOOGLE_ID).user(existingUser).build();
 
@@ -116,7 +113,8 @@ class SocialAuthenticationServiceTest {
         when(payload.getEmail()).thenReturn(USER_EMAIL);
         when(payload.getSubject()).thenReturn(GOOGLE_ID);
         when(userIdentityService.findByProviderAndValue(Provider.GOOGLE, GOOGLE_ID)).thenReturn(Optional.of(existingIdentity));
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(existingUser.getId()), eq(existingUser.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(existingUser.getId()), eq(existingUser.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = socialAuthenticationService.authenticateWithGoogle(GOOGLE_TOKEN);
 
@@ -130,13 +128,6 @@ class SocialAuthenticationServiceTest {
     @Test
     void authenticateWithGoogle_shouldLinkToExistingUser_whenEmailExists() throws GeneralSecurityException, IOException {
         User existingUser = createTestUser();
-        UserContact existingUserContact = UserContact.builder()
-                .type(ContactType.EMAIL)
-                .value(USER_EMAIL)
-                .primary(true)
-                .verified(true)
-                .user(existingUser)
-                .build();
         UserIdentity newIdentity = UserIdentity.builder().provider(Provider.GOOGLE).value(GOOGLE_ID).user(existingUser).build();
 
         when(googleIdTokenVerifier.verify(GOOGLE_TOKEN)).thenReturn(googleIdToken);
@@ -144,9 +135,10 @@ class SocialAuthenticationServiceTest {
         when(payload.getEmail()).thenReturn(USER_EMAIL);
         when(payload.getSubject()).thenReturn(GOOGLE_ID);
         when(userIdentityService.findByProviderAndValue(Provider.GOOGLE, GOOGLE_ID)).thenReturn(Optional.empty());
-        when(userContactService.findByValue(USER_EMAIL)).thenReturn(Optional.of(existingUserContact));
+        when(userService.findByEmail(USER_EMAIL)).thenReturn(Optional.of(existingUser));
         when(userIdentityService.createAndAssociate(existingUser, Provider.GOOGLE, GOOGLE_ID)).thenReturn(newIdentity);
-        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(existingUser.getId()), eq(existingUser.getUsername()), any())).thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
+        when(jwtService.generateTokens(eq(PrincipalType.USER), eq(existingUser.getId()), eq(existingUser.getUsername()), any()))
+                .thenReturn(Map.of(TokenType.ACCESS, "accessToken", TokenType.REFRESH, "refreshToken"));
 
         Optional<AuthenticationResponseDto> response = socialAuthenticationService.authenticateWithGoogle(GOOGLE_TOKEN);
 

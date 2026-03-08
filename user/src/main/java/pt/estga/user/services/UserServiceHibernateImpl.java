@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.shared.enums.UserRole;
 import pt.estga.user.repositories.UserRepository;
-import pt.estga.user.repositories.UserContactRepository;
 import pt.estga.user.repositories.UserIdentityRepository;
 import pt.estga.user.entities.User;
 
@@ -20,7 +19,6 @@ import java.util.Optional;
 public class UserServiceHibernateImpl implements UserService {
 
     private final UserRepository repository;
-    private final UserContactRepository userContactRepository;
     private final UserIdentityRepository userIdentityRepository;
 
     @Override
@@ -111,7 +109,6 @@ public class UserServiceHibernateImpl implements UserService {
     public void softDeleteUser(Long id) {
         User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
-        userContactRepository.deleteByUser(user);
         userIdentityRepository.deleteByUser(user);
 
         user.setFirstName("deleted");
