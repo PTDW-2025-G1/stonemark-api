@@ -9,9 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.shared.exceptions.ContactMethodNotAvailableException;
 import pt.estga.shared.exceptions.UserNotFoundException;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.user.enums.ContactType;
-import pt.estga.user.repositories.UserContactRepository;
+import pt.estga.user.services.UserService;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.ActionCodeService;
@@ -26,7 +24,7 @@ import static org.mockito.Mockito.*;
 class PasswordResetInitiationCommandTest {
 
     @Mock
-    private UserContactRepository userContactRepository;
+    private UserService userService;
 
     @Mock
     private ActionCodeService actionCodeService;
@@ -38,7 +36,6 @@ class PasswordResetInitiationCommandTest {
     private PasswordResetInitiationCommand passwordResetInitiationCommand;
 
     private User testUser;
-    private UserContact testUserContact;
     private ActionCode testActionCode;
     private final String CONTACT_VALUE = "test@example.com";
 
@@ -47,20 +44,15 @@ class PasswordResetInitiationCommandTest {
         testUser = User.builder()
                 .id(1L)
                 .username("testuser")
+                .email(CONTACT_VALUE)
+                .emailVerified(true)
                 .enabled(true)
-                .build();
-
-        testUserContact = UserContact.builder()
-                .id(10L)
-                .user(testUser)
-                .type(ContactType.EMAIL)
-                .value(CONTACT_VALUE)
-                .verified(true)
                 .build();
 
         testActionCode = ActionCode.builder()
                 .id(100L)
                 .code("RESETCODE")
+                .recipient(CONTACT_VALUE)
                 .user(testUser)
                 .type(ActionCodeType.RESET_PASSWORD)
                 .build();
@@ -68,8 +60,8 @@ class PasswordResetInitiationCommandTest {
 
     @Test
     void execute_shouldReturnRunnableThatDispatchesVerification_whenContactIsValid() {
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.of(testUserContact));
-        when(actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD)).thenReturn(testActionCode);
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.of(testUser));
+        when(actionCodeService.createAndSave(testUser, CONTACT_VALUE, ActionCodeType.RESET_PASSWORD)).thenReturn(testActionCode);
 
         Runnable runnable = passwordResetInitiationCommand.execute(CONTACT_VALUE);
         assertNotNull(runnable);
@@ -77,70 +69,69 @@ class PasswordResetInitiationCommandTest {
         // Execute the runnable to trigger the dispatch
         runnable.run();
 
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
-        verify(actionCodeService, times(1)).createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD);
-        verify(verificationDispatchService, times(1)).sendVerification(testUserContact, testActionCode);
+        verify(userService, times(1)).findByEmail(CONTACT_VALUE);
+        verify(actionCodeService, times(1)).createAndSave(testUser, CONTACT_VALUE, ActionCodeType.RESET_PASSWORD);
+        verify(verificationDispatchService, times(1)).sendVerification(CONTACT_VALUE, testActionCode);
     }
 
     @Test
     void execute_shouldThrowUserNotFoundException_whenContactNotFound() {
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.empty());
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.empty());
+        when(userService.findByPhone(CONTACT_VALUE)).thenReturn(Optional.empty());
 
         UserNotFoundException thrown = assertThrows(UserNotFoundException.class,
                 () -> passwordResetInitiationCommand.execute(CONTACT_VALUE));
 
         assertEquals("User not found with contact: " + CONTACT_VALUE, thrown.getMessage());
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
+        verify(userService, times(1)).findByEmail(CONTACT_VALUE);
+        verify(userService, times(1)).findByPhone(CONTACT_VALUE);
         verifyNoInteractions(actionCodeService, verificationDispatchService);
     }
 
     @Test
     void execute_shouldThrowUserNotFoundException_whenUserIsNotEnabled() {
-        testUser.setEnabled(false); // User is not enabled
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.of(testUserContact));
+        testUser.setEnabled(false);
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.of(testUser));
 
         UserNotFoundException thrown = assertThrows(UserNotFoundException.class,
                 () -> passwordResetInitiationCommand.execute(CONTACT_VALUE));
 
         assertEquals("User not found with contact: " + CONTACT_VALUE, thrown.getMessage());
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
         verifyNoInteractions(actionCodeService, verificationDispatchService);
     }
 
     @Test
-    void execute_shouldThrowContactMethodNotAvailableException_whenContactIsNotVerified() {
-        testUserContact.setVerified(false);
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.of(testUserContact));
+    void execute_shouldThrowContactMethodNotAvailableException_whenEmailIsNotVerified() {
+        testUser.setEmailVerified(false);
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.of(testUser));
 
         ContactMethodNotAvailableException thrown = assertThrows(ContactMethodNotAvailableException.class,
                 () -> passwordResetInitiationCommand.execute(CONTACT_VALUE));
 
         assertEquals("Contact is not verified: " + CONTACT_VALUE, thrown.getMessage());
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
         verifyNoInteractions(actionCodeService, verificationDispatchService);
     }
 
     @Test
     void execute_shouldPropagateException_whenActionCodeServiceFails() {
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.of(testUserContact));
-        when(actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD))
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.of(testUser));
+        when(actionCodeService.createAndSave(testUser, CONTACT_VALUE, ActionCodeType.RESET_PASSWORD))
                 .thenThrow(new RuntimeException("ActionCodeService error"));
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
                 () -> passwordResetInitiationCommand.execute(CONTACT_VALUE));
 
         assertEquals("ActionCodeService error", thrown.getMessage());
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
-        verify(actionCodeService, times(1)).createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD);
+        verify(actionCodeService, times(1)).createAndSave(testUser, CONTACT_VALUE, ActionCodeType.RESET_PASSWORD);
         verifyNoInteractions(verificationDispatchService);
     }
 
     @Test
     void execute_shouldPropagateException_whenDispatchServiceFailsDuringRunnableExecution() {
-        when(userContactRepository.findByValue(CONTACT_VALUE)).thenReturn(Optional.of(testUserContact));
-        when(actionCodeService.createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD)).thenReturn(testActionCode);
+        when(userService.findByEmail(CONTACT_VALUE)).thenReturn(Optional.of(testUser));
+        when(actionCodeService.createAndSave(testUser, CONTACT_VALUE, ActionCodeType.RESET_PASSWORD)).thenReturn(testActionCode);
         doThrow(new RuntimeException("Dispatch error")).when(verificationDispatchService)
-                .sendVerification(testUserContact, testActionCode);
+                .sendVerification(CONTACT_VALUE, testActionCode);
 
         Runnable runnable = passwordResetInitiationCommand.execute(CONTACT_VALUE);
         assertNotNull(runnable);
@@ -148,8 +139,6 @@ class PasswordResetInitiationCommandTest {
         RuntimeException thrown = assertThrows(RuntimeException.class, runnable::run);
 
         assertEquals("Dispatch error", thrown.getMessage());
-        verify(userContactRepository, times(1)).findByValue(CONTACT_VALUE);
-        verify(actionCodeService, times(1)).createAndSave(testUser, testUserContact, ActionCodeType.RESET_PASSWORD);
-        verify(verificationDispatchService, times(1)).sendVerification(testUserContact, testActionCode);
+        verify(verificationDispatchService, times(1)).sendVerification(CONTACT_VALUE, testActionCode);
     }
 }

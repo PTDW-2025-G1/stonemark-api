@@ -8,9 +8,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.shared.models.Email;
 import pt.estga.shared.services.EmailService;
-import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.user.enums.ContactType;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 
@@ -29,39 +26,42 @@ class VerificationProcessorEmailImplTest {
     @InjectMocks
     private VerificationProcessorEmailImpl verificationProcessorEmail;
 
-    private UserContact testUserContact;
     private ActionCode testActionCode;
 
     @BeforeEach
     void setUp() {
-        User testUser = User.builder().id(1L).username("testuser").build();
-        testUserContact = UserContact.builder()
-                .id(1L)
-                .user(testUser)
-                .type(ContactType.EMAIL)
-                .value("test@example.com")
-                .build();
         testActionCode = ActionCode.builder()
                 .id(10L)
                 .code("EMAILCODE")
+                .recipient("test@example.com")
                 .type(ActionCodeType.EMAIL_VERIFICATION)
                 .build();
     }
 
     @Test
     void process_shouldSendEmailAndReturnEmptyOptional() {
-        Optional<String> result = verificationProcessorEmail.process(testUserContact, testActionCode);
+        Optional<String> result = verificationProcessorEmail.process("test@example.com", testActionCode);
 
         assertTrue(result.isEmpty());
         verify(emailService, times(1)).sendEmail(any(Email.class));
     }
 
     @Test
-    void process_shouldThrowIllegalArgumentException_whenUserContactIsNull() {
+    void process_shouldUseActionCodeRecipientFallback() {
+        Optional<String> result = verificationProcessorEmail.process(null, testActionCode);
+
+        assertTrue(result.isEmpty());
+        verify(emailService, times(1)).sendEmail(any(Email.class));
+    }
+
+    @Test
+    void process_shouldThrowIllegalArgumentException_whenNoRecipientAvailable() {
+        testActionCode.setRecipient(null);
+
         IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
                 () -> verificationProcessorEmail.process(null, testActionCode));
 
-        assertEquals("UserContact cannot be null for email verification.", thrown.getMessage());
+        assertEquals("Recipient cannot be null for email verification.", thrown.getMessage());
         verifyNoInteractions(emailService);
     }
 
@@ -70,7 +70,7 @@ class VerificationProcessorEmailImplTest {
         doThrow(new RuntimeException("Email service error")).when(emailService).sendEmail(any(Email.class));
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> verificationProcessorEmail.process(testUserContact, testActionCode));
+                () -> verificationProcessorEmail.process("test@example.com", testActionCode));
 
         assertEquals("Email service error", thrown.getMessage());
         verify(emailService, times(1)).sendEmail(any(Email.class));

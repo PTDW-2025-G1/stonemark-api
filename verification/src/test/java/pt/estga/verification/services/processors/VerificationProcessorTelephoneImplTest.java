@@ -7,8 +7,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.user.entities.User;
-import pt.estga.user.entities.UserContact;
-import pt.estga.user.enums.ContactType;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 import pt.estga.verification.services.UserActivationService;
@@ -28,21 +26,15 @@ class VerificationProcessorTelephoneImplTest {
     @InjectMocks
     private VerificationProcessorTelephoneImpl verificationProcessorTelephone;
 
-    private UserContact testUserContact;
     private ActionCode testActionCode;
 
     @BeforeEach
     void setUp() {
         User testUser = User.builder().id(1L).username("testuser").build();
-        testUserContact = UserContact.builder()
-                .id(1L)
-                .user(testUser)
-                .type(ContactType.TELEPHONE)
-                .value("123456789")
-                .build();
         testActionCode = ActionCode.builder()
                 .id(10L)
                 .code("PHONECODE")
+                .recipient("123456789")
                 .user(testUser)
                 .type(ActionCodeType.PHONE_VERIFICATION)
                 .build();
@@ -52,7 +44,7 @@ class VerificationProcessorTelephoneImplTest {
     void process_shouldDelegateToUserActivationService() {
         when(userActivationService.activateUserAndConsumeCode(testActionCode)).thenReturn(Optional.empty());
 
-        Optional<String> result = verificationProcessorTelephone.process(testUserContact, testActionCode);
+        Optional<String> result = verificationProcessorTelephone.process("123456789", testActionCode);
 
         assertTrue(result.isEmpty());
         verify(userActivationService, times(1)).activateUserAndConsumeCode(testActionCode);
@@ -63,7 +55,7 @@ class VerificationProcessorTelephoneImplTest {
         doThrow(new RuntimeException("Activation service error")).when(userActivationService).activateUserAndConsumeCode(any(ActionCode.class));
 
         RuntimeException thrown = assertThrows(RuntimeException.class,
-                () -> verificationProcessorTelephone.process(testUserContact, testActionCode));
+                () -> verificationProcessorTelephone.process("123456789", testActionCode));
 
         assertEquals("Activation service error", thrown.getMessage());
         verify(userActivationService, times(1)).activateUserAndConsumeCode(testActionCode);
