@@ -14,9 +14,7 @@ public record KeycloakIdentitySnapshot(
         String givenName,
         String familyName,
         String email,
-        boolean emailVerified,
-        String phone,
-        boolean phoneVerified
+        boolean emailVerified
 ) {
 
     public static KeycloakIdentitySnapshot fromClaims(Map<String, ?> claims) {
@@ -26,8 +24,6 @@ public record KeycloakIdentitySnapshot(
         String familyName = asString(claims.get("family_name"));
         String email = asString(claims.get("email"));
         boolean emailVerified = asBoolean(claims.get("email_verified"));
-        String phone = asString(claims.get("phone_number"));
-        boolean phoneVerified = asBoolean(claims.get("phone_number_verified"));
 
         return new KeycloakIdentitySnapshot(
                 sub,
@@ -35,9 +31,7 @@ public record KeycloakIdentitySnapshot(
                 givenName,
                 familyName,
                 email,
-                emailVerified,
-                phone,
-                phoneVerified
+                emailVerified
         );
     }
 
@@ -58,4 +52,3 @@ public record KeycloakIdentitySnapshot(
         return false;
     }
 }
-

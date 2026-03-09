@@ -127,9 +127,7 @@ public class UserServiceHibernateImpl implements UserService {
         user.setLastName("user");
         user.setUsername(null);
         user.setEmail(null);
-        user.setPhone(null);
         user.setEmailVerified(false);
-        user.setPhoneVerified(false);
         user.setEnabled(false);
 
         repository.save(user);

@@ -46,9 +46,7 @@ public class KeycloakJitProvisioningServiceImpl implements KeycloakJitProvisioni
                 .firstName(snapshot.givenName())
                 .lastName(snapshot.familyName())
                 .email(snapshot.email())
-                .phone(snapshot.phone())
                 .emailVerified(snapshot.emailVerified())
-                .phoneVerified(snapshot.phoneVerified())
                 .keycloakSub(snapshot.sub())
                 .enabled(true)
                 .role(UserRole.USER)
@@ -75,11 +73,6 @@ public class KeycloakJitProvisioningServiceImpl implements KeycloakJitProvisioni
             user.setEmailVerified(snapshot.emailVerified());
         }
 
-        if (snapshot.phone() != null) {
-            user.setPhone(snapshot.phone());
-            user.setPhoneVerified(snapshot.phoneVerified());
-        }
-
         return userService.update(user);
     }
 
@@ -103,4 +96,3 @@ public class KeycloakJitProvisioningServiceImpl implements KeycloakJitProvisioni
         return candidate;
     }
 }
-
