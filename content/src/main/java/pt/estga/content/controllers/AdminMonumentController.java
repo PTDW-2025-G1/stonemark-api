@@ -20,7 +20,6 @@ import pt.estga.content.entities.Monument;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.content.services.MonumentService;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
 
@@ -54,8 +53,6 @@ public class AdminMonumentController {
     ) throws IOException {
         Monument monument = mapper.toEntity(monumentDto);
 
-        resolveAndSetMedia(monument, file, monumentDto.coverId());
-
         Monument createdMonument = service.create(monument);
         MonumentDto response = mapper.toResponseDto(createdMonument);
 
@@ -79,8 +76,6 @@ public class AdminMonumentController {
 
         mapper.updateEntityFromDto(monumentDto, existingMonument);
 
-        resolveAndSetMedia(existingMonument, file, monumentDto.coverId());
-
         Monument updatedMonument = service.update(existingMonument);
         return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
     }
@@ -97,7 +92,7 @@ public class AdminMonumentController {
     public ResponseEntity<MonumentDto> uploadPhoto(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file
-    ) throws IOException {
+    ) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -105,19 +100,8 @@ public class AdminMonumentController {
         Monument monument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-        monument.setCover(mediaFile);
         Monument updatedMonument = service.update(monument);
 
         return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
-    }
-
-    private void resolveAndSetMedia(Monument monument, MultipartFile file, Long coverId) throws IOException {
-        if (file != null && !file.isEmpty()) {
-            MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-            monument.setCover(mediaFile);
-        } else if (coverId != null) {
-            mediaService.findById(coverId).ifPresent(monument::setCover);
-        }
     }
 }

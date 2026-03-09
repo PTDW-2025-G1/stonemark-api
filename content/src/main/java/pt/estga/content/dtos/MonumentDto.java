@@ -17,7 +17,6 @@ public record MonumentDto(
         AdministrativeDivisionDto parish,
         AdministrativeDivisionDto municipality,
         AdministrativeDivisionDto district,
-        Long coverId,
         Instant createdAt,
         Instant lastModifiedAt,
         Boolean active

@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.content.dtos.MonumentDto;
 import pt.estga.content.dtos.MonumentListDto;
-import pt.estga.content.dtos.MonumentMapDto;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
 
@@ -30,11 +29,6 @@ public class MonumentController {
             @PageableDefault(size = 9) Pageable pageable
     ) {
         return ResponseEntity.ok(service.findAll(pageable).map(mapper::toListDto));
-    }
-
-    @GetMapping("/map")
-    public ResponseEntity<Page<MonumentMapDto>> getAllForMap(Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toMapDto));
     }
 
     @GetMapping("/search")
