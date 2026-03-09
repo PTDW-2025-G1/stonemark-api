@@ -2,6 +2,7 @@ package pt.estga.chatbot.features.verification.handlers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
@@ -13,16 +14,22 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
+import pt.estga.verification.events.MessengerAccountConnectedEvent;
 
 import java.util.Optional;
 
+/**
+ * Handles contact submission in the verification flow by linking the messaging identity
+ * (Telegram/WhatsApp) to an existing domain user when the domain user id is present in context.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SubmitContactHandler implements ConversationStateHandler {
+public class LinkChatbotIdentityHandler implements ConversationStateHandler {
 
     private final UserIdentityService userIdentityService;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
@@ -36,8 +43,17 @@ public class SubmitContactHandler implements ConversationStateHandler {
             Optional<User> userOptional = userService.findById(domainUserId);
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
+                // Associate messaging identity with domain user (Telegram for now)
                 userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
-                log.info("Successfully associated Telegram ID for user {}", user.getUsername());
+
+                // Publish event so listeners (e.g., Telegram notification service) can notify the user
+                try {
+                    eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
+                } catch (Exception e) {
+                    log.error("Failed to publish MessengerAccountConnectedEvent for user {}: {}", user.getId(), e.getMessage());
+                }
+
+                log.info("Successfully associated chatbot identity for user {}", user.getUsername());
                 context.setCurrentState(CoreState.MAIN_MENU);
                 return HandlerOutcome.SUCCESS;
             } else {
@@ -45,8 +61,8 @@ public class SubmitContactHandler implements ConversationStateHandler {
                 return HandlerOutcome.FAILURE;
             }
         } else {
-            // Without phone lookup, we cannot connect an anonymous contact to a user
-            log.warn("No domain user id present and phone lookup is disabled; cannot verify contact.");
+            // Without a domain user id, we cannot link the messaging identity anymore
+            log.warn("No domain user id present; cannot link chatbot identity without prior login.");
             return HandlerOutcome.FAILURE;
         }
     }

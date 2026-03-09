@@ -11,8 +11,8 @@ import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
-import pt.estga.verification.dtos.TelegramVerificationRequestDto;
-import pt.estga.verification.dtos.TelegramVerificationResponseDto;
+import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
+import pt.estga.verification.dtos.ChatbotVerificationResponseDto;
 import pt.estga.verification.events.MessengerAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
@@ -20,8 +20,8 @@ import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/auth/account-verification")
-@Tag(name = "Account Verification", description = "Endpoints for chatbot account verification.")
+@RequestMapping("/api/v1/account")
+@Tag(name = "Account", description = "Account-related endpoints (verification, profile, etc.)")
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
@@ -29,17 +29,17 @@ public class AccountVerificationController {
     private final UserIdentityService userIdentityService;
     private final ApplicationEventPublisher eventPublisher;
 
-    @PostMapping("/telegram/verify")
-    @Operation(summary = "Verify Telegram code", description = "Verifies code from chatbot and links Telegram account to current session")
-    public ResponseEntity<TelegramVerificationResponseDto> verifyTelegramCode(
-            @RequestBody TelegramVerificationRequestDto request,
+    @PostMapping("/verification/chatbot")
+    @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
+    public ResponseEntity<ChatbotVerificationResponseDto> verifyChatbotCode(
+            @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
 
         Optional<String> telegramIdOpt = verificationService.verifyAndGetTelegramId(request.code());
 
         if (telegramIdOpt.isEmpty()) {
             return ResponseEntity.badRequest().body(
-                    TelegramVerificationResponseDto.error("Invalid or expired code")
+                    ChatbotVerificationResponseDto.error("Invalid or expired code")
             );
         }
 
@@ -53,7 +53,7 @@ public class AccountVerificationController {
         eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", telegramId, user.getId()));
 
         return ResponseEntity.ok(
-                TelegramVerificationResponseDto.success("Telegram account linked successfully")
+                ChatbotVerificationResponseDto.success("Messaging account linked successfully")
         );
     }
 }
