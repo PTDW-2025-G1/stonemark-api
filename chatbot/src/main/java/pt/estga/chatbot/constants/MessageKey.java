@@ -6,8 +6,6 @@ public class MessageKey {
     public static final String WELCOME = "welcome";
     public static final String WELCOME_BACK = "welcome_back";
     public static final String ERROR_GENERIC = "error_generic";
-    public static final String ERROR_PROCESSING_PHOTO = "error_processing_photo";
-    public static final String INVALID_SELECTION = "invalid_selection";
     public static final String HELP_OPTIONS_TITLE = "help_options_title";
 
     // Submission Flow
@@ -23,9 +21,6 @@ public class MessageKey {
 
     public static final String ADD_NOTES_PROMPT = "add_notes_prompt";
     public static final String SUBMISSION_SUCCESS = "submission_success";
-
-    public static final String YES_BTN = "yes_btn";
-    public static final String NO_BTN = "no_btn";
 
     // Authentication & Verification
     public static final String CONNECT_ACCOUNT_BTN = "connect_account_btn";
