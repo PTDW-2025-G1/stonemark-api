@@ -4,13 +4,13 @@ import lombok.Getter;
 import org.springframework.context.ApplicationEvent;
 
 @Getter
-public class MessengerAccountConnectedEvent extends ApplicationEvent {
+public class ChatbotAccountConnectedEvent extends ApplicationEvent {
 
     private final String platform;
     private final String recipientId;
     private final Long userId;
 
-    public MessengerAccountConnectedEvent(Object source, String platform, String recipientId, Long userId) {
+    public ChatbotAccountConnectedEvent(Object source, String platform, String recipientId, Long userId) {
         super(source);
         this.platform = platform;
         this.recipientId = recipientId;

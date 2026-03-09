@@ -12,9 +12,9 @@ import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.user.entities.User;
-import pt.estga.user.services.UserIdentityService;
+import pt.estga.user.services.ChatbotAccountService;
 import pt.estga.user.services.UserService;
-import pt.estga.verification.events.MessengerAccountConnectedEvent;
+import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 
 import java.util.Optional;
 
@@ -27,7 +27,7 @@ import java.util.Optional;
 @Slf4j
 public class LinkChatbotIdentityHandler implements ConversationStateHandler {
 
-    private final UserIdentityService userIdentityService;
+    private final ChatbotAccountService chatbotAccountService;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -44,13 +44,13 @@ public class LinkChatbotIdentityHandler implements ConversationStateHandler {
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
                 // Associate messaging identity with domain user (Telegram for now)
-                userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
+                chatbotAccountService.createOrUpdateChatbot(user, input.getUserId());
 
-                // Publish event so listeners (e.g., Telegram notification service) can notify the user
+                // Publish event so listeners (e.g., notification services) can notify the user
                 try {
-                    eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
+                    eventPublisher.publishEvent(new ChatbotAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
                 } catch (Exception e) {
-                    log.error("Failed to publish MessengerAccountConnectedEvent for user {}: {}", user.getId(), e.getMessage());
+                    log.error("Failed to publish ChatbotAccountConnectedEvent for user {}: {}", user.getId(), e.getMessage());
                 }
 
                 log.info("Successfully associated chatbot identity for user {}", user.getUsername());

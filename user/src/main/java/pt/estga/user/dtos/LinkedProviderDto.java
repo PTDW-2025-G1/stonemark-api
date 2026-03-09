@@ -1,5 +1,5 @@
 package pt.estga.user.dtos;
 
-import pt.estga.user.enums.Provider;
+import pt.estga.user.enums.ChatbotPlatform;
 
-public record LinkedProviderDto(Provider provider) { }
+public record LinkedProviderDto(ChatbotPlatform chatbotPlatform) { }

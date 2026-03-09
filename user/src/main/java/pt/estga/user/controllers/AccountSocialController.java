@@ -8,12 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.shared.dtos.MessageResponseDto;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.user.dtos.LinkGoogleRequestDto;
 import pt.estga.user.dtos.LinkedProviderDto;
 import pt.estga.user.entities.User;
-import pt.estga.user.enums.Provider;
 import pt.estga.user.services.AccountSocialService;
 import pt.estga.user.services.UserService;
 
@@ -44,28 +41,5 @@ public class AccountSocialController {
                 service.getLinkedProviders(connectedUser);
 
         return ResponseEntity.ok(providers);
-    }
-
-    @PostMapping("/google")
-    @Operation(
-            summary = "Link Google Account",
-            description = "Links a Google account to the currently authenticated user using an ID token."
-    )
-    @ApiResponse(responseCode = "200", description = "Google account linked successfully")
-    public ResponseEntity<MessageResponseDto> linkGoogle(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @RequestBody LinkGoogleRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        service.linkGoogleAccount(user, request.token());
-        return ResponseEntity.ok(new MessageResponseDto("Your account has been successfully linked with Google."));
-    }
-
-    @DeleteMapping("/google")
-    @Operation(summary = "Unlink Google Account", description = "Disconnects the Google account from the current user.")
-    @ApiResponse(responseCode = "200", description = "Google account disconnected successfully")
-    public ResponseEntity<MessageResponseDto> disconnectGoogle(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        service.unlinkSocialAccount(user, Provider.GOOGLE);
-        return ResponseEntity.ok(new MessageResponseDto("Your account has been successfully disconnected from Google."));
     }
 }

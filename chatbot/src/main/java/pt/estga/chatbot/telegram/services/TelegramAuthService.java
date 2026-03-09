@@ -8,8 +8,8 @@ import pt.estga.chatbot.services.AuthService;
 import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
-import pt.estga.user.enums.Provider;
-import pt.estga.user.services.UserIdentityService;
+import pt.estga.user.enums.ChatbotPlatform;
+import pt.estga.user.services.ChatbotAccountService;
 
 import java.util.Optional;
 
@@ -18,16 +18,16 @@ import java.util.Optional;
 @Slf4j
 public class TelegramAuthService implements AuthService {
 
-    private final UserIdentityService userIdentityService;
+    private final ChatbotAccountService chatbotAccountService;
 
     @Override
     public boolean isAuthenticated(String platformUserId) {
-        return userIdentityService.findByProviderAndValue(Provider.TELEGRAM, platformUserId).isPresent();
+        return chatbotAccountService.findByProviderAndValue(ChatbotPlatform.TELEGRAM, platformUserId).isPresent();
     }
 
     @Override
     public Optional<AppPrincipal> authenticate(String platformUserId) {
-        return userIdentityService.findByProviderAndValue(Provider.TELEGRAM, platformUserId)
+        return chatbotAccountService.findByProviderAndValue(ChatbotPlatform.TELEGRAM, platformUserId)
                 .map(userIdentity -> {
                     var user = userIdentity.getUser();
                     return AppPrincipal.builder()

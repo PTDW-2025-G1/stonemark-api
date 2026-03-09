@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pt.estga.shared.exceptions.InvalidTelegramTokenException;
 import pt.estga.user.entities.User;
-import pt.estga.user.enums.Provider;
+import pt.estga.user.enums.ChatbotPlatform;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -23,7 +23,7 @@ import java.security.NoSuchAlgorithmException;
 @RequiredArgsConstructor
 public class TelegramAccountLinkerService {
 
-    private final UserIdentityService userIdentityService;
+    private final ChatbotAccountService chatbotAccountService;
     private final ObjectMapper objectMapper;
 
     @Value("${telegram.bot.token}")
@@ -36,7 +36,7 @@ public class TelegramAccountLinkerService {
                 throw new InvalidTelegramTokenException("Invalid Telegram data.");
             }
             log.info("Linking Telegram account for user {} with Telegram ID {}", user.getUsername(), userData.getId());
-            userIdentityService.createAndAssociate(user, Provider.TELEGRAM, String.valueOf(userData.getId()));
+            chatbotAccountService.createAndAssociate(user, ChatbotPlatform.TELEGRAM, String.valueOf(userData.getId()));
         } catch (JsonProcessingException e) {
             throw new InvalidTelegramTokenException("Error processing Telegram data.", e);
         }

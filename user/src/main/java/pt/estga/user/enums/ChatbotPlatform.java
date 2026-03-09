@@ -1,7 +1,6 @@
 package pt.estga.user.enums;
 
-public enum Provider {
-    GOOGLE,
+public enum ChatbotPlatform {
     TELEGRAM,
     WHATSAPP
 }

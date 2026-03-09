@@ -2,7 +2,7 @@ package pt.estga.user.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.user.enums.Provider;
+import pt.estga.user.enums.ChatbotPlatform;
 
 @Entity
 @NoArgsConstructor
@@ -10,14 +10,14 @@ import pt.estga.user.enums.Provider;
 @Getter
 @Setter
 @Builder
-public class UserIdentity {
+public class ChatbotAccount {
 
     @Id
     @GeneratedValue
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    private Provider provider;
+    private ChatbotPlatform chatbotPlatform;
 
     private String value;
 

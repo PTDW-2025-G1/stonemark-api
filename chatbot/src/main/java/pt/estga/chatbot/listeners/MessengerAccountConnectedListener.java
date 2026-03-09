@@ -11,7 +11,7 @@ import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.MessengerNotificationService;
 import pt.estga.chatbot.services.MessengerNotificationServiceFactory;
-import pt.estga.verification.events.MessengerAccountConnectedEvent;
+import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 
 @Component
 @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public class MessengerAccountConnectedListener {
 
     @EventListener
     @Async
-    public void handleMessengerAccountConnected(MessengerAccountConnectedEvent event) {
+    public void handleMessengerAccountConnected(ChatbotAccountConnectedEvent event) {
         log.info("Messenger account connected event received for user: {}, platform: {}, recipientId: {}",
                 event.getUserId(), event.getPlatform(), event.getRecipientId());
 
@@ -34,7 +34,7 @@ public class MessengerAccountConnectedListener {
                     new Message(MessageKey.ACCOUNT_CONNECTED_NOTIFICATION, EmojiKey.TADA)
             );
         } catch (IllegalArgumentException e) {
-            log.error("Unsupported platform in MessengerAccountConnectedEvent: {}", event.getPlatform(), e);
+            log.error("Unsupported platform in ChatbotAccountConnectedEvent: {}", event.getPlatform(), e);
         }
     }
 }
