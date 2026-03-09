@@ -26,18 +26,8 @@ public class ResponseFactory {
     private final List<ResponseProvider> responseProviders;
     private final UiTextService textService;
 
-    // Headless states that should not produce any response.
-    private static final Set<ConversationState> HEADLESS_STATES = Set.of(
-            ProposalState.AWAITING_PHOTO_ANALYSIS,
-            ProposalState.AWAITING_MONUMENT_SUGGESTIONS
-    );
-
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         ConversationState currentState = context.getCurrentState();
-
-        if (HEADLESS_STATES.contains(currentState)) {
-            return Collections.emptyList();
-        }
 
         if (outcome == HandlerOutcome.FAILURE) {
             return createErrorResponse(context);
@@ -71,16 +61,12 @@ public class ResponseFactory {
             return switch (proposalState) {
                 case WAITING_FOR_PHOTO -> new Message(MessageKey.EXPECTING_PHOTO_ERROR, WARNING);
                 case AWAITING_LOCATION -> new Message(MessageKey.EXPECTING_LOCATION_ERROR, WARNING);
-                case AWAITING_PHOTO_ANALYSIS -> new Message(MessageKey.ERROR_PROCESSING_PHOTO, WARNING);
-                case AWAITING_MONUMENT_SUGGESTIONS -> new Message(MessageKey.ERROR_GENERIC, WARNING);
                 default -> null;
             };
         } else if (state instanceof VerificationState verificationState) {
             return switch (verificationState) {
                 case DISPLAYING_VERIFICATION_CODE -> new Message(MessageKey.ERROR_GENERIC, WARNING);
                 case AWAITING_CONTACT -> new Message(MessageKey.USER_NOT_FOUND_ERROR, WARNING);
-                case AWAITING_PHONE_CONNECTION_DECISION ->
-                        new Message(MessageKey.INVALID_SELECTION, WARNING);
                 default -> null;
             };
         }

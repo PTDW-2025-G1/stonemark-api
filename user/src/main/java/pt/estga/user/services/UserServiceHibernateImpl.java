@@ -11,7 +11,6 @@ import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.repositories.UserIdentityRepository;
 import pt.estga.user.entities.User;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -45,12 +44,6 @@ public class UserServiceHibernateImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<User> findByPhone(String phone) {
-        return repository.findByPhone(phone);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<User> findByKeycloakSub(String keycloakSub) {
         return repository.findByKeycloakSub(keycloakSub);
     }
@@ -73,11 +66,6 @@ public class UserServiceHibernateImpl implements UserService {
     @Override
     public boolean existsByEmail(String email) {
         return repository.existsByEmail(email);
-    }
-
-    @Override
-    public boolean existsByPhone(String phone) {
-        return repository.existsByPhone(phone);
     }
 
     @Override
@@ -127,9 +115,7 @@ public class UserServiceHibernateImpl implements UserService {
         user.setLastName("user");
         user.setUsername(null);
         user.setEmail(null);
-        user.setPhone(null);
         user.setEmailVerified(false);
-        user.setPhoneVerified(false);
         user.setEnabled(false);
 
         repository.save(user);

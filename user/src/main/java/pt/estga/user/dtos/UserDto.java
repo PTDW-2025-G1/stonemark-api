@@ -13,9 +13,6 @@ public record UserDto(
         String lastName,
         String username,
         String email,
-        String phone,
-        boolean emailVerified,
-        boolean phoneVerified,
         MediaFileDto photo,
         UserRole role,
         Instant createdAt

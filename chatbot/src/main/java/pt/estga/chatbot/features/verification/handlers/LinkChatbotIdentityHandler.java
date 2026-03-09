@@ -2,26 +2,34 @@ package pt.estga.chatbot.features.verification.handlers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserIdentityService;
 import pt.estga.user.services.UserService;
+import pt.estga.verification.events.MessengerAccountConnectedEvent;
 
 import java.util.Optional;
 
+/**
+ * Handles contact submission in the verification flow by linking the messaging identity
+ * (Telegram/WhatsApp) to an existing domain user when the domain user id is present in context.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SubmitContactHandler implements ConversationStateHandler {
+public class LinkChatbotIdentityHandler implements ConversationStateHandler {
 
     private final UserIdentityService userIdentityService;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
@@ -29,45 +37,33 @@ public class SubmitContactHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        String phoneNumber = input.getText();
         Long domainUserId = context.getDomainUserId();
 
         if (domainUserId != null) {
             Optional<User> userOptional = userService.findById(domainUserId);
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                user.setPhone(phoneNumber);
-                user.setPhoneVerified(true);
-                userService.update(user);
-                log.info("Successfully connected phone number for user {}", user.getUsername());
-                context.setCurrentState(VerificationState.PHONE_CONNECTION_SUCCESS);
+                // Associate messaging identity with domain user (Telegram for now)
+                userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
+
+                // Publish event so listeners (e.g., Telegram notification service) can notify the user
+                try {
+                    eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
+                } catch (Exception e) {
+                    log.error("Failed to publish MessengerAccountConnectedEvent for user {}: {}", user.getId(), e.getMessage());
+                }
+
+                log.info("Successfully associated chatbot identity for user {}", user.getUsername());
+                context.setCurrentState(CoreState.MAIN_MENU);
                 return HandlerOutcome.SUCCESS;
             } else {
                 log.error("User with ID {} not found in domain", domainUserId);
                 return HandlerOutcome.FAILURE;
             }
         } else {
-            Optional<User> userOptional = userService.findByPhone(phoneNumber);
-
-            if (userOptional.isPresent()) {
-                User user = userOptional.get();
-                user.setPhone(phoneNumber);
-                user.setPhoneVerified(true);
-                userService.update(user);
-
-                userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
-
-                log.info("Successfully verified user {} and associated their Telegram ID.", user.getUsername());
-
-                context.setDomainUserId(user.getId());
-                context.setUserName(user.getFirstName());
-                context.setCurrentState(VerificationState.PHONE_VERIFICATION_SUCCESS);
-
-                return HandlerOutcome.SUCCESS;
-            } else {
-                log.warn("No user found for phone number: {}", phoneNumber);
-                return HandlerOutcome.FAILURE;
-            }
+            // Without a domain user id, we cannot link the messaging identity anymore
+            log.warn("No domain user id present; cannot link chatbot identity without prior login.");
+            return HandlerOutcome.FAILURE;
         }
     }
 

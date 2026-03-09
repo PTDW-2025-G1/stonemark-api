@@ -29,9 +29,6 @@ public class User {
     @Column(unique = true)
     private String email;
 
-    @Column(unique = true)
-    private String phone;
-
     @Column(name = "keycloak_sub", unique = true)
     private String keycloakSub;
 
@@ -43,15 +40,6 @@ public class User {
      */
     @Builder.Default
     private boolean emailVerified = false;
-
-    /**
-     * Snapshot of phone verification status from Keycloak.
-     * This field is synchronized during JIT (Just-In-Time) provisioning from the Keycloak JWT token.
-     * Do NOT manually set this field - it is managed by Keycloak and synced on login.
-     * Source: JWT claim 'phone_number_verified'
-     */
-    @Builder.Default
-    private boolean phoneVerified = false;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private MediaFile photo;
@@ -73,13 +61,11 @@ public class User {
         return accountLocked == user.accountLocked
                 && enabled == user.enabled
                 && emailVerified == user.emailVerified
-                && phoneVerified == user.phoneVerified
                 && Objects.equals(id, user.id)
                 && Objects.equals(firstName, user.firstName)
                 && Objects.equals(lastName, user.lastName)
                 && Objects.equals(username, user.username)
                 && Objects.equals(email, user.email)
-                && Objects.equals(phone, user.phone)
                 && Objects.equals(keycloakSub, user.keycloakSub)
                 && role == user.role
                 && Objects.equals(createdAt, user.createdAt);
@@ -87,6 +73,6 @@ public class User {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, email, phone, keycloakSub, emailVerified, phoneVerified, role, accountLocked, enabled, createdAt);
+        return Objects.hash(id, firstName, lastName, username, email, keycloakSub, emailVerified, role, accountLocked, enabled, createdAt);
     }
 }

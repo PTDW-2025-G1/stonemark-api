@@ -24,24 +24,14 @@ public class VerificationFlowStrategy implements FlowStrategy {
             return currentState;
         }
 
-        // After displaying code, don't automatically transition - wait for user action
+        // After displaying code, go back to main start
         if (currentState == VerificationState.DISPLAYING_VERIFICATION_CODE) {
-            // User can navigate to main menu or other actions from here
             return CoreState.START;
         }
 
-        // Handle branching from AWAITING_CONTACT
+        // If awaiting contact and success, return to main start
         if (currentState == VerificationState.AWAITING_CONTACT && outcome == SUCCESS) {
-            if (context.getDomainUserId() != null) {
-                return VerificationState.PHONE_CONNECTION_SUCCESS;
-            }
-            return VerificationState.PHONE_VERIFICATION_SUCCESS;
-        }
-
-        // Handle branching from AWAITING_PHONE_CONNECTION_DECISION
-        if (currentState == VerificationState.AWAITING_PHONE_CONNECTION_DECISION) {
-            if (outcome == VERIFY_WITH_PHONE) return VerificationState.AWAITING_CONTACT;
-            if (outcome == SUCCESS) return CoreState.START;
+            return CoreState.START;
         }
 
         if (outcome == SUCCESS) {

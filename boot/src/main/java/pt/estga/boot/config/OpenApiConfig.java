@@ -18,14 +18,6 @@ public class OpenApiConfig {
     private String baseUrl;
 
     @Bean
-    public GroupedOpenApi auth() {
-        return GroupedOpenApi.builder()
-                .group("Authentication")
-                .pathsToMatch("/api/v1/auth/**")
-                .build();
-    }
-
-    @Bean
     public GroupedOpenApi account() {
         return GroupedOpenApi.builder()
                 .group("Account")
