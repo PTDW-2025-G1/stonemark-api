@@ -6,7 +6,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.user.entities.User;
 
-import java.time.Instant;
 import java.util.Optional;
 
 @Repository
@@ -15,8 +14,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);
-
-    Optional<User> findByPhone(String phone);
 
     Optional<User> findByKeycloakSub(String keycloakSub);
 
@@ -30,9 +27,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByEmail(String email);
 
-    boolean existsByPhone(String phone);
-
     boolean existsByKeycloakSub(String keycloakSub);
 
-    void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }

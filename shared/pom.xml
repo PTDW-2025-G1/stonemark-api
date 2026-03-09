@@ -24,12 +24,6 @@
             <artifactId>spring-security-core</artifactId>
         </dependency>
 
-        <!-- Google's libphonenumber for phone number parsing and formatting -->
-        <dependency>
-            <groupId>com.googlecode.libphonenumber</groupId>
-            <artifactId>libphonenumber</artifactId>
-            <version>8.13.37</version>
-        </dependency>
         <dependency>
             <groupId>nz.net.ultraq.thymeleaf</groupId>
             <artifactId>thymeleaf-layout-dialect</artifactId>
@@ -50,11 +44,6 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.vonage</groupId>
-            <artifactId>client</artifactId>
-            <version>9.3.1</version>
         </dependency>
     </dependencies>
 

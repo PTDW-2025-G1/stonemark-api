@@ -29,7 +29,7 @@
         <module>user</module>
         <module>shared</module>
         <module>submission</module>
-        <module>support</module>
+        <module>contact</module>
         <module>chatbot</module>
         <module>verification</module>
         <module>report</module>

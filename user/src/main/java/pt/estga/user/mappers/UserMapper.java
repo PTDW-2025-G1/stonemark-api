@@ -11,7 +11,6 @@ import pt.estga.user.entities.User;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "photoId", source = "photo.id")
     UserDto toDto(User user);
 
     @Mapping(target = "photoId", source = "photo.id")

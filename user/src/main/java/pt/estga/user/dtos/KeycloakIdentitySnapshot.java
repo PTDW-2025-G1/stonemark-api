@@ -4,24 +4,35 @@ import pt.estga.shared.utils.JwtSubExtractor;
 
 import java.util.Map;
 
+/**
+ * Snapshot of user identity data extracted from Keycloak JWT token.
+ * These are the claims that get synced to the local User entity during JIT provisioning.
+ */
 public record KeycloakIdentitySnapshot(
         String sub,
         String preferredUsername,
+        String givenName,
+        String familyName,
         String email,
-        boolean emailVerified,
-        String phone,
-        boolean phoneVerified
+        boolean emailVerified
 ) {
 
     public static KeycloakIdentitySnapshot fromClaims(Map<String, ?> claims) {
         String sub = JwtSubExtractor.extractSub(claims);
         String preferredUsername = asString(claims.get("preferred_username"));
+        String givenName = asString(claims.get("given_name"));
+        String familyName = asString(claims.get("family_name"));
         String email = asString(claims.get("email"));
         boolean emailVerified = asBoolean(claims.get("email_verified"));
-        String phone = asString(claims.get("phone_number"));
-        boolean phoneVerified = asBoolean(claims.get("phone_number_verified"));
 
-        return new KeycloakIdentitySnapshot(sub, preferredUsername, email, emailVerified, phone, phoneVerified);
+        return new KeycloakIdentitySnapshot(
+                sub,
+                preferredUsername,
+                givenName,
+                familyName,
+                email,
+                emailVerified
+        );
     }
 
     private static String asString(Object value) {
@@ -41,4 +52,3 @@ public record KeycloakIdentitySnapshot(
         return false;
     }
 }
-

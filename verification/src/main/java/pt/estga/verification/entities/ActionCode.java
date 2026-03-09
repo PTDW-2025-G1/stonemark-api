@@ -2,11 +2,14 @@ package pt.estga.verification.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.user.entities.User;
 import pt.estga.verification.enums.ActionCodeType;
 
 import java.time.Instant;
 
+/**
+ * Verification code entity for chatbot account linking.
+ * Used to verify ownership of chatbot accounts (e.g., Telegram).
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,21 +22,20 @@ public class ActionCode {
     @GeneratedValue
     private Long id;
 
+    @Column(nullable = false, unique = true)
     private String code;
 
+    @Column(nullable = false)
     private Instant expiresAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ActionCodeType type;
 
-    @ManyToOne
-    private User user;
-
-    // Optional explicit recipient (email/phone) used by dispatch flows.
-    private String recipient;
-
+    @Column(nullable = false)
     private String telegramId;
 
+    @Column(nullable = false)
     private boolean consumed;
 
 }

@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>support</artifactId>
+            <artifactId>contact</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

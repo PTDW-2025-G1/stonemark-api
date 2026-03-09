@@ -10,7 +10,6 @@ import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Message;
-import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.ContactRequest;
 import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.features.core.MainMenuFactory;
@@ -53,44 +52,15 @@ public class VerificationResponseProvider implements ResponseProvider {
                 yield responses;
             }
             case AWAITING_CONTACT -> createContactRequestResponse();
-            case AWAITING_PHONE_CONNECTION_DECISION -> {
-                List<BotResponse> responses = new ArrayList<>();
-                responses.add(buildSimpleMenuResponse(new Message(MessageKey.MESSENGER_CONNECT_SUCCESS, context.getUserName(), TADA)).getFirst());
-                responses.add(createPhoneConnectionPrompt().getFirst());
-                yield responses;
-            }
-            case PHONE_VERIFICATION_SUCCESS -> {
-                List<BotResponse> responses = new ArrayList<>();
-                responses.add(buildSimpleMenuResponse(new Message(MessageKey.VERIFICATION_SUCCESS_PHONE, TADA)).getFirst());
-                responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
-                yield responses;
-            }
-            case PHONE_CONNECTION_SUCCESS -> {
-                List<BotResponse> responses = new ArrayList<>();
-                responses.add(buildSimpleMenuResponse(new Message(MessageKey.PHONE_CONNECTION_SUCCESS, TADA)).getFirst());
-                responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
-                yield responses;
-            }
         };
     }
 
-
     private List<BotResponse> createContactRequestResponse() {
+        // Phone removed: instruct user to visit web UI and use the code to connect their messenger account.
         ContactRequest contactRequest = ContactRequest.builder()
-                .messageNode(textService.get(new Message(MessageKey.SHARE_PHONE_NUMBER_PROMPT, PHONE)))
+                .messageNode(textService.get(new Message(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS, KEY)))
                 .build();
         return Collections.singletonList(BotResponse.builder().uiComponent(contactRequest).build());
-    }
-
-    private List<BotResponse> createPhoneConnectionPrompt() {
-        Menu menu = Menu.builder()
-                .titleNode(textService.get(new Message(MessageKey.PROMPT_CONNECT_PHONE)))
-                .buttons(List.of(
-                        List.of(Button.builder().textNode(textService.get(new Message(MessageKey.YES_BTN, CHECK))).callbackData(VerificationCallbackData.CONNECT_PHONE_YES).build()),
-                        List.of(Button.builder().textNode(textService.get(new Message(MessageKey.NO_BTN, CROSS))).callbackData(VerificationCallbackData.CONNECT_PHONE_NO).build())
-                ))
-                .build();
-        return Collections.singletonList(BotResponse.builder().uiComponent(menu).build());
     }
 
     private List<BotResponse> buildSimpleMenuResponse(Message message) {
