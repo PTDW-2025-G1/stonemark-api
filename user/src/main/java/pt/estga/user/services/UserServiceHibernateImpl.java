@@ -118,11 +118,6 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    public void deleteUnverifiedUsers(Instant minus) {
-        repository.deleteAllByEnabledFalseAndCreatedAtBefore(minus);
-    }
-
-    @Override
     public void softDeleteUser(Long id) {
         User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 

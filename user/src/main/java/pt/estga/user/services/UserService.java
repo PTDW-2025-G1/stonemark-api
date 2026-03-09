@@ -44,7 +44,5 @@ public interface UserService {
 
     void deleteById(Long id);
 
-    void deleteUnverifiedUsers(Instant minus);
-
     void softDeleteUser(Long id);
 }

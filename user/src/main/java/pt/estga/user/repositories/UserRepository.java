@@ -34,5 +34,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByKeycloakSub(String keycloakSub);
 
-    void deleteAllByEnabledFalseAndCreatedAtBefore(Instant minus);
 }
