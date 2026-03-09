@@ -47,6 +47,8 @@ class KeycloakJitProvisioningServiceTest {
         newUserSnapshot = new KeycloakIdentitySnapshot(
                 "new-sub-456",
                 "newuser",
+                "New",
+                "User",
                 "new@example.com",
                 true,
                 "+351987654321",
@@ -56,6 +58,8 @@ class KeycloakJitProvisioningServiceTest {
         existingUserSnapshot = new KeycloakIdentitySnapshot(
                 "existing-sub-123",
                 "existing-user",
+                "Existing",
+                "User",
                 "existing@example.com",
                 true,
                 "+351912345678",
@@ -80,22 +84,10 @@ class KeycloakJitProvisioningServiceTest {
 
     @Test
     void resolveOrProvision_shouldCreateNewUser_whenKeycloakSubNotFoundAndNoEmailMatch() {
-        User newUser = User.builder()
-                .id(2L)
-                .username("newuser")
-                .email("new@example.com")
-                .emailVerified(true)
-                .phone("+351987654321")
-                .phoneVerified(true)
-                .keycloakSub("new-sub-456")
-                .enabled(true)
-                .role(UserRole.USER)
-                .build();
-
         when(userService.findByKeycloakSub("new-sub-456")).thenReturn(Optional.empty());
         when(userService.findByEmail("new@example.com")).thenReturn(Optional.empty());
         when(userService.existsByUsername(anyString())).thenReturn(false);
-        when(userService.create(any(User.class))).thenReturn(newUser);
+        when(userService.create(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = jitProvisioningService.resolveOrProvision(newUserSnapshot);
 
@@ -103,6 +95,8 @@ class KeycloakJitProvisioningServiceTest {
         assertEquals("new-sub-456", result.getKeycloakSub());
         assertEquals("new@example.com", result.getEmail());
         assertEquals("newuser", result.getUsername());
+        assertEquals("New", result.getFirstName());
+        assertEquals("User", result.getLastName());
         assertTrue(result.isEmailVerified());
         assertTrue(result.isPhoneVerified());
         assertEquals(UserRole.USER, result.getRole());
@@ -169,6 +163,8 @@ class KeycloakJitProvisioningServiceTest {
         KeycloakIdentitySnapshot unverifiedSnapshot = new KeycloakIdentitySnapshot(
                 "unverified-sub",
                 "unverified-user",
+                "Unverified",
+                "User",
                 "unverified@example.com",
                 false,
                 null,
@@ -205,6 +201,8 @@ class KeycloakJitProvisioningServiceTest {
         KeycloakIdentitySnapshot updatedSnapshot = new KeycloakIdentitySnapshot(
                 "existing-sub-123",
                 "updated-username",
+                "Updated",
+                "Name",
                 "updated@example.com",
                 true,
                 "+351999888777",
@@ -218,6 +216,8 @@ class KeycloakJitProvisioningServiceTest {
 
         assertNotNull(result);
         assertEquals("updated-username", result.getUsername());
+        assertEquals("Updated", result.getFirstName());
+        assertEquals("Name", result.getLastName());
         assertEquals("updated@example.com", result.getEmail());
         assertEquals("+351999888777", result.getPhone());
         assertTrue(result.isEmailVerified());
@@ -231,6 +231,8 @@ class KeycloakJitProvisioningServiceTest {
         KeycloakIdentitySnapshot noPhoneSnapshot = new KeycloakIdentitySnapshot(
                 "no-phone-sub",
                 "nophone",
+                "No",
+                "Phone",
                 "nophone@example.com",
                 true,
                 null,
@@ -269,6 +271,8 @@ class KeycloakJitProvisioningServiceTest {
         KeycloakIdentitySnapshot duplicateUsernameSnapshot = new KeycloakIdentitySnapshot(
                 "duplicate-sub",
                 "existing-user",
+                "Dup",
+                "User",
                 "duplicate@example.com",
                 true,
                 null,

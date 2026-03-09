@@ -43,6 +43,8 @@ public class KeycloakJitProvisioningServiceImpl implements KeycloakJitProvisioni
     private User createUser(KeycloakIdentitySnapshot snapshot) {
         User user = User.builder()
                 .username(resolveUsername(snapshot))
+                .firstName(snapshot.givenName())
+                .lastName(snapshot.familyName())
                 .email(snapshot.email())
                 .phone(snapshot.phone())
                 .emailVerified(snapshot.emailVerified())
@@ -58,6 +60,14 @@ public class KeycloakJitProvisioningServiceImpl implements KeycloakJitProvisioni
     private User syncSnapshot(User user, KeycloakIdentitySnapshot snapshot) {
         if (snapshot.preferredUsername() != null && !snapshot.preferredUsername().isBlank()) {
             user.setUsername(snapshot.preferredUsername());
+        }
+
+        if (snapshot.givenName() != null && !snapshot.givenName().isBlank()) {
+            user.setFirstName(snapshot.givenName());
+        }
+
+        if (snapshot.familyName() != null && !snapshot.familyName().isBlank()) {
+            user.setLastName(snapshot.familyName());
         }
 
         if (snapshot.email() != null) {
