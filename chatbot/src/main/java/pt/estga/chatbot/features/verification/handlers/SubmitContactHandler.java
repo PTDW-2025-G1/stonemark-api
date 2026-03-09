@@ -36,10 +36,9 @@ public class SubmitContactHandler implements ConversationStateHandler {
             Optional<User> userOptional = userService.findById(domainUserId);
             if (userOptional.isPresent()) {
                 User user = userOptional.get();
-                user.setPhone(phoneNumber);
-                user.setPhoneVerified(true);
-                userService.update(user);
-                log.info("Successfully connected phone number for user {}", user.getUsername());
+                // Phone removed: associate Telegram identity directly to domain user
+                userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
+                log.info("Successfully associated Telegram ID for user {}", user.getUsername());
                 context.setCurrentState(VerificationState.PHONE_CONNECTION_SUCCESS);
                 return HandlerOutcome.SUCCESS;
             } else {
@@ -47,27 +46,9 @@ public class SubmitContactHandler implements ConversationStateHandler {
                 return HandlerOutcome.FAILURE;
             }
         } else {
-            Optional<User> userOptional = userService.findByPhone(phoneNumber);
-
-            if (userOptional.isPresent()) {
-                User user = userOptional.get();
-                user.setPhone(phoneNumber);
-                user.setPhoneVerified(true);
-                userService.update(user);
-
-                userIdentityService.createOrUpdateTelegramIdentity(user, input.getUserId());
-
-                log.info("Successfully verified user {} and associated their Telegram ID.", user.getUsername());
-
-                context.setDomainUserId(user.getId());
-                context.setUserName(user.getFirstName());
-                context.setCurrentState(VerificationState.PHONE_VERIFICATION_SUCCESS);
-
-                return HandlerOutcome.SUCCESS;
-            } else {
-                log.warn("No user found for phone number: {}", phoneNumber);
-                return HandlerOutcome.FAILURE;
-            }
+            // Without phone lookup, we cannot connect an anonymous contact to a user
+            log.warn("No domain user id present and phone lookup is disabled; cannot verify contact.");
+            return HandlerOutcome.FAILURE;
         }
     }
 
