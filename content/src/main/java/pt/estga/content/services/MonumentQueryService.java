@@ -17,10 +17,6 @@ public interface MonumentQueryService {
 
     Optional<Monument> findById(Long id);
 
-    List<Monument> findByCoordinatesInRange(double latitude, double longitude, double range);
-
-    List<Monument> findLatest(int limit);
-
     long count();
 
     Page<Monument> searchByName(String query, Pageable pageable);
@@ -29,5 +25,4 @@ public interface MonumentQueryService {
 
     Page<Monument> findByDivisionId(Long id, Pageable pageable);
 
-    List<Monument> findPopular(int limit);
 }

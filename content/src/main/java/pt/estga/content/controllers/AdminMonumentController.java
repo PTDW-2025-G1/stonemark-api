@@ -50,7 +50,7 @@ public class AdminMonumentController {
     public ResponseEntity<MonumentDto> createMonument(
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
             @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         Monument monument = mapper.toEntity(monumentDto);
 
         Monument createdMonument = service.create(monument);
@@ -70,7 +70,7 @@ public class AdminMonumentController {
             @PathVariable Long id,
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
             @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 

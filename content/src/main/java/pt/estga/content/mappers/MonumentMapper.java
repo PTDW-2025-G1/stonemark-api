@@ -20,7 +20,6 @@ public interface MonumentMapper {
 
     MonumentListDto toListDto(Monument monument);
 
-    @Mapping(source = "cover.id", target = "coverId")
     List<MonumentListDto> toListDto(List<Monument> monuments);
 
     MonumentMinDto toMinDto(Monument monument);

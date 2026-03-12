@@ -47,17 +47,6 @@ public class MonumentQueryServiceImpl implements MonumentQueryService {
     }
 
     @Override
-    public List<Monument> findByCoordinatesInRange(double latitude, double longitude, double range) {
-        return repository.findByCoordinatesInRange(latitude, longitude, range, true);
-    }
-
-    @Override
-    public List<Monument> findLatest(int limit) {
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return repository.findByActive(pageable, true).getContent();
-    }
-
-    @Override
     public long count() {
         return repository.count();
     }
@@ -82,11 +71,5 @@ public class MonumentQueryServiceImpl implements MonumentQueryService {
             }
         }
         return Page.empty(pageable);
-    }
-
-    @Override
-    @Cacheable("popularMonuments")
-    public List<Monument> findPopular(int limit) {
-        return repository.findPopular(PageRequest.of(0, limit), true);
     }
 }
