@@ -9,7 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.contact.ContactStatus;
+import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.entities.ContactRequest;
 import pt.estga.contact.services.ContactRequestService;
 

@@ -2,7 +2,7 @@ package pt.estga.contact.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pt.estga.contact.ContactStatus;
+import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.dtos.ContactRequestDto;
 import pt.estga.contact.entities.ContactRequest;
 

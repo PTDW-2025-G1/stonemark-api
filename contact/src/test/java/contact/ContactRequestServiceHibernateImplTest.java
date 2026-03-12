@@ -12,7 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import pt.estga.contact.ContactStatus;
+import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.dtos.ContactRequestDto;
 import pt.estga.contact.entities.ContactRequest;
 import pt.estga.contact.repositories.ContactRequestRepository;
