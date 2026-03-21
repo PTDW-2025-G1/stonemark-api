@@ -19,13 +19,26 @@ public class PagedRequest {
     private Integer size;
     private List<SortCriteria> sort;
 
+    // Default paging values and maximums are centralized for ease of maintenance and testing.
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 20;
+    private static final int MAX_SIZE = 500;
+
     /**
      * Convert this PagedRequest into a Spring Data Pageable. Defaults are
      * applied when page/size are null. SortCriteria entries are applied in order.
+     * <p>
+     * Expected JSON shape when received from clients:
+     * {
+     *   "filter": { ... },
+     *   "page": 0,
+     *   "size": 20,
+     *   "sort": [{ "field": "name", "direction": "ASC" }]
+     * }
      */
     public Pageable toPageable() {
-        int p = page != null && page >= 0 ? page : 0;
-        int s = size != null && size > 0 ? Math.min(size, 500) : 20; // guard against excessive page sizes
+        int p = page != null && page >= 0 ? page : DEFAULT_PAGE;
+        int s = size != null && size > 0 ? Math.min(size, MAX_SIZE) : DEFAULT_SIZE; // guard against excessive page sizes
         if (sort == null || sort.isEmpty()) return PageRequest.of(p, s);
         Sort springSort = Sort.unsorted();
         for (SortCriteria sc : sort) {
