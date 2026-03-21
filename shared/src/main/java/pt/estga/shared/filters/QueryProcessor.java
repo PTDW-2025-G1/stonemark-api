@@ -3,7 +3,6 @@ package pt.estga.shared.filters;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import pt.estga.shared.filters.mappers.FieldMapper;
 import pt.estga.shared.filters.models.PagedRequest;
 import pt.estga.shared.filters.models.QueryResult;
 import pt.estga.shared.filters.utils.FilterNormalizer;
@@ -17,17 +16,14 @@ import pt.estga.shared.filters.utils.SortNormalizer;
  */
 public class QueryProcessor<T> {
 
-    private final FieldMapper mapper;
     private final SpecificationBuilder<T> builder;
 
     /**
      * Constructs a QueryProcessor with the given FieldMapper and SpecificationBuilder.
      *
-     * @param mapper  The FieldMapper for field normalization.
      * @param builder The SpecificationBuilder for building specifications.
      */
-    public QueryProcessor(FieldMapper mapper, SpecificationBuilder<T> builder) {
-        this.mapper = mapper;
+    public QueryProcessor(SpecificationBuilder<T> builder) {
         this.builder = builder;
     }
 
@@ -45,7 +41,7 @@ public class QueryProcessor<T> {
         Specification<T> spec = builder.build(normalizedFilter);
 
         // Normalize the sort
-        Sort sort = SortNormalizer.normalize(mapper, request.getSort());
+        Sort sort = SortNormalizer.normalize(request.getSort());
 
         // Convert to Pageable
         Pageable pageable = request.toPageable(sort);

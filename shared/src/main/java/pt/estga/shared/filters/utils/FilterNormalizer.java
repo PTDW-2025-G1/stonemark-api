@@ -1,5 +1,6 @@
 package pt.estga.shared.filters.utils;
 
+import jakarta.persistence.criteria.JoinType;
 import pt.estga.shared.filters.models.FilterCriteria;
 import pt.estga.shared.filters.models.FilterNode;
 
@@ -101,18 +102,16 @@ public class FilterNormalizer {
                     throw new IllegalArgumentException("Operator " + criteria.getOperator() + " requires a non-null value");
                 }
             }
-            default -> {
-                // No additional validation needed for other operators.
-            }
+            default -> throw new IllegalArgumentException("Unsupported operator: " + criteria.getOperator());
         }
 
-        // Optional transformation: trim field strings
         return FilterCriteria.validatedBuilder(
                 criteria.getField().trim(),
                 criteria.getOperator(),
                 criteria.getValue(),
                 criteria.getLikeMode(),
-                criteria.isCaseSensitive()
+                criteria.isCaseSensitive(),
+                JoinType.LEFT
         );
     }
 }

@@ -5,7 +5,6 @@ import pt.estga.shared.filters.enums.LikeMode;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
-import pt.estga.shared.filters.mappers.FieldMapper;
 import pt.estga.shared.filters.models.FilterCriteria;
 import org.springframework.lang.NonNull;
 
@@ -18,7 +17,6 @@ import java.util.function.Function;
 @Slf4j
 public class GenericSpecification<T> implements Specification<T> {
 
-    private final FieldMapper fieldMapper;
     private final FilterCriteria criteria;
     private final Object value;
     private final List<Object> values;
@@ -39,9 +37,13 @@ public class GenericSpecification<T> implements Specification<T> {
         TYPE_REGISTRY.put(BigDecimal.class, BigDecimal::new);
     }
 
-    public GenericSpecification(FilterCriteria criteria, FieldMapper fieldMapper) {
+    // Add field injection for GenericFieldMapper
+    private final GenericFieldMapper fieldMapper;
+
+    // Constructor injection for GenericFieldMapper
+    public GenericSpecification(GenericFieldMapper fieldMapper, FilterCriteria criteria) {
+        this.fieldMapper = fieldMapper;
         this.criteria = Objects.requireNonNull(criteria, "FilterCriteria cannot be null");
-        this.fieldMapper = Objects.requireNonNull(fieldMapper, "FieldMapper cannot be null");
 
         if (criteria.getValue() instanceof List<?> list) {
             this.values = List.copyOf(list); // immutable copy
@@ -194,7 +196,7 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Path<?> getPath(Root<T> root, String field, Map<String, Path<?>> joinCache) {
-        if (!fieldMapper.isFieldAllowed(field)) {
+        if (!fieldMapper.isAllowed(field, root.getJavaType())) {
             throw new IllegalArgumentException("Field path not allowed: " + field);
         }
 
