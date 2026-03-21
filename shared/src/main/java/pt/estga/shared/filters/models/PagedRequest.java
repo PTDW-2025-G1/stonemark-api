@@ -4,7 +4,6 @@ import lombok.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import pt.estga.shared.filters.utils.SortNormalizer;
 
 import java.util.List;
 
@@ -24,13 +23,12 @@ public class PagedRequest {
     /**
      * Converts the current PagedRequest into a Pageable object.
      *
-     * @param defaultSort The default sort to apply if none is provided.
+     * @param sort The sort to apply.
      * @return A Pageable object representing the pagination and sorting.
      */
-    public Pageable toPageable(Sort defaultSort) {
-        Sort effectiveSort = (sort == null || sort.isEmpty()) ? defaultSort : SortNormalizer.normalize(null, sort);
+    public Pageable toPageable(Sort sort) {
         int effectivePage = (page == null || page < 0) ? DEFAULT_PAGE : page;
         int effectiveSize = (size == null || size < 1 || size > MAX_SIZE) ? DEFAULT_SIZE : size;
-        return PageRequest.of(effectivePage, effectiveSize, effectiveSort);
+        return PageRequest.of(effectivePage, effectiveSize, sort);
     }
 }

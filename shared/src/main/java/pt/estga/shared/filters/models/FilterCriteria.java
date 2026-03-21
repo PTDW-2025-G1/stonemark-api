@@ -20,46 +20,36 @@ import pt.estga.shared.filters.enums.LikeMode;
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Builder
+@Builder(builderMethodName = "validatedBuilder")
 public class FilterCriteria {
-
     private final String field;
     private final FilterOperator operator;
     private final Object value;
-    /**
-     * Specifies the LIKE mode for string filtering. Default is LikeMode.CONTAINS.
-     * The builder must preserve this default; @Builder.Default ensures the value is set when using Lombok's builder.
-     */
     @Builder.Default
     private final LikeMode likeMode = LikeMode.CONTAINS;
-    /**
-     * Controls case sensitivity for LIKE operator. If true, LIKE is case-sensitive and preserves index usage.
-     */
     private final boolean caseSensitive;
 
     /**
-     * Custom no-args constructor for frameworks like Jackson.
-     * Ensures that default values are applied and the object is valid.
+     * Creates a validated builder for constructing FilterCriteria instances.
+     * This method ensures that all required fields are properly validated before
+     * the object is built.
+     * <p>
+     * Example usage:
+     * <pre>
+     *     FilterCriteria criteria = FilterCriteria.validatedBuilder()
+     *         .field("name")
+     *         .operator(FilterOperator.EQ)
+     *         .value("John")
+     *         .likeMode(LikeMode.CONTAINS)
+     *         .caseSensitive(false)
+     *         .build();
+     * </pre>
+     *
+     * @return A validated builder instance for FilterCriteria.
      */
-    public FilterCriteria() {
-        this.field = ""; // Default to empty string
-        this.operator = FilterOperator.EQ; // Default operator
-        this.value = null; // Default value
-        this.likeMode = LikeMode.CONTAINS; // Default like mode
-        this.caseSensitive = false; // Default case sensitivity
-    }
-
-    /**
-     * Validates the required fields to ensure the object is always in a valid state.
-     */
-    @Builder(builderMethodName = "validatedBuilder")
-    private static FilterCriteria createValidated(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive) {
-        if (field == null || field.isEmpty()) {
-            throw new IllegalArgumentException("Field must not be null or empty");
-        }
-        if (operator == null) {
-            throw new IllegalArgumentException("Operator must not be null");
-        }
+    public static FilterCriteria validatedBuilder(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive) {
+        if (field == null || field.isBlank()) throw new IllegalArgumentException("Field cannot be blank");
+        if (operator == null) throw new IllegalArgumentException("Operator cannot be null");
         return new FilterCriteria(field, operator, value, likeMode, caseSensitive);
     }
 }

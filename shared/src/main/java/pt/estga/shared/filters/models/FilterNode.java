@@ -4,7 +4,7 @@ import lombok.*;
 import org.jspecify.annotations.NonNull;
 import pt.estga.shared.filters.enums.LogicalOperator;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,7 +30,7 @@ public record FilterNode(LogicalOperator operator, List<FilterNode> children, Fi
 
     @Override
     public List<FilterNode> children() {
-        return children == null ? List.of() : new ArrayList<>(children);
+        return children == null ? List.of() : Collections.unmodifiableList(children);
     }
 
     @Override
@@ -69,11 +69,10 @@ public record FilterNode(LogicalOperator operator, List<FilterNode> children, Fi
             throw new IllegalStateException("Leaf node cannot have an operator.");
         }
 
-        if (isGroup && children.stream().allMatch(java.util.Objects::isNull)) {
-            throw new IllegalStateException("Group node has only null children.");
+        if (isGroup && (children == null || children.isEmpty())) {
+            throw new IllegalStateException("Group node must have non-empty children.");
         }
 
-        // Recursively validate child nodes if this is a group
         if (isGroup) {
             for (FilterNode child : children) {
                 if (child != null) {
