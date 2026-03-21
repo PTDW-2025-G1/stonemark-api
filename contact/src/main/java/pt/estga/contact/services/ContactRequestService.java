@@ -1,27 +1,53 @@
 package pt.estga.contact.services;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import pt.estga.contact.repositories.ContactRequestRepository;
 import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.dtos.ContactRequestDto;
 import pt.estga.contact.entities.ContactRequest;
+import pt.estga.shared.exceptions.ContactNotFoundException;
+import pt.estga.user.entities.User;
 
-import java.util.Optional;
+import java.time.Instant;
 
-public interface ContactRequestService {
+@Service
+@RequiredArgsConstructor
+public class ContactRequestService {
 
-    Page<ContactRequest> findAll(Pageable pageable);
+    private final ContactRequestRepository repository;
 
-    Page<ContactRequest> findAllBySubmittedBy(Long submittedById, Pageable pageable);
+    public ContactRequest create(ContactRequestDto dto) {
+        return create(dto, null);
+    }
 
-    Optional<ContactRequest> findById(Long id);
+    public ContactRequest create(ContactRequestDto dto, Long submittedById) {
+        ContactRequest contact = new ContactRequest();
 
-    ContactRequest create(ContactRequestDto dto);
+        contact.setName(dto.name());
+        contact.setEmail(dto.email());
+        contact.setSubject(dto.subject());
+        contact.setMessage(dto.message());
+        contact.setStatus(ContactStatus.PENDING);
+        contact.setCreatedAt(Instant.now());
+        contact.setSubmittedBy(User.builder().id(submittedById).build());
 
-    ContactRequest create(ContactRequestDto dto, Long submittedById);
+        return repository.save(contact);
+    }
 
-    ContactRequest updateStatus(Long id, ContactStatus status);
 
-    void delete(Long id);
+    public ContactRequest updateStatus(Long id, ContactStatus status) {
+        ContactRequest contact = repository.findById(id)
+                .orElseThrow(() -> new ContactNotFoundException(id));
 
+        contact.setStatus(status);
+        return repository.save(contact);
+    }
+
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new ContactNotFoundException(id);
+        }
+        repository.deleteById(id);
+    }
 }

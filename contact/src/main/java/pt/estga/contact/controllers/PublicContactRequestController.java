@@ -16,6 +16,7 @@ import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.contact.dtos.ContactRequestDto;
 import pt.estga.contact.entities.ContactRequest;
 import pt.estga.contact.services.ContactRequestService;
+import pt.estga.contact.services.ContactRequestQueryService;
 
 @RestController
 @RequestMapping("/api/v1/public/contact-requests")
@@ -24,6 +25,7 @@ import pt.estga.contact.services.ContactRequestService;
 public class PublicContactRequestController {
 
     private final ContactRequestService service;
+    private final ContactRequestQueryService queryService;
 
     @PostMapping
     public ResponseEntity<ContactRequest> create(
@@ -39,7 +41,7 @@ public class PublicContactRequestController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             Pageable pageable
     ) {
-        Page<ContactRequest> requests = service.findAllBySubmittedBy(principal.getId(), pageable);
+        Page<ContactRequest> requests = queryService.findAllBySubmittedBy(principal.getId(), pageable);
         return ResponseEntity.ok(requests);
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.entities.ContactRequest;
+import pt.estga.contact.services.ContactRequestQueryService;
 import pt.estga.contact.services.ContactRequestService;
 
 @RestController
@@ -20,6 +21,7 @@ import pt.estga.contact.services.ContactRequestService;
 @PreAuthorize("hasRole('MODERATOR')")
 public class AdminContactRequestController {
 
+    private final ContactRequestQueryService queryService;
     private final ContactRequestService service;
 
     @GetMapping
@@ -28,12 +30,12 @@ public class AdminContactRequestController {
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(queryService.findAll(pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ContactRequest> getById(@PathVariable Long id) {
-        return service.findById(id)
+        return queryService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
