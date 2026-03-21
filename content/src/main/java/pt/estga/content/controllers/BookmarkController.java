@@ -7,7 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.content.dtos.BookmarkDto;
 import pt.estga.content.services.BookmarkService;
-import pt.estga.shared.enums.TargetType;
+import pt.estga.content.enums.TargetType;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public class BookmarkController {
     public BookmarkDto create(
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable TargetType type,
-            @PathVariable Long targetId
+            @PathVariable String targetId
     ) {
         return service.createBookmark(principal.getId(), type, targetId);
     }
@@ -47,7 +47,7 @@ public class BookmarkController {
     public boolean isBookmarked(
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @PathVariable TargetType type,
-            @PathVariable Long targetId
+            @PathVariable String targetId
     ) {
         return service.isBookmarked(principal.getId(), type, targetId);
     }

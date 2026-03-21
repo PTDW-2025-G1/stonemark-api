@@ -1,11 +1,11 @@
 package pt.estga.content.dtos;
 
-import pt.estga.shared.enums.TargetType;
+import pt.estga.content.enums.TargetType;
 
 public record BookmarkDto(
         Long id,
         TargetType type,
-        Long targetId,
+        String targetId,
         Object content
 ) {}
 
