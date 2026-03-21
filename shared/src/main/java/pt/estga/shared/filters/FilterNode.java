@@ -48,12 +48,14 @@ public class FilterNode {
                 .toList();
         }
 
-        if (criteria != null && cleanedChildren != null) {
+        boolean isGroup = cleanedChildren != null && !cleanedChildren.isEmpty();
+
+        if (criteria != null && isGroup) {
             throw new IllegalStateException("Node cannot have both criteria and children");
         }
 
         if (criteria == null) {
-            if (cleanedChildren == null || cleanedChildren.isEmpty()) {
+            if (!isGroup) {
                 if (children != null && !children.isEmpty()) {
                     throw new IllegalStateException(
                             "Group node contains only null children; operator=" + operator + ", originalCount=" + children.size()
@@ -63,7 +65,7 @@ public class FilterNode {
             }
         }
 
-        if (isGroup() && operator == null) {
+        if (isGroup && operator == null) {
             throw new IllegalStateException("Group node must have a logical operator");
         }
 

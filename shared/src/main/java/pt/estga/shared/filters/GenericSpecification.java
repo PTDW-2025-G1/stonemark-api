@@ -1,13 +1,15 @@
 package pt.estga.shared.filters;
 
+import org.jspecify.annotations.NonNull;
 import pt.estga.shared.filters.enums.LikeMode;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.*;
+
+import static pt.estga.shared.filters.FilterNormalizer.normalize;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -19,7 +21,7 @@ public class GenericSpecification<T> implements Specification<T> {
     private final List<Object> values;
 
     public GenericSpecification(FilterCriteria criteria) {
-        this.criteria = criteria;
+        this.criteria = normalize(criteria);
         if (criteria.getValue() instanceof List<?> list) {
             this.values = new ArrayList<>(list);
             this.value = null;
@@ -30,15 +32,10 @@ public class GenericSpecification<T> implements Specification<T> {
     }
 
     @Override
-    public Predicate toPredicate(@NonNull Root<T> root, @NonNull CriteriaQuery<?> query, @NonNull CriteriaBuilder cb) {
-
-        if (!validateCriteria()) {
-            throw new IllegalArgumentException(invalidFilterMessage("validation failed"));
-        }
-
+    public Predicate toPredicate(@NonNull Root<T> root, CriteriaQuery<?> query, @NonNull CriteriaBuilder cb) {
         Path<?> path = getPath(root, criteria.getField());
         if (path == null) {
-            throw new IllegalArgumentException(invalidFilterMessage("invalid path"));
+            throw new IllegalArgumentException(invalidFilterMessage());
         }
 
         Predicate predicate = switch (criteria.getOperator()) {
@@ -56,7 +53,6 @@ public class GenericSpecification<T> implements Specification<T> {
         };
 
         return Objects.requireNonNull(predicate, "Predicate creation failed");
-
     }
 
     private enum ComparisonOperator { GT, LT, GTE, LTE }
@@ -73,17 +69,6 @@ public class GenericSpecification<T> implements Specification<T> {
         };
     }
 
-    private boolean validateCriteria() {
-        if (criteria == null) return false;
-        if (criteria.getField() == null || criteria.getField().isBlank()) return false;
-        if (criteria.getOperator() == null) return false;
-
-        return switch (criteria.getOperator()) {
-            case IN, BETWEEN -> values != null && !values.isEmpty();
-            case LIKE, EQ, NE, GT, LT, GTE, LTE -> value != null;
-            default -> true;
-        };
-    }
 
     // ----------------------
     // CENTRALIZED CONVERSION
@@ -107,20 +92,16 @@ public class GenericSpecification<T> implements Specification<T> {
             case String s -> {
                 return (Y) parseString(type, s);
             }
-
             // Number conversion with widening
             case Number num -> {
                 return (Y) convertNumber(type, num);
             }
-
             // Boolean
             case Boolean b -> {
                 if (type == Boolean.class || type == boolean.class) return (Y) b;
                 if (type == String.class) return (Y) String.valueOf(b);
             }
-            default -> {
-                log.warn("Value of type {} cannot be directly converted to {}, attempting fallback", value.getClass().getSimpleName(), type.getSimpleName());
-            }
+            default -> throw new IllegalArgumentException("Cannot convert value '" + value + "' to type " + type.getSimpleName());
         }
 
         if (type.isInstance(value)) return (Y) value;
@@ -196,24 +177,23 @@ public class GenericSpecification<T> implements Specification<T> {
         return input.replace(esc, esc + esc).replace("%", esc + "%").replace("_", esc + "_");
     }
 
-    private Predicate inPredicate(Path<?> path, Object value) {
-        Objects.requireNonNull(value, "IN operator requires a non-null value");
-        if (!(value instanceof List<?> list)) throw new IllegalArgumentException("IN operator requires a list of values");
-        for (Object e : list) {
+    private Predicate inPredicate(Path<?> path, List<?> values) {
+        Objects.requireNonNull(values, "IN operator requires a non-null list of values");
+        for (Object e : values) {
             if (e == null) throw new IllegalArgumentException("IN list contains null element");
         }
-        List<?> converted = convertList(path, list);
+        List<?> converted = convertList(path, values);
         return path.in(converted);
     }
 
     @SuppressWarnings("unchecked")
-    private <Y extends Comparable<? super Y>> Predicate betweenPredicate(CriteriaBuilder cb, Path<?> path, Object value) {
-        Objects.requireNonNull(value, "BETWEEN operator requires a non-null value");
-        if (!(value instanceof List<?> list) || list.size() != 2) {
+    private <Y extends Comparable<? super Y>> Predicate betweenPredicate(CriteriaBuilder cb, Path<?> path, List<?> values) {
+        Objects.requireNonNull(values, "BETWEEN operator requires a non-null list of values");
+        if (values.size() != 2) {
             throw new IllegalArgumentException("BETWEEN requires list of size 2");
         }
 
-        List<Y> converted = convertList(path, list);
+        List<Y> converted = convertList(path, values);
         Y start = converted.get(0);
         Y end = converted.get(1);
 
@@ -225,8 +205,14 @@ public class GenericSpecification<T> implements Specification<T> {
     // PATH / JOIN
     // ----------------------
 
+    private final Map<String, Path<?>> joinCache = new HashMap<>();
+
     private Path<?> getPath(Root<T> root, String field) {
         if (!field.contains(".")) return root.get(field);
+
+        if (joinCache.containsKey(field)) {
+            return joinCache.get(field);
+        }
 
         String[] parts = field.split("\\.");
         Path<?> path = root;
@@ -235,21 +221,22 @@ public class GenericSpecification<T> implements Specification<T> {
             if (path instanceof From<?, ?> from) {
                 path = from.join(part, JoinType.LEFT);
             } else {
-                path = path.get(part);
+                throw new IllegalArgumentException("Invalid path segment: " + part);
             }
             if (path == null) {
                 throw new IllegalArgumentException("Invalid path segment: " + part);
             }
         }
 
+        joinCache.put(field, path);
         return path;
     }
 
-    private String invalidFilterMessage(String reason) {
+    private String invalidFilterMessage() {
         String field = criteria == null ? "<null>" : criteria.getField();
         String op = criteria == null ? "<null>" : String.valueOf(criteria.getOperator());
         Object val = criteria == null ? null : criteria.getValue();
         String valStr = val == null ? "null" : val.toString();
-        return "Invalid filter (" + reason + ") - field=" + field + ", operator=" + op + ", value=" + valStr;
+        return "Invalid filter - field=" + field + ", operator=" + op + ", value=" + valStr;
     }
 }
