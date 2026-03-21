@@ -28,12 +28,6 @@ public class ConversationDispatcher {
                 .collect(Collectors.toMap(ConversationStateHandler::canHandle, Function.identity()));
         this.proposalFlow = proposalFlow;
         this.responseFactory = responseFactory;
-
-        // Log all registered handlers for debugging
-        log.info("Registering {} conversation state handlers", handlerList.size());
-        handlerList.forEach(handler ->
-            log.debug("Registered handler: {} for state: {}", handler.getClass().getSimpleName(), handler.canHandle())
-        );
     }
 
     public List<BotResponse> dispatch(ChatbotContext context, BotInput input) {

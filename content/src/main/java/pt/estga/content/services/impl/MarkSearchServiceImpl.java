@@ -3,8 +3,8 @@ package pt.estga.content.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pt.estga.content.repositories.MarkOccurrenceQueryRepository;
-import pt.estga.content.repositories.MarkQueryRepository;
+import pt.estga.content.repositories.MarkOccurrenceRepository;
+import pt.estga.content.repositories.MarkRepository;
 import pt.estga.content.repositories.projections.MarkSimilarityProjection;
 import pt.estga.content.services.MarkSearchService;
 
@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MarkSearchServiceImpl implements MarkSearchService {
 
-    private final MarkQueryRepository markQueryRepository;
-    private final MarkOccurrenceQueryRepository markOccurrenceQueryRepository;
+    private final MarkRepository markRepository;
+    private final MarkOccurrenceRepository markOccurrenceRepository;
 
     private static final double SIMILARITY_THRESHOLD = 0.8;
 
@@ -29,7 +29,7 @@ public class MarkSearchServiceImpl implements MarkSearchService {
         }
 
         log.debug("Searching for similar marks with embedding length: {}", embeddedVector.length);
-        List<MarkSimilarityProjection> results = markQueryRepository.findSimilarMarks(embeddedVector);
+        List<MarkSimilarityProjection> results = markRepository.findSimilarMarks(embeddedVector);
 
         log.info("Mark similarity search returned {} results from database", results.size());
         results.forEach(result ->
@@ -58,7 +58,7 @@ public class MarkSearchServiceImpl implements MarkSearchService {
             return List.of();
         }
 
-        List<MarkSimilarityProjection> results = markOccurrenceQueryRepository.findSimilarOccurrences(embeddedVector);
+        List<MarkSimilarityProjection> results = markOccurrenceRepository.findSimilarOccurrences(embeddedVector);
 
         return results.stream()
                 .filter(result -> result.getSimilarity() >= SIMILARITY_THRESHOLD)

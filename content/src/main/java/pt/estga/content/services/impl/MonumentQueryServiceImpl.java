@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
-import pt.estga.content.repositories.MonumentQueryRepository;
+import pt.estga.content.repositories.MonumentRepository;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.services.AdministrativeDivisionQueryService;
@@ -19,7 +19,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class MonumentQueryServiceImpl implements MonumentQueryService {
 
-    private final MonumentQueryRepository repository;
+    private final MonumentRepository repository;
     private final AdministrativeDivisionQueryService administrativeDivisionService;
 
     @Override
