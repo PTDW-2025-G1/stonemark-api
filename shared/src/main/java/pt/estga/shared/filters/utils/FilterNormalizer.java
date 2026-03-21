@@ -34,7 +34,7 @@ public class FilterNormalizer {
         }
 
         if (maxDepth <= 0) {
-            throw new IllegalArgumentException("Tree depth exceeds the maximum allowed depth");
+            throw new IllegalArgumentException("Tree depth exceeds the maximum allowed depth. Current depth: " + maxDepth);
         }
 
         // Perform structural validation
@@ -49,7 +49,6 @@ public class FilterNormalizer {
             FilterCriteria normalizedCriteria = normalize(input.criteria());
 
             return FilterNode.builder()
-                    .operator(input.operator())
                     .criteria(normalizedCriteria)
                     .build();
         }
@@ -58,10 +57,6 @@ public class FilterNormalizer {
         if (input.isGroup()) {
             if (input.operator() == null) {
                 throw new IllegalArgumentException("Group node must have a valid operator");
-            }
-
-            if (input.children().stream().anyMatch(java.util.Objects::isNull)) {
-                throw new IllegalArgumentException("Null child in filter tree");
             }
 
             // Recursively normalize children
@@ -111,6 +106,13 @@ public class FilterNormalizer {
             }
         }
 
-        return criteria;
+        // Optional transformation: trim field strings
+        return FilterCriteria.validatedBuilder(
+                criteria.getField().trim(),
+                criteria.getOperator(),
+                criteria.getValue(),
+                criteria.getLikeMode(),
+                criteria.isCaseSensitive()
+        );
     }
 }
