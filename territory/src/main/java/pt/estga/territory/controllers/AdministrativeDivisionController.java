@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.bind.annotation.*;
+import pt.estga.filterutils.models.PagedRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
@@ -25,13 +25,9 @@ public class AdministrativeDivisionController {
     private final AdministrativeDivisionQueryService service;
     private final AdministrativeDivisionMapper mapper;
 
-    @GetMapping("/search")
-    public ResponseEntity<Page<AdministrativeDivisionDto>> search(
-            @RequestParam Specification<AdministrativeDivision> specification,
-            Pageable pageable
-    ) {
-        Page<AdministrativeDivision> divisions = service.search(specification, pageable);
-        return ResponseEntity.ok(divisions.map(mapper::toDto));
+    @PostMapping("/search")
+    public ResponseEntity<Page<AdministrativeDivisionDto>> search(@RequestBody PagedRequest request) {
+        return ResponseEntity.ok(service.search(request));
     }
 
     @GetMapping("/{id}")
