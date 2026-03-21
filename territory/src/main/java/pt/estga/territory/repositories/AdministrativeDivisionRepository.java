@@ -1,6 +1,7 @@
 package pt.estga.territory.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AdministrativeDivisionRepository extends JpaRepository<AdministrativeDivision, Long> {
+public interface AdministrativeDivisionRepository extends JpaRepository<AdministrativeDivision, Long>, JpaSpecificationExecutor<AdministrativeDivision> {
     List<AdministrativeDivision> findAllByNameIn(Collection<String> names);
     List<AdministrativeDivision> findByOsmAdminLevel(int osmAdminLevel);
 

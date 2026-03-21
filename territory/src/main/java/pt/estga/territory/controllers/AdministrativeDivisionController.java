@@ -3,6 +3,9 @@ package pt.estga.territory.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
@@ -22,6 +25,15 @@ public class AdministrativeDivisionController {
     private final AdministrativeDivisionService service;
     private final AdministrativeDivisionMapper mapper;
 
+    @GetMapping("/search")
+    public ResponseEntity<Page<AdministrativeDivisionDto>> search(
+            @RequestParam Specification<AdministrativeDivision> specification,
+            Pageable pageable
+    ) {
+        Page<AdministrativeDivision> divisions = service.search(specification, pageable);
+        return ResponseEntity.ok(divisions.map(mapper::toDto));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AdministrativeDivisionDto> getById(@PathVariable Long id) {
         return service.findById(id)
@@ -30,43 +42,24 @@ public class AdministrativeDivisionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/districts")
-    public ResponseEntity<List<AdministrativeDivisionDto>> getDistricts(
+    @GetMapping
+    public ResponseEntity<List<AdministrativeDivisionDto>> getDivisionsByType(
+            @RequestParam String type,
             @RequestParam(required = false) boolean withMonuments
     ) {
-        List<AdministrativeDivision> districts;
+        List<AdministrativeDivision> divisions;
+        int adminLevel = switch (type.toLowerCase()) {
+            case "district" -> 6;
+            case "municipality" -> 7;
+            case "parish" -> 8;
+            default -> throw new IllegalArgumentException("Invalid type: " + type);
+        };
         if (withMonuments) {
-            districts = service.findWithMonuments(6);
+            divisions = service.findWithMonuments(adminLevel);
         } else {
-            districts = service.findByOsmAdminLevel(6);
+            divisions = service.findByOsmAdminLevel(adminLevel);
         }
-        return ResponseEntity.ok(mapper.toDtoList(districts));
-    }
-
-    @GetMapping("/municipalities")
-    public ResponseEntity<List<AdministrativeDivisionDto>> getMunicipalities(
-            @RequestParam(required = false) boolean withMonuments
-    ) {
-        List<AdministrativeDivision> municipalities;
-        if (withMonuments) {
-            municipalities = service.findWithMonuments(7);
-        } else {
-            municipalities = service.findByOsmAdminLevel(7);
-        }
-        return ResponseEntity.ok(mapper.toDtoList(municipalities));
-    }
-
-    @GetMapping("/parishes")
-    public ResponseEntity<List<AdministrativeDivisionDto>> getParishes(
-            @RequestParam(required = false) boolean withMonuments
-    ) {
-        List<AdministrativeDivision> parishes;
-        if (withMonuments) {
-            parishes = service.findWithMonuments(8);
-        } else {
-            parishes = service.findByOsmAdminLevel(8);
-        }
-        return ResponseEntity.ok(mapper.toDtoList(parishes));
+        return ResponseEntity.ok(mapper.toDtoList(divisions));
     }
 
     @GetMapping("/districts/{districtId}/municipalities")
