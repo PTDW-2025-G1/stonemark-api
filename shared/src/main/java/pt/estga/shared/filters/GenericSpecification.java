@@ -1,11 +1,11 @@
 package pt.estga.shared.filters;
 
-import org.jspecify.annotations.NonNull;
 import pt.estga.shared.filters.enums.LikeMode;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
+import pt.estga.shared.filters.models.FilterCriteria;
 
 import java.util.*;
 
@@ -32,8 +32,9 @@ public class GenericSpecification<T> implements Specification<T> {
     }
 
     @Override
-    public Predicate toPredicate(@NonNull Root<T> root, CriteriaQuery<?> query, @NonNull CriteriaBuilder cb) {
-        Path<?> path = getPath(root, criteria.getField());
+    public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+        Map<String, Path<?>> joinCache = new HashMap<>();
+        Path<?> path = getPath(root, criteria.getField(), joinCache);
         if (path == null) {
             throw new IllegalArgumentException(invalidFilterMessage());
         }
@@ -205,9 +206,7 @@ public class GenericSpecification<T> implements Specification<T> {
     // PATH / JOIN
     // ----------------------
 
-    private final Map<String, Path<?>> joinCache = new HashMap<>();
-
-    private Path<?> getPath(Root<T> root, String field) {
+    private Path<?> getPath(Root<T> root, String field, Map<String, Path<?>> joinCache) {
         if (!field.contains(".")) return root.get(field);
 
         if (joinCache.containsKey(field)) {
@@ -221,10 +220,7 @@ public class GenericSpecification<T> implements Specification<T> {
             if (path instanceof From<?, ?> from) {
                 path = from.join(part, JoinType.LEFT);
             } else {
-                throw new IllegalArgumentException("Invalid path segment: " + part);
-            }
-            if (path == null) {
-                throw new IllegalArgumentException("Invalid path segment: " + part);
+                path = path.get(part);
             }
         }
 

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pt.estga.shared.filters.FilterNode;
+import pt.estga.shared.filters.models.FilterNode;
 import pt.estga.shared.filters.SpecificationBuilder;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;

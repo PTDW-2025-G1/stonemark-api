@@ -1,4 +1,4 @@
-package pt.estga.shared.filters;
+package pt.estga.shared.filters.models;
 
 import lombok.*;
 import pt.estga.shared.filters.enums.FilterOperator;
@@ -19,24 +19,23 @@ import pt.estga.shared.filters.enums.LikeMode;
  * Only fields required by a specific operator must be provided (for example, IN requires a list value).
  */
 @AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @Getter
-@Setter
 @Builder
 public class FilterCriteria {
 
-    private String field;
-    private FilterOperator operator;
-    private Object value;
+    private final String field;
+    private final FilterOperator operator;
+    private final Object value;
     /**
      * Specifies the LIKE mode for string filtering. Default is LikeMode.CONTAINS.
      * The builder must preserve this default; @Builder.Default ensures the value is set when using Lombok's builder.
      */
     @Builder.Default
-    private LikeMode likeMode = LikeMode.CONTAINS;
+    private final LikeMode likeMode = LikeMode.CONTAINS;
     /**
      * Controls case sensitivity for LIKE operator. If true, LIKE is case-sensitive and preserves index usage.
      */
-    private boolean caseSensitive = false;
+    private final boolean caseSensitive;
 
 }

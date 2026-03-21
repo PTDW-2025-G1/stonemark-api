@@ -1,5 +1,8 @@
 package pt.estga.shared.filters;
 
+import pt.estga.shared.filters.models.FilterCriteria;
+import pt.estga.shared.filters.models.FilterNode;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -15,45 +18,65 @@ public class FilterNormalizer {
      * @return the normalized FilterNode
      */
     public static FilterNode normalize(FilterNode input) {
+        return normalize(input, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Normalizes and validates the given FilterNode with a depth limit.
+     *
+     * @param input the input FilterNode to normalize
+     * @param maxDepth the maximum depth allowed for the tree
+     * @return the normalized FilterNode
+     */
+    public static FilterNode normalize(FilterNode input, int maxDepth) {
         if (input == null) {
             return null;
         }
 
-        // Validate and normalize leaf nodes
+        if (maxDepth <= 0) {
+            throw new IllegalArgumentException("Tree depth exceeds the maximum allowed depth");
+        }
+
+        // Normalize leaf nodes
         if (input.isLeaf()) {
-            if (input.getCriteria() == null || input.getCriteria().getField() == null) {
+            if (input.criteria() == null || input.criteria().getField() == null) {
                 throw new IllegalArgumentException("Leaf node must have valid criteria with a field");
             }
 
-            // Map the field using FilterFieldMapper
-            String mappedField = FilterFieldMapper.map(input.getCriteria().getField());
-            input.getCriteria().setField(mappedField);
+            FilterCriteria normalizedCriteria = normalize(input.criteria());
+
+            return FilterNode.builder()
+                    .operator(input.operator())
+                    .criteria(normalizedCriteria)
+                    .build();
         }
 
-        // Validate and normalize group nodes
+        // Normalize group nodes
         if (input.isGroup()) {
-            if (input.getChildren() == null || input.getChildren().isEmpty()) {
+            if (input.children() == null || input.children().isEmpty()) {
                 throw new IllegalArgumentException("Group node must have non-empty children");
             }
 
             // Recursively normalize children
-            List<FilterNode> normalizedChildren = input.getChildren().stream()
+            List<FilterNode> normalizedChildren = input.children().stream()
                     .filter(Objects::nonNull)
-                    .map(FilterNormalizer::normalize)
+                    .map(child -> normalize(child, maxDepth - 1))
                     .toList();
 
-            input.setChildren(normalizedChildren);
+            return FilterNode.builder()
+                    .operator(input.operator())
+                    .children(normalizedChildren)
+                    .build();
         }
 
-        return input;
+        throw new IllegalArgumentException("Invalid FilterNode: neither leaf nor group");
     }
 
     /**
-     * Validates and normalizes the given FilterCriteria.
+     * Normalizes and validates the given FilterCriteria.
      *
-     * @param criteria The FilterCriteria to validate and normalize.
-     * @return A normalized FilterCriteria object.
-     * @throws IllegalArgumentException if the criteria is invalid.
+     * @param criteria the FilterCriteria to normalize
+     * @return the normalized FilterCriteria
      */
     public static FilterCriteria normalize(FilterCriteria criteria) {
         Objects.requireNonNull(criteria, "FilterCriteria cannot be null");

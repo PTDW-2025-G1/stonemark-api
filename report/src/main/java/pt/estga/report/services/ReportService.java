@@ -11,7 +11,7 @@ import pt.estga.report.entities.Report;
 import pt.estga.report.enums.ReportStatus;
 import pt.estga.report.mappers.ReportMapper;
 import pt.estga.report.repositories.ReportRepository;
-import pt.estga.shared.filters.FilterNode;
+import pt.estga.shared.filters.models.FilterNode;
 import pt.estga.shared.filters.SpecificationBuilder;
 import pt.estga.user.entities.User;
 

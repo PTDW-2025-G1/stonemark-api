@@ -5,6 +5,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import pt.estga.shared.filters.enums.SortDirection;
+import pt.estga.shared.filters.models.FilterNode;
+import pt.estga.shared.filters.models.SortCriteria;
 
 import java.util.List;
 

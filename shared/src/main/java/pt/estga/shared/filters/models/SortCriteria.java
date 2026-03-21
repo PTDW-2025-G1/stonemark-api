@@ -1,4 +1,4 @@
-package pt.estga.shared.filters;
+package pt.estga.shared.filters.models;
 
 import lombok.*;
 import pt.estga.shared.filters.enums.SortDirection;

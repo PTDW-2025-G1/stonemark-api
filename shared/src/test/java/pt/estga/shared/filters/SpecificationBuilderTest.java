@@ -10,6 +10,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.data.jpa.domain.Specification;
 import pt.estga.shared.filters.enums.FilterOperator;
 import pt.estga.shared.filters.enums.LogicalOperator;
+import pt.estga.shared.filters.models.FilterCriteria;
+import pt.estga.shared.filters.models.FilterNode;
 
 import java.util.List;
 

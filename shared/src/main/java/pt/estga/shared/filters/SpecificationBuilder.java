@@ -3,6 +3,8 @@ package pt.estga.shared.filters;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import pt.estga.shared.filters.enums.LogicalOperator;
+import pt.estga.shared.filters.models.FilterCriteria;
+import pt.estga.shared.filters.models.FilterNode;
 
 import java.util.Objects;
 
@@ -15,16 +17,14 @@ public class SpecificationBuilder<T> {
     public Specification<T> build(FilterNode node) {
         if (node == null) return null;
 
-        if (node.getCriteria() == null && (node.getChildren() == null || node.getChildren().isEmpty())) {
+        if (node.criteria() == null && (node.children() == null || node.children().isEmpty())) {
             return null;
         }
 
-        node.validate();
-
         // Leaf node
-        if (node.getCriteria() != null) {
+        if (node.criteria() != null) {
             // Apply field mapping before creating GenericSpecification
-            FilterCriteria original = node.getCriteria();
+            FilterCriteria original = node.criteria();
 
             FilterCriteria mapped = FilterCriteria.builder()
                 .field(FilterFieldMapper.map(original.getField()))
@@ -38,14 +38,14 @@ public class SpecificationBuilder<T> {
         }
 
         // Validate group node
-        if (node.getChildren() == null || node.getChildren().isEmpty()) {
-            if (node.getOperator() == LogicalOperator.AND) {
+        if (node.children() == null || node.children().isEmpty()) {
+            if (node.operator() == LogicalOperator.AND) {
                 return (root, query, cb) -> {
                     Objects.requireNonNull(root);
                     Objects.requireNonNull(query);
                     return cb.conjunction();
                 };
-            } else if (node.getOperator() == LogicalOperator.OR) {
+            } else if (node.operator() == LogicalOperator.OR) {
                 return (root, query, cb) -> {
                     Objects.requireNonNull(root);
                     Objects.requireNonNull(query);
@@ -56,12 +56,12 @@ public class SpecificationBuilder<T> {
             }
         }
 
-        if (node.getOperator() == null) {
+        if (node.operator() == null) {
             throw new IllegalArgumentException("Group node must have a logical operator");
         }
 
         // Check for null children
-        for (FilterNode child : node.getChildren()) {
+        for (FilterNode child : node.children()) {
             if (child == null) {
                 throw new IllegalArgumentException("Group node contains null child");
             }
@@ -69,14 +69,14 @@ public class SpecificationBuilder<T> {
 
         Specification<T> spec = null;
 
-        for (FilterNode child : node.getChildren()) {
+        for (FilterNode child : node.children()) {
             Specification<T> childSpec = build(child);
             if (childSpec == null) continue;
 
             if (spec == null) {
                 spec = childSpec;
             } else {
-                spec = node.getOperator() == LogicalOperator.OR
+                spec = node.operator() == LogicalOperator.OR
                         ? spec.or(childSpec)
                         : spec.and(childSpec);
             }

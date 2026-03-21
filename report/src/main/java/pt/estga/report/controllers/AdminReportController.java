@@ -12,7 +12,7 @@ import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.enums.ReportStatus;
 import pt.estga.report.mappers.ReportMapper;
 import pt.estga.report.services.ReportService;
-import pt.estga.shared.filters.FilterNode;
+import pt.estga.shared.filters.models.FilterNode;
 
 @RestController
 @RequestMapping("/api/v1/admin/reports")

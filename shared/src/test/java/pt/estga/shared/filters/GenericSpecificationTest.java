@@ -2,6 +2,7 @@ package pt.estga.shared.filters;
 
 import jakarta.persistence.criteria.Path;
 import org.junit.jupiter.api.Test;
+import pt.estga.shared.filters.models.FilterCriteria;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
