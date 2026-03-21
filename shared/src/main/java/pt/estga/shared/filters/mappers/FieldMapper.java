@@ -14,4 +14,12 @@ public interface FieldMapper {
      * @throws IllegalArgumentException if the field is not allowed
      */
     String map(String field);
+
+    /**
+     * Checks if a given field is allowed for mapping.
+     *
+     * @param field the field to check
+     * @return true if the field is allowed, false otherwise
+     */
+    boolean isFieldAllowed(String field);
 }

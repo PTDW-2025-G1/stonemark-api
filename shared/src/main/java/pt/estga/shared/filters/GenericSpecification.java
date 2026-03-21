@@ -2,10 +2,11 @@ package pt.estga.shared.filters;
 
 import pt.estga.shared.filters.enums.LikeMode;
 import jakarta.persistence.criteria.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
+import pt.estga.shared.filters.mappers.FieldMapper;
 import pt.estga.shared.filters.models.FilterCriteria;
+import org.springframework.lang.NonNull;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,15 +15,14 @@ import java.util.*;
 import java.util.function.Function;
 
 @Slf4j
-@RequiredArgsConstructor
 public class GenericSpecification<T> implements Specification<T> {
 
+    private final FieldMapper fieldMapper;
     private final FilterCriteria criteria;
     private final Object value;
     private final List<Object> values;
 
     private static final Map<Class<?>, Function<String, ?>> TYPE_REGISTRY = new HashMap<>();
-    private static final Set<String> ALLOWED_PATHS = Set.of("email", "roles.name", "age"); // Example whitelist
 
     static {
         TYPE_REGISTRY.put(Integer.class, Integer::valueOf);
@@ -38,10 +38,12 @@ public class GenericSpecification<T> implements Specification<T> {
         TYPE_REGISTRY.put(BigDecimal.class, BigDecimal::new);
     }
 
-    public GenericSpecification(FilterCriteria criteria) {
-        this.criteria = criteria;
+    public GenericSpecification(FilterCriteria criteria, FieldMapper fieldMapper) {
+        this.criteria = Objects.requireNonNull(criteria, "FilterCriteria cannot be null");
+        this.fieldMapper = Objects.requireNonNull(fieldMapper, "FieldMapper cannot be null");
+
         if (criteria.getValue() instanceof List<?> list) {
-            this.values = new ArrayList<>(list);
+            this.values = List.copyOf(list); // immutable copy
             this.value = null;
         } else {
             this.value = criteria.getValue();
@@ -50,7 +52,11 @@ public class GenericSpecification<T> implements Specification<T> {
     }
 
     @Override
-    public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb) {
+    public Predicate toPredicate(
+            @NonNull Root<T> root,
+            CriteriaQuery<?> query,
+            @NonNull CriteriaBuilder cb
+    ) {
         Map<String, Path<?>> joinCache = new HashMap<>();
         Path<?> path = getPath(root, criteria.getField(), joinCache);
         if (path == null) {
@@ -70,6 +76,8 @@ public class GenericSpecification<T> implements Specification<T> {
             case IS_NULL -> cb.isNull(path);
             case IS_NOT_NULL -> cb.isNotNull(path);
         };
+
+        log.debug("Created predicate for field: {}, operator: {}, value: {}", criteria.getField(), criteria.getOperator(), criteria.getValue());
 
         return Objects.requireNonNull(predicate, "Predicate creation failed");
     }
@@ -171,7 +179,7 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Path<?> getPath(Root<T> root, String field, Map<String, Path<?>> joinCache) {
-        if (!ALLOWED_PATHS.contains(field)) {
+        if (!fieldMapper.isFieldAllowed(field)) {
             throw new IllegalArgumentException("Field path not allowed: " + field);
         }
 
@@ -188,7 +196,7 @@ public class GenericSpecification<T> implements Specification<T> {
             if (path instanceof From<?, ?> from) {
                 path = from.join(part, JoinType.LEFT);
             } else {
-                path = path.get(part);
+                throw new IllegalStateException("Path resolution failed for field: " + field);
             }
         }
 
