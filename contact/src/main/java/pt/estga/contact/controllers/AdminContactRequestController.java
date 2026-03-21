@@ -13,6 +13,7 @@ import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.entities.ContactRequest;
 import pt.estga.contact.services.ContactRequestQueryService;
 import pt.estga.contact.services.ContactRequestService;
+import pt.estga.filterutils.models.PagedRequest;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")
@@ -24,13 +25,9 @@ public class AdminContactRequestController {
     private final ContactRequestQueryService queryService;
     private final ContactRequestService service;
 
-    @GetMapping
-    public ResponseEntity<Page<ContactRequest>> getAll(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        return ResponseEntity.ok(queryService.findAll(pageable));
+    @PostMapping("/search")
+    public ResponseEntity<Page<ContactRequest>> search(@RequestBody PagedRequest request) {
+        return ResponseEntity.ok(queryService.search(request));
     }
 
     @GetMapping("/{id}")
