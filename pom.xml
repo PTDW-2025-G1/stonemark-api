@@ -36,6 +36,7 @@
         <module>territory</module>
         <module>decision</module>
         <module>filter-utils</module>
+        <module>shared-web</module>
     </modules>
     <scm>
 		<connection/>
