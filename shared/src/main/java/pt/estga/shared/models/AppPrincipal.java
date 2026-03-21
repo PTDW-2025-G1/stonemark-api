@@ -4,7 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 
 import java.util.Collection;
@@ -13,8 +12,6 @@ import java.util.Collection;
 public class AppPrincipal implements UserDetails, AuthenticatedPrincipal {
 
     private final Long id;
-    @Getter
-    private final PrincipalType type;
     @Getter
     private final String identifier; // username OR service name
     private final String password;

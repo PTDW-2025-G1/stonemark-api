@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.AuthService;
-import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.enums.ChatbotPlatform;
@@ -32,7 +31,6 @@ public class TelegramAuthService implements AuthService {
                     var user = userIdentity.getUser();
                     return AppPrincipal.builder()
                             .id(user.getId())
-                            .type(PrincipalType.USER)
                             .identifier(user.getUsername())
                             .password(null)
                             .authorities(SecurityUtils.mapUserRolesToAuthorities(user.getRole()))

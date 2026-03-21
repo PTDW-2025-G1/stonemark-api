@@ -12,7 +12,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pt.estga.chatbot.services.BotEngine;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.ServiceAccountUtils;
 
@@ -88,7 +87,6 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
         AppPrincipal botPrincipal = AppPrincipal.builder()
                 .id(BOT_SERVICE_ACCOUNT_ID)
-                .type(PrincipalType.SERVICE)
                 .identifier("TelegramBot")
                 .password(null)
                 .authorities(Collections.emptyList())

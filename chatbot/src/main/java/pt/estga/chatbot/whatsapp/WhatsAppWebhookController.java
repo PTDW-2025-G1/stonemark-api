@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.services.BotEngine;
-import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.ServiceAccountUtils;
 
@@ -53,7 +52,6 @@ public class WhatsAppWebhookController {
             // Use service account for sending messages back to WhatsApp
             AppPrincipal botPrincipal = AppPrincipal.builder()
                     .id(BOT_SERVICE_ACCOUNT_ID)
-                    .type(PrincipalType.SERVICE)
                     .identifier("WhatsAppBot")
                     .password(null)
                     .authorities(Collections.emptyList())
