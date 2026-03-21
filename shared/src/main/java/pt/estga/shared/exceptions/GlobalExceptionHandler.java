@@ -29,6 +29,13 @@ public class GlobalExceptionHandler {
                 .body(new MessageResponseDto(ex.getMessage()));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<MessageResponseDto> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity
+                .badRequest()
+                .body(new MessageResponseDto(ex.getMessage()));
+    }
+
     @ExceptionHandler(FileStorageException.class)
     public ResponseEntity<MessageResponseDto> handleFileStorageException(FileStorageException ex) {
         return ResponseEntity

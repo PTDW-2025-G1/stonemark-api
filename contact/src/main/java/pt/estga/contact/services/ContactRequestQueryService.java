@@ -31,5 +31,3 @@ public class ContactRequestQueryService {
 		return repository.findById(id);
 	}
 }
-
-
