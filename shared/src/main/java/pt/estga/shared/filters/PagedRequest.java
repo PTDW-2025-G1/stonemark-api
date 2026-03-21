@@ -40,12 +40,17 @@ public class PagedRequest {
         int p = page != null && page >= 0 ? page : DEFAULT_PAGE;
         int s = size != null && size > 0 ? Math.min(size, MAX_SIZE) : DEFAULT_SIZE; // guard against excessive page sizes
         if (sort == null || sort.isEmpty()) return PageRequest.of(p, s);
+
         Sort springSort = Sort.unsorted();
         for (SortCriteria sc : sort) {
             if (sc == null || sc.getField() == null || sc.getField().isBlank()) continue;
+
+            // Validate and map the field using FilterFieldMapper
+            String mappedField = FilterFieldMapper.map(sc.getField());
+
             Sort.Order order = sc.getDirection() == null || SortDirection.ASC.equals(sc.getDirection())
-                    ? Sort.Order.asc(sc.getField())
-                    : Sort.Order.desc(sc.getField());
+                    ? Sort.Order.asc(mappedField)
+                    : Sort.Order.desc(mappedField);
             springSort = springSort.isUnsorted() ? Sort.by(order) : springSort.and(Sort.by(order));
         }
         return PageRequest.of(p, s, springSort);

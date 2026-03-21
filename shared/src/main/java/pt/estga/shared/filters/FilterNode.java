@@ -66,6 +66,11 @@ public class FilterNode {
         if (isGroup() && operator == null) {
             throw new IllegalStateException("Group node must have a logical operator");
         }
+
+        // Additional validation for leaf nodes
+        if (isLeaf() && criteria.getOperator() == null) {
+            throw new IllegalStateException("Leaf node must have a valid operator in its criteria");
+        }
     }
 
     @Override

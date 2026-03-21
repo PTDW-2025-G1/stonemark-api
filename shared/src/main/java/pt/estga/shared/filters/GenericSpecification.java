@@ -15,45 +15,49 @@ public class GenericSpecification<T> implements Specification<T> {
 
     private final FilterCriteria criteria;
 
-    private static final ThreadLocal<Map<Root<?>, Map<String, Join<?, ?>>>> THREAD_LOCAL_JOIN_CACHE =
-            ThreadLocal.withInitial(WeakHashMap::new);
+    private final Object value;
+    private final List<Object> values;
+
+    public GenericSpecification(FilterCriteria criteria) {
+        this.criteria = criteria;
+        if (criteria.getValue() instanceof List<?>) {
+            this.values = (List<Object>) criteria.getValue();
+            this.value = null;
+        } else {
+            this.value = criteria.getValue();
+            this.values = null;
+        }
+    }
 
     @Override
     public Predicate toPredicate(@NonNull Root<T> root, @NonNull CriteriaQuery<?> query, @NonNull CriteriaBuilder cb) {
-        Map<Root<?>, Map<String, Join<?, ?>>> perThread = THREAD_LOCAL_JOIN_CACHE.get();
-        try {
-            if (!validateCriteria()) {
-                throw new IllegalArgumentException(invalidFilterMessage("validation failed"));
-            }
 
-            Path<?> path = getPath(root, criteria.getField());
-            if (path == null) {
-                throw new IllegalArgumentException(invalidFilterMessage("invalid path"));
-            }
-
-            Predicate predicate = switch (criteria.getOperator()) {
-                case EQ -> cb.equal(path, convertSingle(path, criteria.getValue()));
-                case NE -> cb.notEqual(path, convertSingle(path, criteria.getValue()));
-                case GT -> comparison(cb, path, criteria.getValue(), ComparisonOperator.GT);
-                case LT -> comparison(cb, path, criteria.getValue(), ComparisonOperator.LT);
-                case GTE -> comparison(cb, path, criteria.getValue(), ComparisonOperator.GTE);
-                case LTE -> comparison(cb, path, criteria.getValue(), ComparisonOperator.LTE);
-                case LIKE -> likePredicate(cb, path, criteria.getValue());
-                case IN -> inPredicate(cb, path, criteria.getValue());
-                case BETWEEN -> betweenPredicate(cb, path, criteria.getValue());
-                case IS_NULL -> cb.isNull(path);
-                case IS_NOT_NULL -> cb.isNotNull(path);
-                default -> throw new UnsupportedOperationException("Operator not supported: " + criteria.getOperator());
-            };
-
-            return Objects.requireNonNull(predicate, "Predicate creation failed");
-
-        } finally {
-            try {
-                perThread.remove(root);
-            } catch (Exception ignored) {}
-            if (perThread.isEmpty()) THREAD_LOCAL_JOIN_CACHE.remove();
+        if (!validateCriteria()) {
+            throw new IllegalArgumentException(invalidFilterMessage("validation failed"));
         }
+
+        Path<?> path = getPath(root, criteria.getField());
+        if (path == null) {
+            throw new IllegalArgumentException(invalidFilterMessage("invalid path"));
+        }
+
+        Predicate predicate = switch (criteria.getOperator()) {
+            case EQ -> cb.equal(path, convertSingle(path, value));
+            case NE -> cb.notEqual(path, convertSingle(path, value));
+            case GT -> comparison(cb, path, value, ComparisonOperator.GT);
+            case LT -> comparison(cb, path, value, ComparisonOperator.LT);
+            case GTE -> comparison(cb, path, value, ComparisonOperator.GTE);
+            case LTE -> comparison(cb, path, value, ComparisonOperator.LTE);
+            case LIKE -> likePredicate(cb, path, value);
+            case IN -> inPredicate(cb, path, values);
+            case BETWEEN -> betweenPredicate(cb, path, values);
+            case IS_NULL -> cb.isNull(path);
+            case IS_NOT_NULL -> cb.isNotNull(path);
+            default -> throw new UnsupportedOperationException("Operator not supported: " + criteria.getOperator());
+        };
+
+        return Objects.requireNonNull(predicate, "Predicate creation failed");
+
     }
 
     private enum ComparisonOperator { GT, LT, GTE, LTE }
@@ -227,22 +231,19 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Path<?> getPath(Root<T> root, String field) {
-        Map<Root<?>, Map<String, Join<?, ?>>> perThread = THREAD_LOCAL_JOIN_CACHE.get();
-        Map<String, Join<?, ?>> joinCache = perThread.computeIfAbsent(root, r -> new HashMap<>());
-        return getPath(root, field, joinCache);
-    }
-
-    private Path<?> getPath(Root<T> root, String field, Map<String, Join<?, ?>> joinCache) {
         if (!field.contains(".")) return root.get(field);
+
         String[] parts = field.split("\\.");
         Path<?> path = root;
-        for (int i = 0; i < parts.length; i++) {
-            String key = String.join(".", Arrays.copyOfRange(parts, 0, i + 1));
-            final String part = parts[i];
-            if (path instanceof Root<?> r) path = joinCache.computeIfAbsent(key, k -> r.join(part, JoinType.LEFT));
-            else if (path instanceof Join<?, ?> j) path = joinCache.computeIfAbsent(key, k -> j.join(part, JoinType.LEFT));
-            else path = path.get(part);
+
+        for (String part : parts) {
+            if (path instanceof From<?, ?> from) {
+                path = from.join(part, JoinType.LEFT);
+            } else {
+                path = path.get(part);
+            }
         }
+
         return path;
     }
 

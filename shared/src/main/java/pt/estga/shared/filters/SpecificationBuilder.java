@@ -23,6 +23,9 @@ public class SpecificationBuilder<T> {
 
         // Leaf node
         if (node.getCriteria() != null) {
+            // Apply field mapping before creating GenericSpecification
+            String mappedField = FilterFieldMapper.map(node.getCriteria().getField());
+            node.getCriteria().setField(mappedField);
             return new GenericSpecification<>(node.getCriteria());
         }
 
