@@ -106,14 +106,18 @@ class SpecificationBuilderTest {
                 .children(List.of(FilterNode.builder().criteria(c1).build()))
                 .build();
 
-        SpecificationBuilder<Person> builder = new SpecificationBuilder<>();
-        assertThrows(IllegalStateException.class, node::validate);
+        // Updated to include a message for better debugging
+        IllegalStateException exception = assertThrows(IllegalStateException.class, node::validate);
+        assertEquals("Node cannot have both criteria and children", exception.getMessage());
     }
 
     @Test
     void build_nodeWithNeitherCriteriaNorChildren_throws() {
         FilterNode node = FilterNode.builder().build();
-        assertThrows(IllegalStateException.class, node::validate);
+
+        // Updated to include a message for better debugging
+        IllegalStateException exception = assertThrows(IllegalStateException.class, node::validate);
+        assertEquals("Node must have either criteria or children", exception.getMessage());
     }
 
     @Test

@@ -3,7 +3,6 @@ package pt.estga.shared.filters;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import pt.estga.shared.filters.enums.LogicalOperator;
-import pt.estga.shared.filters.models.FilterCriteria;
 import pt.estga.shared.filters.models.FilterNode;
 
 import java.util.Objects;
@@ -17,28 +16,18 @@ public class SpecificationBuilder<T> {
     public Specification<T> build(FilterNode node) {
         if (node == null) return null;
 
-        if (node.criteria() == null && (node.children() == null || node.children().isEmpty())) {
+        if (node.criteria() == null && node.children().isEmpty()) {
             return null;
         }
 
         // Leaf node
         if (node.criteria() != null) {
-            // Apply field mapping before creating GenericSpecification
-            FilterCriteria original = node.criteria();
-
-            FilterCriteria mapped = FilterCriteria.builder()
-                .field(FilterFieldMapper.map(original.getField()))
-                .operator(original.getOperator())
-                .value(original.getValue())
-                .likeMode(original.getLikeMode())
-                .caseSensitive(original.isCaseSensitive())
-                .build();
-
-            return new GenericSpecification<>(mapped);
+            // Directly use the criteria without additional mapping
+            return new GenericSpecification<>(node.criteria());
         }
 
         // Validate group node
-        if (node.children() == null || node.children().isEmpty()) {
+        if (node.children().isEmpty()) {
             if (node.operator() == LogicalOperator.AND) {
                 return (root, query, cb) -> {
                     Objects.requireNonNull(root);

@@ -41,4 +41,45 @@ public record FilterNode(LogicalOperator operator, List<FilterNode> children, Fi
                 ", criteria=" + criteria +
                 '}';
     }
+
+    /**
+     * Validates the structure of this FilterNode.
+     * Ensures that a node is either a leaf or a group, but not both.
+     * Also validates additional constraints for group and leaf nodes.
+     *
+     * @throws IllegalStateException if the node structure is invalid.
+     */
+    public void validate() {
+        boolean isLeaf = isLeaf();
+        boolean isGroup = isGroup();
+
+        if (isLeaf && isGroup) {
+            throw new IllegalStateException("A FilterNode cannot be both a leaf and a group.");
+        }
+
+        if (!isLeaf && !isGroup) {
+            throw new IllegalStateException("A FilterNode must be either a leaf or a group.");
+        }
+
+        if (isGroup && operator == null) {
+            throw new IllegalStateException("Group node must have an operator.");
+        }
+
+        if (isLeaf && operator != null) {
+            throw new IllegalStateException("Leaf node cannot have an operator.");
+        }
+
+        if (isGroup && children.stream().allMatch(java.util.Objects::isNull)) {
+            throw new IllegalStateException("Group node has only null children.");
+        }
+
+        // Recursively validate child nodes if this is a group
+        if (isGroup) {
+            for (FilterNode child : children) {
+                if (child != null) {
+                    child.validate();
+                }
+            }
+        }
+    }
 }

@@ -1,4 +1,4 @@
-package pt.estga.shared.filters;
+package pt.estga.shared.filters.utils;
 
 import pt.estga.shared.filters.models.FilterCriteria;
 import pt.estga.shared.filters.models.FilterNode;
@@ -37,6 +37,9 @@ public class FilterNormalizer {
             throw new IllegalArgumentException("Tree depth exceeds the maximum allowed depth");
         }
 
+        // Perform structural validation
+        input.validate();
+
         // Normalize leaf nodes
         if (input.isLeaf()) {
             if (input.criteria() == null || input.criteria().getField() == null) {
@@ -53,13 +56,16 @@ public class FilterNormalizer {
 
         // Normalize group nodes
         if (input.isGroup()) {
-            if (input.children() == null || input.children().isEmpty()) {
-                throw new IllegalArgumentException("Group node must have non-empty children");
+            if (input.operator() == null) {
+                throw new IllegalArgumentException("Group node must have a valid operator");
+            }
+
+            if (input.children().stream().anyMatch(java.util.Objects::isNull)) {
+                throw new IllegalArgumentException("Null child in filter tree");
             }
 
             // Recursively normalize children
             List<FilterNode> normalizedChildren = input.children().stream()
-                    .filter(Objects::nonNull)
                     .map(child -> normalize(child, maxDepth - 1))
                     .toList();
 

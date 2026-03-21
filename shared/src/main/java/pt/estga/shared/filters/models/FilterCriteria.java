@@ -18,8 +18,7 @@ import pt.estga.shared.filters.enums.LikeMode;
  * <p>
  * Only fields required by a specific operator must be provided (for example, IN requires a list value).
  */
-@AllArgsConstructor
-@NoArgsConstructor(force = true)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Builder
 public class FilterCriteria {
@@ -38,4 +37,29 @@ public class FilterCriteria {
      */
     private final boolean caseSensitive;
 
+    /**
+     * Custom no-args constructor for frameworks like Jackson.
+     * Ensures that default values are applied and the object is valid.
+     */
+    public FilterCriteria() {
+        this.field = ""; // Default to empty string
+        this.operator = FilterOperator.EQ; // Default operator
+        this.value = null; // Default value
+        this.likeMode = LikeMode.CONTAINS; // Default like mode
+        this.caseSensitive = false; // Default case sensitivity
+    }
+
+    /**
+     * Validates the required fields to ensure the object is always in a valid state.
+     */
+    @Builder(builderMethodName = "validatedBuilder")
+    private static FilterCriteria createValidated(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive) {
+        if (field == null || field.isEmpty()) {
+            throw new IllegalArgumentException("Field must not be null or empty");
+        }
+        if (operator == null) {
+            throw new IllegalArgumentException("Operator must not be null");
+        }
+        return new FilterCriteria(field, operator, value, likeMode, caseSensitive);
+    }
 }

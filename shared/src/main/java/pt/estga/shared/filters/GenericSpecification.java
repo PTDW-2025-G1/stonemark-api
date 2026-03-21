@@ -7,21 +7,39 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import pt.estga.shared.filters.models.FilterCriteria;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 
-import static pt.estga.shared.filters.FilterNormalizer.normalize;
-
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class GenericSpecification<T> implements Specification<T> {
 
     private final FilterCriteria criteria;
-
     private final Object value;
     private final List<Object> values;
 
+    private static final Map<Class<?>, Function<String, ?>> TYPE_REGISTRY = new HashMap<>();
+    private static final Set<String> ALLOWED_PATHS = Set.of("email", "roles.name", "age"); // Example whitelist
+
+    static {
+        TYPE_REGISTRY.put(Integer.class, Integer::valueOf);
+        TYPE_REGISTRY.put(Long.class, Long::valueOf);
+        TYPE_REGISTRY.put(Short.class, Short::valueOf);
+        TYPE_REGISTRY.put(Byte.class, Byte::valueOf);
+        TYPE_REGISTRY.put(Double.class, Double::valueOf);
+        TYPE_REGISTRY.put(Float.class, Float::valueOf);
+        TYPE_REGISTRY.put(Boolean.class, Boolean::valueOf);
+        TYPE_REGISTRY.put(String.class, Function.identity());
+        TYPE_REGISTRY.put(LocalDate.class, LocalDate::parse);
+        TYPE_REGISTRY.put(Instant.class, Instant::parse);
+        TYPE_REGISTRY.put(BigDecimal.class, BigDecimal::new);
+    }
+
     public GenericSpecification(FilterCriteria criteria) {
-        this.criteria = normalize(criteria);
+        this.criteria = criteria;
         if (criteria.getValue() instanceof List<?> list) {
             this.values = new ArrayList<>(list);
             this.value = null;
@@ -80,69 +98,15 @@ public class GenericSpecification<T> implements Specification<T> {
         if (value == null) return null;
 
         Class<?> type = path.getJavaType();
+        Function<String, ?> converter = TYPE_REGISTRY.get(type);
 
-        // Enum handling
-        if (type.isEnum()) {
-            if (value instanceof String s) return convertEnum(type, s);
-            if (type.isInstance(value)) return (Y) value;
-            throw new IllegalArgumentException("Invalid enum value: " + value);
-        }
-
-        // String -> primitives
-        switch (value) {
-            case String s -> {
-                return (Y) parseString(type, s);
-            }
-            // Number conversion with widening
-            case Number num -> {
-                return (Y) convertNumber(type, num);
-            }
-            // Boolean
-            case Boolean b -> {
-                if (type == Boolean.class || type == boolean.class) return (Y) b;
-                if (type == String.class) return (Y) String.valueOf(b);
-            }
-            default -> throw new IllegalArgumentException("Cannot convert value '" + value + "' to type " + type.getSimpleName());
+        if (converter != null && value instanceof String s) {
+            return (Y) converter.apply(s);
         }
 
         if (type.isInstance(value)) return (Y) value;
 
         throw new IllegalArgumentException("Cannot convert value '" + value + "' to type " + type.getSimpleName());
-    }
-
-    private Object parseString(Class<?> type, String s) {
-        return switch (type.getSimpleName()) {
-            case "Integer", "int" -> Integer.valueOf(s);
-            case "Long", "long" -> Long.valueOf(s);
-            case "Short", "short" -> Short.valueOf(s);
-            case "Byte", "byte" -> Byte.valueOf(s);
-            case "Double", "double" -> Double.valueOf(s);
-            case "Float", "float" -> Float.valueOf(s);
-            case "Boolean", "boolean" -> Boolean.valueOf(s);
-            case "String" -> s;
-            default -> throw new IllegalArgumentException("Cannot convert String '" + s + "' to type " + type.getSimpleName());
-        };
-    }
-
-    private Object convertNumber(Class<?> type, Number num) {
-        return switch (type.getSimpleName()) {
-            case "Integer", "int" -> num.intValue();
-            case "Long", "long" -> num.longValue();
-            case "Short", "short" -> num.shortValue();
-            case "Byte", "byte" -> num.byteValue();
-            case "Double", "double" -> num.doubleValue();
-            case "Float", "float" -> num.floatValue();
-            default -> throw new IllegalArgumentException("Cannot convert number '" + num + "' to type " + type.getSimpleName());
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    private <Y extends Enum<Y>> Y convertEnum(Class<?> enumType, String name) {
-        try {
-            return Enum.valueOf((Class<Y>) enumType, name);
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Invalid enum value: " + name, ex);
-        }
     }
 
     private <Y> List<Y> convertList(Path<?> path, List<?> list) {
@@ -207,6 +171,10 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Path<?> getPath(Root<T> root, String field, Map<String, Path<?>> joinCache) {
+        if (!ALLOWED_PATHS.contains(field)) {
+            throw new IllegalArgumentException("Field path not allowed: " + field);
+        }
+
         if (!field.contains(".")) return root.get(field);
 
         if (joinCache.containsKey(field)) {
