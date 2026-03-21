@@ -1,4 +1,4 @@
-package pt.estga.filterutils.utils;
+package pt.estga.filterutils;
 
 import org.springframework.data.domain.Sort;
 import pt.estga.filterutils.enums.SortDirection;

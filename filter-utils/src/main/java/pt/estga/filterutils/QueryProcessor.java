@@ -5,7 +5,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import pt.estga.filterutils.models.PagedRequest;
 import pt.estga.filterutils.models.QueryResult;
-import pt.estga.filterutils.utils.SortNormalizer;
 
 /**
  * QueryProcessor is responsible for orchestrating the query pipeline.
