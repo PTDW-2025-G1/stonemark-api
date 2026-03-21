@@ -2,12 +2,17 @@ package pt.estga.user.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.entities.User;
+import pt.estga.filterutils.QueryProcessor;
+import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.filterutils.models.QueryResult;
+import pt.estga.filterutils.utils.FilterValidator;
+import pt.estga.user.dtos.UserPublicDto;
+import pt.estga.user.mappers.UserMapper;
 
 import java.util.Optional;
 
@@ -17,9 +22,22 @@ public class UserService {
 
     private final UserRepository repository;
     private final ChatbotAccountRepository chatbotAccountRepository;
+    private final QueryProcessor<User> queryProcessor;
+    private final UserMapper mapper;
 
-    public Page<User> findAll(Pageable pageable) {
-        return repository.findAll(pageable);
+    @Transactional(readOnly = true)
+    public Page<UserPublicDto> searchPublicUsers(PagedRequest request) {
+        FilterValidator.validate(request.getFilter(), UserPublicDto.class);
+        FilterValidator.validateSort(request.getSort(), UserPublicDto.class);
+
+        QueryResult<User> result = queryProcessor.process(request);
+
+        Page<User> page = repository.findAll(
+                result.specification(),
+                result.pageable()
+        );
+
+        return page.map(mapper::toPublicDto);
     }
 
     public Optional<User> findById(Long id) {

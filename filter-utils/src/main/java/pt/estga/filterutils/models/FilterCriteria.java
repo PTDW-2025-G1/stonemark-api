@@ -19,9 +19,9 @@ import pt.estga.filterutils.enums.LikeMode;
  * <p>
  * Only fields required by a specific operator must be provided (for example, IN requires a list value).
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @Getter
-@Builder(builderMethodName = "validatedBuilder")
+@Builder
 public class FilterCriteria {
     private final String field;
     private final FilterOperator operator;
@@ -31,28 +31,4 @@ public class FilterCriteria {
     private final boolean caseSensitive;
     @Builder.Default
     private final JoinType joinType = JoinType.LEFT;
-
-    /**
-     * Creates a validated builder for constructing FilterCriteria instances.
-     * This method ensures that all required fields are properly validated before
-     * the object is built.
-     * <p>
-     * Example usage:
-     * <pre>
-     *     FilterCriteria criteria = FilterCriteria.validatedBuilder()
-     *         .field("name")
-     *         .operator(FilterOperator.EQ)
-     *         .value("John")
-     *         .likeMode(LikeMode.CONTAINS)
-     *         .caseSensitive(false)
-     *         .build();
-     * </pre>
-     *
-     * @return A validated builder instance for FilterCriteria.
-     */
-    public static FilterCriteria validatedBuilder(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive, JoinType joinType) {
-        if (field == null || field.isBlank()) throw new IllegalArgumentException("Field cannot be blank");
-        if (operator == null) throw new IllegalArgumentException("Operator cannot be null");
-        return new FilterCriteria(field, operator, value, likeMode, caseSensitive, joinType);
-    }
 }

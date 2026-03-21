@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Mark;
 import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.entities.Monument;
-import pt.estga.content.repositories.MarkOccurrenceQueryRepository;
+import pt.estga.content.repositories.MarkOccurrenceRepository;
 import pt.estga.content.services.MarkOccurrenceQueryService;
 
 import java.util.List;
@@ -21,7 +21,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class MarkOccurrenceQueryServiceImpl implements MarkOccurrenceQueryService {
 
-    private final MarkOccurrenceQueryRepository repository;
+    private final MarkOccurrenceRepository repository;
 
     @Override
     public Page<MarkOccurrence> findAll(Pageable pageable) {

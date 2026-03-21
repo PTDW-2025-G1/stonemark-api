@@ -11,7 +11,7 @@ import org.springframework.web.client.RestTemplate;
 @ComponentScan("pt.estga.detection")
 @EntityScan("pt.estga.detection.entities")
 @EnableConfigurationProperties
-public class DetectionModuleAutoConfiguration {
+public class DetectionAutoConfiguration {
 
     @Bean
     public RestTemplate restTemplate() {

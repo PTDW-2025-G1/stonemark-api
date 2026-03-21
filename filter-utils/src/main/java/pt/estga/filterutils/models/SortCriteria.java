@@ -1,13 +1,9 @@
 package pt.estga.filterutils.models;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
-
-import java.io.IOException;
-import com.fasterxml.jackson.databind.JsonNode;
+import lombok.extern.slf4j.Slf4j;
 import pt.estga.filterutils.enums.SortDirection;
 
 /**
@@ -16,8 +12,8 @@ import pt.estga.filterutils.enums.SortDirection;
  * @param field     The field to sort by.
  * @param direction The direction of sorting (ASC or DESC). Defaults to ASC.
  */
+@Slf4j
 @Builder
-@JsonDeserialize(using = SortCriteria.SortCriteriaDeserializer.class)
 public record SortCriteria(String field, SortDirection direction) {
     public SortCriteria {
         if (direction == null) {
@@ -25,23 +21,17 @@ public record SortCriteria(String field, SortDirection direction) {
         }
     }
 
-    /**
-     * Custom deserializer to ensure default value for direction.
-     */
-    static class SortCriteriaDeserializer extends JsonDeserializer<SortCriteria> {
-        @Override
-        public SortCriteria deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            JsonNode node = p.getCodec().readTree(p);
-            String field = node.get("field").asText();
-            SortDirection direction;
+    @JsonCreator
+    public static SortCriteria create(@JsonProperty("field") String field,
+                                      @JsonProperty("direction") String direction) {
+        SortDirection dir = SortDirection.ASC;
+        if (direction != null && !direction.isBlank()) {
             try {
-                direction = node.has("direction") && !node.get("direction").isNull()
-                        ? SortDirection.valueOf(node.get("direction").asText().toUpperCase())
-                        : SortDirection.ASC;
-            } catch (IllegalArgumentException e) {
-                direction = SortDirection.ASC; // Default to ASC if invalid value is provided
+                dir = SortDirection.valueOf(direction.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                log.warn("Invalid sort direction '{}', defaulting to ASC", direction);
             }
-            return new SortCriteria(field, direction);
         }
+        return new SortCriteria(field, dir);
     }
 }

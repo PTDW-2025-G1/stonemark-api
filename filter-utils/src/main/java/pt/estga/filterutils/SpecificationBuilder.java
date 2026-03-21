@@ -1,6 +1,5 @@
 package pt.estga.filterutils;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import pt.estga.filterutils.enums.LogicalOperator;
@@ -12,10 +11,7 @@ import java.util.Objects;
  * Stateless builder that converts a {@link FilterNode} tree into a JPA {@link Specification}.
  */
 @Component
-@RequiredArgsConstructor
 public class SpecificationBuilder<T> {
-
-    private final GenericFieldMapper fieldMapper;
 
     public Specification<T> build(FilterNode node) {
         if (node == null) return null;
@@ -26,8 +22,7 @@ public class SpecificationBuilder<T> {
 
         // Leaf node
         if (node.criteria() != null) {
-            // Use the criteria with provided field mapper
-            return new GenericSpecification<>(fieldMapper, node.criteria());
+            return new GenericSpecification<>(node.criteria());
         }
 
         // Validate group node

@@ -8,6 +8,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import pt.estga.filterutils.models.PagedRequest;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.services.UserService;
@@ -29,6 +33,12 @@ public class PublicUserController {
                 .map(mapper::toPublicDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @Operation(summary = "Search public users", description = "Search public user list using PagedRequest.")
+    @PostMapping("/search")
+    public ResponseEntity<Page<UserPublicDto>> searchPublic(@RequestBody PagedRequest request) {
+        return ResponseEntity.ok(service.searchPublicUsers(request));
     }
 
     @Operation(summary = "Check if a user exists by username", description = "Checks if a user exists with the given username.")

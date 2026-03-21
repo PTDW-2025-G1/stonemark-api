@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Mark;
-import pt.estga.content.repositories.MarkQueryRepository;
+import pt.estga.content.repositories.MarkRepository;
 import pt.estga.content.services.MarkQueryService;
 
 import java.util.Optional;
@@ -16,7 +16,7 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class MarkQueryServiceImpl implements MarkQueryService {
 
-    private final MarkQueryRepository repository;
+    private final MarkRepository repository;
 
     @Override
     public Page<Mark> findAll(Pageable pageable) {

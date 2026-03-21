@@ -4,9 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pt.estga.submission.dtos.ProposalFilter;
+import pt.estga.filterutils.QueryProcessor;
+import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.filterutils.models.QueryResult;
+import pt.estga.submission.dtos.ProposalAdminListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.enums.SubmissionStatus;
+import pt.estga.submission.mappers.SubmissionAdminMapper;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
 import java.util.Collection;
@@ -21,15 +24,18 @@ import java.util.Optional;
 public class MarkOccurrenceSubmissionQueryService {
 
 	private final MarkOccurrenceSubmissionRepository repository;
+	private final QueryProcessor<MarkOccurrenceSubmission> queryProcessor;
+	private final SubmissionAdminMapper submissionAdminMapper;
 
-	public Page<MarkOccurrenceSubmission> search(ProposalFilter filter, Pageable pageable) {
-		Collection<SubmissionStatus> statuses = filter == null ? null : filter.statuses();
-		if (statuses != null && statuses.isEmpty()) {
-			statuses = null;
-		}
+	public Page<ProposalAdminListDto> search(PagedRequest request) {
+		QueryResult<MarkOccurrenceSubmission> result = queryProcessor.process(request);
 
-		Long submittedById = filter == null ? null : filter.submittedById();
-		return repository.findByFilters(statuses, submittedById, pageable);
+		Page<MarkOccurrenceSubmission> entityPage = repository.findAll(
+				result.specification(),
+				result.pageable()
+		);
+
+		return entityPage.map(submissionAdminMapper::toAdminListDto);
 	}
 
 	public Page<MarkOccurrenceSubmission> findBySubmittedBy(Pageable pageable, pt.estga.user.entities.User user) {

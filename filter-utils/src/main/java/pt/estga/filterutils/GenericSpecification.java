@@ -9,6 +9,8 @@ import pt.estga.filterutils.enums.LikeMode;
 import pt.estga.filterutils.models.FilterCriteria;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.UUID;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
@@ -25,24 +27,30 @@ public class GenericSpecification<T> implements Specification<T> {
 
     static {
         TYPE_REGISTRY.put(Integer.class, Integer::valueOf);
+        TYPE_REGISTRY.put(int.class, Integer::valueOf);
         TYPE_REGISTRY.put(Long.class, Long::valueOf);
+        TYPE_REGISTRY.put(long.class, Long::valueOf);
         TYPE_REGISTRY.put(Short.class, Short::valueOf);
+        TYPE_REGISTRY.put(short.class, Short::valueOf);
         TYPE_REGISTRY.put(Byte.class, Byte::valueOf);
+        TYPE_REGISTRY.put(byte.class, Byte::valueOf);
         TYPE_REGISTRY.put(Double.class, Double::valueOf);
+        TYPE_REGISTRY.put(double.class, Double::valueOf);
         TYPE_REGISTRY.put(Float.class, Float::valueOf);
+        TYPE_REGISTRY.put(float.class, Float::valueOf);
         TYPE_REGISTRY.put(Boolean.class, Boolean::valueOf);
+        TYPE_REGISTRY.put(boolean.class, Boolean::valueOf);
         TYPE_REGISTRY.put(String.class, Function.identity());
+        TYPE_REGISTRY.put(Character.class, s -> !s.isEmpty() ? s.charAt(0) : null);
+        TYPE_REGISTRY.put(char.class, s -> !s.isEmpty() ? s.charAt(0) : null);
         TYPE_REGISTRY.put(LocalDate.class, LocalDate::parse);
         TYPE_REGISTRY.put(Instant.class, Instant::parse);
         TYPE_REGISTRY.put(BigDecimal.class, BigDecimal::new);
+        TYPE_REGISTRY.put(BigInteger.class, BigInteger::new);
+        TYPE_REGISTRY.put(UUID.class, UUID::fromString);
     }
 
-    // Add field injection for GenericFieldMapper
-    private final GenericFieldMapper fieldMapper;
-
-    // Constructor injection for GenericFieldMapper
-    public GenericSpecification(GenericFieldMapper fieldMapper, FilterCriteria criteria) {
-        this.fieldMapper = fieldMapper;
+    public GenericSpecification(FilterCriteria criteria) {
         this.criteria = Objects.requireNonNull(criteria, "FilterCriteria cannot be null");
 
         if (criteria.getValue() instanceof List<?> list) {
@@ -60,8 +68,7 @@ public class GenericSpecification<T> implements Specification<T> {
             CriteriaQuery<?> query,
             @NonNull CriteriaBuilder cb
     ) {
-        Map<String, Path<?>> joinCache = new HashMap<>();
-        Path<?> path = getPath(root, criteria.getField(), joinCache);
+        Path<?> path = getPath(root, criteria.getField());
         if (path == null) {
             throw new IllegalArgumentException(invalidFilterMessage());
         }
@@ -115,8 +122,33 @@ public class GenericSpecification<T> implements Specification<T> {
         Class<?> type = path.getJavaType();
         Function<String, ?> converter = TYPE_REGISTRY.get(type);
 
-        if (converter != null && value instanceof String s) {
-            return (Y) converter.apply(s);
+        switch (value) {
+            case String s when converter != null -> {
+                return (Y) converter.apply(s);
+            }
+
+
+            // Handle enums provided as strings
+            case String s when type.isEnum() -> {
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                Y enumVal = (Y) Enum.valueOf((Class<Enum>) type, s);
+                return enumVal;
+            }
+
+
+            // Allow numeric widening when value is a Number
+            case Number n -> {
+                if (type == Long.class || type == long.class) return (Y) Long.valueOf(n.longValue());
+                if (type == Integer.class || type == int.class) return (Y) Integer.valueOf(n.intValue());
+                if (type == Short.class || type == short.class) return (Y) Short.valueOf(n.shortValue());
+                if (type == Byte.class || type == byte.class) return (Y) Byte.valueOf(n.byteValue());
+                if (type == Double.class || type == double.class) return (Y) Double.valueOf(n.doubleValue());
+                if (type == Float.class || type == float.class) return (Y) Float.valueOf(n.floatValue());
+                if (type == BigDecimal.class) return (Y) BigDecimal.valueOf(n.doubleValue());
+                if (type == BigInteger.class) return (Y) BigInteger.valueOf(n.longValue());
+            }
+            default -> {
+            }
         }
 
         if (type.isInstance(value)) return (Y) value;
@@ -195,29 +227,31 @@ public class GenericSpecification<T> implements Specification<T> {
     // PATH / JOIN
     // ----------------------
 
-    private Path<?> getPath(Root<T> root, String field, Map<String, Path<?>> joinCache) {
-        if (!fieldMapper.isAllowed(field, root.getJavaType())) {
-            throw new IllegalArgumentException("Field path not allowed: " + field);
+    private Path<?> getPath(Root<T> root, String field) {
+        if (field == null || field.isBlank()) {
+            throw new IllegalArgumentException("Field for path navigation cannot be null or blank");
         }
 
-        if (!field.contains(".")) return root.get(field);
-
-        if (joinCache.containsKey(field)) {
-            return joinCache.get(field);
-        }
-
-        String[] parts = field.split("\\.");
+        // Trim whitespace at point-of-use to tolerate user input like "firstName "
+        String trimmed = field.trim();
+        String[] parts = trimmed.split("\\.");
         Path<?> path = root;
 
-        for (String part : parts) {
-            if (path instanceof From<?, ?> from) {
-                path = from.join(part, criteria.getJoinType());
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+
+            // If it's not the last part, we MUST be able to join/navigate
+            if (i < parts.length - 1) {
+                if (path instanceof From<?, ?> from) {
+                    path = from.join(part, criteria.getJoinType());
+                } else {
+                    path = path.get(part);
+                }
             } else {
-                throw new IllegalStateException("Path resolution failed for field: " + field);
+                // Last part: just get the attribute
+                path = path.get(part);
             }
         }
-
-        joinCache.put(field, path);
         return path;
     }
 
