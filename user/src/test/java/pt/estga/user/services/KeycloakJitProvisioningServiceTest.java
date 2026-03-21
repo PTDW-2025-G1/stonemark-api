@@ -24,7 +24,7 @@ class KeycloakJitProvisioningServiceTest {
     private UserService userService;
 
     @InjectMocks
-    private KeycloakJitProvisioningServiceImpl jitProvisioningService;
+    private KeycloakJitProvisioningService jitProvisioningService;
 
     private User existingUser;
     private KeycloakIdentitySnapshot newUserSnapshot;

@@ -14,11 +14,7 @@ public interface ChatbotAccountRepository extends JpaRepository<ChatbotAccount, 
 
     Optional<ChatbotAccount> findByChatbotPlatformAndValue(ChatbotPlatform chatbotPlatform, String value);
 
-    void deleteByUserAndChatbotPlatform(User user, ChatbotPlatform chatbotPlatform);
-
     Optional<ChatbotAccount> findByUserAndChatbotPlatform(User user, ChatbotPlatform chatbotPlatform);
-
-    List<ChatbotAccount> findByUser(User user);
 
     void deleteByUser(User user);
 }
