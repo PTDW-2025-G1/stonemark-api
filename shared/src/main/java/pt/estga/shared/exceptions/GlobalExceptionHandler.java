@@ -1,5 +1,7 @@
 package pt.estga.shared.exceptions;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
@@ -12,6 +14,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Global exception handler to translate common input and JPA errors into 400 responses.
+ */
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -89,6 +95,20 @@ public class GlobalExceptionHandler {
         body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid Request Data", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<Map<String, String>> handleJpaError(InvalidDataAccessApiUsageException ex) {
+        // Log the exception at debug level for troubleshooting without exposing internals to clients
+        log.debug("JPA path/navigation error while handling request", ex);
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Invalid Field Path", "message", "One or more provided fields are invalid for this entity."));
     }
 
 }

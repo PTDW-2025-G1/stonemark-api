@@ -228,7 +228,13 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Path<?> getPath(Root<T> root, String field) {
-        String[] parts = field.split("\\.");
+        if (field == null || field.isBlank()) {
+            throw new IllegalArgumentException("Field for path navigation cannot be null or blank");
+        }
+
+        // Trim whitespace at point-of-use to tolerate user input like "firstName "
+        String trimmed = field.trim();
+        String[] parts = trimmed.split("\\.");
         Path<?> path = root;
 
         for (int i = 0; i < parts.length; i++) {

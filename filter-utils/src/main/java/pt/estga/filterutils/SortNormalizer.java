@@ -27,21 +27,27 @@ public class SortNormalizer {
             return Sort.unsorted();
         }
 
-        // Collect Sort.Orders in one pass
+        // Collect Sort.Orders in one pass; perform point-of-use normalization (trim fields)
         List<Sort.Order> orders = sortCriteriaList.stream()
             .map(sc -> {
                 if (sc == null) {
                     throw new IllegalArgumentException("SortCriteria cannot be null");
                 }
-                if (sc.field() == null || sc.field().isBlank()) {
+                String rawField = sc.field();
+                if (rawField == null || rawField.isBlank()) {
                     throw new IllegalArgumentException("Sort field cannot be blank");
                 }
 
-                String mappedField = sc.field();
+                // Trim only at the point of use to avoid mutating the original model
+                String mappedField = rawField.trim();
+
+                // Default to ASC when direction is missing
                 SortDirection direction = sc.direction() != null ? sc.direction() : SortDirection.ASC;
-                return SortDirection.ASC.equals(direction)
-                        ? Sort.Order.asc(mappedField)
-                        : Sort.Order.desc(mappedField);
+
+                // Safe comparison with enum value
+                return SortDirection.DESC.equals(direction)
+                        ? Sort.Order.desc(mappedField)
+                        : Sort.Order.asc(mappedField);
             })
             .collect(Collectors.toList());
 
