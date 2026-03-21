@@ -1,21 +1,28 @@
 package pt.estga.file.services;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaVariantType;
+import pt.estga.file.repositories.MediaVariantRepository;
+import pt.estga.shared.exceptions.FileNotFoundException;
 
-/**
- * Service interface for managing the metadata of media variants.
- * Handles database operations and caching for MediaVariant entities.
- */
-public interface MediaVariantMetadataService {
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MediaVariantMetadataService {
 
-    /**
-     * Finds the storage path for a specific media variant.
-     * This method is cached to reduce database lookups.
-     *
-     * @param mediaId the ID of the media file
-     * @param type    the type of variant
-     * @return the storage path of the variant
-     * @throws pt.estga.shared.exceptions.FileNotFoundException if the variant is not found
-     */
-    String findVariantPath(Long mediaId, MediaVariantType type);
+    private final MediaVariantRepository mediaVariantRepository;
+
+    @Transactional(readOnly = true)
+    @Cacheable(value = "mediaVariantPaths", key = "#mediaId + '-' + #type")
+    public String findVariantPath(Long mediaId, MediaVariantType type) {
+        log.info("Fetching variant path from DB for media ID: {} type: {}", mediaId, type);
+        return mediaVariantRepository.findByMediaFileIdAndType(mediaId, type)
+                .map(MediaVariant::getStoragePath)
+                .orElseThrow(() -> new FileNotFoundException("Variant not found: " + type + " for media " + mediaId));
+    }
 }

@@ -1,28 +1,27 @@
 package pt.estga.file.services;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.file.repositories.MediaFileRepository;
 
 import java.util.Optional;
 
-/**
- * Service interface for managing the metadata of media files.
- * Handles database operations for MediaFile entities.
- */
-public interface MediaMetadataService {
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MediaMetadataService {
 
-    /**
-     * Saves the metadata of a media file.
-     *
-     * @param mediaFile the entity to save
-     * @return the saved entity
-     */
-    MediaFile saveMetadata(MediaFile mediaFile);
+    private final MediaFileRepository mediaFileRepository;
 
-    /**
-     * Finds a media file entity by its ID.
-     *
-     * @param id the id of the media file
-     * @return an Optional containing the MediaFile if found
-     */
-    Optional<MediaFile> findById(Long id);
+    @Transactional
+    public MediaFile saveMetadata(MediaFile mediaFile) {
+        return mediaFileRepository.save(mediaFile);
+    }
+
+    public Optional<MediaFile> findById(Long id) {
+        return mediaFileRepository.findById(id);
+    }
 }
