@@ -1,4 +1,4 @@
-package pt.estga.shared.filters.models;
+package pt.estga.filterutils.models;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

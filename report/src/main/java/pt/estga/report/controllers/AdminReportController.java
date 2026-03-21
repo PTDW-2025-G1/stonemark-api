@@ -8,11 +8,11 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.filterutils.models.FilterNode;
 import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.enums.ReportStatus;
 import pt.estga.report.mappers.ReportMapper;
 import pt.estga.report.services.ReportService;
-import pt.estga.shared.filters.models.FilterNode;
 
 @RestController
 @RequestMapping("/api/v1/admin/reports")

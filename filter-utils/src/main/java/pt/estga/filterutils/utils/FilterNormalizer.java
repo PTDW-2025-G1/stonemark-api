@@ -1,8 +1,8 @@
-package pt.estga.shared.filters.utils;
+package pt.estga.filterutils.utils;
 
 import jakarta.persistence.criteria.JoinType;
-import pt.estga.shared.filters.models.FilterCriteria;
-import pt.estga.shared.filters.models.FilterNode;
+import pt.estga.filterutils.models.FilterCriteria;
+import pt.estga.filterutils.models.FilterNode;
 
 import java.util.List;
 import java.util.Objects;

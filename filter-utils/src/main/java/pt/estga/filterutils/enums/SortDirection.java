@@ -1,4 +1,4 @@
-package pt.estga.shared.filters.enums;
+package pt.estga.filterutils.enums;
 
 public enum SortDirection {
     ASC, DESC

@@ -21,6 +21,11 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>filter-utils</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>file</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>

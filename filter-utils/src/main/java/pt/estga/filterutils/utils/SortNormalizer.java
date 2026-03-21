@@ -1,8 +1,8 @@
-package pt.estga.shared.filters.utils;
+package pt.estga.filterutils.utils;
 
 import org.springframework.data.domain.Sort;
-import pt.estga.shared.filters.enums.SortDirection;
-import pt.estga.shared.filters.models.SortCriteria;
+import pt.estga.filterutils.enums.SortDirection;
+import pt.estga.filterutils.models.SortCriteria;
 
 import java.util.List;
 import java.util.Objects;

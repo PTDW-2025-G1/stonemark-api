@@ -1,4 +1,4 @@
-package pt.estga.shared.filters;
+package pt.estga.filterutils;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.metamodel.*;

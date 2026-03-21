@@ -5,14 +5,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.filterutils.SpecificationBuilder;
+import pt.estga.filterutils.models.FilterNode;
 import pt.estga.report.dtos.ReportRequestDto;
 import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.entities.Report;
 import pt.estga.report.enums.ReportStatus;
 import pt.estga.report.mappers.ReportMapper;
 import pt.estga.report.repositories.ReportRepository;
-import pt.estga.shared.filters.models.FilterNode;
-import pt.estga.shared.filters.SpecificationBuilder;
 import pt.estga.user.entities.User;
 
 @Service

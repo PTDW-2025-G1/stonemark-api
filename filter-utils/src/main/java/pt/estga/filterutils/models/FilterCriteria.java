@@ -1,9 +1,9 @@
-package pt.estga.shared.filters.models;
+package pt.estga.filterutils.models;
 
 import jakarta.persistence.criteria.JoinType;
 import lombok.*;
-import pt.estga.shared.filters.enums.FilterOperator;
-import pt.estga.shared.filters.enums.LikeMode;
+import pt.estga.filterutils.enums.FilterOperator;
+import pt.estga.filterutils.enums.LikeMode;
 
 /**
  * Represents a single filtering condition used by the filtering subsystem.
