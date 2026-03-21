@@ -13,23 +13,13 @@ public interface UserService {
 
     Optional<User> findById(Long id);
 
-    Optional<User> findByUsername(String username);
-
     Optional<User> findByEmail(String email);
 
     Optional<User> findByKeycloakSub(String keycloakSub);
 
     Optional<User> findByIdForProfile(Long id);
 
-    Optional<User> findByIdWithIdentities(Long id);
-
     boolean existsByUsername(String username);
-
-    boolean existsByEmail(String email);
-
-    boolean existsByKeycloakSub(String keycloakSub);
-
-    void deactivateByKeycloakSub(String keycloakSub);
 
     User create(User user);
 

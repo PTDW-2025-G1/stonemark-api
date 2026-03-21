@@ -31,12 +31,6 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW, readOnly = true)
-    public Optional<User> findByUsername(String username) {
-        return repository.findByUsername(username);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(String email) {
         return repository.findByEmail(email);
@@ -54,34 +48,8 @@ public class UserServiceHibernateImpl implements UserService {
     }
 
     @Override
-    public Optional<User> findByIdWithIdentities(Long id) {
-        return repository.findByIdWithIdentities(id);
-    }
-
-    @Override
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return repository.existsByEmail(email);
-    }
-
-    @Override
-    public boolean existsByKeycloakSub(String keycloakSub) {
-        return repository.existsByKeycloakSub(keycloakSub);
-    }
-
-    @Override
-    @Transactional
-    public void deactivateByKeycloakSub(String keycloakSub) {
-        User user = repository.findByKeycloakSub(keycloakSub)
-                .orElseThrow(() -> new RuntimeException("User not found for keycloakSub"));
-
-        user.setEnabled(false);
-        user.setAccountLocked(true);
-        repository.save(user);
     }
 
     @Override
