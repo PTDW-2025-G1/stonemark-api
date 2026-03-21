@@ -41,22 +41,22 @@ public class FilterNode {
     }
 
     public void validate() {
-        Integer originalChildrenCount = null;
+        List<FilterNode> cleanedChildren = null;
         if (children != null) {
-            originalChildrenCount = children.size();
-            this.children = new ArrayList<>(children);
-            this.children.removeIf(Objects::isNull);
+            cleanedChildren = children.stream()
+                .filter(Objects::nonNull)
+                .toList();
         }
 
-        if (criteria != null && children != null) {
+        if (criteria != null && cleanedChildren != null) {
             throw new IllegalStateException("Node cannot have both criteria and children");
         }
 
         if (criteria == null) {
-            if (children == null || children.isEmpty()) {
-                if (originalChildrenCount != null && originalChildrenCount > 0) {
+            if (cleanedChildren == null || cleanedChildren.isEmpty()) {
+                if (children != null && !children.isEmpty()) {
                     throw new IllegalStateException(
-                            "Group node contains only null children; operator=" + operator + ", originalCount=" + originalChildrenCount
+                            "Group node contains only null children; operator=" + operator + ", originalCount=" + children.size()
                     );
                 }
                 throw new IllegalStateException("Node must have either criteria or children");

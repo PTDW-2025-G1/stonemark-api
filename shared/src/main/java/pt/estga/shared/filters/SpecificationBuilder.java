@@ -24,9 +24,17 @@ public class SpecificationBuilder<T> {
         // Leaf node
         if (node.getCriteria() != null) {
             // Apply field mapping before creating GenericSpecification
-            String mappedField = FilterFieldMapper.map(node.getCriteria().getField());
-            node.getCriteria().setField(mappedField);
-            return new GenericSpecification<>(node.getCriteria());
+            FilterCriteria original = node.getCriteria();
+
+            FilterCriteria mapped = FilterCriteria.builder()
+                .field(FilterFieldMapper.map(original.getField()))
+                .operator(original.getOperator())
+                .value(original.getValue())
+                .likeMode(original.getLikeMode())
+                .caseSensitive(original.isCaseSensitive())
+                .build();
+
+            return new GenericSpecification<>(mapped);
         }
 
         // Validate group node

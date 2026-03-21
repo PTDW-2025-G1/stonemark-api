@@ -20,8 +20,8 @@ public class GenericSpecification<T> implements Specification<T> {
 
     public GenericSpecification(FilterCriteria criteria) {
         this.criteria = criteria;
-        if (criteria.getValue() instanceof List<?>) {
-            this.values = (List<Object>) criteria.getValue();
+        if (criteria.getValue() instanceof List<?> list) {
+            this.values = new ArrayList<>(list);
             this.value = null;
         } else {
             this.value = criteria.getValue();
@@ -49,11 +49,10 @@ public class GenericSpecification<T> implements Specification<T> {
             case GTE -> comparison(cb, path, value, ComparisonOperator.GTE);
             case LTE -> comparison(cb, path, value, ComparisonOperator.LTE);
             case LIKE -> likePredicate(cb, path, value);
-            case IN -> inPredicate(cb, path, values);
+            case IN -> inPredicate(path, values);
             case BETWEEN -> betweenPredicate(cb, path, values);
             case IS_NULL -> cb.isNull(path);
             case IS_NOT_NULL -> cb.isNotNull(path);
-            default -> throw new UnsupportedOperationException("Operator not supported: " + criteria.getOperator());
         };
 
         return Objects.requireNonNull(predicate, "Predicate creation failed");
@@ -79,16 +78,11 @@ public class GenericSpecification<T> implements Specification<T> {
         if (criteria.getField() == null || criteria.getField().isBlank()) return false;
         if (criteria.getOperator() == null) return false;
 
-        Object value = criteria.getValue();
         return switch (criteria.getOperator()) {
-            case IN, BETWEEN -> value instanceof List<?> list && !list.isEmpty();
+            case IN, BETWEEN -> values != null && !values.isEmpty();
             case LIKE, EQ, NE, GT, LT, GTE, LTE -> value != null;
             default -> true;
         };
-    }
-
-    private boolean isEnumField(Path<?> path) {
-        return path != null && path.getJavaType().isEnum();
     }
 
     // ----------------------
@@ -103,7 +97,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
         // Enum handling
         if (type.isEnum()) {
-            if (value instanceof String s) return (Y) convertEnum(type, s);
+            if (value instanceof String s) return convertEnum(type, s);
             if (type.isInstance(value)) return (Y) value;
             throw new IllegalArgumentException("Invalid enum value: " + value);
         }
@@ -161,9 +155,9 @@ public class GenericSpecification<T> implements Specification<T> {
     }
 
     @SuppressWarnings("unchecked")
-    private Object convertEnum(Class<?> enumType, String name) {
+    private <Y extends Enum<Y>> Y convertEnum(Class<?> enumType, String name) {
         try {
-            return Enum.valueOf((Class<? extends Enum>) enumType, name);
+            return Enum.valueOf((Class<Y>) enumType, name);
         } catch (IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid enum value: " + name, ex);
         }
@@ -182,8 +176,9 @@ public class GenericSpecification<T> implements Specification<T> {
     // ----------------------
 
     private Predicate likePredicate(CriteriaBuilder cb, Path<?> path, Object value) {
-        Objects.requireNonNull(value, "LIKE operator requires a non-null value");
-        String str = (String) value;
+        if (!(value instanceof String str)) {
+            throw new IllegalArgumentException("LIKE requires string value");
+        }
         LikeMode mode = criteria.getLikeMode() != null ? criteria.getLikeMode() : LikeMode.CONTAINS;
         char escapeChar = '\\';
         String escaped = escapeLike(str, escapeChar);
@@ -201,7 +196,7 @@ public class GenericSpecification<T> implements Specification<T> {
         return input.replace(esc, esc + esc).replace("%", esc + "%").replace("_", esc + "_");
     }
 
-    private Predicate inPredicate(CriteriaBuilder cb, Path<?> path, Object value) {
+    private Predicate inPredicate(Path<?> path, Object value) {
         Objects.requireNonNull(value, "IN operator requires a non-null value");
         if (!(value instanceof List<?> list)) throw new IllegalArgumentException("IN operator requires a list of values");
         for (Object e : list) {
@@ -241,6 +236,9 @@ public class GenericSpecification<T> implements Specification<T> {
                 path = from.join(part, JoinType.LEFT);
             } else {
                 path = path.get(part);
+            }
+            if (path == null) {
+                throw new IllegalArgumentException("Invalid path segment: " + part);
             }
         }
 

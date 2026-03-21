@@ -48,7 +48,8 @@ public class PagedRequest {
             // Validate and map the field using FilterFieldMapper
             String mappedField = FilterFieldMapper.map(sc.getField());
 
-            Sort.Order order = sc.getDirection() == null || SortDirection.ASC.equals(sc.getDirection())
+            SortDirection direction = sc.getDirection() != null ? sc.getDirection() : SortDirection.ASC;
+            Sort.Order order = SortDirection.ASC.equals(direction)
                     ? Sort.Order.asc(mappedField)
                     : Sort.Order.desc(mappedField);
             springSort = springSort.isUnsorted() ? Sort.by(order) : springSort.and(Sort.by(order));
