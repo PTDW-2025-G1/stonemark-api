@@ -1,33 +1,73 @@
 package pt.estga.user.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import pt.estga.shared.enums.UserRole;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
 
-public interface UserService {
+@Service
+@RequiredArgsConstructor
+public class UserService {
 
-    Page<User> findAll(Pageable pageable);
+    private final UserRepository repository;
+    private final ChatbotAccountRepository chatbotAccountRepository;
 
-    Optional<User> findById(Long id);
+    public Page<User> findAll(Pageable pageable) {
+        return repository.findAll(pageable);
+    }
 
-    Optional<User> findByEmail(String email);
+    public Optional<User> findById(Long id) {
+        return repository.findById(id);
+    }
 
-    Optional<User> findByKeycloakSub(String keycloakSub);
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
 
-    Optional<User> findByIdForProfile(Long id);
+    @Transactional(readOnly = true)
+    public Optional<User> findByKeycloakSub(String keycloakSub) {
+        return repository.findByKeycloakSub(keycloakSub);
+    }
 
-    boolean existsByUsername(String username);
+    public Optional<User> findByIdForProfile(Long id) {
+        return repository.findByIdForProfile(id);
+    }
 
-    User create(User user);
+    public boolean existsByUsername(String username) {
+        return repository.existsByUsername(username);
+    }
 
-    User update(User user);
+    public User create(User user) {
+        return repository.save(user);
+    }
 
-    Optional<User> updateRole(User user, UserRole role);
+    public User update(User user) {
+        return repository.save(user);
+    }
 
-    void deleteById(Long id);
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
 
-    void softDeleteUser(Long id);
+    public void softDeleteUser(Long id) {
+        User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+
+        chatbotAccountRepository.deleteByUser(user);
+
+        user.setFirstName("deleted");
+        user.setLastName("user");
+        user.setUsername(null);
+        user.setEmail(null);
+        user.setEmailVerified(false);
+        user.setEnabled(false);
+
+        repository.save(user);
+    }
 }
