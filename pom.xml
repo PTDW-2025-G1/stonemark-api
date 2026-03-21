@@ -35,6 +35,7 @@
         <module>report</module>
         <module>territory</module>
         <module>decision</module>
+        <module>filter-utils</module>
     </modules>
     <scm>
 		<connection/>
