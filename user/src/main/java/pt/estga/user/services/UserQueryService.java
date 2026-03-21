@@ -2,31 +2,30 @@ package pt.estga.user.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import pt.estga.filterutils.QueryProcessor;
+import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.filterutils.models.QueryResult;
 import pt.estga.filterutils.SpecificationBuilder;
-import pt.estga.filterutils.models.FilterNode;
+import pt.estga.user.dtos.UserDto;
 import pt.estga.user.entities.User;
+import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.repositories.UserRepository;
 
-/**
- * Service for querying User entities based on dynamic filters.
- */
 @Service
 @RequiredArgsConstructor
 public class UserQueryService {
 
     private final UserRepository userRepository;
     private final SpecificationBuilder<User> specificationBuilder;
+    private final UserMapper mapper;
 
-    /**
-     * Searches for users based on the provided filter and pageable information.
-     *
-     * @param filter   the filter criteria represented as a FilterNode
-     * @param pageable the pagination information
-     * @return a paginated list of users matching the filter criteria
-     */
-    public Page<User> search(FilterNode filter, Pageable pageable) {
-        return userRepository.findAll(specificationBuilder.build(filter), pageable);
+    public Page<UserDto> search(PagedRequest request) {
+        QueryProcessor<User> processor = new QueryProcessor<>(specificationBuilder);
+        QueryResult<User> result = processor.process(request);
+        Page<User> page = (result.specification() == null)
+                ? userRepository.findAll(result.pageable())
+                : userRepository.findAll(result.specification(), result.pageable());
+        return page.map(mapper::toDto);
     }
 }

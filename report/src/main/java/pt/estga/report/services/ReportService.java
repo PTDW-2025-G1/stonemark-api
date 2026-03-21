@@ -1,12 +1,9 @@
 package pt.estga.report.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.filterutils.SpecificationBuilder;
-import pt.estga.filterutils.models.FilterNode;
 import pt.estga.report.dtos.ReportRequestDto;
 import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.entities.Report;
@@ -22,11 +19,6 @@ public class ReportService {
     private final ReportRepository repository;
     private final ReportMapper mapper;
     private final SpecificationBuilder<Report> specificationBuilder;
-
-    @Transactional(readOnly = true)
-    public Page<Report> search(FilterNode filter, Pageable pageable) {
-        return repository.findAll(specificationBuilder.build(filter), pageable);
-    }
 
     @Transactional
     public ReportResponseDto createReport(User user, ReportRequestDto dto) {
