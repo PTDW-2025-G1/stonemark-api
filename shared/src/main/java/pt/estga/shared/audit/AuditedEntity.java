@@ -31,7 +31,6 @@ public abstract class AuditedEntity {
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "id", column = @Column(name = "created_by_id", updatable = false)),
-            @AttributeOverride(name = "type", column = @Column(name = "created_by_type", updatable = false)),
             @AttributeOverride(name = "identifier", column = @Column(name = "created_by_identifier", updatable = false))
     })
     protected AuditActor createdBy;
@@ -43,7 +42,6 @@ public abstract class AuditedEntity {
     @Embedded
     @AttributeOverrides({
             @AttributeOverride(name = "id", column = @Column(name = "modified_by_id")),
-            @AttributeOverride(name = "type", column = @Column(name = "modified_by_type")),
             @AttributeOverride(name = "identifier", column = @Column(name = "modified_by_identifier"))
     })
     protected AuditActor modifiedBy;

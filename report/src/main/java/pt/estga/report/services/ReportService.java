@@ -14,4 +14,5 @@ public interface ReportService {
     Page<ReportResponseDto> getAllReports(Pageable pageable);
 
     ReportResponseDto updateStatus(Long reportId, ReportStatus status);
+
 }

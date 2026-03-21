@@ -6,7 +6,6 @@ import org.hibernate.annotations.Type;
 import pt.estga.content.entities.Mark;
 import pt.estga.content.entities.Monument;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.audit.AuditedEntity;
 import pt.estga.shared.utils.PgVectorType;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
@@ -24,7 +23,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class MarkOccurrenceSubmission extends AuditedEntity {
+public class MarkOccurrenceSubmission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
