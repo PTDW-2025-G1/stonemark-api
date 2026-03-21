@@ -2,7 +2,7 @@ package pt.estga.shared.filters.utils;
 
 import org.springframework.data.domain.Sort;
 import pt.estga.shared.filters.enums.SortDirection;
-import pt.estga.shared.filters.mappers.FilterFieldMapper;
+import pt.estga.shared.filters.mappers.FieldMapper;
 import pt.estga.shared.filters.models.SortCriteria;
 
 import java.util.List;
@@ -15,23 +15,26 @@ public class SortNormalizer {
     /**
      * Converts a list of SortCriteria into a Spring Sort object.
      *
-     * @param entityClass The entity class for field mapping.
+     * @param mapper The FieldMapper to use for field mapping.
      * @param sortCriteriaList The list of SortCriteria to normalize.
      * @return A Spring Sort object representing the normalized criteria.
      */
-    public static Sort normalize(Class<?> entityClass, List<SortCriteria> sortCriteriaList) {
+    public static Sort normalize(FieldMapper mapper, List<SortCriteria> sortCriteriaList) {
         if (sortCriteriaList == null || sortCriteriaList.isEmpty()) {
             return Sort.unsorted();
         }
 
         Sort combinedSort = Sort.unsorted();
         for (SortCriteria sc : sortCriteriaList) {
-            if (sc == null || sc.getField() == null || sc.getField().isBlank()) {
-                continue;
+            if (sc == null) {
+                throw new IllegalArgumentException("SortCriteria cannot be null");
+            }
+            if (sc.getField() == null || sc.getField().isBlank()) {
+                throw new IllegalArgumentException("Sort field cannot be blank");
             }
 
-            // Map the field name using FilterFieldMapper
-            String mappedField = FilterFieldMapper.map(entityClass, sc.getField());
+            // Map the field name using the provided FieldMapper
+            String mappedField = mapper.map(sc.getField());
 
             // Determine the sort direction
             SortDirection direction = sc.getDirection() != null ? sc.getDirection() : SortDirection.ASC;

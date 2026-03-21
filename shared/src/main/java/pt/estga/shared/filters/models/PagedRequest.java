@@ -22,23 +22,15 @@ public class PagedRequest {
     private static final int MAX_SIZE = 500;
 
     /**
-     * Convert this PagedRequest into a Spring Data Pageable. Defaults are
-     * applied when page/size are null. SortCriteria entries are applied in order.
-     * <p>
-     * Expected JSON shape when received from clients:
-     * {
-     *   "filter": { ... },
-     *   "page": 0,
-     *   "size": 20,
-     *   "sort": [{ "field": "name", "direction": "ASC" }]
-     * }
+     * Converts the current PagedRequest into a Pageable object.
+     *
+     * @param defaultSort The default sort to apply if none is provided.
+     * @return A Pageable object representing the pagination and sorting.
      */
-    public Pageable toPageable(Class<?> entityClass) {
-        int p = page != null && page >= 0 ? page : DEFAULT_PAGE;
-        int s = size != null && size > 0 ? Math.min(size, MAX_SIZE) : DEFAULT_SIZE; // guard against excessive page sizes
-        if (sort == null || sort.isEmpty()) return PageRequest.of(p, s);
-
-        Sort springSort = SortNormalizer.normalize(entityClass, sort);
-        return PageRequest.of(p, s, springSort);
+    public Pageable toPageable(Sort defaultSort) {
+        Sort effectiveSort = (sort == null || sort.isEmpty()) ? defaultSort : SortNormalizer.normalize(null, sort);
+        int effectivePage = (page == null || page < 0) ? DEFAULT_PAGE : page;
+        int effectiveSize = (size == null || size < 1 || size > MAX_SIZE) ? DEFAULT_SIZE : size;
+        return PageRequest.of(effectivePage, effectiveSize, effectiveSort);
     }
 }
