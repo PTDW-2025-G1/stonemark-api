@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @ComponentScan("pt.estga.user")
 @EnableJpaRepositories("pt.estga.user")
 @EntityScan("pt.estga.user.entities")
-public class UserModuleAutoConfiguration {
+public class UserAutoConfiguration {
 }

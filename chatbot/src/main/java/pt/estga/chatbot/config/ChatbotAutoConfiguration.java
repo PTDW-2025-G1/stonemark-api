@@ -8,7 +8,7 @@ import org.springframework.context.support.ReloadableResourceBundleMessageSource
 
 @Configuration
 @ComponentScan("pt.estga.chatbot")
-public class BotsModuleAutoConfiguration {
+public class ChatbotAutoConfiguration {
 
     @Bean
     public MessageSource messageSource() {
