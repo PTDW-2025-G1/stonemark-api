@@ -18,7 +18,6 @@ public class SortNormalizer {
      *
      * @param sortCriteriaList The list of SortCriteria to normalize.
      * @return A Spring Sort object representing the normalized criteria.
-     * @throws NullPointerException if {@code mapper} is null.
      * @throws IllegalArgumentException if any SortCriteria is null or contains invalid data.
      */
     public static Sort normalize(List<SortCriteria> sortCriteriaList) {

@@ -5,7 +5,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import pt.estga.filterutils.models.PagedRequest;
 import pt.estga.filterutils.models.QueryResult;
-import pt.estga.filterutils.utils.FilterNormalizer;
 import pt.estga.filterutils.utils.SortNormalizer;
 
 /**
@@ -19,7 +18,7 @@ public class QueryProcessor<T> {
     private final SpecificationBuilder<T> builder;
 
     /**
-     * Constructs a QueryProcessor with the given FieldMapper and SpecificationBuilder.
+     * Constructs a QueryProcessor with the given SpecificationBuilder.
      *
      * @param builder The SpecificationBuilder for building specifications.
      */
@@ -34,11 +33,8 @@ public class QueryProcessor<T> {
      * @return A QueryResult containing the Specification and Pageable.
      */
     public QueryResult<T> process(PagedRequest request) {
-        // Normalize the filter
-        var normalizedFilter = FilterNormalizer.normalize(request.getFilter());
-
-        // Build the specification
-        Specification<T> spec = builder.build(normalizedFilter);
+        // Build the specification directly from the provided filter
+        Specification<T> spec = builder.build(request.getFilter());
 
         // Normalize the sort
         Sort sort = SortNormalizer.normalize(request.getSort());
