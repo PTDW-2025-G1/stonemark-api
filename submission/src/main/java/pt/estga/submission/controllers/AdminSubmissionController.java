@@ -23,8 +23,8 @@ import pt.estga.submission.dtos.ProposalFilter;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;
 import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.mappers.SubmissionAdminMapper;
-import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.shared.exceptions.ResourceNotFoundException;
+import pt.estga.submission.services.MarkOccurrenceSubmissionQueryService;
 
 @RestController
 @RequestMapping("/api/v1/admin/proposals")
@@ -33,7 +33,7 @@ import pt.estga.shared.exceptions.ResourceNotFoundException;
 @Tag(name = "Submission Administration", description = "Endpoints for proposal administration and read operations.")
 public class AdminSubmissionController {
 
-    private final MarkOccurrenceSubmissionRepository proposalRepo;
+    private final MarkOccurrenceSubmissionQueryService proposalQueryService;
     private final SubmissionAdminMapper submissionAdminMapper;
     private final MarkOccurrenceSubmissionMapper proposalMapper;
 
@@ -47,12 +47,7 @@ public class AdminSubmissionController {
             @ParameterObject ProposalFilter filter,
             @ParameterObject @PageableDefault(sort = "submittedAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        var statuses = filter.statuses();
-        if (statuses != null && statuses.isEmpty()) {
-            statuses = null;
-        }
-
-        return ResponseEntity.ok(proposalRepo.findByFilters(statuses, filter.submittedById(), pageable)
+        return ResponseEntity.ok(proposalQueryService.search(filter, pageable)
                 .map(submissionAdminMapper::toAdminListDto));
     }
 
@@ -65,7 +60,7 @@ public class AdminSubmissionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProposalWithRelationsDto> getProposalDetails(@PathVariable Long id) {
-        var proposal = proposalRepo.findByIdWithRelations(id)
+        var proposal = proposalQueryService.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission not found with id: " + id));
         return ResponseEntity.ok(proposalMapper.toWithRelationsDto(proposal));
     }

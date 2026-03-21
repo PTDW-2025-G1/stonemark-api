@@ -1,23 +1,64 @@
 package pt.estga.submission.services;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
 
-public interface MarkOccurrenceSubmissionService {
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MarkOccurrenceSubmissionService {
 
-    Optional<MarkOccurrenceSubmission> findByIdWithRelations(Long id);
+    private final MarkOccurrenceSubmissionRepository repository;
 
-    MarkOccurrenceSubmission create(MarkOccurrenceSubmission proposal);
+    @Transactional(readOnly = true)
+    public Page<MarkOccurrenceSubmission> findByUser(User user, Pageable pageable) {
+        return repository.findBySubmittedBy(user, pageable);
+    }
 
-    MarkOccurrenceSubmission update(MarkOccurrenceSubmission proposal);
+    @Transactional(readOnly = true)
+    @Cacheable(value = "proposals", key = "#id")
+    public Optional<MarkOccurrenceSubmission> findById(Long id) {
+        return repository.findById(id);
+    }
 
-    Page<MarkOccurrenceSubmission> findByUser(User user, Pageable pageable);
-    
-    Optional<MarkOccurrenceSubmission> findById(Long id);
-    
-    void delete(MarkOccurrenceSubmission proposal);
+    @Transactional(readOnly = true)
+    public Optional<MarkOccurrenceSubmission> findByIdWithRelations(Long id) {
+        return repository.findByIdWithRelations(id);
+    }
+
+    @Transactional
+    @CacheEvict(value = "proposalStats", key = "#proposal.submittedBy?.id")
+    public MarkOccurrenceSubmission create(MarkOccurrenceSubmission proposal) {
+        return repository.save(proposal);
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "proposals", key = "#proposal.id"),
+            @CacheEvict(value = "proposalStats", key = "#proposal.submittedBy?.id")
+    })
+    public MarkOccurrenceSubmission update(MarkOccurrenceSubmission proposal) {
+        return repository.save(proposal);
+    }
+
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "proposals", key = "#proposal.id"),
+            @CacheEvict(value = "proposalStats", key = "#proposal.submittedBy?.id")
+    })
+    public void delete(MarkOccurrenceSubmission proposal) {
+        repository.delete(proposal);
+    }
 }
