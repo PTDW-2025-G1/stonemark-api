@@ -2,20 +2,16 @@ package pt.estga.content.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Geometry;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
 import pt.estga.content.repositories.MonumentQueryRepository;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.territory.services.AdministrativeDivisionService;
+import pt.estga.territory.services.AdministrativeDivisionQueryService;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -24,7 +20,7 @@ import java.util.Optional;
 public class MonumentQueryServiceImpl implements MonumentQueryService {
 
     private final MonumentQueryRepository repository;
-    private final AdministrativeDivisionService administrativeDivisionService;
+    private final AdministrativeDivisionQueryService administrativeDivisionService;
 
     @Override
     public Page<Monument> findAll(Pageable pageable) {

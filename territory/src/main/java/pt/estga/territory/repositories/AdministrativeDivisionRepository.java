@@ -14,7 +14,6 @@ import java.util.Optional;
 
 @Repository
 public interface AdministrativeDivisionRepository extends JpaRepository<AdministrativeDivision, Long>, JpaSpecificationExecutor<AdministrativeDivision> {
-    List<AdministrativeDivision> findAllByNameIn(Collection<String> names);
     List<AdministrativeDivision> findByOsmAdminLevel(int osmAdminLevel);
 
     List<AdministrativeDivision> findByParentId(Long parentId);

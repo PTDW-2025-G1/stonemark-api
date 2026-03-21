@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
-import pt.estga.territory.services.AdministrativeDivisionService;
+import pt.estga.territory.services.AdministrativeDivisionQueryService;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import java.util.List;
 @Tag(name = "Administrative Divisions", description = "Endpoints for administrative divisions.")
 public class AdministrativeDivisionController {
 
-    private final AdministrativeDivisionService service;
+    private final AdministrativeDivisionQueryService service;
     private final AdministrativeDivisionMapper mapper;
 
     @GetMapping("/search")
