@@ -229,17 +229,23 @@ public class GenericSpecification<T> implements Specification<T> {
 
     private Path<?> getPath(Root<T> root, String field) {
         String[] parts = field.split("\\.");
-        From<?, ?> path = root;
+        Path<?> path = root;
 
-        for (String part : parts) {
-            if (path == null) {
-                throw new IllegalArgumentException("Invalid path segment '" + part + "' for field: " + field);
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+
+            // If it's not the last part, we MUST be able to join/navigate
+            if (i < parts.length - 1) {
+                if (path instanceof From<?, ?> from) {
+                    path = from.join(part, criteria.getJoinType());
+                } else {
+                    path = path.get(part);
+                }
+            } else {
+                // Last part: just get the attribute
+                path = path.get(part);
             }
-
-            From<?, ?> from = path;
-            path = from.join(part, criteria.getJoinType());
         }
-
         return path;
     }
 
