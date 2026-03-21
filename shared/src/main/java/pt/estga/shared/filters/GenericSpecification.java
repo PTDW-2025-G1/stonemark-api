@@ -1,5 +1,6 @@
 package pt.estga.shared.filters;
 
+import pt.estga.shared.filters.enums.FilterOperator;
 import pt.estga.shared.filters.enums.LikeMode;
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,10 @@ public class GenericSpecification<T> implements Specification<T> {
         Path<?> path = getPath(root, criteria.getField(), joinCache);
         if (path == null) {
             throw new IllegalArgumentException(invalidFilterMessage());
+        }
+
+        if (value == null && !criteria.getOperator().equals(FilterOperator.IS_NULL) && !criteria.getOperator().equals(FilterOperator.IS_NOT_NULL)) {
+            throw new IllegalArgumentException("Null value not allowed for operator: " + criteria.getOperator());
         }
 
         Predicate predicate = switch (criteria.getOperator()) {
@@ -147,7 +152,11 @@ public class GenericSpecification<T> implements Specification<T> {
 
     private String escapeLike(String input, char escapeChar) {
         String esc = String.valueOf(escapeChar);
-        return input.replace(esc, esc + esc).replace("%", esc + "%").replace("_", esc + "_");
+        return input.replace(esc, esc + esc)
+                    .replace("%", esc + "%")
+                    .replace("_", esc + "_")
+                    .replace("[", esc + "[")
+                    .replace("]", esc + "]");
     }
 
     private Predicate inPredicate(Path<?> path, List<?> values) {
@@ -159,6 +168,7 @@ public class GenericSpecification<T> implements Specification<T> {
         return path.in(converted);
     }
 
+    // Updated betweenPredicate to auto-swap start and end values
     @SuppressWarnings("unchecked")
     private <Y extends Comparable<? super Y>> Predicate betweenPredicate(CriteriaBuilder cb, Path<?> path, List<?> values) {
         Objects.requireNonNull(values, "BETWEEN operator requires a non-null list of values");
@@ -170,7 +180,12 @@ public class GenericSpecification<T> implements Specification<T> {
         Y start = converted.get(0);
         Y end = converted.get(1);
 
-        if (start.compareTo(end) > 0) throw new IllegalArgumentException("BETWEEN start value must be less than or equal to end value");
+        if (start.compareTo(end) > 0) {
+            Y temp = start;
+            start = end;
+            end = temp;
+        }
+
         return cb.between((Path<Y>) path, start, end);
     }
 
@@ -194,7 +209,7 @@ public class GenericSpecification<T> implements Specification<T> {
 
         for (String part : parts) {
             if (path instanceof From<?, ?> from) {
-                path = from.join(part, JoinType.LEFT);
+                path = from.join(part, criteria.getJoinType());
             } else {
                 throw new IllegalStateException("Path resolution failed for field: " + field);
             }

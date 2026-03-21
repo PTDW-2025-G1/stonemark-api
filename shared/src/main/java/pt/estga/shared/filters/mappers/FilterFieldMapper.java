@@ -38,6 +38,6 @@ public class FilterFieldMapper {
      * @return true if the field is allowed, false otherwise
      */
     public boolean isFieldAllowed(String field) {
-        return true; // Placeholder logic, adjust as needed for specific mappers.
+        return fieldMapper.isFieldAllowed(field);
     }
 }

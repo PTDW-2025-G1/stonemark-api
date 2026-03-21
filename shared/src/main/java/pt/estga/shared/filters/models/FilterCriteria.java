@@ -1,5 +1,6 @@
 package pt.estga.shared.filters.models;
 
+import jakarta.persistence.criteria.JoinType;
 import lombok.*;
 import pt.estga.shared.filters.enums.FilterOperator;
 import pt.estga.shared.filters.enums.LikeMode;
@@ -28,6 +29,8 @@ public class FilterCriteria {
     @Builder.Default
     private final LikeMode likeMode = LikeMode.CONTAINS;
     private final boolean caseSensitive;
+    @Builder.Default
+    private final JoinType joinType = JoinType.LEFT;
 
     /**
      * Creates a validated builder for constructing FilterCriteria instances.
@@ -47,9 +50,9 @@ public class FilterCriteria {
      *
      * @return A validated builder instance for FilterCriteria.
      */
-    public static FilterCriteria validatedBuilder(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive) {
+    public static FilterCriteria validatedBuilder(String field, FilterOperator operator, Object value, LikeMode likeMode, boolean caseSensitive, JoinType joinType) {
         if (field == null || field.isBlank()) throw new IllegalArgumentException("Field cannot be blank");
         if (operator == null) throw new IllegalArgumentException("Operator cannot be null");
-        return new FilterCriteria(field, operator, value, likeMode, caseSensitive);
+        return new FilterCriteria(field, operator, value, likeMode, caseSensitive, joinType);
     }
 }
