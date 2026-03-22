@@ -1,4 +1,4 @@
-package pt.estga.shared.config;
+package pt.estga.notification.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

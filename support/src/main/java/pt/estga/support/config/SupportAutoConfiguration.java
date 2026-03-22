@@ -8,6 +8,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @AutoConfiguration
 @ComponentScan("pt.estga.support")
 @EnableJpaRepositories("pt.estga.support.repositories")
-@EntityScan("pt.estga.contact.entities")
-public class ContactAutoConfiguration {
+@EntityScan("pt.estga.support.entities")
+public class SupportAutoConfiguration {
 }

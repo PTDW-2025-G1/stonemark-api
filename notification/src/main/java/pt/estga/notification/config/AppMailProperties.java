@@ -1,4 +1,4 @@
-package pt.estga.shared.config;
+package pt.estga.notification.config;
 
 import java.util.HashMap;
 import java.util.Map;

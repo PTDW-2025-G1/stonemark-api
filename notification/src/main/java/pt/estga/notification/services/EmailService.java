@@ -1,4 +1,4 @@
-package pt.estga.shared.services;
+package pt.estga.notification.services;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -8,17 +8,16 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import pt.estga.shared.models.Email;
+import pt.estga.notification.models.Email;
 
 @Service
 @AllArgsConstructor
 @Slf4j
-public class EmailServiceImpl implements EmailService {
+public class EmailService {
 
     private final JavaMailSender mailSender;
     private final EmailTemplateService templateService;
 
-    @Override
     @Async
     public void sendEmail(Email email) {
         try {

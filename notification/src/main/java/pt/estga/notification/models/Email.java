@@ -1,4 +1,4 @@
-package pt.estga.shared.models;
+package pt.estga.notification.models;
 
 import lombok.Builder;
 import lombok.Data;
