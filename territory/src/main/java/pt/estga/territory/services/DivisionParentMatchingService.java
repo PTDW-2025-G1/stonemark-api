@@ -49,15 +49,14 @@ public class DivisionParentMatchingService {
     }
 
     private Integer getParentAdminLevel(int adminLevel) {
-        switch (adminLevel) {
-            case 8: // Parish
-                return 7; // Parent is Municipality
-            case 7: // Municipality
-                return 6; // Parent is District
-            case 6: // District
-                return null;
-            default:
-                return null;
-        }
+        return switch (adminLevel) {
+            case 8 -> // Parish
+                    7; // Parent is Municipality
+            case 7 -> // Municipality
+                    6; // Parent is District
+            case 6 -> // District
+                    null;
+            default -> null;
+        };
     }
 }

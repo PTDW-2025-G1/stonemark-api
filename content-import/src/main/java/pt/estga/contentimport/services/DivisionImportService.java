@@ -1,4 +1,4 @@
-package pt.estga.territory.services;
+package pt.estga.contentimport.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,6 +10,7 @@ import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
+import pt.estga.territory.services.DivisionParentMatchingService;
 
 import java.io.BufferedReader;
 import java.io.IOException;

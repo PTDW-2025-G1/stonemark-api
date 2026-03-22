@@ -1,4 +1,4 @@
-package pt.estga.content.services;
+package pt.estga.contentimport.services;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
 import pt.estga.content.repositories.MonumentRepository;
+import pt.estga.content.services.MonumentService;
 import pt.estga.territory.services.AdministrativeDivisionService;
 
 import java.io.IOException;

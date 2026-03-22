@@ -1,4 +1,4 @@
-package pt.estga.content.controllers;
+package pt.estga.contentimport;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import pt.estga.contentimport.services.DivisionImportService;
+import pt.estga.contentimport.services.MonumentImportService;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
-import pt.estga.territory.services.DivisionImportService;
-import pt.estga.content.services.MonumentImportService;
 
 import java.io.InputStream;
 
