@@ -9,7 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.MonumentQueryService;
+import pt.estga.monument.services.MonumentQueryService;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.monument.dots.MonumentListDto;
 

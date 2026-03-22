@@ -1,10 +1,12 @@
-package pt.estga.monument;
+package pt.estga.monument.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.monument.Monument;
+import pt.estga.monument.MonumentRepository;
 
 import java.util.Optional;
 

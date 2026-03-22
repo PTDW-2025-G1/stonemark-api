@@ -12,7 +12,7 @@ import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.services.MarkOccurrenceService;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.decision.services.SubmissionDecisionService;
-import pt.estga.monument.MonumentService;
+import pt.estga.monument.services.MonumentService;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.events.SubmissionAcceptedEvent;
 import pt.estga.submission.events.SubmissionScoredEvent;
