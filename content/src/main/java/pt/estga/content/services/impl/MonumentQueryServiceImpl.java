@@ -2,20 +2,16 @@ package pt.estga.content.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Geometry;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
-import pt.estga.content.repositories.MonumentQueryRepository;
+import pt.estga.content.repositories.MonumentRepository;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.territory.services.AdministrativeDivisionService;
+import pt.estga.territory.services.AdministrativeDivisionQueryService;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,8 +19,8 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class MonumentQueryServiceImpl implements MonumentQueryService {
 
-    private final MonumentQueryRepository repository;
-    private final AdministrativeDivisionService administrativeDivisionService;
+    private final MonumentRepository repository;
+    private final AdministrativeDivisionQueryService administrativeDivisionService;
 
     @Override
     public Page<Monument> findAll(Pageable pageable) {
@@ -44,17 +40,6 @@ public class MonumentQueryServiceImpl implements MonumentQueryService {
     @Override
     public Optional<Monument> findById(Long id) {
         return repository.findById(id);
-    }
-
-    @Override
-    public List<Monument> findByCoordinatesInRange(double latitude, double longitude, double range) {
-        return repository.findByCoordinatesInRange(latitude, longitude, range, true);
-    }
-
-    @Override
-    public List<Monument> findLatest(int limit) {
-        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return repository.findByActive(pageable, true).getContent();
     }
 
     @Override
@@ -82,11 +67,5 @@ public class MonumentQueryServiceImpl implements MonumentQueryService {
             }
         }
         return Page.empty(pageable);
-    }
-
-    @Override
-    @Cacheable("popularMonuments")
-    public List<Monument> findPopular(int limit) {
-        return repository.findPopular(PageRequest.of(0, limit), true);
     }
 }

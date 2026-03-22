@@ -2,9 +2,9 @@ package pt.estga.decision.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor

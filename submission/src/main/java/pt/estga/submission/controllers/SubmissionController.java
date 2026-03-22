@@ -14,7 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.submission.dtos.ProposalSummaryDto;
 import pt.estga.submission.mappers.SubmissionMapper;
-import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
+import pt.estga.submission.services.MarkOccurrenceSubmissionQueryService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
 
@@ -24,7 +24,7 @@ import pt.estga.user.entities.User;
 @Tag(name = "Proposals (Generic)", description = "Generic endpoints for listing and querying all types of proposals.")
 public class SubmissionController {
 
-    private final MarkOccurrenceSubmissionRepository submissionRepository;
+    private final MarkOccurrenceSubmissionQueryService submissionQueryService;
     private final SubmissionMapper submissionMapper;
 
     @Operation(summary = "List all proposals by user",
@@ -39,7 +39,7 @@ public class SubmissionController {
             @RequestParam(defaultValue = "6") int size
     ) {
         User user = User.builder().id(principal.getId()).build();
-        return submissionRepository.findBySubmittedBy(user, PageRequest.of(page, size))
+        return submissionQueryService.findBySubmittedBy(PageRequest.of(page, size), user)
                 .map(submissionMapper::toSummaryDto);
     }
 
@@ -52,7 +52,7 @@ public class SubmissionController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<ProposalSummaryDto> findById(@PathVariable Long id) {
-        return submissionRepository.findById(id)
+        return submissionQueryService.findById(id)
                 .map(submissionMapper::toSummaryDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

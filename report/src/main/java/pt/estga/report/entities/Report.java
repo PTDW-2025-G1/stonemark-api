@@ -3,8 +3,8 @@ package pt.estga.report.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import pt.estga.shared.audit.AuditedEntity;
-import pt.estga.shared.enums.TargetType;
+import pt.estga.shared.audit.CreationAuditedEntity;
+import pt.estga.content.enums.TargetType;
 import pt.estga.report.enums.ReportReason;
 import pt.estga.report.enums.ReportStatus;
 
@@ -21,7 +21,7 @@ import pt.estga.report.enums.ReportStatus;
 @Getter
 @Setter
 @Builder
-public class Report extends AuditedEntity {
+public class Report extends CreationAuditedEntity {
 
     @Id
     @GeneratedValue
@@ -44,4 +44,5 @@ public class Report extends AuditedEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReportStatus status;
+
 }

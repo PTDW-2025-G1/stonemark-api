@@ -21,15 +21,15 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        String telegramId = input.getUserId();
+        String platformUserId = input.getUserId();
 
-        // Generate code for this telegram user
-        ActionCode actionCode = verificationService.generateChatbotVerificationCode(telegramId);
+        // Generate code for this platform user
+        ActionCode actionCode = verificationService.generateChatbotVerificationCode(platformUserId);
 
         // Store code in context to display
         context.setVerificationCode(actionCode.getCode());
 
-        log.info("Generated verification code for Telegram user: {}", telegramId);
+        log.info("Generated verification code for platform user: {}", platformUserId);
 
         return HandlerOutcome.SUCCESS;
     }

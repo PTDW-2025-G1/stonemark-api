@@ -7,7 +7,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import pt.estga.shared.enums.PrincipalType;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.user.dtos.KeycloakIdentitySnapshot;
 import pt.estga.user.entities.User;
@@ -33,7 +32,6 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
         // Build AppPrincipal from resolved user
         AppPrincipal principal = AppPrincipal.builder()
                 .id(user.getId())
-                .type(PrincipalType.USER)
                 .identifier(user.getUsername())
                 .password(null)
                 .authorities(authorities)

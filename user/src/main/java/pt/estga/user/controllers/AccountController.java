@@ -17,12 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
-import pt.estga.shared.dtos.MessageResponseDto;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
+import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.AccountService;
 import pt.estga.user.services.UserService;
 
 import java.io.IOException;
@@ -35,7 +34,6 @@ import java.io.IOException;
 public class AccountController {
 
     private final UserService userService;
-    private final AccountService accountService;
     private final UserMapper mapper;
     private final MediaService mediaService;
 
@@ -52,17 +50,6 @@ public class AccountController {
                 .orElseThrow();
         return ResponseEntity.ok(mapper.toDto(user));
     }
-
-    @GetMapping("/security/status")
-    @Operation(
-            summary = "Get account security status",
-            description = "Returns information about available authentication methods."
-    )
-    public ResponseEntity<AccountSecurityStatusDto> getSecurityStatus(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        return ResponseEntity.ok(accountService.getSecurityStatus(user));
-    }
-
 
     @Operation(summary = "Update user profile", description = "Updates the profile information of the authenticated user.")
     @ApiResponses(value = {

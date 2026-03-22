@@ -22,7 +22,7 @@ import pt.estga.content.services.MarkQueryService;
 import pt.estga.content.services.MarkService;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.io.IOException;
 import java.net.URI;

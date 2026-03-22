@@ -9,11 +9,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
-import pt.estga.user.services.UserIdentityService;
+import pt.estga.user.services.ChatbotAccountService;
 import pt.estga.user.services.UserService;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.verification.dtos.ChatbotVerificationResponseDto;
-import pt.estga.verification.events.MessengerAccountConnectedEvent;
+import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
 import java.util.Optional;
@@ -26,7 +26,7 @@ public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
     private final UserService userService;
-    private final UserIdentityService userIdentityService;
+    private final ChatbotAccountService chatbotAccountService;
     private final ApplicationEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
@@ -35,22 +35,22 @@ public class AccountVerificationController {
             @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
 
-        Optional<String> telegramIdOpt = verificationService.verifyAndGetTelegramId(request.code());
+        Optional<String> platformUserIdOpt = verificationService.verifyAndGetPlatformUserId(request.code());
 
-        if (telegramIdOpt.isEmpty()) {
+        if (platformUserIdOpt.isEmpty()) {
             return ResponseEntity.badRequest().body(
                     ChatbotVerificationResponseDto.error("Invalid or expired code")
             );
         }
 
-        String telegramId = telegramIdOpt.get();
+        String platformUserId = platformUserIdOpt.get();
         User user = userService.findById(principal.getId()).orElseThrow();
 
-        // Create or update telegram identity
-        userIdentityService.createOrUpdateTelegramIdentity(user, telegramId);
+        // Create or update chatbot identity (platform-agnostic)
+        chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
 
-        // Publish event for chatbot to handle notification
-        eventPublisher.publishEvent(new MessengerAccountConnectedEvent(this, "TELEGRAM", telegramId, user.getId()));
+        // Publish event for chatbot to handle notification, platform set to TELEGRAM for now
+        eventPublisher.publishEvent(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
 
         return ResponseEntity.ok(
                 ChatbotVerificationResponseDto.success("Messaging account linked successfully")

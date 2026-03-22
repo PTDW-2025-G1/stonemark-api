@@ -35,6 +35,7 @@
         <module>report</module>
         <module>territory</module>
         <module>decision</module>
+        <module>shared-web</module>
     </modules>
     <scm>
 		<connection/>
@@ -178,6 +179,13 @@
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
             <version>3.2.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.21.2</version>
             <scope>compile</scope>
         </dependency>
 

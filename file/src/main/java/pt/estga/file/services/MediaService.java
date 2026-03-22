@@ -1,52 +1,127 @@
 package pt.estga.file.services;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import pt.estga.file.enums.MediaStatus;
+import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.file.enums.StorageProvider;
+import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
-/**
- * Service interface for managing media files.
- * Handles both the metadata (database) and the physical storage of media content.
- */
-public interface MediaService {
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MediaService {
 
-    /**
-     * Saves a media file, persisting its metadata and storing its content.
-     *
-     * @param fileStream the input stream of the file content
-     * @param filename   the original filename
-     * @return the saved MediaFile entity containing metadata
-     * @throws IOException if an I/O error occurs during storage
-     */
-    MediaFile save(InputStream fileStream, String filename) throws IOException;
+    private final MediaMetadataService mediaMetadataService;
+    private final MediaContentService mediaContentService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final StoragePathStrategy storagePathStrategy;
 
-    /**
-     * Loads a file as a {@link Resource} from the given file id.
-     *
-     * @param fileId the id of the file to load
-     * @return the loaded file as a {@link Resource}
-     * @throws RuntimeException if the file cannot be loaded
-     */
-    Resource loadFileById(Long fileId);
+    @Value("${storage.provider:local}")
+    private String storageProvider;
 
-    /**
-     * Loads a file as a {@link Resource} from the given MediaFile entity.
-     * Use this to avoid redundant DB lookups if the entity is already known.
-     *
-     * @param mediaFile the media file entity
-     * @return the loaded file as a {@link Resource}
-     */
-    Resource loadFile(MediaFile mediaFile);
+    @Transactional
+    public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
+            throw new IllegalArgumentException("Filename cannot be null or empty");
+        }
 
-    /**
-     * Finds a media file entity by its ID.
-     *
-     * @param id the id of the media file
-     * @return an Optional containing the MediaFile if found
-     */
-    Optional<MediaFile> findById(Long id);
+        // Create initial record with 0 size
+        MediaFile media = createInitialMediaFile(originalFilename);
+        media = mediaMetadataService.saveMetadata(media);
 
+        String extension = StringUtils.getFilenameExtension(originalFilename);
+        String newFilename = "stonemark-" + media.getId() + (extension != null ? "." + extension : "");
+        media.setFilename(newFilename);
+
+        // Use the strategy to generate the path
+        String relativePath = storagePathStrategy.generatePath(media);
+
+        CountingInputStream countingStream = new CountingInputStream(fileStream);
+        
+        // Delegate content storage to MediaContentService
+        String storagePath = mediaContentService.saveContent(countingStream, relativePath);
+
+        media.setStoragePath(storagePath);
+        media.setSize(countingStream.getCount());
+        media.setStatus(MediaStatus.UPLOADED);
+        
+        MediaFile savedMedia = mediaMetadataService.saveMetadata(media);
+
+        applicationEventPublisher.publishEvent(
+            new MediaUploadedEvent(savedMedia.getId())
+        );
+
+        return savedMedia;
+    }
+
+    private MediaFile createInitialMediaFile(String originalFilename) {
+        return MediaFile.builder()
+                .filename(originalFilename)
+                .originalFilename(originalFilename)
+                .size(0L)
+                .storageProvider(StorageProvider.valueOf(storageProvider.toUpperCase()))
+                .storagePath("")
+                .status(MediaStatus.PROCESSING)
+                .build();
+    }
+
+    public Resource loadFileById(Long fileId) {
+        log.info("Loading file with ID: {}", fileId);
+        MediaFile mediaFile = mediaMetadataService.findById(fileId)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
+        return loadFile(mediaFile);
+    }
+
+    public Resource loadFile(MediaFile mediaFile) {
+        if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
+            throw new FileNotFoundException("Media file has no storage path");
+        }
+        return mediaContentService.loadContent(mediaFile.getStoragePath());
+    }
+
+    public Optional<MediaFile> findById(Long id) {
+        return mediaMetadataService.findById(id);
+    }
+
+    @Getter
+    private static class CountingInputStream extends FilterInputStream {
+        private long count;
+
+        protected CountingInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int result = super.read();
+            if (result != -1) {
+                count++;
+            }
+            return result;
+        }
+
+        @Override
+        public int read(byte @NonNull [] b, int off, int len) throws IOException {
+            int result = super.read(b, off, len);
+            if (result != -1) {
+                count += result;
+            }
+            return result;
+        }
+    }
 }

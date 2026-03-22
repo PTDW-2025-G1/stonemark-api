@@ -12,7 +12,6 @@ public class AppRevisionListener implements RevisionListener {
             ((AuditRevisionEntity) revisionEntity).setActor(
                     new AuditActor(
                             principal.getId(),
-                            principal.getType(),
                             principal.getIdentifier()
                     )
             );

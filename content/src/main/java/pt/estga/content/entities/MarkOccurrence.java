@@ -22,18 +22,18 @@ public class MarkOccurrence extends AuditedEntity {
     @GeneratedValue
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Mark mark;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Monument monument;
-
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile cover;
 
     @Type(PgVectorType.class)
     @Column(columnDefinition = "vector")
     private float[] embedding;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Mark mark;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Monument monument;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;

@@ -33,7 +33,7 @@ public class ActionCode {
     private ActionCodeType type;
 
     @Column(nullable = false)
-    private String telegramId;
+    private String platformUserId;
 
     @Column(nullable = false)
     private boolean consumed;

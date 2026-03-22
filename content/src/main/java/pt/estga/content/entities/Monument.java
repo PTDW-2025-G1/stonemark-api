@@ -32,11 +32,11 @@ public class Monument extends AuditedEntity {
     private Double longitude;
     private String website;
 
-    @Column(columnDefinition = "geometry(Point, 4326)")
-    private Point location;
-
     private String street;
     private String houseNumber;
+
+    @Column(columnDefinition = "geometry(Point, 4326)")
+    private Point location;
 
     @ManyToOne(fetch = FetchType.EAGER)
     private AdministrativeDivision parish;
@@ -49,9 +49,6 @@ public class Monument extends AuditedEntity {
 
     @Builder.Default
     private Boolean active = true;
-
-    @OneToOne
-    private MediaFile cover;
 
     @PrePersist
     @PreUpdate

@@ -12,11 +12,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pt.estga.chatbot.services.BotEngine;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.shared.enums.PrincipalType;
-import pt.estga.shared.models.AppPrincipal;
-import pt.estga.shared.utils.ServiceAccountUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CompletableFuture;
@@ -29,8 +25,6 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final BotEngine conversationService;
     private final TelegramAdapter telegramAdapter;
     private final Executor botExecutor;
-
-    private static final Long BOT_SERVICE_ACCOUNT_ID = 2L;
 
     public StonemarkTelegramBot(String botUsername,
                                 String botToken,
@@ -86,21 +80,8 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
             return;
         }
 
-        AppPrincipal botPrincipal = AppPrincipal.builder()
-                .id(BOT_SERVICE_ACCOUNT_ID)
-                .type(PrincipalType.SERVICE)
-                .identifier("TelegramBot")
-                .password(null)
-                .authorities(Collections.emptyList())
-                .enabled(true)
-                .accountNonLocked(true)
-                .build();
-
         try {
-            ServiceAccountUtils.runAsServiceAccount(botPrincipal, () -> {
-                sendBotResponses(botInput.getChatId(), botResponses);
-                return null;
-            });
+            sendBotResponses(botInput.getChatId(), botResponses);
         } catch (Exception e) {
             log.error("Error dispatching and sending bot responses", e);
         }

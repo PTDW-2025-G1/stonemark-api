@@ -9,11 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.services.BotEngine;
-import pt.estga.shared.enums.PrincipalType;
-import pt.estga.shared.models.AppPrincipal;
-import pt.estga.shared.utils.ServiceAccountUtils;
 
-import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -27,8 +23,6 @@ public class WhatsAppWebhookController {
 
     @Value("${whatsapp.bot.token}")
     private String verifyToken;
-
-    private static final Long BOT_SERVICE_ACCOUNT_ID = 2L;
 
     @PostMapping
     public ResponseEntity<Void> onMessage(@RequestBody WhatsAppWebhookPayload payload) {
@@ -50,28 +44,14 @@ public class WhatsAppWebhookController {
                 return ResponseEntity.ok().build();
             }
 
-            // Use service account for sending messages back to WhatsApp
-            AppPrincipal botPrincipal = AppPrincipal.builder()
-                    .id(BOT_SERVICE_ACCOUNT_ID)
-                    .type(PrincipalType.SERVICE)
-                    .identifier("WhatsAppBot")
-                    .password(null)
-                    .authorities(Collections.emptyList())
-                    .enabled(true)
-                    .accountNonLocked(true)
-                    .build();
-
-            ServiceAccountUtils.runAsServiceAccount(botPrincipal, () -> {
-                for (BotResponse response : responses) {
-                    try {
-                        log.info("Sending message to {}: {}", input.getChatId(), response.getTextNode());
-                        apiClient.sendMessage(String.valueOf(input.getChatId()), response);
-                    } catch (Exception e) {
-                        log.error("Failed to send message to {}: {}", input.getChatId(), response, e);
-                    }
+            for (BotResponse response : responses) {
+                try {
+                    log.info("Sending message to {}: {}", input.getChatId(), response.getTextNode());
+                    apiClient.sendMessage(String.valueOf(input.getChatId()), response);
+                } catch (Exception e) {
+                    log.error("Failed to send message to {}: {}", input.getChatId(), response, e);
                 }
-                return null;
-            });
+            }
 
         } catch (Exception e) {
             log.error("Error processing WhatsApp webhook", e);

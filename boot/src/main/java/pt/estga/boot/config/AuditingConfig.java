@@ -16,7 +16,6 @@ public class AuditingConfig {
         return () -> SecurityUtils.currentPrincipal()
                 .map(p -> new AuditActor(
                         p.getId(),
-                        p.getType(),
                         p.getIdentifier()
                 ));
     }

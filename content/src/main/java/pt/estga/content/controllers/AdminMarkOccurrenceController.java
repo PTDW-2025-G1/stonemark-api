@@ -21,8 +21,8 @@ import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.mappers.MarkOccurrenceMapper;
 import pt.estga.content.services.MarkOccurrenceQueryService;
 import pt.estga.content.services.MarkOccurrenceService;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 

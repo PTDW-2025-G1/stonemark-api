@@ -1,11 +1,12 @@
 package pt.estga.report.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import pt.estga.shared.enums.TargetType;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import pt.estga.content.enums.TargetType;
 import pt.estga.report.entities.Report;
 
 import java.util.Optional;
 
-public interface ReportRepository extends JpaRepository<Report, Long> {
+public interface ReportRepository extends JpaRepository<Report, Long>, JpaSpecificationExecutor<Report> {
     Optional<Report> findByCreatedByIdAndTargetIdAndTargetType(Long createdById, Long targetId, TargetType targetType);
 }

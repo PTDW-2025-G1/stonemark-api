@@ -27,6 +27,10 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     locations: classpath:db/migration
+  jackson:
+    deserializer:
+      read_enum_values_using_index: false
+      accept-case-insensitive-enums: true
 
 vision:
   server:

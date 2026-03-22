@@ -10,11 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.content.dtos.MonumentDto;
 import pt.estga.content.dtos.MonumentListDto;
-import pt.estga.content.dtos.MonumentMapDto;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")
@@ -32,9 +29,14 @@ public class MonumentController {
         return ResponseEntity.ok(service.findAll(pageable).map(mapper::toListDto));
     }
 
-    @GetMapping("/map")
-    public ResponseEntity<Page<MonumentMapDto>> getAllForMap(Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toMapDto));
+    @GetMapping("/{id}")
+    public ResponseEntity<MonumentDto> getMonumentById(
+            @PathVariable Long id
+    ) {
+        return service.findById(id)
+                .map(mapper::toResponseDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/search")
@@ -61,34 +63,8 @@ public class MonumentController {
         return ResponseEntity.ok(service.findByDivisionId(id, pageable).map(mapper::toListDto));
     }
 
-    @GetMapping("/popular")
-    public ResponseEntity<List<MonumentListDto>> getPopularMonuments(
-            @RequestParam(defaultValue = "6") int limit
-    ) {
-        int safeLimit = Math.min(limit, 50);
-        return ResponseEntity.ok(mapper.toListDto(service.findPopular(safeLimit)));
-    }
-
-    @GetMapping("/latest")
-    public ResponseEntity<List<MonumentListDto>> getLatestMonuments(
-            @RequestParam(defaultValue = "6") int limit
-    ) {
-        int safeLimit = Math.min(limit, 50);
-        return ResponseEntity.ok(mapper.toListDto(service.findLatest(safeLimit)));
-    }
-
     @GetMapping("/count")
     public ResponseEntity<Long> countMonuments() {
         return ResponseEntity.ok(service.count());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<MonumentDto> getMonumentById(
-            @PathVariable Long id
-    ) {
-        return service.findById(id)
-                .map(mapper::toResponseDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 }

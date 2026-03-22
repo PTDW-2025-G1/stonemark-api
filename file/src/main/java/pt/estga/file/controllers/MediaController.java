@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +23,9 @@ import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.services.MediaService;
 import pt.estga.file.services.MediaVariantService;
-import pt.estga.shared.exceptions.FileNotFoundException;
+import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j

@@ -1,6 +1,6 @@
 package pt.estga.report.dtos;
 
-import pt.estga.shared.enums.TargetType;
+import pt.estga.content.enums.TargetType;
 import pt.estga.report.enums.ReportReason;
 import pt.estga.report.enums.ReportStatus;
 

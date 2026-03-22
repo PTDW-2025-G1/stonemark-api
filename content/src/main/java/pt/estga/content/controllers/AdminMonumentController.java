@@ -20,11 +20,9 @@ import pt.estga.content.entities.Monument;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.content.services.MonumentService;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
-import java.io.IOException;
 import java.net.URI;
 
 @RestController
@@ -51,10 +49,8 @@ public class AdminMonumentController {
     public ResponseEntity<MonumentDto> createMonument(
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
             @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         Monument monument = mapper.toEntity(monumentDto);
-
-        resolveAndSetMedia(monument, file, monumentDto.coverId());
 
         Monument createdMonument = service.create(monument);
         MonumentDto response = mapper.toResponseDto(createdMonument);
@@ -73,13 +69,11 @@ public class AdminMonumentController {
             @PathVariable Long id,
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
             @RequestPart(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
         mapper.updateEntityFromDto(monumentDto, existingMonument);
-
-        resolveAndSetMedia(existingMonument, file, monumentDto.coverId());
 
         Monument updatedMonument = service.update(existingMonument);
         return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
@@ -97,7 +91,7 @@ public class AdminMonumentController {
     public ResponseEntity<MonumentDto> uploadPhoto(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file
-    ) throws IOException {
+    ) {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -105,19 +99,8 @@ public class AdminMonumentController {
         Monument monument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-        monument.setCover(mediaFile);
         Monument updatedMonument = service.update(monument);
 
         return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
-    }
-
-    private void resolveAndSetMedia(Monument monument, MultipartFile file, Long coverId) throws IOException {
-        if (file != null && !file.isEmpty()) {
-            MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-            monument.setCover(mediaFile);
-        } else if (coverId != null) {
-            mediaService.findById(coverId).ifPresent(monument::setCover);
-        }
     }
 }

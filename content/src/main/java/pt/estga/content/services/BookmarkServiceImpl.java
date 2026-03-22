@@ -11,7 +11,7 @@ import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.repositories.BookmarkRepository;
 import pt.estga.content.repositories.MarkRepository;
 import pt.estga.content.repositories.MonumentRepository;
-import pt.estga.shared.enums.TargetType;
+import pt.estga.content.enums.TargetType;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
@@ -31,7 +31,7 @@ public class BookmarkServiceImpl implements BookmarkService {
 
     @Override
     @Transactional
-    public BookmarkDto createBookmark(Long userId, TargetType type, Long targetId) {
+    public BookmarkDto createBookmark(Long userId, TargetType type, String targetId) {
 
         bookmarkRepository.findByUserIdAndTargetTypeAndTargetId(userId, type, targetId)
                 .ifPresent(existing -> {
@@ -39,13 +39,19 @@ public class BookmarkServiceImpl implements BookmarkService {
                 });
 
         Object content = switch (type) {
-            case MONUMENT -> monumentRepository.findById(targetId)
-                    .map(monumentMapper::toResponseDto)
-                    .orElseThrow(() -> new IllegalArgumentException("Monument not found"));
+            case MONUMENT -> {
+                Long parsedId = Long.parseLong(targetId);
+                yield monumentRepository.findById(parsedId)
+                        .map(monumentMapper::toResponseDto)
+                        .orElseThrow(() -> new IllegalArgumentException("Monument not found"));
+            }
 
-            case MARK -> markRepository.findById(targetId)
-                    .map(markMapper::toDto)
-                    .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+            case MARK -> {
+                Long parsedId = Long.parseLong(targetId);
+                yield markRepository.findById(parsedId)
+                        .map(markMapper::toDto)
+                        .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+            }
 
             default -> null;
         };
@@ -71,13 +77,19 @@ public class BookmarkServiceImpl implements BookmarkService {
                 .stream()
                 .map(b -> {
                     Object content = switch (b.getTargetType()) {
-                        case MONUMENT -> monumentRepository.findById(b.getTargetId())
-                                .map(monumentMapper::toResponseDto)
-                                .orElse(null);
+                        case MONUMENT -> {
+                            Long parsedId = Long.parseLong(b.getTargetId());
+                            yield monumentRepository.findById(parsedId)
+                                    .map(monumentMapper::toResponseDto)
+                                    .orElse(null);
+                        }
 
-                        case MARK -> markRepository.findById(b.getTargetId())
-                                .map(markMapper::toDto)
-                                .orElse(null);
+                        case MARK -> {
+                            Long parsedId = Long.parseLong(b.getTargetId());
+                            yield markRepository.findById(parsedId)
+                                    .map(markMapper::toDto)
+                                    .orElse(null);
+                        }
 
                         default -> null;
                     };
@@ -96,7 +108,7 @@ public class BookmarkServiceImpl implements BookmarkService {
     }
 
     @Override
-    public boolean isBookmarked(Long userId, TargetType type, Long targetId) {
+    public boolean isBookmarked(Long userId, TargetType type, String targetId) {
         return bookmarkRepository
                 .findByUserIdAndTargetTypeAndTargetId(userId, type, targetId)
                 .isPresent();

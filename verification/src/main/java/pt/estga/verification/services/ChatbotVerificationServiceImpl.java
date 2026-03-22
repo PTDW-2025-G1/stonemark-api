@@ -25,16 +25,16 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
 
     @Override
     @Transactional
-    public ActionCode generateChatbotVerificationCode(String telegramId) {
-        log.info("Generating chatbot verification code for Telegram user: {}", telegramId);
+    public ActionCode generateChatbotVerificationCode(String platformUserId) {
+        log.info("Generating chatbot verification code for platform user: {}", platformUserId);
 
-        // Invalidate existing codes for this telegram ID and type
-        actionCodeRepository.deleteByTelegramIdAndType(telegramId, ActionCodeType.CHATBOT_VERIFICATION);
+        // Invalidate existing codes for this platform user ID and type
+        actionCodeRepository.deleteByPlatformUserIdAndType(platformUserId, ActionCodeType.CHATBOT_VERIFICATION);
 
         String code = generateRandomCode();
         ActionCode actionCode = ActionCode.builder()
                 .code(code)
-                .telegramId(telegramId)
+                .platformUserId(platformUserId)
                 .type(ActionCodeType.CHATBOT_VERIFICATION)
                 .expiresAt(Instant.now().plus(EXPIRATION_MINUTES, ChronoUnit.MINUTES))
                 .consumed(false)
@@ -45,7 +45,7 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
 
     @Override
     @Transactional
-    public Optional<String> verifyAndGetTelegramId(String code) {
+    public Optional<String> verifyAndGetPlatformUserId(String code) {
         log.info("Verifying chatbot code: {}", code);
 
         Optional<ActionCode> actionCodeOptional = actionCodeRepository.findByCode(code);
@@ -72,14 +72,14 @@ public class ChatbotVerificationServiceImpl implements ChatbotVerificationServic
             return Optional.empty();
         }
 
-        String telegramId = actionCode.getTelegramId();
+        String platformUserId = actionCode.getPlatformUserId();
 
         // Mark code as consumed
         actionCode.setConsumed(true);
         actionCodeRepository.save(actionCode);
 
-        log.info("Chatbot verification successful for Telegram user: {}", telegramId);
-        return Optional.of(telegramId);
+        log.info("Chatbot verification successful for platform user: {}", platformUserId);
+        return Optional.of(platformUserId);
     }
 
     private String generateRandomCode() {

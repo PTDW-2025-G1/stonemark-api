@@ -1,4 +1,3 @@
 package pt.estga.verification.dtos;
 
-public record ChatbotVerificationRequestDto(String code) {
-}
+public record ChatbotVerificationRequestDto(String code) { }

@@ -18,9 +18,8 @@ import pt.estga.decision.mappers.DecisionMapper;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
 import pt.estga.decision.services.DecisionServiceFactory;
 import pt.estga.decision.services.SubmissionDecisionService;
-import pt.estga.shared.exceptions.InvalidCredentialsException;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.services.UserService;
 
 import java.util.List;
@@ -79,9 +78,6 @@ public class DecisionsController {
             @RequestBody @Valid ManualDecisionRequest request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal
     ) {
-        if (principal == null) {
-            throw new InvalidCredentialsException("User not authenticated");
-        }
         var moderator = userService.findById(principal.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Moderator not found"));
         
@@ -119,7 +115,6 @@ public class DecisionsController {
                 .orElseThrow(() -> new ResourceNotFoundException("Decision attempt not found with id: " + attemptId));
         
         if (!attempt.getSubmission().getId().equals(id)) {
-            // Returning 400 Bad Request for mismatched submission ID
             return ResponseEntity.badRequest().build();
         }
         

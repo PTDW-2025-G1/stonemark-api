@@ -7,6 +7,7 @@ import pt.estga.content.entities.Monument;
 import pt.estga.content.repositories.MonumentRepository;
 import pt.estga.content.services.MonumentService;
 import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.territory.services.AdministrativeDivisionQueryService;
 import pt.estga.territory.services.AdministrativeDivisionService;
 
 import java.util.List;
@@ -18,7 +19,8 @@ import java.util.Optional;
 public class MonumentServiceHibernateImpl implements MonumentService {
 
     private final MonumentRepository repository;
-    private final AdministrativeDivisionService administrativeDivisionService;
+    private final AdministrativeDivisionQueryService queryService;
+    private final AdministrativeDivisionService service;
 
     @Override
     public Optional<Monument> findById(Long id) {
@@ -56,7 +58,7 @@ public class MonumentServiceHibernateImpl implements MonumentService {
     @Override
     public void enrichWithDivisions(Monument m) {
         if (m.getLatitude() != null && m.getLongitude() != null) {
-            List<AdministrativeDivision> divisions = administrativeDivisionService.findByCoordinates(m.getLatitude(), m.getLongitude());
+            List<AdministrativeDivision> divisions = queryService.findByCoordinates(m.getLatitude(), m.getLongitude());
             m.setParish(null);
             m.setMunicipality(null);
             m.setDistrict(null);
@@ -89,10 +91,10 @@ public class MonumentServiceHibernateImpl implements MonumentService {
             return;
         }
         if (oldDivision != null) {
-            administrativeDivisionService.decrementMonumentsCount(oldDivision.getId());
+            service.decrementMonumentsCount(oldDivision.getId());
         }
         if (newDivision != null) {
-            administrativeDivisionService.incrementMonumentsCount(newDivision.getId());
+            service.incrementMonumentsCount(newDivision.getId());
         }
     }
 }

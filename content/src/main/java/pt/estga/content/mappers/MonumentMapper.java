@@ -16,25 +16,17 @@ import java.util.List;
 @Mapper(componentModel = "spring", uses = {MediaFileMapper.class, AdministrativeDivisionMapper.class})
 public interface MonumentMapper {
 
-    @Mapping(source = "cover.id", target = "coverId")
     MonumentDto toResponseDto(Monument monument);
 
-    List<MonumentDto> toResponseDto(List<Monument> monuments);
-
-    @Mapping(source = "cover.id", target = "coverId")
     MonumentListDto toListDto(Monument monument);
 
-    @Mapping(source = "cover.id", target = "coverId")
     List<MonumentListDto> toListDto(List<Monument> monuments);
-
-    MonumentMapDto toMapDto(Monument monument);
 
     MonumentMinDto toMinDto(Monument monument);
 
     @Mapping(source = "parishId", target = "parish.id")
     @Mapping(source = "municipalityId", target = "municipality.id")
     @Mapping(source = "districtId", target = "district.id")
-    @Mapping(target = "cover", ignore = true)
     @Mapping(target = "location", ignore = true)
     Monument toEntity(MonumentRequestDto dto);
 
@@ -42,7 +34,6 @@ public interface MonumentMapper {
     @Mapping(source = "parishId", target = "parish.id")
     @Mapping(source = "municipalityId", target = "municipality.id")
     @Mapping(source = "districtId", target = "district.id")
-    @Mapping(target = "cover", ignore = true)
     @Mapping(target = "location", ignore = true)
     void updateEntityFromDto(MonumentRequestDto dto, @MappingTarget Monument entity);
 

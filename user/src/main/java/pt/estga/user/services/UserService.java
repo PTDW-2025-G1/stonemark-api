@@ -1,43 +1,91 @@
 package pt.estga.user.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import pt.estga.shared.enums.UserRole;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.entities.User;
+import pt.estga.sharedweb.filtering.QueryProcessor;
+import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.sharedweb.models.QueryResult;
+import pt.estga.sharedweb.utils.FilterValidator;
+import pt.estga.user.dtos.UserPublicDto;
+import pt.estga.user.mappers.UserMapper;
 
 import java.util.Optional;
 
-public interface UserService {
+@Service
+@RequiredArgsConstructor
+public class UserService {
 
-    Page<User> findAll(Pageable pageable);
+    private final UserRepository repository;
+    private final ChatbotAccountRepository chatbotAccountRepository;
+    private final QueryProcessor<User> queryProcessor;
+    private final UserMapper mapper;
 
-    Optional<User> findById(Long id);
+    @Transactional(readOnly = true)
+    public Page<UserPublicDto> searchPublicUsers(PagedRequest request) {
+        FilterValidator.validate(request.getFilter(), UserPublicDto.class);
+        FilterValidator.validateSort(request.getSort(), UserPublicDto.class);
 
-    Optional<User> findByUsername(String username);
+        QueryResult<User> result = queryProcessor.process(request);
 
-    Optional<User> findByEmail(String email);
+        Page<User> page = repository.findAll(
+                result.specification(),
+                result.pageable()
+        );
 
-    Optional<User> findByKeycloakSub(String keycloakSub);
+        return page.map(mapper::toPublicDto);
+    }
 
-    Optional<User> findByIdForProfile(Long id);
+    public Optional<User> findById(Long id) {
+        return repository.findById(id);
+    }
 
-    Optional<User> findByIdWithIdentities(Long id);
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(String email) {
+        return repository.findByEmail(email);
+    }
 
-    boolean existsByUsername(String username);
+    @Transactional(readOnly = true)
+    public Optional<User> findByKeycloakSub(String keycloakSub) {
+        return repository.findByKeycloakSub(keycloakSub);
+    }
 
-    boolean existsByEmail(String email);
+    public Optional<User> findByIdForProfile(Long id) {
+        return repository.findByIdForProfile(id);
+    }
 
-    boolean existsByKeycloakSub(String keycloakSub);
+    public boolean existsByUsername(String username) {
+        return repository.existsByUsername(username);
+    }
 
-    void deactivateByKeycloakSub(String keycloakSub);
+    public User create(User user) {
+        return repository.save(user);
+    }
 
-    User create(User user);
+    public User update(User user) {
+        return repository.save(user);
+    }
 
-    User update(User user);
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
 
-    Optional<User> updateRole(User user, UserRole role);
+    public void softDeleteUser(Long id) {
+        User user = repository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
 
-    void deleteById(Long id);
+        chatbotAccountRepository.deleteByUser(user);
 
-    void softDeleteUser(Long id);
+        user.setFirstName("deleted");
+        user.setLastName("user");
+        user.setUsername(null);
+        user.setEmail(null);
+        user.setEmailVerified(false);
+        user.setEnabled(false);
+
+        repository.save(user);
+    }
 }
