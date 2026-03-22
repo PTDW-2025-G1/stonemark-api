@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
 import pt.estga.content.repositories.MonumentRepository;
-import pt.estga.content.services.MonumentService;
-import pt.estga.territory.services.AdministrativeDivisionService;
+import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,9 +23,8 @@ import java.util.Map;
 @Slf4j
 public class MonumentImportService {
 
-    private final MonumentRepository repository;
-    private final AdministrativeDivisionService administrativeDivisionService;
-    private final MonumentService monumentService;
+    private final MonumentRepository monumentRepository;
+    private final AdministrativeDivisionRepository administrativeDivisionRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -38,7 +37,7 @@ public class MonumentImportService {
             return 0;
         }
 
-        // Phase 1: Process monuments from GeoJSON
+        // Process monuments from GeoJSON
         Map<String, Monument> monumentMap = new LinkedHashMap<>();
 
         for (JsonNode feature : features) {
@@ -79,7 +78,7 @@ public class MonumentImportService {
             monument.setHouseNumber(properties.path("addr:housenumber").asText(null));
 
             // Set all divisions (parish, municipality, district) using standard service logic
-            monumentService.enrichWithDivisions(monument);
+            enrichWithDivisions(monument);
 
             if (monumentMap.containsKey(externalId)) {
                 log.warn("Duplicate monument external ID found: '{}'. The last entry will be used.", externalId);
@@ -87,10 +86,10 @@ public class MonumentImportService {
             monumentMap.put(externalId, monument);
         }
 
-        // Phase 2: Persist monuments
+        // Persist monuments
         List<Monument> toSave = new ArrayList<>();
         for (Monument incoming : monumentMap.values()) {
-            repository.findByExternalId(incoming.getExternalId())
+            monumentRepository.findByExternalId(incoming.getExternalId())
                     .ifPresentOrElse(
                             existing -> {
                                 incoming.setId(existing.getId()); // Set ID to trigger an update
@@ -100,13 +99,22 @@ public class MonumentImportService {
                     );
         }
 
-        List<Monument> savedMonuments = repository.saveAll(toSave);
+        return monumentRepository.saveAll(toSave).size();
+    }
 
-        // Phase 3: Recalculate all monument counts
-        log.info("Recalculating all monument counts in administrative divisions...");
-        administrativeDivisionService.recalculateAllMonumentsCounts();
-        log.info("Monument counts updated.");
-
-        return savedMonuments.size();
+    public void enrichWithDivisions(Monument m) {
+        if (m.getLatitude() != null && m.getLongitude() != null) {
+            List<AdministrativeDivision> divisions = administrativeDivisionRepository.findByCoordinates(m.getLatitude(), m.getLongitude());
+            m.setParish(null);
+            m.setMunicipality(null);
+            m.setDistrict(null);
+            for (AdministrativeDivision division : divisions) {
+                switch (division.getOsmAdminLevel()) {
+                    case 6 -> m.setDistrict(division);
+                    case 7 -> m.setMunicipality(division);
+                    case 8 -> m.setParish(division);
+                }
+            }
+        }
     }
 }
