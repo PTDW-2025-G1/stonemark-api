@@ -20,17 +20,12 @@ public interface MonumentMapper {
 
     MonumentListDto toListDto(Monument monument);
 
-    List<MonumentListDto> toListDto(List<Monument> monuments);
-
-    MonumentMinDto toMinDto(Monument monument);
-
     @Mapping(source = "parishId", target = "parish.id")
     @Mapping(source = "municipalityId", target = "municipality.id")
     @Mapping(source = "districtId", target = "district.id")
     @Mapping(target = "location", ignore = true)
     Monument toEntity(MonumentRequestDto dto);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "parishId", target = "parish.id")
     @Mapping(source = "municipalityId", target = "municipality.id")
     @Mapping(source = "districtId", target = "district.id")
