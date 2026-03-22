@@ -36,6 +36,7 @@
         <module>territory</module>
         <module>decision</module>
         <module>shared-web</module>
+        <module>bookmark</module>
     </modules>
     <scm>
 		<connection/>
