@@ -55,10 +55,12 @@
             <artifactId>telegrambots-spring-boot-starter</artifactId>
             <version>6.9.7.1</version>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.telegram/telegrambots-abilities -->
         <dependency>
             <groupId>org.telegram</groupId>
             <artifactId>telegrambots-abilities</artifactId>
-            <version>9.2.1</version>
+            <version>9.5.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
