@@ -23,7 +23,7 @@
 	</developers>
     <modules>
         <module>boot</module>
-        <module>content</module>
+        <module>mark</module>
         <module>detection</module>
         <module>file</module>
         <module>user</module>

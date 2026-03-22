@@ -26,7 +26,7 @@
         </dependency>
          <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>content</artifactId>
+            <artifactId>mark</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

@@ -33,7 +33,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>content</artifactId>
+            <artifactId>mark</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
