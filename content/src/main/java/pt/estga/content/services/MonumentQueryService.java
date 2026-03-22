@@ -1,28 +1,62 @@
 package pt.estga.content.services;
 
+import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Geometry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.entities.Monument;
+import pt.estga.content.repositories.MonumentRepository;
+import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.territory.services.AdministrativeDivisionQueryService;
 
-import java.util.List;
 import java.util.Optional;
 
-public interface MonumentQueryService {
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class MonumentQueryService {
 
-    Page<Monument> findAll(Pageable pageable);
+    private final MonumentRepository repository;
+    private final AdministrativeDivisionQueryService administrativeDivisionService;
 
-    Page<Monument> findAll(Pageable pageable, boolean active);
+    public Page<Monument> findAll(Pageable pageable) {
+        return repository.findByActive(pageable, true);
+    }
 
-    Page<Monument> findAllWithDivisions(Pageable pageable, boolean active);
+    public Page<Monument> findAll(Pageable pageable, boolean active) {
+        return repository.findByActive(pageable, active);
+    }
 
-    Optional<Monument> findById(Long id);
+    public Page<Monument> findAllWithDivisions(Pageable pageable, boolean active) {
+        return repository.findAllWithDivisions(pageable, active);
+    }
 
-    long count();
+    public Optional<Monument> findById(Long id) {
+        return repository.findById(id);
+    }
 
-    Page<Monument> searchByName(String query, Pageable pageable);
+    public long count() {
+        return repository.count();
+    }
 
-    Page<Monument> findByPolygon(String geoJson, Pageable pageable);
+    public Page<Monument> searchByName(String query, Pageable pageable) {
+        return repository.findByNameContainingIgnoreCaseAndActive(query, pageable, true);
+    }
 
-    Page<Monument> findByDivisionId(Long id, Pageable pageable);
+    public Page<Monument> findByPolygon(String geoJson, Pageable pageable) {
+        return repository.findByPolygon(geoJson, pageable, true);
+    }
 
+    public Page<Monument> findByDivisionId(Long id, Pageable pageable) {
+        Optional<AdministrativeDivision> division = administrativeDivisionService.findById(id);
+        if (division.isPresent()) {
+            Geometry geometry = division.get().getGeometry();
+            if (geometry != null) {
+                return repository.findByGeometry(geometry, pageable, true);
+            }
+        }
+        return Page.empty(pageable);
+    }
 }
