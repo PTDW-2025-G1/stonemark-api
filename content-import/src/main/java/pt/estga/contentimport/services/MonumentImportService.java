@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.content.entities.Monument;
-import pt.estga.content.repositories.MonumentRepository;
+import pt.estga.monument.Monument;
+import pt.estga.monument.MonumentRepository;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 

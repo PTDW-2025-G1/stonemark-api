@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import pt.estga.content.mappers.MarkMapper;
-import pt.estga.content.mappers.MonumentMapper;
+import pt.estga.monument.MonumentMapper;
 import pt.estga.submission.dtos.MarkOccurrenceProposalDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;

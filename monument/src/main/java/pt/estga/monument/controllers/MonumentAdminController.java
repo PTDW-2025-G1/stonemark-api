@@ -1,4 +1,4 @@
-package pt.estga.content.controllers;
+package pt.estga.monument.controllers;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -11,12 +11,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import pt.estga.content.dtos.MonumentDto;
-import pt.estga.content.dtos.MonumentRequestDto;
-import pt.estga.content.entities.Monument;
-import pt.estga.content.mappers.MonumentMapper;
-import pt.estga.content.services.MonumentQueryService;
-import pt.estga.content.services.MonumentService;
+import pt.estga.monument.Monument;
+import pt.estga.monument.MonumentMapper;
+import pt.estga.monument.MonumentQueryService;
+import pt.estga.monument.MonumentService;
+import pt.estga.monument.dots.MonumentDto;
+import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.net.URI;

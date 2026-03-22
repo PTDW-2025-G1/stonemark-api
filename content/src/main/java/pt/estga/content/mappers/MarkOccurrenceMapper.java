@@ -8,6 +8,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import pt.estga.content.dtos.MarkOccurrenceRequestDto;
 import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.dtos.MarkOccurrenceDto;
+import pt.estga.monument.MonumentMapper;
 
 import java.util.List;
 

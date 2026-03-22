@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.monument.Monument;
 import pt.estga.shared.audit.AuditedEntity;
 import pt.estga.shared.utils.PgVectorType;
 import pt.estga.user.entities.User;

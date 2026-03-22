@@ -1,19 +1,14 @@
-package pt.estga.content.mappers;
+package pt.estga.monument;
 
-import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import pt.estga.content.dtos.*;
-import pt.estga.content.dtos.MonumentDto;
-import pt.estga.content.entities.Monument;
-import pt.estga.file.mappers.MediaFileMapper;
+import pt.estga.monument.dots.MonumentDto;
+import pt.estga.monument.dots.MonumentListDto;
+import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring", uses = {MediaFileMapper.class, AdministrativeDivisionMapper.class})
+@Mapper(componentModel = "spring", uses = {AdministrativeDivisionMapper.class})
 public interface MonumentMapper {
 
     MonumentDto toResponseDto(Monument monument);

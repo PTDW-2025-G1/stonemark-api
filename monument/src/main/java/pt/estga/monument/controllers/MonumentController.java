@@ -1,4 +1,4 @@
-package pt.estga.content.controllers;
+package pt.estga.monument.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -8,10 +8,10 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.content.dtos.MonumentDto;
-import pt.estga.content.dtos.MonumentListDto;
-import pt.estga.content.mappers.MonumentMapper;
-import pt.estga.content.services.MonumentQueryService;
+import pt.estga.monument.MonumentMapper;
+import pt.estga.monument.MonumentQueryService;
+import pt.estga.monument.dots.MonumentDto;
+import pt.estga.monument.dots.MonumentListDto;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")

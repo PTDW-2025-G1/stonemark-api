@@ -21,17 +21,17 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>monument</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>user</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>file</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>territory</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

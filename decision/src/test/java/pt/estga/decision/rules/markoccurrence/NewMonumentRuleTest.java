@@ -7,10 +7,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import pt.estga.content.entities.Monument;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.rules.DecisionRuleResult;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.monument.Monument;
 import pt.estga.submission.config.SubmissionDecisionProperties;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 

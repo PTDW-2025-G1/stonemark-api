@@ -7,9 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pt.estga.content.entities.Mark;
 import pt.estga.content.entities.MarkOccurrence;
-import pt.estga.content.entities.Monument;
 import pt.estga.content.repositories.projections.MarkSimilarityProjection;
 
 import java.util.List;

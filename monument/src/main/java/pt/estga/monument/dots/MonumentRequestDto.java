@@ -1,4 +1,4 @@
-package pt.estga.content.dtos;
+package pt.estga.monument.dots;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.content.mappers.MarkMapper;
-import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.repositories.MarkRepository;
-import pt.estga.content.repositories.MonumentRepository;
 import pt.estga.content.enums.TargetType;
+import pt.estga.monument.MonumentMapper;
+import pt.estga.monument.MonumentRepository;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
