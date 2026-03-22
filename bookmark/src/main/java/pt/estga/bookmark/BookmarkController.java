@@ -1,12 +1,10 @@
-package pt.estga.content.controllers;
+package pt.estga.bookmark;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.content.dtos.BookmarkDto;
-import pt.estga.content.services.BookmarkService;
 import pt.estga.content.enums.TargetType;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 

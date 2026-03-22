@@ -1,7 +1,6 @@
-package pt.estga.content.repositories;
+package pt.estga.bookmark;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import pt.estga.content.entities.Bookmark;
 import pt.estga.content.enums.TargetType;
 
 import java.util.List;

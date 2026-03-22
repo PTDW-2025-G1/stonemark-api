@@ -1,9 +1,7 @@
-package pt.estga.content.mappers;
+package pt.estga.bookmark;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import pt.estga.content.dtos.BookmarkDto;
-import pt.estga.content.entities.Bookmark;
 
 @Mapper(componentModel = "spring")
 public interface BookmarkMapper {

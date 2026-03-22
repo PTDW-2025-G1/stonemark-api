@@ -1,4 +1,4 @@
-package pt.estga.content.entities;
+package pt.estga.bookmark;
 
 import jakarta.persistence.*;
 import lombok.*;
