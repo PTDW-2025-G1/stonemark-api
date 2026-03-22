@@ -19,7 +19,6 @@ import java.util.Optional;
 public class MonumentQueryService {
 
     private final MonumentRepository repository;
-    private final AdministrativeDivisionQueryService administrativeDivisionService;
 
     public Page<Monument> findAll(Pageable pageable) {
         return repository.findByActive(pageable, true);
@@ -50,13 +49,6 @@ public class MonumentQueryService {
     }
 
     public Page<Monument> findByDivisionId(Long id, Pageable pageable) {
-        Optional<AdministrativeDivision> division = administrativeDivisionService.findById(id);
-        if (division.isPresent()) {
-            Geometry geometry = division.get().getGeometry();
-            if (geometry != null) {
-                return repository.findByGeometry(geometry, pageable, true);
-            }
-        }
-        return Page.empty(pageable);
+        return repository.findByDivisionId(id, pageable, true);
     }
 }

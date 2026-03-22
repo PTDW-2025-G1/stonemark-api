@@ -1,6 +1,7 @@
 package pt.estga.content.services;
 
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,27 +29,20 @@ public class MarkOccurrenceService {
 
     @Transactional
     public MarkOccurrence create(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
-        MediaFile mediaFile = null;
-
-        if (file != null && !file.isEmpty()) {
-            mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-        } else if (coverId != null) {
-            mediaFile = mediaService.findById(coverId).orElse(null);
-        }
-
-        if (mediaFile != null) {
-            occurrence.setCover(mediaFile);
-        }
-
-        MarkOccurrence savedOccurrence = repository.save(occurrence);
-        if (savedOccurrence.getCover() != null) {
-            eventPublisher.publishEvent(new MarkOccurrenceCreatedEvent(this, savedOccurrence.getId(), savedOccurrence.getCover().getId(), savedOccurrence.getCover().getOriginalFilename()));
-        }
-        return savedOccurrence;
+        return setImageAndSave(occurrence, file, coverId);
     }
 
     @Transactional
     public MarkOccurrence update(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
+        return setImageAndSave(occurrence, file, coverId);
+    }
+
+    public void deleteById(Long id) {
+        repository.deleteById(id);
+    }
+
+    @NonNull
+    private MarkOccurrence setImageAndSave(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
         MediaFile mediaFile = null;
 
         if (file != null && !file.isEmpty()) {
@@ -66,9 +60,5 @@ public class MarkOccurrenceService {
             eventPublisher.publishEvent(new MarkOccurrenceCreatedEvent(this, savedOccurrence.getId(), savedOccurrence.getCover().getId(), savedOccurrence.getCover().getOriginalFilename()));
         }
         return savedOccurrence;
-    }
-
-    public void deleteById(Long id) {
-        repository.deleteById(id);
     }
 }

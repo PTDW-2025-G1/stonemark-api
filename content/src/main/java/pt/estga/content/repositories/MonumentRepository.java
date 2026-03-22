@@ -1,6 +1,5 @@
 package pt.estga.content.repositories;
 
-import org.locationtech.jts.geom.Geometry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -10,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.content.entities.Monument;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,6 +16,13 @@ public interface MonumentRepository extends JpaRepository<Monument, Long> {
 
     @EntityGraph(attributePaths = {"district", "parish", "municipality"})
     Optional<Monument> findById(Long id);
+
+    @EntityGraph(attributePaths = {"district", "parish", "municipality"})
+    Page<Monument> findByDistrictIdOrMunicipalityIdOrParishIdAndActive(Long districtId, Long municipalityId, Long parishId, Pageable pageable, boolean active);
+
+    default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable, boolean active) {
+        return findByDistrictIdOrMunicipalityIdOrParishIdAndActive(divisionId, divisionId, divisionId, pageable, active);
+    }
 
     Optional<Monument> findByExternalId(String externalId);
 
@@ -31,13 +36,4 @@ public interface MonumentRepository extends JpaRepository<Monument, Long> {
 
     @Query(value = "SELECT * FROM monument m WHERE ST_Within(m.location, ST_GeomFromGeoJSON(:geoJson)) AND m.active = :active", nativeQuery = true)
     Page<Monument> findByPolygon(@Param("geoJson") String geoJson, Pageable pageable, @Param("active") boolean active);
-
-    @Query("SELECT m FROM Monument m WHERE within(m.location, :geometry) = true AND m.active = :active")
-    Page<Monument> findByGeometry(@Param("geometry") Geometry geometry, Pageable pageable, @Param("active") boolean active);
-
-    @Query(value = "SELECT * FROM monument m WHERE ST_DWithin(m.location, ST_SetSRID(ST_Point(:longitude, :latitude), 4326), :range) AND m.active = :active", nativeQuery = true)
-    List<Monument> findByCoordinatesInRange(@Param("latitude") double latitude, @Param("longitude") double longitude, @Param("range") double range, @Param("active") boolean active);
-
-    @Query("SELECT m FROM MarkOccurrence mo JOIN mo.monument m WHERE m.active = :active GROUP BY m ORDER BY COUNT(m) DESC")
-    List<Monument> findPopular(Pageable pageable, @Param("active") boolean active);
 }

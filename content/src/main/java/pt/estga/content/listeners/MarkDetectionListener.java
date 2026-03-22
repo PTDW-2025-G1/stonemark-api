@@ -1,6 +1,7 @@
 package pt.estga.content.listeners;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -18,6 +19,7 @@ import pt.estga.file.services.MediaService;
 import java.io.IOException;
 import java.util.Optional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class MarkDetectionListener {
@@ -44,7 +46,7 @@ public class MarkDetectionListener {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error processing mark detection for mark ID {}: {}", event.getMarkId(), e.getMessage());
         }
     }
 
@@ -65,7 +67,7 @@ public class MarkDetectionListener {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error processing mark occurrence detection for occurrence ID {}: {}", event.getOccurrenceId(), e.getMessage());
         }
     }
 }
