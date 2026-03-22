@@ -34,7 +34,7 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Tag(name = "Mark Occurrences Management", description = "Moderation endpoints for mark occurrences.")
 @PreAuthorize("hasRole('MODERATOR')")
-public class AdminMarkOccurrenceController {
+public class MarkOccurrenceAdminController {
 
     private final MarkOccurrenceService service;
     private final MarkOccurrenceQueryService queryService;

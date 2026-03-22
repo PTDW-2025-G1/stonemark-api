@@ -20,7 +20,6 @@ import pt.estga.content.entities.Monument;
 import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.content.services.MonumentService;
-import pt.estga.file.services.MediaService;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.net.URI;
@@ -30,12 +29,11 @@ import java.net.URI;
 @RequiredArgsConstructor
 @Tag(name = "Monuments Management", description = "Management endpoints for monuments.")
 @PreAuthorize("hasRole('MODERATOR')")
-public class AdminMonumentController {
+public class MonumentAdminController {
 
     private final MonumentService service;
     private final MonumentQueryService queryService;
     private final MonumentMapper mapper;
-    private final MediaService mediaService;
 
     @GetMapping()
     public ResponseEntity<Page<MonumentDto>> getMonumentsManagement(
