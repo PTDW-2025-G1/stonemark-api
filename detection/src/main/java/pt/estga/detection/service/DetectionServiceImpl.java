@@ -2,7 +2,7 @@ package pt.estga.detection.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
@@ -64,7 +64,7 @@ public class DetectionServiceImpl implements DetectionService {
         return result;
     }
 
-    @NotNull
+    @NonNull
     private static MediaType getMediaType(String originalFilename) {
         MediaType fileMediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (originalFilename != null) {
