@@ -2,7 +2,7 @@ package pt.estga.report.dtos;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import pt.estga.content.enums.TargetType;
+import pt.estga.mark.enums.TargetType;
 import pt.estga.report.enums.ReportReason;
 
 public record ReportRequestDto(

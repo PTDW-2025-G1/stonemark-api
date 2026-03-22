@@ -12,7 +12,7 @@ import pt.estga.user.entities.User;
 import pt.estga.user.services.ChatbotAccountService;
 import pt.estga.user.services.UserService;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
-import pt.estga.verification.dtos.ChatbotVerificationResponseDto;
+import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
@@ -31,7 +31,7 @@ public class AccountVerificationController {
 
     @PostMapping("/verification/chatbot")
     @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
-    public ResponseEntity<ChatbotVerificationResponseDto> verifyChatbotCode(
+    public ResponseEntity<MessageResponseDto> verifyChatbotCode(
             @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
 
@@ -39,7 +39,7 @@ public class AccountVerificationController {
 
         if (platformUserIdOpt.isEmpty()) {
             return ResponseEntity.badRequest().body(
-                    ChatbotVerificationResponseDto.error("Invalid or expired code")
+                    MessageResponseDto.error("Invalid or expired code")
             );
         }
 
@@ -53,7 +53,7 @@ public class AccountVerificationController {
         eventPublisher.publishEvent(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
 
         return ResponseEntity.ok(
-                ChatbotVerificationResponseDto.success("Messaging account linked successfully")
+                MessageResponseDto.success("Messaging account linked successfully")
         );
     }
 }
