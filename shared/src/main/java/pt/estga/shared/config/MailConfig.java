@@ -1,19 +1,23 @@
 package pt.estga.shared.config;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.mail.MailProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+/**
+ * Configuration to expose a configured JavaMailSender bean.
+ * Uses a local configuration properties class to avoid depending on the
+ * Spring Boot autoconfigure mail package directly.
+ */
 @Configuration
-@EnableConfigurationProperties(MailProperties.class)
+@EnableConfigurationProperties(AppMailProperties.class)
 @RequiredArgsConstructor
 public class MailConfig {
 
-    private final MailProperties mailProperties;
+    private final AppMailProperties mailProperties;
 
     @Bean
     public JavaMailSender javaMailSender() {

@@ -9,7 +9,7 @@ import pt.estga.chatbot.context.ChatbotContext;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-public class CacheConfig {
+public class ChatbotCacheConfig {
 
     @Bean
     public Cache<String, ChatbotContext> conversationContextCache() {
