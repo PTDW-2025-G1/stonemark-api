@@ -9,8 +9,8 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.services.FileStorageService;
-import pt.estga.shared.exceptions.FileNotFoundException;
-import pt.estga.shared.exceptions.FileStorageException;
+import pt.estga.sharedweb.exceptions.FileNotFoundException;
+import pt.estga.sharedweb.exceptions.FileStorageException;
 
 import java.io.IOException;
 import java.io.InputStream;

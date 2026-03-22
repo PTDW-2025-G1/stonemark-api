@@ -3,7 +3,6 @@ package pt.estga.file.services;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
@@ -14,7 +13,7 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
-import pt.estga.shared.exceptions.FileNotFoundException;
+import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -30,7 +29,6 @@ public class MediaService {
     private final MediaContentService mediaContentService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final StoragePathStrategy storagePathStrategy;
-    private final Tika tika = new Tika();
 
     @Value("${storage.provider:local}")
     private String storageProvider;

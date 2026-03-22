@@ -1,4 +1,4 @@
-package pt.estga.shared.exceptions;
+package pt.estga.sharedweb.exceptions;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -8,9 +8,9 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import pt.estga.shared.dtos.MessageResponseDto;
+import pt.estga.sharedweb.dtos.MessageResponseDto;
 
-import java.io.IOException;
+import java.io.FileNotFoundException;import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,15 +24,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IOException.class)
     public ResponseEntity<String> handleIOException(IOException ex) {
         return new ResponseEntity<>("File processing error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<MessageResponseDto> handleInvalidCredentials(
-            InvalidCredentialsException ex
-    ) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new MessageResponseDto(ex.getMessage()));
     }
 
     @ExceptionHandler(FileStorageException.class)
@@ -79,15 +70,6 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getGlobalErrors().forEach(error ->
                 errors.put(error.getObjectName(), error.getDefaultMessage()));
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(ContactNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleContactNotFound(ContactNotFoundException ex) {
-        Map<String, String> body = new HashMap<>();
-        body.put("error", "CONTACT_NOT_FOUND");
-        body.put("message", ex.getMessage());
-
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

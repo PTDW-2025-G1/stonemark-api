@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.submission.dtos.ProposalAdminListDto;
 import pt.estga.submission.dtos.ProposalWithRelationsDto;
 import pt.estga.submission.mappers.MarkOccurrenceSubmissionMapper;
 import pt.estga.submission.mappers.SubmissionAdminMapper;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.submission.services.MarkOccurrenceSubmissionQueryService;
 
 @RestController

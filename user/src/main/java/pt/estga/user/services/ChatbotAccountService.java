@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.entities.ChatbotAccount;
 import pt.estga.user.enums.ChatbotPlatform;

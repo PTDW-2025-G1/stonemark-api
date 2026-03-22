@@ -21,9 +21,8 @@ import pt.estga.content.mappers.MonumentMapper;
 import pt.estga.content.services.MonumentQueryService;
 import pt.estga.content.services.MonumentService;
 import pt.estga.file.services.MediaService;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
-import java.io.IOException;
 import java.net.URI;
 
 @RestController

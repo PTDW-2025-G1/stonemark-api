@@ -1,3 +1,3 @@
-package pt.estga.shared.dtos;
+package pt.estga.sharedweb.dtos;
 
 public record MessageResponseDto(String message) {}

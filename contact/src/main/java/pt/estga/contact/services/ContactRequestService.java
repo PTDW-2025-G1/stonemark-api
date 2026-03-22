@@ -6,7 +6,7 @@ import pt.estga.contact.repositories.ContactRequestRepository;
 import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.dtos.ContactRequestDto;
 import pt.estga.contact.entities.ContactRequest;
-import pt.estga.shared.exceptions.ContactNotFoundException;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
@@ -38,7 +38,7 @@ public class ContactRequestService {
 
     public ContactRequest updateStatus(Long id, ContactStatus status) {
         ContactRequest contact = repository.findById(id)
-                .orElseThrow(() -> new ContactNotFoundException(id));
+                .orElseThrow(() -> new ResourceNotFoundException("Contact request not found with id: " + id));
 
         contact.setStatus(status);
         return repository.save(contact);
@@ -46,7 +46,7 @@ public class ContactRequestService {
 
     public void delete(Long id) {
         if (!repository.existsById(id)) {
-            throw new ContactNotFoundException(id);
+            throw new ResourceNotFoundException("Contact request not found with id: " + id);
         }
         repository.deleteById(id);
     }

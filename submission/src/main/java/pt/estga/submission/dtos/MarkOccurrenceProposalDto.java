@@ -15,6 +15,5 @@ public record MarkOccurrenceProposalDto(
         Long existingMonumentId,
         String existingMonumentName,
         Long existingMarkId,
-        String existingMarkName,
         Long photoId
 ) { }

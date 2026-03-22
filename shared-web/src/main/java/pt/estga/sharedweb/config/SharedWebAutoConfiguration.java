@@ -1,4 +1,4 @@
-package pt.estga.sharedweb;
+package pt.estga.sharedweb.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;

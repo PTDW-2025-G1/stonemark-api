@@ -7,10 +7,10 @@ import pt.estga.decision.entities.SubmissionDecisionAttempt;
 import pt.estga.decision.enums.DecisionOutcome;
 import pt.estga.decision.enums.DecisionType;
 import pt.estga.decision.repositories.SubmissionDecisionAttemptRepository;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
-import pt.estga.shared.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;

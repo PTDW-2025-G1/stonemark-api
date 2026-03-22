@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.shared.exceptions.FileNotFoundException;
+import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 @Service
 @RequiredArgsConstructor
