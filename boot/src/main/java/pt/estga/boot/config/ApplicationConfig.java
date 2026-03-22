@@ -1,5 +1,6 @@
 package pt.estga.boot.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,8 +19,8 @@ public class ApplicationConfig {
     private String jwkSetUri;
 
     @Bean
-    public PhoneNumberUtil phoneNumberUtil() {
-        return PhoneNumberUtil.getInstance();
+    ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
     @Bean
