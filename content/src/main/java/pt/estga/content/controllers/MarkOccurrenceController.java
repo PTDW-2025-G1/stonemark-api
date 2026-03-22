@@ -13,8 +13,8 @@ import pt.estga.content.dtos.*;
 import pt.estga.content.mappers.MarkOccurrenceMapper;
 import pt.estga.content.services.MarkOccurrenceQueryService;
 import pt.estga.content.services.MarkSearchService;
-import pt.estga.detection.model.DetectionResult;
-import pt.estga.detection.service.DetectionService;
+import pt.estga.detection.DetectionResult;
+import pt.estga.detection.DetectionService;
 
 import java.io.IOException;
 import java.util.Collections;

@@ -2,9 +2,6 @@ package pt.estga.content.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,8 +10,8 @@ import pt.estga.content.dtos.MarkDto;
 import pt.estga.content.mappers.MarkMapper;
 import pt.estga.content.services.MarkQueryService;
 import pt.estga.content.services.MarkSearchService;
-import pt.estga.detection.model.DetectionResult;
-import pt.estga.detection.service.DetectionService;
+import pt.estga.detection.DetectionResult;
+import pt.estga.detection.DetectionService;
 
 import java.io.IOException;
 import java.util.Collections;

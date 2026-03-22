@@ -12,8 +12,8 @@ import pt.estga.content.events.MarkCreatedEvent;
 import pt.estga.content.events.MarkOccurrenceCreatedEvent;
 import pt.estga.content.repositories.MarkOccurrenceRepository;
 import pt.estga.content.repositories.MarkRepository;
-import pt.estga.detection.model.DetectionResult;
-import pt.estga.detection.service.DetectionService;
+import pt.estga.detection.DetectionResult;
+import pt.estga.detection.DetectionService;
 import pt.estga.file.services.MediaService;
 
 import java.io.IOException;

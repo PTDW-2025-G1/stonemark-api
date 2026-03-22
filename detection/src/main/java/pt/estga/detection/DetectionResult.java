@@ -1,4 +1,4 @@
-package pt.estga.detection.model;
+package pt.estga.detection;
 
 public record DetectionResult(
         boolean isMasonMark,

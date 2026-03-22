@@ -1,4 +1,4 @@
-package pt.estga.detection.service;
+package pt.estga.detection;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,21 +13,26 @@ import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import pt.estga.detection.model.DetectionResult;
 
 import java.io.InputStream;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DetectionServiceImpl implements DetectionService {
+public class DetectionService {
 
     private final RestTemplate restTemplate;
 
     @Value("${vision.server.url}")
     private String detectionServerUrl;
 
-    @Override
+    /**
+     * Analyzes the provided image data to verify its content and extract a feature embedding.
+     *
+     * @param imageInputStream The InputStream of the image to analyze.
+     * @param originalFilename The original filename of the image.
+     * @return A {@link DetectionResult} containing the outcome of the analysis.
+     */
     public DetectionResult detect(InputStream imageInputStream, String originalFilename) {
         log.info("Starting detection process for file: {}", originalFilename);
 
