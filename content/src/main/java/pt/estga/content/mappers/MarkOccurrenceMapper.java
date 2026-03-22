@@ -5,8 +5,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import pt.estga.content.dtos.MarkOccurrenceListDto;
-import pt.estga.content.dtos.MarkOccurrenceMapDto;
 import pt.estga.content.dtos.MarkOccurrenceRequestDto;
 import pt.estga.content.entities.MarkOccurrence;
 import pt.estga.content.dtos.MarkOccurrenceDto;
@@ -24,11 +22,6 @@ public interface MarkOccurrenceMapper {
     MarkOccurrenceDto toDto(MarkOccurrence entity);
 
     List<MarkOccurrenceDto> toDto(List<MarkOccurrence> entities);
-
-    @Mapping(target = "coverId", source = "cover.id")
-    MarkOccurrenceListDto toListDto(MarkOccurrence entity);
-
-    MarkOccurrenceMapDto toMapDto(MarkOccurrence entity);
 
     @Mapping(target = "cover", ignore = true)
     @Mapping(source = "markId", target = "mark.id")
