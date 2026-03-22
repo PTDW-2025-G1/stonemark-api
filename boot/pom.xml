@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -9,15 +9,13 @@
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>boot</artifactId>
-
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <stonemark.version>0.0.1-SNAPSHOT</stonemark.version>
     </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -26,71 +24,76 @@
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>chatbot</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>contact</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>content</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>report</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>detection</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>file</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>submission</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>decision</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>shared</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>shared-web</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>user</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>territory</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>verification</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
-
+        <!-- Source: https://mvnrepository.com/artifact/me.paulschwarz/spring-dotenv -->
         <dependency>
             <groupId>me.paulschwarz</groupId>
             <artifactId>spring-dotenv</artifactId>
-            <version>4.0.0</version>
+            <version>5.1.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
-
     <build>
         <plugins>
             <plugin>
@@ -109,5 +112,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

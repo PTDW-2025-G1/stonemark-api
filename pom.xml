@@ -117,12 +117,6 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.12.7</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/dev.samstevens.totp/totp -->
-        <dependency>
-            <groupId>dev.samstevens.totp</groupId>
-            <artifactId>totp</artifactId>
-            <version>1.7.1</version>
-        </dependency>
 
         <!-- Database -->
         <dependency>
@@ -153,7 +147,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.15</version>
+            <version>3.0.2</version>
             <scope>compile</scope>
         </dependency>
 
