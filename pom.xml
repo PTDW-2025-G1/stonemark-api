@@ -38,6 +38,7 @@
         <module>shared-web</module>
         <module>bookmark</module>
         <module>content-import</module>
+        <module>monument</module>
     </modules>
     <scm>
 		<connection/>
