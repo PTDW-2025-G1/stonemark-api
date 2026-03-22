@@ -71,7 +71,7 @@ public class AccountController {
         }
 
         userService.update(user);
-        return ResponseEntity.ok(new MessageResponseDto("Your profile has been updated successfully."));
+        return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
     }
 
 
@@ -97,6 +97,6 @@ public class AccountController {
     @DeleteMapping
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         userService.softDeleteUser(principal.getId());
-        return ResponseEntity.ok(new MessageResponseDto("Your account has been deleted successfully."));
+        return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
     }
 }

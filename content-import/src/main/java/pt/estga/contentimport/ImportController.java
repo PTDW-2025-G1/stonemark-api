@@ -33,7 +33,7 @@ public class ImportController {
 
         if (file.isEmpty()) {
             log.warn("Empty file received for division import");
-            return ResponseEntity.badRequest().body(new MessageResponseDto("File is empty"));
+            return ResponseEntity.badRequest().body(MessageResponseDto.error("File is empty"));
         }
 
         try {
@@ -46,7 +46,7 @@ public class ImportController {
 
             String message = "Administrative divisions fully replaced. Imported " + count + " entries.";
             log.info("Division import completed successfully: {}", message);
-            return ResponseEntity.ok(new MessageResponseDto(message));
+            return ResponseEntity.ok(MessageResponseDto.success(message));
         } catch (Exception e) {
             log.error("Error importing divisions from PBF file: {}", file.getOriginalFilename(), e);
             throw e;
@@ -61,7 +61,7 @@ public class ImportController {
 
         if (file.isEmpty()) {
             log.warn("Empty file received for monument import");
-            return ResponseEntity.badRequest().body(new MessageResponseDto("File is empty"));
+            return ResponseEntity.badRequest().body(MessageResponseDto.error("File is empty"));
         }
 
         try {
@@ -74,7 +74,7 @@ public class ImportController {
 
             String message = "Imported " + count + " monuments successfully.";
             log.info("Monument import completed successfully: {}", message);
-            return ResponseEntity.ok(new MessageResponseDto(message));
+            return ResponseEntity.ok(MessageResponseDto.success(message));
         } catch (Exception e) {
             log.error("Error importing monuments from GeoJSON file: {}", file.getOriginalFilename(), e);
             throw e;
