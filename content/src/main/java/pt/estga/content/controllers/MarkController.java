@@ -31,20 +31,6 @@ public class MarkController {
     private final DetectionService detectionService;
     private final MarkSearchService markSearchService;
 
-    @GetMapping
-    public ResponseEntity<Page<MarkDto>> getMarks(
-            @PageableDefault(size = 9) Pageable pageable
-    ) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toDto));
-    }
-
-    @GetMapping("/details")
-    public ResponseEntity<Page<MarkDto>> getDetailedMarks(
-            @PageableDefault(size = 9) Pageable pageable
-    ) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toDto));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<MarkDto> getMark(@PathVariable Long id) {
         return service.findById(id)

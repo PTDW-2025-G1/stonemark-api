@@ -5,9 +5,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -34,14 +31,6 @@ public class MonumentAdminController {
     private final MonumentService service;
     private final MonumentQueryService queryService;
     private final MonumentMapper mapper;
-
-    @GetMapping()
-    public ResponseEntity<Page<MonumentDto>> getMonumentsManagement(
-            @PageableDefault(size = 10) Pageable pageable,
-            @RequestParam(required = false, defaultValue = "true") boolean active
-    ) {
-        return ResponseEntity.ok(queryService.findAllWithDivisions(pageable, active).map(mapper::toResponseDto));
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MonumentDto> createMonument(

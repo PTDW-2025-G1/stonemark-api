@@ -22,13 +22,6 @@ public class MonumentController {
     private final MonumentQueryService service;
     private final MonumentMapper mapper;
 
-    @GetMapping
-    public ResponseEntity<Page<MonumentListDto>> getMonuments(
-            @PageableDefault(size = 9) Pageable pageable
-    ) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toListDto));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<MonumentDto> getMonumentById(
             @PathVariable Long id
@@ -61,10 +54,5 @@ public class MonumentController {
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
         return ResponseEntity.ok(service.findByDivisionId(id, pageable).map(mapper::toListDto));
-    }
-
-    @GetMapping("/count")
-    public ResponseEntity<Long> countMonuments() {
-        return ResponseEntity.ok(service.count());
     }
 }

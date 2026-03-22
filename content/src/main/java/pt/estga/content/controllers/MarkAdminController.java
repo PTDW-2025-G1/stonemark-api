@@ -39,13 +39,6 @@ public class MarkAdminController {
     private final MarkMapper mapper;
     private final MediaService mediaService;
 
-    @GetMapping()
-    public ResponseEntity<Page<MarkDto>> getMarksManagement(
-            @PageableDefault(size = 9) Pageable pageable
-    ) {
-        return ResponseEntity.ok(queryService.findAllManagement(pageable).map(mapper::toDto));
-    }
-
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MarkDto> createMark(
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MarkRequestDto markDto,

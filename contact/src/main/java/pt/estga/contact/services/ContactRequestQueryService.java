@@ -31,10 +31,6 @@ public class ContactRequestQueryService {
 		);
 	}
 
-	public Page<ContactRequest> findAll(Pageable pageable) {
-		return repository.findAll(pageable);
-	}
-
 	public Page<ContactRequest> findAllBySubmittedBy(Long submittedById, Pageable pageable) {
 		return repository.findBySubmittedById(submittedById, pageable);
 	}

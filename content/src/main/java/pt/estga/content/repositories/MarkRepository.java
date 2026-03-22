@@ -1,8 +1,5 @@
 package pt.estga.content.repositories;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,20 +8,9 @@ import pt.estga.content.entities.Mark;
 import pt.estga.content.repositories.projections.MarkSimilarityProjection;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface MarkRepository extends JpaRepository<Mark, Long> {
-
-    @EntityGraph(attributePaths = {"cover"})
-    Page<Mark> findByActiveIsTrue(Pageable pageable);
-
-    @Override
-    @EntityGraph(attributePaths = {"cover"})
-    Page<Mark> findAll(Pageable pageable);
-
-    @EntityGraph(attributePaths = {"cover"})
-    Optional<Mark> findWithCoverById(Long id);
 
     @Query(value = "SELECT id, 1 - (embedding <=> CAST(:vector AS vector)) as similarity " +
             "FROM mark " +

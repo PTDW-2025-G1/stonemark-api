@@ -26,13 +26,7 @@ public interface MonumentRepository extends JpaRepository<Monument, Long> {
 
     Optional<Monument> findByExternalId(String externalId);
 
-    @EntityGraph(attributePaths = {"district", "parish", "municipality"})
-    @Query("SELECT m FROM Monument m WHERE m.active = :active")
-    Page<Monument> findAllWithDivisions(Pageable pageable, @Param("active") boolean active);
-
     Page<Monument> findByNameContainingIgnoreCaseAndActive(String name, Pageable pageable, boolean active);
-
-    Page<Monument> findByActive(Pageable pageable, boolean active);
 
     @Query(value = "SELECT * FROM monument m WHERE ST_Within(m.location, ST_GeomFromGeoJSON(:geoJson)) AND m.active = :active", nativeQuery = true)
     Page<Monument> findByPolygon(@Param("geoJson") String geoJson, Pageable pageable, @Param("active") boolean active);

@@ -41,13 +41,6 @@ public class MarkOccurrenceAdminController {
     private final MarkOccurrenceMapper mapper;
     private final UserService userService;
 
-    @GetMapping()
-    public ResponseEntity<Page<MarkOccurrenceDto>> getMarkOccurrencesManagement(
-            @PageableDefault(size = 10) Pageable pageable
-    ) {
-        return ResponseEntity.ok(queryService.findAllManagement(pageable).map(mapper::toDto));
-    }
-
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MarkOccurrenceDto> createMarkOccurrence(
             @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MarkOccurrenceRequestDto markOccurrenceDto,
