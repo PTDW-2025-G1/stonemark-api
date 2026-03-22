@@ -31,28 +31,28 @@ public class GlobalExceptionHandler {
     public ResponseEntity<MessageResponseDto> handleFileStorageException(FileStorageException ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new MessageResponseDto(ex.getMessage()));
+                .body(MessageResponseDto.error(ex.getMessage()));
     }
 
     @ExceptionHandler(FileNotFoundException.class)
     public ResponseEntity<MessageResponseDto> handleFileNotFoundException(FileNotFoundException ex) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(new MessageResponseDto(ex.getMessage()));
+                .body(MessageResponseDto.error(ex.getMessage()));
     }
 
     @ExceptionHandler(UnsupportedFileTypeException.class)
     public ResponseEntity<MessageResponseDto> handleUnsupportedFileTypeException(UnsupportedFileTypeException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(new MessageResponseDto(ex.getMessage()));
+                .body(MessageResponseDto.error(ex.getMessage()));
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<MessageResponseDto> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(new MessageResponseDto("Content-Type not supported. If uploading a file with JSON data, ensure the JSON part has 'Content-Type: application/json'. Details: " + ex.getBody()));
+                .body(MessageResponseDto.error("Content-Type not supported. If uploading a file with JSON data, ensure the JSON part has 'Content-Type: application/json'. Details: " + ex.getBody()));
     }
 
     @ExceptionHandler(RuntimeException.class)

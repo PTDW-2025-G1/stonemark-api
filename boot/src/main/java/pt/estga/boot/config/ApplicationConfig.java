@@ -1,14 +1,16 @@
 package pt.estga.boot.config;
 
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 @Configuration
+@EnableCaching
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
@@ -16,8 +18,8 @@ public class ApplicationConfig {
     private String jwkSetUri;
 
     @Bean
-    public PhoneNumberUtil phoneNumberUtil() {
-        return PhoneNumberUtil.getInstance();
+    ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
     @Bean

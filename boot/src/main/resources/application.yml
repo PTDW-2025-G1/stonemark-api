@@ -31,6 +31,8 @@ spring:
     deserializer:
       read_enum_values_using_index: false
       accept-case-insensitive-enums: true
+  config:
+    import: optional:file:.env[.properties]
 
 vision:
   server:

@@ -12,10 +12,7 @@ import pt.estga.file.services.FileStorageService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 import pt.estga.sharedweb.exceptions.FileStorageException;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 @Service
 @ConditionalOnProperty(name = "storage.provider", havingValue = "minio")
@@ -48,13 +45,13 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(filename)
-                            .stream(fileStream, -1, 10485760) // Let Minio handle stream size and multipart
+                            .stream(fileStream, -1L, 10485760L) // Let Minio handle stream size and multipart
                             .build()
             );
 
             log.info("File stored successfully with object name: {}", filename);
             return filename;
-        } catch (MinioException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+        } catch (MinioException e) {
             log.error("Failed to store file in MinIO", e);
             throw new FileStorageException("Failed to store file in MinIO", e);
         }
@@ -72,7 +69,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
             );
 //            log.info("File loaded successfully from path: {}", path);
             return new InputStreamResource(stream);
-        } catch (MinioException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+        } catch (MinioException e) {
             log.error("Failed to load file from MinIO with path: {}", path, e);
             // MinIO throws generic exceptions, but we can try to guess if it's not found
             // For now, wrap in generic storage exception or check error code if needed
@@ -91,7 +88,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
                             .build()
             );
             log.info("File deleted successfully from path: {}", path);
-        } catch (MinioException | InvalidKeyException | NoSuchAlgorithmException | IOException e) {
+        } catch (MinioException e) {
             log.error("Could not delete file from MinIO with path: {}", path, e);
             throw new FileStorageException("Could not delete file from MinIO", e);
         }

@@ -5,8 +5,8 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>4.0.4</version>
+		<relativePath/>
 	</parent>
 	<groupId>pt.estga</groupId>
 	<artifactId>stonemark</artifactId>
@@ -23,19 +23,23 @@
 	</developers>
     <modules>
         <module>boot</module>
-        <module>content</module>
+        <module>mark</module>
         <module>detection</module>
         <module>file</module>
         <module>user</module>
         <module>shared</module>
         <module>submission</module>
-        <module>contact</module>
+        <module>support</module>
         <module>chatbot</module>
         <module>verification</module>
         <module>report</module>
         <module>territory</module>
         <module>decision</module>
         <module>shared-web</module>
+        <module>bookmark</module>
+        <module>content-import</module>
+        <module>monument</module>
+        <module>notification</module>
     </modules>
     <scm>
 		<connection/>
@@ -44,7 +48,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
         <stonemark.version>0.0.1-SNAPSHOT</stonemark.version>
     </properties>
     <dependencies>
@@ -96,10 +100,6 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
@@ -116,12 +116,6 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <version>0.12.7</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/dev.samstevens.totp/totp -->
-        <dependency>
-            <groupId>dev.samstevens.totp</groupId>
-            <artifactId>totp</artifactId>
-            <version>1.7.1</version>
         </dependency>
 
         <!-- Database -->
@@ -148,15 +142,6 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Documentation -->
-        <!-- Source: https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui -->
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.15</version>
-            <scope>compile</scope>
-        </dependency>
-
         <!-- Utilities & Tools -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -166,13 +151,6 @@
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>1.6.3</version>
-        </dependency>
-        <!-- Source: https://mvnrepository.com/artifact/net.datafaker/datafaker -->
-        <dependency>
-            <groupId>net.datafaker</groupId>
-            <artifactId>datafaker</artifactId>
-            <version>2.5.3</version>
-            <scope>compile</scope>
         </dependency>
         <!-- Source: https://mvnrepository.com/artifact/org.apache.tika/tika-core -->
         <dependency>
@@ -190,15 +168,12 @@
         </dependency>
 
         <!-- External APIs / Clients -->
-        <dependency>
-            <groupId>com.google.api-client</groupId>
-            <artifactId>google-api-client</artifactId>
-            <version>2.8.1</version>
-        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.10.0</version>
+            <version>4.12.0</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

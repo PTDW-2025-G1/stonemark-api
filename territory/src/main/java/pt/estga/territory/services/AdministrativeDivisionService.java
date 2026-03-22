@@ -26,22 +26,6 @@ public class AdministrativeDivisionService {
         return repository.findById(id);
     }
 
-    public List<AdministrativeDivision> findByOsmAdminLevel(int adminLevel) {
-        return repository.findByOsmAdminLevel(adminLevel);
-    }
-
-    public List<AdministrativeDivision> findChildren(Long parentId) {
-        return repository.findByParentId(parentId);
-    }
-
-    public Optional<AdministrativeDivision> findParent(Long childId) {
-        return repository.findById(childId).map(AdministrativeDivision::getParent);
-    }
-
-    public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
-        return repository.findByCoordinates(latitude, longitude);
-    }
-
     public AdministrativeDivision create(AdministrativeDivision division) {
         return repository.save(division);
     }
@@ -50,30 +34,7 @@ public class AdministrativeDivisionService {
         return repository.save(division);
     }
 
-    public List<AdministrativeDivision> createOrUpdateAll(List<AdministrativeDivision> divisions) {
-        return repository.saveAll(divisions);
-    }
-
     public void deleteById(Long id) {
         repository.deleteById(id);
-    }
-
-    public List<AdministrativeDivision> findWithMonuments(int adminLevel) {
-        return repository.findWithMonuments(adminLevel);
-    }
-
-    @Transactional
-    public void incrementMonumentsCount(Long divisionId) {
-        repository.incrementMonumentsCount(divisionId);
-    }
-
-    @Transactional
-    public void decrementMonumentsCount(Long divisionId) {
-        repository.decrementMonumentsCount(divisionId);
-    }
-
-    @Transactional
-    public void recalculateAllMonumentsCounts() {
-        repository.recalculateAllMonumentsCounts();
     }
 }

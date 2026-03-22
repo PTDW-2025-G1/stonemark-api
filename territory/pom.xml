@@ -13,8 +13,8 @@
     <artifactId>territory</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -23,10 +23,12 @@
             <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.locationtech.jts.io/jts-io-common -->
         <dependency>
             <groupId>org.locationtech.jts.io</groupId>
             <artifactId>jts-io-common</artifactId>
-            <version>1.19.0</version>
+            <version>1.20.0</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
