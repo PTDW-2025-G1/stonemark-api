@@ -7,10 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.entities.User;
-import pt.estga.filterutils.QueryProcessor;
-import pt.estga.filterutils.models.PagedRequest;
-import pt.estga.filterutils.models.QueryResult;
-import pt.estga.filterutils.utils.FilterValidator;
+import pt.estga.sharedweb.filtering.QueryProcessor;
+import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.sharedweb.models.QueryResult;
+import pt.estga.sharedweb.utils.FilterValidator;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.mappers.UserMapper;
 

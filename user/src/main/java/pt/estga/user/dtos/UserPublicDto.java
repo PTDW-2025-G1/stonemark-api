@@ -1,7 +1,7 @@
 package pt.estga.user.dtos;
 
 import lombok.Builder;
-import pt.estga.filterutils.annotations.Filterable;
+import pt.estga.sharedweb.annotations.Filterable;
 import pt.estga.shared.enums.UserRole;
 
 @Builder

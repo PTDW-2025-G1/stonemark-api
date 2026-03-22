@@ -1,8 +1,8 @@
-package pt.estga.filterutils.models;
+package pt.estga.sharedweb.models;
 
 import lombok.*;
 import org.jspecify.annotations.NonNull;
-import pt.estga.filterutils.enums.LogicalOperator;
+import pt.estga.sharedweb.enums.LogicalOperator;
 
 import java.util.Collections;
 import java.util.List;

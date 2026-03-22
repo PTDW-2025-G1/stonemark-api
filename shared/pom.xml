@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>filter-utils</artifactId>
+            <artifactId>shared-web</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

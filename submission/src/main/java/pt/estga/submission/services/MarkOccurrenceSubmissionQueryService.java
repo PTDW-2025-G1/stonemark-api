@@ -4,15 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pt.estga.filterutils.QueryProcessor;
-import pt.estga.filterutils.models.PagedRequest;
-import pt.estga.filterutils.models.QueryResult;
+import pt.estga.sharedweb.filtering.QueryProcessor;
+import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.sharedweb.models.QueryResult;
 import pt.estga.submission.dtos.ProposalAdminListDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.mappers.SubmissionAdminMapper;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 
-import java.util.Collection;
 import java.util.Optional;
 
 /**

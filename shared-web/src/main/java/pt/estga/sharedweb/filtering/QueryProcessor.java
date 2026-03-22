@@ -1,10 +1,11 @@
-package pt.estga.filterutils;
+package pt.estga.sharedweb.filtering;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import pt.estga.filterutils.models.PagedRequest;
-import pt.estga.filterutils.models.QueryResult;
+import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.sharedweb.models.QueryResult;
+import pt.estga.sharedweb.utils.SortNormalizer;
 
 /**
  * QueryProcessor is responsible for orchestrating the query pipeline.

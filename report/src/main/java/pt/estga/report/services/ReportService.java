@@ -3,7 +3,7 @@ package pt.estga.report.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.filterutils.SpecificationBuilder;
+import pt.estga.sharedweb.filtering.SpecificationBuilder;
 import pt.estga.report.dtos.ReportRequestDto;
 import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.entities.Report;

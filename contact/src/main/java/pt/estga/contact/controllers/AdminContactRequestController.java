@@ -3,9 +3,6 @@ package pt.estga.contact.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +10,7 @@ import pt.estga.contact.enums.ContactStatus;
 import pt.estga.contact.entities.ContactRequest;
 import pt.estga.contact.services.ContactRequestQueryService;
 import pt.estga.contact.services.ContactRequestService;
-import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.sharedweb.models.PagedRequest;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")

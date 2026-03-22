@@ -1,4 +1,4 @@
-package pt.estga.filterutils.enums;
+package pt.estga.sharedweb.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 

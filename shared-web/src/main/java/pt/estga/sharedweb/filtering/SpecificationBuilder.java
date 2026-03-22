@@ -1,9 +1,9 @@
-package pt.estga.filterutils;
+package pt.estga.sharedweb.filtering;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
-import pt.estga.filterutils.enums.LogicalOperator;
-import pt.estga.filterutils.models.FilterNode;
+import pt.estga.sharedweb.enums.LogicalOperator;
+import pt.estga.sharedweb.models.FilterNode;
 
 import java.util.Objects;
 

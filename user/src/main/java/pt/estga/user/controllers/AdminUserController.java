@@ -12,7 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;

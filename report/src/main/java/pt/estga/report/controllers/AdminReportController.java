@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.filterutils.models.PagedRequest;
+import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.report.services.ReportQueryService;
 import pt.estga.report.dtos.ReportResponseDto;
 import pt.estga.report.enums.ReportStatus;

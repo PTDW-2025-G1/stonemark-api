@@ -1,8 +1,8 @@
-package pt.estga.filterutils.utils;
+package pt.estga.sharedweb.utils;
 
-import pt.estga.filterutils.models.FilterNode;
-import pt.estga.filterutils.models.SortCriteria;
-import pt.estga.filterutils.annotations.Filterable;
+import pt.estga.sharedweb.annotations.Filterable;
+import pt.estga.sharedweb.models.FilterNode;
+import pt.estga.sharedweb.models.SortCriteria;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;

@@ -1,12 +1,12 @@
-package pt.estga.filterutils;
+package pt.estga.sharedweb.filtering;
 
 import jakarta.persistence.criteria.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
-import pt.estga.filterutils.enums.FilterOperator;
-import pt.estga.filterutils.enums.LikeMode;
-import pt.estga.filterutils.models.FilterCriteria;
+import pt.estga.sharedweb.enums.FilterOperator;
+import pt.estga.sharedweb.enums.LikeMode;
+import pt.estga.sharedweb.models.FilterCriteria;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

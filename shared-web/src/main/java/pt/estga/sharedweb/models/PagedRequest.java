@@ -1,4 +1,4 @@
-package pt.estga.filterutils.models;
+package pt.estga.sharedweb.models;
 
 import lombok.*;
 import org.springframework.data.domain.PageRequest;

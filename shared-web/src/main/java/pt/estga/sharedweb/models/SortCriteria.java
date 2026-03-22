@@ -1,10 +1,10 @@
-package pt.estga.filterutils.models;
+package pt.estga.sharedweb.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import pt.estga.filterutils.enums.SortDirection;
+import pt.estga.sharedweb.enums.SortDirection;
 
 /**
  * Represents sorting criteria for a query.
