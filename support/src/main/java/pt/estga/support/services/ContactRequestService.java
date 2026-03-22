@@ -1,11 +1,11 @@
-package pt.estga.contact.services;
+package pt.estga.support.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pt.estga.contact.repositories.ContactRequestRepository;
-import pt.estga.contact.enums.ContactStatus;
-import pt.estga.contact.dtos.ContactRequestDto;
-import pt.estga.contact.entities.ContactRequest;
+import pt.estga.support.repositories.ContactRequestRepository;
+import pt.estga.support.enums.ContactStatus;
+import pt.estga.support.dtos.ContactRequestDto;
+import pt.estga.support.entities.ContactRequest;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 

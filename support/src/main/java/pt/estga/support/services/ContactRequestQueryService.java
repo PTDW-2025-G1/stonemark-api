@@ -1,11 +1,11 @@
-package pt.estga.contact.services;
+package pt.estga.support.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import pt.estga.contact.entities.ContactRequest;
-import pt.estga.contact.repositories.ContactRequestRepository;
+import pt.estga.support.entities.ContactRequest;
+import pt.estga.support.repositories.ContactRequestRepository;
 import pt.estga.sharedweb.filtering.QueryProcessor;
 import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.sharedweb.models.QueryResult;

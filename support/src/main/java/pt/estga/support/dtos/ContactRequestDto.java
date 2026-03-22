@@ -1,4 +1,4 @@
-package pt.estga.contact.dtos;
+package pt.estga.support.dtos;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

@@ -28,7 +28,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>contact</artifactId>
+            <artifactId>support</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

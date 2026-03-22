@@ -7,7 +7,6 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.audit.AuditedEntity;
 
 @Entity

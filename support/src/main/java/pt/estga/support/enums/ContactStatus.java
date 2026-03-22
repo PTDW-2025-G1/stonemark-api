@@ -1,4 +1,4 @@
-package pt.estga.contact.enums;
+package pt.estga.support.enums;
 
 public enum ContactStatus {
     PENDING,

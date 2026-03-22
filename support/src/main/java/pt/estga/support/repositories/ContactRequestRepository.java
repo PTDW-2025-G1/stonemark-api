@@ -1,10 +1,10 @@
-package pt.estga.contact.repositories;
+package pt.estga.support.repositories;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import pt.estga.contact.entities.ContactRequest;
+import pt.estga.support.entities.ContactRequest;
 
 public interface ContactRequestRepository extends JpaRepository<ContactRequest, Long>, JpaSpecificationExecutor<ContactRequest> {
     Page<ContactRequest> findBySubmittedById(Long submittedById, Pageable pageable);
