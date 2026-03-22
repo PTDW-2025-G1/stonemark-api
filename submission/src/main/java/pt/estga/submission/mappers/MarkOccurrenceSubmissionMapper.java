@@ -3,7 +3,7 @@ package pt.estga.submission.mappers;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
-import pt.estga.content.mappers.MarkMapper;
+import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.submission.dtos.MarkOccurrenceProposalDto;
 import pt.estga.submission.dtos.MarkOccurrenceProposalListDto;

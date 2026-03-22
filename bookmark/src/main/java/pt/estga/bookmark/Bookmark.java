@@ -3,7 +3,7 @@ package pt.estga.bookmark;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import pt.estga.content.enums.TargetType;
+import pt.estga.mark.enums.TargetType;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.content.enums.TargetType;
+import pt.estga.mark.enums.TargetType;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 
 import java.util.List;

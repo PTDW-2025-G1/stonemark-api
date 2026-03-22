@@ -1,6 +1,6 @@
 package pt.estga.submission.dtos;
 
-import pt.estga.content.dtos.MarkDto;
+import pt.estga.mark.dtos.MarkDto;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.submission.enums.SubmissionStatus;
