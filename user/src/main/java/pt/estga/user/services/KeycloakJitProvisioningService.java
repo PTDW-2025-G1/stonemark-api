@@ -7,6 +7,8 @@ import pt.estga.shared.enums.UserRole;
 import pt.estga.user.dtos.KeycloakIdentitySnapshot;
 import pt.estga.user.entities.User;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class KeycloakJitProvisioningService {
@@ -76,22 +78,22 @@ public class KeycloakJitProvisioningService {
     }
 
     private String resolveUsername(KeycloakIdentitySnapshot snapshot) {
+        // 1. Pick the best starting point
         String base = snapshot.preferredUsername();
-
         if (base == null || base.isBlank()) {
-            if (snapshot.email() != null && snapshot.email().contains("@")) {
-                base = snapshot.email().substring(0, snapshot.email().indexOf('@'));
-            } else {
-                base = "kc_" + snapshot.sub().substring(0, Math.min(snapshot.sub().length(), 8));
-            }
+            base = (snapshot.email() != null && snapshot.email().contains("@"))
+                    ? snapshot.email().split("@")[0]
+                    : "user";
         }
 
-        String candidate = base;
-        int i = 1;
-        while (userService.existsByUsername(candidate)) {
-            candidate = base + i++;
-        }
+        // 2. Sanitize: Remove non-alphanumeric characters (keep it clean)
+        base = base.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
 
-        return candidate;
+        // 3. Extract deterministic suffix from sub
+        // Using 8 chars gives 16^8 (~4.2 billion) possibilities, safe for collisions
+        String sub = snapshot.sub() != null ? snapshot.sub() : UUID.randomUUID().toString();
+        String suffix = sub.substring(0, Math.min(sub.length(), 8));
+
+        return base + "_" + suffix;
     }
 }
