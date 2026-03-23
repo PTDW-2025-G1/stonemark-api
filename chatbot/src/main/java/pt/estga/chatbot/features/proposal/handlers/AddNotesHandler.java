@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.entities.MarkEvidenceSubmission;
 import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
@@ -21,8 +21,8 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
-        if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
+        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
+        if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }
 

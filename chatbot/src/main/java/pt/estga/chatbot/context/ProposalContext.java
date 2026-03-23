@@ -1,14 +1,14 @@
 package pt.estga.chatbot.context;
 
 import lombok.Data;
-import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.entities.MarkEvidenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
 
 import java.util.List;
 
 @Data
 public class ProposalContext {
-    private MarkOccurrenceSubmission submission;
+    private MarkEvidenceSubmission submission;
     private List<String> suggestedMarkIds;
     private List<String> suggestedMonumentIds;
 

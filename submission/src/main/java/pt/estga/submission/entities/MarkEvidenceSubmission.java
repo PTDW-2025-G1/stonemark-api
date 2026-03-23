@@ -20,7 +20,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class MarkOccurrenceSubmission {
+public class MarkEvidenceSubmission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
-import pt.estga.submission.entities.MarkOccurrenceSubmission;
+import pt.estga.submission.entities.MarkEvidenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
@@ -17,11 +17,11 @@ import pt.estga.user.entities.User;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public class MarkOccurrenceSubmissionSubmitService {
 
     private final MarkOccurrenceSubmissionRepository repository;
@@ -33,7 +33,7 @@ public class MarkOccurrenceSubmissionSubmitService {
      * Saves the image if provided and then submits the submission.
      */
     @Transactional
-    public MarkOccurrenceSubmission submit(MarkOccurrenceSubmission submission, MultipartFile imageFile) throws IOException {
+    public MarkEvidenceSubmission submit(MarkEvidenceSubmission submission, MultipartFile imageFile) throws IOException {
         log.info("Submitting submission of type: {}", submission.getClass().getSimpleName());
 
         if (SubmissionStatus.SUBMITTED.equals(submission.getStatus())) {
@@ -50,7 +50,7 @@ public class MarkOccurrenceSubmissionSubmitService {
 
         submission.setStatus(SubmissionStatus.SUBMITTED);
 
-        MarkOccurrenceSubmission savedSubmission = repository.save(submission);
+        MarkEvidenceSubmission savedSubmission = repository.save(submission);
         log.info("Submission submitted successfully with ID: {}", savedSubmission.getId());
 
         eventPublisher.publishEvent(new SubmissionSubmittedEvent(this, savedSubmission.getId()));
@@ -63,8 +63,8 @@ public class MarkOccurrenceSubmissionSubmitService {
      * Overloaded submit method for backward compatibility - submits without image file
      */
     @Transactional
-    public MarkOccurrenceSubmission submit(MarkOccurrenceSubmission submission) throws IOException {
-        return submit(submission, null);
+    public void submit(MarkEvidenceSubmission submission) throws IOException {
+        submit(submission, null);
     }
 
     /**
@@ -73,7 +73,7 @@ public class MarkOccurrenceSubmissionSubmitService {
      */
     @Transactional
     public void submitFromChatbot(
-            MarkOccurrenceSubmission proposal,
+            MarkEvidenceSubmission proposal,
             byte[] photoData,
             String photoFilename,
             User user,
