@@ -37,11 +37,6 @@ public class MarkOccurrenceSubmission {
 
     private Integer credibilityScore;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User submittedBy;
-
-    private Instant submittedAt;
-
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
 
@@ -62,4 +57,9 @@ public class MarkOccurrenceSubmission {
 
     @Builder.Default
     private boolean newMark = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User submittedBy;
+
+    private Instant submittedAt;
 }
