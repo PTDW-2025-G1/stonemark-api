@@ -3,6 +3,8 @@ package pt.estga.user.services;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.text.Normalizer;
@@ -14,18 +16,21 @@ import pt.estga.user.entities.User;
 import java.util.UUID;
 import java.time.Instant;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @RequiredArgsConstructor
 public class KeycloakJitProvisioningService {
 
     private final UserService userService;
+    private KeycloakJitProvisioningService self;
     private static final Logger log = LoggerFactory.getLogger(KeycloakJitProvisioningService.class);
     private static final int SUB_SUFFIX_LENGTH = 8;
     private static final int MAX_USERNAME_LENGTH = 30;
     private static final Pattern ALLOWED_USERNAME = Pattern.compile("[^a-zA-Z0-9._-]");
 
     @Transactional
+    @Cacheable(value = "user_provisioning", key = "#snapshot.sub()")
     public User resolveOrProvision(KeycloakIdentitySnapshot snapshot) {
         // Require Keycloak subject as the primary external lookup key
         if (snapshot.sub() == null || snapshot.sub().isBlank()) {
@@ -113,10 +118,27 @@ public class KeycloakJitProvisioningService {
         }
 
         if (changed) {
-            return userService.update(user);
+            User updated = userService.update(user);
+            // Evict cache via the proxied self reference so @CacheEvict takes effect
+            if (self != null) {
+                self.evictProvisioningCache(updated.getKeycloakSub());
+            }
+            return updated;
         }
 
         return user;
+    }
+
+    @CacheEvict(value = "user_provisioning", key = "#key")
+    // Separate method so Spring can apply the cache eviction advice
+    @SuppressWarnings("unused")
+    public void evictProvisioningCache(String key) {
+        // Intentionally left blank; annotation triggers eviction via Spring AOP.
+    }
+
+    @Autowired
+    public void setSelf(KeycloakJitProvisioningService self) {
+        this.self = self;
     }
 
     private String resolveUsername(KeycloakIdentitySnapshot snapshot) {
