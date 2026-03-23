@@ -48,9 +48,6 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private MediaFile photo;
-
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
