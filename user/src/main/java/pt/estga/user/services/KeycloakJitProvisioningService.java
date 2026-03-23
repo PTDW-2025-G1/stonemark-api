@@ -101,15 +101,13 @@ public class KeycloakJitProvisioningService {
             }
         }
 
-        // Keycloak subject: ensure local DB stores the external lookup key; persist when changed
+        // Keycloak subject: maintain link
         if (snapshot.sub() != null && !snapshot.sub().equals(user.getKeycloakSub())) {
             user.setKeycloakSub(snapshot.sub());
             changed = true;
         }
 
-        // Do not overwrite local firstName/lastName to maintain local data ownership
-
-        // Update last login timestamp only when it's stale to avoid frequent DB writes
+        // Update last login timestamp
         Instant now = Instant.now();
         long minutesSinceLast = user.getLastLoginAt() == null ? Long.MAX_VALUE : Duration.between(user.getLastLoginAt(), now).toMinutes();
         if (user.getLastLoginAt() == null || minutesSinceLast >= 5) {
@@ -119,7 +117,6 @@ public class KeycloakJitProvisioningService {
 
         if (changed) {
             User updated = userService.update(user);
-            // Evict cache via the proxied self reference so @CacheEvict takes effect
             if (self != null) {
                 self.evictProvisioningCache(updated.getKeycloakSub());
             }
