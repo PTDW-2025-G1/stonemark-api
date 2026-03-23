@@ -6,7 +6,6 @@ import org.hibernate.annotations.Type;
 import pt.estga.mark.entities.Mark;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.monument.Monument;
-import pt.estga.shared.utils.PgVectorType;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.user.entities.User;
@@ -55,7 +54,6 @@ public class MarkOccurrenceSubmission {
     @OneToOne(fetch = FetchType.LAZY)
     private MediaFile originalMediaFile;
 
-    @Type(PgVectorType.class)
     @Column(columnDefinition = "vector")
     private float[] embedding;
 

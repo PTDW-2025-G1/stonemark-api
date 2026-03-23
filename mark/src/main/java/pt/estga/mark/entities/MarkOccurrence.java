@@ -6,7 +6,6 @@ import org.hibernate.annotations.Type;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.monument.Monument;
 import pt.estga.shared.audit.AuditedEntity;
-import pt.estga.shared.utils.PgVectorType;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
@@ -26,7 +25,6 @@ public class MarkOccurrence extends AuditedEntity {
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile cover;
 
-    @Type(PgVectorType.class)
     @Column(columnDefinition = "vector")
     private float[] embedding;
 
