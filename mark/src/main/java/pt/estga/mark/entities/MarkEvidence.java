@@ -1,10 +1,16 @@
 package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
+import lombok.*;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.audit.AuditedEntity;
 
 @Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
 public class MarkEvidence extends AuditedEntity {
 
     @Id

@@ -5,6 +5,10 @@ import lombok.*;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.audit.AuditedEntity;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,15 +21,28 @@ public class Mark extends AuditedEntity {
     @GeneratedValue
     private Long id;
 
+    private String name;
+
+    @Column
     private String description;
 
-    @OneToOne
-    private MediaFile cover;
+    @OneToOne(cascade = CascadeType.ALL)
+    private MediaFile referenceImage;
 
     @Column(columnDefinition = "vector")
-    private float[] embedding;
+    private float[] canonicalEmbedding;
+
+    @ManyToMany
+    @JoinTable(
+            name = "mark_category_mapping",
+            joinColumns = @JoinColumn(name = "mark_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<MarkCategory> categories = new HashSet<>();
+
+    @OneToMany(mappedBy = "mark")
+    private List<MarkOccurrence> occurrences;
 
     @Builder.Default
     private Boolean active = true;
-
 }

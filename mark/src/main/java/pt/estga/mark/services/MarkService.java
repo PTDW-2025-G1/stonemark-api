@@ -46,11 +46,11 @@ public class MarkService {
     @NonNull
     private Mark setPhotoAndSave(Mark mark, MediaFile cover) {
         if (cover != null) {
-            mark.setCover(cover);
+            mark.setReferenceImage(cover);
         }
         Mark savedMark = repository.save(mark);
-        if (savedMark.getCover() != null) {
-            eventPublisher.publishEvent(new MarkCreatedEvent(this, savedMark.getId(), savedMark.getCover().getId(), savedMark.getCover().getOriginalFilename()));
+        if (savedMark.getReferenceImage() != null) {
+            eventPublisher.publishEvent(new MarkCreatedEvent(this, savedMark.getId(), savedMark.getReferenceImage().getId(), savedMark.getReferenceImage().getOriginalFilename()));
         }
         return savedMark;
     }

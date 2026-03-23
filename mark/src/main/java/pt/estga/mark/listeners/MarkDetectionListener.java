@@ -41,7 +41,7 @@ public class MarkDetectionListener {
                 Optional<Mark> markOpt = markRepository.findById(event.getMarkId());
                 if (markOpt.isPresent()) {
                     Mark mark = markOpt.get();
-                    mark.setEmbedding(detectionResult.embedding());
+                    mark.setCanonicalEmbedding(detectionResult.embedding());
                     markRepository.save(mark);
                 }
             }
