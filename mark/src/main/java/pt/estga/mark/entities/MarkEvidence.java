@@ -2,8 +2,11 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.audit.AuditedEntity;
+
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
@@ -15,7 +18,8 @@ public class MarkEvidence extends AuditedEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator
+    private UUID id;
 
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile file;
