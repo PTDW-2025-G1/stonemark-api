@@ -11,6 +11,7 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
+import pt.estga.file.services.metadata.MediaMetadataService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;

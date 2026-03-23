@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.metadata;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

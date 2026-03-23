@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.util;
 
 import lombok.Getter;
 import org.jspecify.annotations.NonNull;

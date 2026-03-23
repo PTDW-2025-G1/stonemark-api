@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.naming;
 
 import org.springframework.stereotype.Component;
 import pt.estga.file.entities.MediaFile;

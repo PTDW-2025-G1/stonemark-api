@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.api;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +11,11 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
+import pt.estga.file.services.MediaContentService;
+import pt.estga.file.services.metadata.MediaMetadataService;
+import pt.estga.file.services.naming.FileNamingService;
+import pt.estga.file.services.naming.StoragePathStrategy;
+import pt.estga.file.util.CountingInputStream;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;

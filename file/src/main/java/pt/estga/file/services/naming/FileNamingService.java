@@ -1,4 +1,4 @@
-package pt.estga.file.services;
+package pt.estga.file.services.naming;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
