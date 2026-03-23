@@ -29,6 +29,11 @@ public class KeycloakJwtAuthenticationConverter implements Converter<Jwt, Abstra
         KeycloakIdentitySnapshot snapshot = KeycloakIdentitySnapshot.fromClaims(jwt.getClaims());
         User user = jitProvisioningService.resolveOrProvision(snapshot);
 
+        // CRITICAL: Block users disabled in YOUR database
+        if (!user.isEnabled() || user.isAccountLocked()) {
+            throw new org.springframework.security.authentication.DisabledException("User account is inactive.");
+        }
+
         // Build AppPrincipal from resolved user
         AppPrincipal principal = AppPrincipal.builder()
                 .id(user.getId())
