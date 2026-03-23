@@ -1,22 +1,18 @@
 package pt.estga.file.services;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -30,6 +26,7 @@ public class MediaService {
     private final MediaContentService mediaContentService;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final StoragePathStrategy storagePathStrategy;
+    private final FileNamingService fileNamingService;
 
     @Value("${storage.provider:local}")
     private String storageProvider;
@@ -44,8 +41,7 @@ public class MediaService {
         MediaFile media = createInitialMediaFile(originalFilename);
         media = mediaMetadataService.saveMetadata(media);
 
-        String extension = StringUtils.getFilenameExtension(originalFilename);
-        String newFilename = "stonemark-" + media.getId() + (extension != null ? "." + extension : "");
+        String newFilename = fileNamingService.generateStoredFilename(media, originalFilename);
         media.setFilename(newFilename);
 
         // Use the strategy to generate the path
@@ -96,32 +92,5 @@ public class MediaService {
 
     public Optional<MediaFile> findById(Long id) {
         return mediaMetadataService.findById(id);
-    }
-
-    @Getter
-    private static class CountingInputStream extends FilterInputStream {
-        private long count;
-
-        protected CountingInputStream(InputStream in) {
-            super(in);
-        }
-
-        @Override
-        public int read() throws IOException {
-            int result = super.read();
-            if (result != -1) {
-                count++;
-            }
-            return result;
-        }
-
-        @Override
-        public int read(byte @NonNull [] b, int off, int len) throws IOException {
-            int result = super.read(b, off, len);
-            if (result != -1) {
-                count += result;
-            }
-            return result;
-        }
     }
 }
