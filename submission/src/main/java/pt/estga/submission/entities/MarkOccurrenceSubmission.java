@@ -2,10 +2,8 @@ package pt.estga.submission.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
-import pt.estga.mark.entities.Mark;
+import org.hibernate.annotations.CreationTimestamp;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.monument.Monument;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.user.entities.User;
@@ -33,18 +31,8 @@ public class MarkOccurrenceSubmission {
     @Enumerated(EnumType.STRING)
     private SubmissionSource submissionSource;
 
-    private Integer priority;
-
-    private Integer credibilityScore;
-
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Mark existingMark;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Monument existingMonument;
 
     @OneToOne(fetch = FetchType.LAZY)
     private MediaFile originalMediaFile;
@@ -55,11 +43,10 @@ public class MarkOccurrenceSubmission {
     private Double latitude;
     private Double longitude;
 
-    @Builder.Default
-    private boolean newMark = true;
-
     @ManyToOne(fetch = FetchType.LAZY)
     private User submittedBy;
 
+    @CreationTimestamp
     private Instant submittedAt;
+
 }

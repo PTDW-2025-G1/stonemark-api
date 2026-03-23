@@ -48,7 +48,6 @@ public class MarkOccurrenceSubmissionSubmitService {
             submission.setOriginalMediaFile(mediaFile);
         }
 
-        submission.setSubmittedAt(Instant.now());
         submission.setStatus(SubmissionStatus.SUBMITTED);
 
         MarkOccurrenceSubmission savedSubmission = repository.save(submission);
