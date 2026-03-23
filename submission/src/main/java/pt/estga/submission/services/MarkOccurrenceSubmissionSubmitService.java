@@ -6,11 +6,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.mark.entities.Mark;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
-import pt.estga.monument.Monument;
-import pt.estga.submission.dtos.MarkOccurrenceProposalCreateDto;
 import pt.estga.submission.entities.MarkOccurrenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
@@ -69,32 +66,6 @@ public class MarkOccurrenceSubmissionSubmitService {
     @Transactional
     public MarkOccurrenceSubmission submit(MarkOccurrenceSubmission submission) throws IOException {
         return submit(submission, null);
-    }
-
-    @Transactional
-    public MarkOccurrenceSubmission createAndSubmit(MarkOccurrenceProposalCreateDto dto, User user, MultipartFile imageFile) throws IOException {
-        log.info("Creating and submitting new proposal for user: {}", user.getId());
-
-        MarkOccurrenceSubmission proposal = MarkOccurrenceSubmission.builder()
-                .latitude(dto.latitude())
-                .longitude(dto.longitude())
-                .userNotes(dto.userNotes())
-                .submissionSource(dto.submissionSource())
-                .submittedBy(user)
-                .newMark(true)
-                .build();
-
-        if (dto.existingMonumentId() != null) {
-            proposal.setExistingMonument(Monument.builder().id(dto.existingMonumentId()).build());
-        }
-
-        if (dto.existingMarkId() != null) {
-            proposal.setExistingMark(Mark.builder().id(dto.existingMarkId()).build());
-            proposal.setNewMark(false);
-        }
-
-        // Image file is now handled in submit() method
-        return submit(proposal, imageFile);
     }
 
     /**

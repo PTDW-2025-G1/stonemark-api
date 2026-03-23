@@ -12,19 +12,6 @@ import org.springframework.validation.annotation.Validated;
 public class SubmissionDecisionProperties {
 
     /**
-     * Automatic Decision Thresholds.
-     * Defines the score limits for automatically accepting or rejecting a proposal.
-     * With the new scoring system:
-     * - Base credibility: 0-100
-     * - Reputation boost: 0-40
-     * - New monument boost: 0-5
-     * - Total possible: ~145
-     */
-    private Integer automaticAcceptanceThreshold = 100;
-    private Integer automaticRejectionThreshold = 10;
-    private Boolean requireManualReviewForNewMonuments = true;
-
-    /**
      * Priority Scoring Configuration.
      * Parameters used to calculate the priority of a proposal, influencing the order of review.
      */
