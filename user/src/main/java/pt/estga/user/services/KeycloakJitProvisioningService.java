@@ -3,6 +3,8 @@ package pt.estga.user.services;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -16,7 +18,6 @@ import pt.estga.user.entities.User;
 import java.util.UUID;
 import java.time.Instant;
 import java.time.Duration;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 @RequiredArgsConstructor
@@ -29,10 +30,18 @@ public class KeycloakJitProvisioningService {
     private static final int MAX_USERNAME_LENGTH = 30;
     private static final Pattern ALLOWED_USERNAME = Pattern.compile("[^a-zA-Z0-9._-]");
 
+    /**
+     * Setter for self-injection to allow proxy-based cache eviction.
+     * @Lazy is critical here to prevent circular dependency on startup.
+     */
+    @Autowired
+    public void setSelf(@Lazy KeycloakJitProvisioningService self) {
+        this.self = self;
+    }
+
     @Transactional
     @Cacheable(value = "user_provisioning", key = "#snapshot.sub()")
     public User resolveOrProvision(KeycloakIdentitySnapshot snapshot) {
-        // Require Keycloak subject as the primary external lookup key
         if (snapshot.sub() == null || snapshot.sub().isBlank()) {
             log.warn("Keycloak snapshot missing sub claim; cannot resolve or provision user: {}", snapshot);
             throw new IllegalArgumentException("Keycloak snapshot must contain a subject (sub)");
@@ -49,12 +58,10 @@ public class KeycloakJitProvisioningService {
                     .map(existing -> linkExistingUser(existing, snapshot))
                     .orElseGet(() -> createUser(snapshot));
         }
-
         return createUser(snapshot);
     }
 
     private User linkExistingUser(User existing, KeycloakIdentitySnapshot snapshot) {
-        // Only link when the identity provider has asserted the email as verified
         if (!snapshot.emailVerified()) {
             throw new IllegalStateException("Cannot link account: email address is not verified by Keycloak");
         }
@@ -63,7 +70,6 @@ public class KeycloakJitProvisioningService {
             throw new IllegalStateException("User already linked to another Keycloak subject");
         }
 
-        // Link external identity and persist only if something actually changed
         existing.setKeycloakSub(snapshot.sub());
         log.info("Linking existing user id={} email={} to Keycloak sub={}", existing.getId(), existing.getEmail(), snapshot.sub());
 
@@ -89,7 +95,6 @@ public class KeycloakJitProvisioningService {
     private User syncSnapshot(User user, KeycloakIdentitySnapshot snapshot) {
         boolean changed = false;
 
-        // Email and verification status: update only when different
         if (snapshot.email() != null) {
             if (!snapshot.email().equals(user.getEmail())) {
                 user.setEmail(snapshot.email());
@@ -101,13 +106,11 @@ public class KeycloakJitProvisioningService {
             }
         }
 
-        // Keycloak subject: maintain link
         if (snapshot.sub() != null && !snapshot.sub().equals(user.getKeycloakSub())) {
             user.setKeycloakSub(snapshot.sub());
             changed = true;
         }
 
-        // Update last login timestamp
         Instant now = Instant.now();
         long minutesSinceLast = user.getLastLoginAt() == null ? Long.MAX_VALUE : Duration.between(user.getLastLoginAt(), now).toMinutes();
         if (user.getLastLoginAt() == null || minutesSinceLast >= 5) {
@@ -117,6 +120,7 @@ public class KeycloakJitProvisioningService {
 
         if (changed) {
             User updated = userService.update(user);
+            // Use 'self' proxy to trigger @CacheEvict
             if (self != null) {
                 self.evictProvisioningCache(updated.getKeycloakSub());
             }
@@ -127,19 +131,13 @@ public class KeycloakJitProvisioningService {
     }
 
     @CacheEvict(value = "user_provisioning", key = "#key")
-    // Separate method so Spring can apply the cache eviction advice
-    @SuppressWarnings("unused")
     public void evictProvisioningCache(String key) {
-        // Intentionally left blank; annotation triggers eviction via Spring AOP.
+        log.trace("Evicting user_provisioning cache for key: {}", key);
     }
 
-    @Autowired
-    public void setSelf(KeycloakJitProvisioningService self) {
-        this.self = self;
-    }
+    // --- Helper Methods (Username Logic) ---
 
     private String resolveUsername(KeycloakIdentitySnapshot snapshot) {
-        // 1. Pick readable base
         String base = snapshot.preferredUsername();
         if (base == null || base.isBlank()) {
             base = (snapshot.email() != null && snapshot.email().contains("@"))
@@ -147,18 +145,14 @@ public class KeycloakJitProvisioningService {
                     : "user";
         }
 
-        // 2. Sanitize base to remove emojis and special characters
         base = sanitizeUsernameBase(base);
-
-        // 3. Deterministic suffix from Keycloak sub (keep only alphanumeric characters)
         String sub = snapshot.sub() != null ? snapshot.sub() : UUID.randomUUID().toString();
         String suffix = alphaNumericSuffixFromSub(sub);
 
         String candidate = base + "_" + suffix;
 
-        // Ensure max length
         if (candidate.length() > MAX_USERNAME_LENGTH) {
-            int keep = MAX_USERNAME_LENGTH - 1 - suffix.length(); // -1 for '_'
+            int keep = MAX_USERNAME_LENGTH - 1 - suffix.length();
             String truncatedBase = base.substring(0, Math.min(base.length(), keep));
             candidate = truncatedBase + "_" + suffix;
         }
@@ -168,31 +162,20 @@ public class KeycloakJitProvisioningService {
 
     private String sanitizeUsernameBase(String input) {
         if (input == null) return "user";
-
-        // Normalize unicode to separate diacritics, then remove them
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFKC);
-
-        // Remove characters not allowed in usernames (this also strips emojis)
         String cleaned = ALLOWED_USERNAME.matcher(normalized).replaceAll("");
-
-        // Collapse consecutive dots/underscores/dashes
         cleaned = cleaned.replaceAll("[._-]{2,}", "_");
-
-        // Trim and enforce minimum content
         cleaned = cleaned.trim();
         if (cleaned.isEmpty()) return "user";
 
-        // Truncate to reasonable length (leave space for suffix)
         int maxBase = Math.max(1, MAX_USERNAME_LENGTH - 1 - SUB_SUFFIX_LENGTH);
         if (cleaned.length() > maxBase) {
             cleaned = cleaned.substring(0, maxBase);
         }
-
         return cleaned;
     }
 
     private String alphaNumericSuffixFromSub(String sub) {
-        // Assume sanitized Keycloak sub yields at least one alphanumeric character
         String subAlpha = sub.replaceAll("[^A-Za-z0-9]", "");
         return subAlpha.substring(0, Math.min(subAlpha.length(), SUB_SUFFIX_LENGTH));
     }
