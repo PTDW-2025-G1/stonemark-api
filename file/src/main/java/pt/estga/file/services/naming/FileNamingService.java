@@ -2,7 +2,6 @@ package pt.estga.file.services.naming;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import pt.estga.file.entities.MediaFile;
 
 /**
  * Generates stored filenames for media files. Keeps naming strategy centralized for reuse.
@@ -10,9 +9,18 @@ import pt.estga.file.entities.MediaFile;
 @Service
 public class FileNamingService {
 
-    public String generateStoredFilename(MediaFile media, String originalFilename) {
+    /**
+     * Generates a stored filename based on a UUID. This avoids coupling filenames
+     * to database-generated ids and produces safe, deterministic filenames.
+     * The original filename's extension is preserved when present.
+     *
+     * @param originalFilename optional original filename used only to preserve extension
+     * @return uuid-based filename (example: 3f9e7a1c-... .jpg)
+     */
+    public String generateStoredFilename(String originalFilename) {
         String extension = StringUtils.getFilenameExtension(originalFilename);
-        return "stonemark-" + media.getId() + (extension != null ? "." + extension : "");
+        String uuid = java.util.UUID.randomUUID().toString();
+        return uuid + (extension != null ? "." + extension : "");
     }
 }
 

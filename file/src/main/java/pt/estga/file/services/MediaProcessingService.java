@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaStatus;
@@ -34,8 +35,8 @@ public class MediaProcessingService {
     private final MediaValidationService mediaValidationService;
     private final VariantGeneratorService variantGeneratorService;
     private final VariantStorageService variantStorageService;
+    private final StorageProperties storageProperties;
 
-    private static final Set<String> ALLOWED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -62,7 +63,7 @@ public class MediaProcessingService {
                     Files.copy(is, tempOriginal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
 
-                if (!mediaValidationService.isAllowedImage(tempOriginal, ALLOWED_MIME)) {
+                if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
                     mediaMetadataService.saveMetadata(mediaFile);

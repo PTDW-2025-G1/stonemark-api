@@ -3,11 +3,11 @@ package pt.estga.file.services.storage;
 import io.minio.*;
 import io.minio.errors.MinioException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.config.MinioProperties;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 import pt.estga.sharedweb.exceptions.FileStorageException;
 
@@ -21,12 +21,9 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
     private final MinioClient minioClient;
     private final String bucketName;
 
-    public FileStorageServiceMinioImpl(
-            MinioClient minioClient,
-            @Value("${minio.bucket-name}") String bucketName
-    ) {
+    public FileStorageServiceMinioImpl(MinioClient minioClient, MinioProperties minioProperties) {
         this.minioClient = minioClient;
-        this.bucketName = bucketName;
+        this.bucketName = minioProperties.getBucketName();
     }
 
     @Override
