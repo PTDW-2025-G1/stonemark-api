@@ -63,7 +63,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(OPEN_API_ROUTES).permitAll();
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
-                    auth.requestMatchers("/telegram/test").permitAll();
+                    auth.requestMatchers("/actuator/**").permitAll();
 
                     if (chatbotAuthOptional) {
                         auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
