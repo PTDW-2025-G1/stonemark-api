@@ -12,7 +12,7 @@ import pt.estga.submission.entities.MarkEvidenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
+import pt.estga.submission.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.user.entities.User;
 
 import java.io.ByteArrayInputStream;
@@ -24,7 +24,7 @@ import java.io.IOException;
 @Deprecated
 public class MarkOccurrenceSubmissionSubmitService {
 
-    private final MarkOccurrenceSubmissionRepository repository;
+    private final MarkEvidenceSubmissionRepository repository;
     private final AfterCommitEventPublisher eventPublisher;
     private final MediaService mediaService;
 

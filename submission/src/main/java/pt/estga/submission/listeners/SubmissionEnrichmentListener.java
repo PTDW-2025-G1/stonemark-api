@@ -12,7 +12,7 @@ import pt.estga.detection.DetectionResult;
 import pt.estga.detection.DetectionService;
 import pt.estga.file.application.MediaService;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
-import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
+import pt.estga.submission.repositories.MarkEvidenceSubmissionRepository;
 
 import java.io.InputStream;
 
@@ -21,7 +21,7 @@ import java.io.InputStream;
 @Slf4j
 public class SubmissionEnrichmentListener {
 
-    private final MarkOccurrenceSubmissionRepository proposalRepo;
+    private final MarkEvidenceSubmissionRepository proposalRepo;
     private final DetectionService detectionService;
     private final MediaService mediaService;
 
