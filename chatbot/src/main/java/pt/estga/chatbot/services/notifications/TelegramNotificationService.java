@@ -1,4 +1,4 @@
-package pt.estga.chatbot.services;
+package pt.estga.chatbot.services.notifications;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +10,7 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
+import pt.estga.chatbot.services.UiTextService;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.chatbot.telegram.services.TelegramTextService;
 
