@@ -12,7 +12,8 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.file.services.metadata.MediaMetadataService;
+import pt.estga.file.services.upload.MediaValidationService;
+import pt.estga.file.storage.variant.VariantStorageService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
@@ -33,7 +34,7 @@ public class MediaProcessingService {
     private final MediaVariantRepository mediaVariantRepository;
     private final MediaContentService mediaContentService;
     private final MediaValidationService mediaValidationService;
-    private final VariantGeneratorService variantGeneratorService;
+    private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
     private final StorageProperties storageProperties;
 
@@ -82,7 +83,7 @@ public class MediaProcessingService {
                         continue;
                     }
 
-                    VariantResult generated = variantGeneratorService.generate(tempOriginal, type);
+                    VariantResult generated = imageVariantGenerator.generate(tempOriginal, type);
                     try {
                         String storagePath = variantStorageService.storeVariant(mediaFile, generated, type);
 

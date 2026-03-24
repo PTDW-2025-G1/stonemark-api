@@ -1,4 +1,4 @@
-package pt.estga.file.services.storage;
+package pt.estga.file.storage;
 
 import org.springframework.core.io.Resource;
 

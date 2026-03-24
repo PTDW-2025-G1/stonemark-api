@@ -1,7 +1,9 @@
-package pt.estga.file.services.orchestration;
+package pt.estga.file.services.upload;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import pt.estga.file.services.MediaContentService;
+import pt.estga.file.services.MediaMetadataService;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
@@ -9,10 +11,8 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
-import pt.estga.file.services.MediaContentService;
-import pt.estga.file.services.metadata.MediaMetadataService;
-import pt.estga.file.services.naming.FileNamingService;
-import pt.estga.file.services.naming.StoragePathStrategy;
+import pt.estga.file.naming.FileNamingService;
+import pt.estga.file.naming.StoragePathStrategy;
 
 import java.io.InputStream;
 

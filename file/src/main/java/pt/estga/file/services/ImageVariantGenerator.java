@@ -23,7 +23,7 @@ import java.util.Iterator;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class VariantGeneratorService {
+public class ImageVariantGenerator {
 
     public VariantResult generate(Path originalFile, MediaVariantType type) throws IOException {
         Path temp = Files.createTempFile("variant-", ".webp");

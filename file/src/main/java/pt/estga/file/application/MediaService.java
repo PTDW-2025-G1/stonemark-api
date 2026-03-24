@@ -1,4 +1,4 @@
-package pt.estga.file.services.api;
+package pt.estga.file.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaContentService;
-import pt.estga.file.services.metadata.MediaMetadataService;
-import pt.estga.file.services.orchestration.MediaUploadOrchestrator;
+import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package pt.estga.file.services.storage;
+package pt.estga.file.storage;
 
 import io.minio.*;
 import io.minio.errors.MinioException;

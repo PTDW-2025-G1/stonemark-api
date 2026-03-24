@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.api.MediaService;
+import pt.estga.file.application.MediaService;
 import pt.estga.submission.entities.MarkEvidenceSubmission;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;

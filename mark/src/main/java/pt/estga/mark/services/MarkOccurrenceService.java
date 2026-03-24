@@ -10,7 +10,7 @@ import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.events.MarkOccurrenceCreatedEvent;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.api.MediaService;
+import pt.estga.file.application.MediaService;
 
 import java.io.IOException;
 import java.util.Optional;

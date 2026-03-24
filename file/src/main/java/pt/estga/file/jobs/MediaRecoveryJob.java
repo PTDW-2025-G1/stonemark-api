@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
-import pt.estga.file.services.metadata.MediaMetadataService;
+import pt.estga.file.services.MediaMetadataService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
