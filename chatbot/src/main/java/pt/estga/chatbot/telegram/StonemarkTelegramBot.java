@@ -6,6 +6,9 @@ import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.PartialBotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.springframework.security.core.Authentication;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -55,16 +58,62 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        // Run asynchronously with executor
+        log.info("onWebhookUpdateReceived invoked for updateId={}", update == null ? "<null>" : update.getUpdateId());
+        // Synchronous quick-handling: log update type and immediately acknowledge callback queries
+        try {
+            if (update == null) {
+                log.warn("Received null Telegram update");
+            } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
+                CallbackQuery cq = update.getCallbackQuery();
+                String callbackId = cq.getId();
+                String data = cq.getData();
+                Integer messageId = cq.getMessage() != null ? cq.getMessage().getMessageId() : null;
+                Long fromId = cq.getFrom() != null ? cq.getFrom().getId() : null;
+                log.debug("Received callback query id={} data={} from={} messageId={}", callbackId, data, fromId, messageId);
+
+                // Acknowledge callback right away to stop the Telegram client spinner. Failure to ack
+                // can make the client appear to hang even if server-side processing later runs.
+                try {
+                    AnswerCallbackQuery ack = new AnswerCallbackQuery(callbackId);
+                    ack.setText("");
+                    execute(ack);
+                    log.info("Sent AnswerCallbackQuery ack for id={}", callbackId);
+                } catch (TelegramApiException e) {
+                    String msg = e.getMessage();
+                    if (msg != null && msg.contains("query is too old")) {
+                        // Known Telegram condition: callback query expired on client side; not actionable.
+                        log.debug("AnswerCallbackQuery not sent because query is too old for id={}", cq.getId());
+                    } else {
+                        log.warn("Failed to send AnswerCallbackQuery ack for id={}", cq.getId(), e);
+                    }
+                }
+            } else {
+                log.debug("Received update: {}", update.getUpdateId());
+            }
+        } catch (Exception e) {
+            log.error("Error during synchronous webhook handling", e);
+        }
+
+        // Capture authentication for propagation into async thread to preserve impersonation/audit context if present.
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        // Run asynchronously with executor and restore authentication inside the task.
         CompletableFuture.runAsync(() -> {
             try {
+                if (authentication != null) {
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
                 BotInput botInput = telegramAdapter.toBotInput(update);
                 if (botInput != null) {
+                    log.debug("Dispatching bot input for chatId={}", botInput.getChatId());
                     dispatchAndSend(botInput);
+                } else {
+                    log.debug("telegramAdapter.toBotInput returned null for updateId={}", update == null ? "<null>" : update.getUpdateId());
                 }
             } catch (Exception e) {
-                log.error("Error processing Telegram update", e);
+                log.error("Error processing Telegram update asynchronously", e);
             } finally {
+                // Ensure SecurityContext is cleared to avoid leaking authentication to other requests/threads.
                 SecurityContextHolder.clearContext();
             }
         }, botExecutor);
@@ -81,9 +130,11 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         }
 
         try {
+            log.debug("Dispatching {} responses for chatId={}", botResponses.size(), botInput.getChatId());
             sendBotResponses(botInput.getChatId(), botResponses);
         } catch (Exception e) {
             log.error("Error dispatching and sending bot responses", e);
+            throw e;
         }
     }
 
@@ -94,6 +145,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                 continue;
             }
             for (PartialBotApiMethod<?> method : methods) {
+                log.debug("Sending Telegram method {} for chatId={}", method == null ? "<null>" : method.getClass().getSimpleName(), chatId);
                 try {
                     if (method instanceof BotApiMethod<?>) {
                         execute((BotApiMethod<?>) method);
