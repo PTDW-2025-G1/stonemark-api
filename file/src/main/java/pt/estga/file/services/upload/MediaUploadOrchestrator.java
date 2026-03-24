@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
-import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
@@ -15,6 +14,7 @@ import pt.estga.file.naming.FileNamingService;
 import pt.estga.file.naming.StoragePathStrategy;
 
 import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Handles the full upload orchestration in a linear, readable flow. Keeps
@@ -29,7 +29,6 @@ public class MediaUploadOrchestrator {
     private final MediaMetadataService mediaMetadataService;
     private final MediaContentService mediaContentService;
     private final FileNamingService fileNamingService;
-    private final AfterCommitEventPublisher eventPublisher;
     private final StorageProperties storageProperties;
     private final StoragePathStrategy storagePathStrategy;
 
@@ -50,6 +49,7 @@ public class MediaUploadOrchestrator {
         // Store content and obtain size info. Handle storage failures by marking
         // the entity as FAILED so the system does not leave a PROCESSING record.
         MediaContentService.SaveResult result;
+        // Ensure the provided InputStream is closed after use to avoid resource leaks.
         try {
             result = mediaContentService.saveContent(input, relativePath);
         } catch (Exception e) {
@@ -61,6 +61,12 @@ public class MediaUploadOrchestrator {
                 log.error("Failed to mark media as FAILED after storage error for id {}", media.getId(), ex);
             }
             throw e;
+        } finally {
+            try {
+                if (input != null) input.close();
+            } catch (IOException ioe) {
+                log.warn("Failed to close upload InputStream for media id {}: {}", media.getId(), ioe.getMessage());
+            }
         }
 
         // Enforce configured maximum upload size. If the stored file exceeds the
@@ -82,7 +88,12 @@ public class MediaUploadOrchestrator {
         media.completeUpload(result.size(), result.storagePath(), null, MediaStatus.UPLOADED);
         MediaFile saved;
         try {
-            saved = saveMetadataWithRetries(media);
+            // Save metadata and register the MediaUploadedEvent within the same
+            // transactional boundary to guarantee the event is deferred until that
+            // transaction commits. This avoids making the entire orchestrator
+            // transactional (which would keep DB transaction open for the duration
+            // of file I/O).
+            saved = mediaMetadataService.saveMetadataWithRetriesAndPublish(media, new MediaUploadedEvent(media.getId()));
         } catch (Exception e) {
             log.error("CRITICAL: file stored but DB update failed for media id {}", media.getId(), e);
             // Attempt to delete stored content to avoid orphaned files. If deletion
@@ -104,36 +115,6 @@ public class MediaUploadOrchestrator {
             throw new RuntimeException("Failed to persist final media state for id " + media.getId(), e);
         }
 
-        // Publish the uploaded event after commit using the centralized abstraction.
-        eventPublisher.publish(new MediaUploadedEvent(saved.getId()));
-
         return saved;
-    }
-
-    /**
-     * Attempts to save metadata with a small number of retries.
-     * Retries are kept simple to avoid complex scheduling in the request
-     * thread; the goal is to recover from transient DB errors.
-     */
-    private MediaFile saveMetadataWithRetries(MediaFile media) {
-        final int maxAttempts = 3;
-        int tried = 0;
-        while (true) {
-            try {
-                return mediaMetadataService.saveMetadata(media);
-            } catch (Exception e) {
-                tried++;
-                if (tried >= maxAttempts) {
-                    throw e;
-                }
-                log.warn("Transient error saving media metadata for id {} - retry {}/{}", media.getId(), tried, maxAttempts, e);
-                try {
-                    java.util.concurrent.TimeUnit.MILLISECONDS.sleep(250L * tried);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted while retrying metadata save", ie);
-                }
-            }
-        }
     }
 }
