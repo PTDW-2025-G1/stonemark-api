@@ -7,8 +7,6 @@ telegram:
     username: stonemarkbot
     token: ${TELEGRAM_BOT_TOKEN}
     webhook-path: /webhook/telegram
-    auth:
-      enabled: true
 
 whatsapp:
   bot:

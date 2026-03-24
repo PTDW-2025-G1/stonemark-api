@@ -40,7 +40,6 @@ public class SecurityConfig {
             "/swagger-ui.html"
     };
     private static final String PUBLIC_ROUTE = "/api/v1/public/**";
-    private static final String AUTH_ROUTE = "/api/v1/auth/**";
     private static final String[] ALLOWED_ORIGINS = {
             "http://localhost:*",
             "https://stonemark.pt",
@@ -64,7 +63,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(OPEN_API_ROUTES).permitAll();
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
-                    auth.requestMatchers(AUTH_ROUTE).permitAll();
 
                     if (chatbotAuthOptional) {
                         auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
