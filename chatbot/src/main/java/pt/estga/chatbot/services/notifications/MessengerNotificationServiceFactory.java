@@ -1,4 +1,4 @@
-package pt.estga.chatbot.services;
+package pt.estga.chatbot.services.notifications;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;

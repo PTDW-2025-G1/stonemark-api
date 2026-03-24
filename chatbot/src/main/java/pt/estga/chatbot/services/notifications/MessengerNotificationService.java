@@ -1,4 +1,4 @@
-package pt.estga.chatbot.services;
+package pt.estga.chatbot.services.notifications;
 
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;

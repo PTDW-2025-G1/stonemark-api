@@ -51,3 +51,22 @@ application:
 
 user:
   delete-after-days: 30
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: [health, info, metrics, prometheus, env]
+  endpoint:
+    health:
+      show-details: always
+      group:
+        readiness:
+          include: [readinessState, vision, telegram, whatsapp, db]
+        liveness:
+          include: [livenessState]
+      validate-group-membership: false
+
+# Note: Prometheus metrics are enabled by adding micrometer-registry-prometheus dependency.
+# Secure actuator endpoints in production via network restrictions or Spring Security.
