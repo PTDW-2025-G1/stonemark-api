@@ -38,7 +38,6 @@ public class MediaProcessingService {
     private final VariantStorageService variantStorageService;
     private final StorageProperties storageProperties;
 
-
     @PostConstruct
     public void verifyWebpSupport() {
         if (!ImageIO.getImageWritersByFormatName("webp").hasNext()) {
