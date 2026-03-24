@@ -2,11 +2,10 @@ package pt.estga.file.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
+import pt.estga.shared.audit.CreationAuditedEntity;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class MediaFile {
+public class MediaFile extends CreationAuditedEntity {
 
     @Id
     @GeneratedValue
@@ -42,9 +41,6 @@ public class MediaFile {
 
     @Column(length = 512)
     private String providerPublicId;
-
-    @CreatedDate
-    private Instant uploadedAt;
 
     @OneToMany(
             mappedBy = "mediaFile",

@@ -13,6 +13,6 @@ import java.util.List;
 @Repository
 public interface MediaFileRepository extends JpaRepository<MediaFile, Long> {
 
-	@Query("select m from MediaFile m where m.status = :status and (m.uploadedAt is null or m.uploadedAt < :before)")
-	List<MediaFile> findProcessingWithNullOrBeforeUploadedAt(@Param("status") MediaStatus status, @Param("before") Instant before);
+	@Query("select m from MediaFile m where m.status = :status and m.createdAt < :before")
+	List<MediaFile> findProcessingOlderThan(@Param("status") MediaStatus status, @Param("before") Instant before);
 }

@@ -30,6 +30,6 @@ public class MediaMetadataService {
     }
 
     public List<MediaFile> findProcessingOlderThan(Instant before) {
-        return mediaFileRepository.findProcessingWithNullOrBeforeUploadedAt(MediaStatus.PROCESSING, before);
+        return mediaFileRepository.findProcessingOlderThan(MediaStatus.PROCESSING, before);
     }
 }

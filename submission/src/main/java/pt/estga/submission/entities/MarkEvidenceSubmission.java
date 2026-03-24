@@ -2,7 +2,7 @@ package pt.estga.submission.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.submission.enums.SubmissionSource;
 import pt.estga.submission.enums.SubmissionStatus;
@@ -46,7 +46,7 @@ public class MarkEvidenceSubmission {
     @ManyToOne(fetch = FetchType.LAZY)
     private User submittedBy;
 
-    @CreationTimestamp
+    @CreatedDate
     private Instant submittedAt;
 
 }
