@@ -1,0 +1,41 @@
+package pt.estga.submission.services;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import pt.estga.submission.entities.MarkEvidenceSubmission;
+import pt.estga.submission.enums.SubmissionSource;
+import pt.estga.user.services.UserService;
+
+import java.io.IOException;
+
+/**
+ * Thin facade that encapsulates chatbot-specific submission orchestration:
+ * - resolves an optional domain user id to a User and attaches it to the submission
+ * - ensures a submission source is set
+ * - delegates the actual persistence and media saving to the application SubmissionService
+ */
+@Component
+@RequiredArgsConstructor
+public class ChatbotSubmissionFacade {
+
+    private final SubmissionService submissionService;
+    private final UserService userService;
+
+    public void submitFromChatbot(
+            MarkEvidenceSubmission submission,
+            byte[] photoData,
+            String photoFilename,
+            Long domainUserId,
+            SubmissionSource source
+    ) throws IOException {
+        if (domainUserId != null) {
+            userService.findById(domainUserId).ifPresent(submission::setSubmittedBy);
+        }
+
+        if (submission.getSubmissionSource() == null) {
+            submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
+        }
+
+        submissionService.submit(submission, photoData, photoFilename);
+    }
+}
