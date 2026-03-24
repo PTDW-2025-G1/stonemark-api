@@ -19,6 +19,8 @@ import pt.estga.chatbot.models.BotResponse;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
 public class StonemarkTelegramBot extends TelegramWebhookBot {
@@ -28,6 +30,8 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final BotEngine conversationService;
     private final TelegramAdapter telegramAdapter;
     private final Executor botExecutor;
+    // Map used to serialize processing per chatId to prevent concurrent dispatch races
+    private final ConcurrentMap<Long, Object> chatLocks = new ConcurrentHashMap<>();
 
     public StonemarkTelegramBot(String botUsername,
                                 String botToken,
@@ -124,17 +128,40 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     // Reusable path for webhook and internal notifications that need dispatcher-driven output.
     public void dispatchAndSend(BotInput botInput) {
-        List<BotResponse> botResponses = conversationService.handleInput(botInput);
-        if (botResponses == null) {
-            return;
+        long chatId = botInput.getChatId();
+
+        // Obtain a per-chat lock object and serialize dispatch for this chat.
+        // Create or obtain a per-chat lock object without using a lambda to avoid synthetic
+        // parameter warnings from static analysis tools.
+        Object lock = chatLocks.get(chatId);
+        if (lock == null) {
+            Object newLock = new Object();
+            Object existing = chatLocks.putIfAbsent(chatId, newLock);
+            lock = existing == null ? newLock : existing;
         }
 
-        try {
-            log.debug("Dispatching {} responses for chatId={}", botResponses.size(), botInput.getChatId());
-            sendBotResponses(botInput.getChatId(), botResponses);
-        } catch (Exception e) {
-            log.error("Error dispatching and sending bot responses", e);
-            throw e;
+        log.debug("Attempting to acquire chat lock for chatId={}", chatId);
+        synchronized (lock) {
+            log.debug("Acquired chat lock for chatId={}", chatId);
+            List<BotResponse> botResponses = conversationService.handleInput(botInput);
+            if (botResponses == null) {
+                // Attempt to remove the lock to avoid unbounded map growth.
+                chatLocks.remove(chatId, lock);
+                return;
+            }
+
+            try {
+                log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
+                sendBotResponses(chatId, botResponses);
+            } catch (Exception e) {
+                log.error("Error dispatching and sending bot responses", e);
+                throw e;
+            } finally {
+                log.debug("Releasing chat lock for chatId={}", chatId);
+                // Remove lock reference when done to keep map size bounded. Removal is conditional
+                // to avoid removing a lock instance that was replaced concurrently.
+                chatLocks.remove(chatId, lock);
+            }
         }
     }
 
