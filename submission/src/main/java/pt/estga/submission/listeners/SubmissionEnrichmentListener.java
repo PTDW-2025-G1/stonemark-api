@@ -10,7 +10,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.detection.DetectionResult;
 import pt.estga.detection.DetectionService;
-import pt.estga.file.services.api.MediaService;
+import pt.estga.file.application.MediaService;
 import pt.estga.submission.events.SubmissionSubmittedEvent;
 import pt.estga.submission.repositories.MarkOccurrenceSubmissionRepository;
 

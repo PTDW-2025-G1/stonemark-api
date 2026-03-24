@@ -5,13 +5,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.file.services.metadata.MediaMetadataService;
+import pt.estga.file.services.upload.MediaValidationService;
+import pt.estga.file.storage.variant.VariantStorageService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
@@ -32,10 +34,10 @@ public class MediaProcessingService {
     private final MediaVariantRepository mediaVariantRepository;
     private final MediaContentService mediaContentService;
     private final MediaValidationService mediaValidationService;
-    private final VariantGeneratorService variantGeneratorService;
+    private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
+    private final StorageProperties storageProperties;
 
-    private static final Set<String> ALLOWED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -62,7 +64,7 @@ public class MediaProcessingService {
                     Files.copy(is, tempOriginal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
 
-                if (!mediaValidationService.isAllowedImage(tempOriginal, ALLOWED_MIME)) {
+                if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
                     mediaMetadataService.saveMetadata(mediaFile);
@@ -81,7 +83,7 @@ public class MediaProcessingService {
                         continue;
                     }
 
-                    VariantResult generated = variantGeneratorService.generate(tempOriginal, type);
+                    VariantResult generated = imageVariantGenerator.generate(tempOriginal, type);
                     try {
                         String storagePath = variantStorageService.storeVariant(mediaFile, generated, type);
 

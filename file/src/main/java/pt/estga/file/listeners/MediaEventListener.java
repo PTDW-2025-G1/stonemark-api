@@ -16,6 +16,11 @@ public class MediaEventListener {
 
     private final MediaProcessingService processingService;
 
+    /**
+     * Listener is executed asynchronously and only after the surrounding
+     * transaction commits. This ensures upload persistence completes before
+     * processing begins and prevents blocking the upload request thread.
+     */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMediaUploaded(MediaUploadedEvent event) {

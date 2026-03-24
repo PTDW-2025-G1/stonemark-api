@@ -1,11 +1,11 @@
-package pt.estga.file.services.storage;
+package pt.estga.file.storage;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.config.StorageProperties;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 import pt.estga.sharedweb.exceptions.FileStorageException;
 
@@ -21,7 +21,8 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
 
     private final Path rootPath;
 
-    public FileStorageServiceLocalImpl(@Value("${storage.local.root-path:uploads}") String rootDir) {
+    public FileStorageServiceLocalImpl(StorageProperties storageProperties) {
+        String rootDir = storageProperties.getLocal().getRootPath();
         this.rootPath = Paths.get(rootDir).toAbsolutePath().normalize();
 
         try {
@@ -101,8 +102,8 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
             // Try to delete the parent folder if it's empty (cleanup)
             Path parentDir = filePath.getParent();
             if (parentDir != null && !parentDir.equals(rootPath)) {
-                try {
-                    if (Files.list(parentDir).findAny().isEmpty()) {
+                try (var stream = Files.list(parentDir)) {
+                    if (stream.findAny().isEmpty()) {
                         Files.delete(parentDir);
                     }
                 } catch (IOException ignored) {
