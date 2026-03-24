@@ -6,6 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.repositories.MediaFileRepository;
+import pt.estga.file.enums.MediaStatus;
+
+import java.time.Instant;
+import java.util.List;
 
 import java.util.Optional;
 
@@ -23,5 +27,9 @@ public class MediaMetadataService {
 
     public Optional<MediaFile> findById(Long id) {
         return mediaFileRepository.findById(id);
+    }
+
+    public List<MediaFile> findProcessingOlderThan(Instant before) {
+        return mediaFileRepository.findProcessingWithNullOrBeforeUploadedAt(MediaStatus.PROCESSING, before);
     }
 }

@@ -35,4 +35,12 @@ public class MediaContentService {
     public Resource loadContent(String storagePath) {
         return fileStorageService.loadFile(storagePath);
     }
+
+    /**
+     * Deletes the content at the given storage path using the underlying storage
+     * implementation. This is used to cleanup files when metadata persistence fails.
+     */
+    public void deleteContent(String storagePath) {
+        fileStorageService.deleteFile(storagePath);
+    }
 }

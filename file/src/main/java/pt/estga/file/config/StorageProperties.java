@@ -29,6 +29,10 @@ public class StorageProperties {
             "image/webp"
     ));
 
+    /** Maximum upload size in bytes. Files larger than this will be rejected. Default: 10 MiB */
+    @Setter
+    private long maxUploadSize = 10 * 1024 * 1024;
+
     private final Local local = new Local();
 
     @Setter
