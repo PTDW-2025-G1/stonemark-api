@@ -2,7 +2,7 @@ package pt.estga.submission.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +25,7 @@ import java.io.IOException;
 public class MarkOccurrenceSubmissionSubmitService {
 
     private final MarkOccurrenceSubmissionRepository repository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AfterCommitEventPublisher eventPublisher;
     private final MediaService mediaService;
 
     /**
@@ -53,7 +53,7 @@ public class MarkOccurrenceSubmissionSubmitService {
         MarkEvidenceSubmission savedSubmission = repository.save(submission);
         log.info("Submission submitted successfully with ID: {}", savedSubmission.getId());
 
-        eventPublisher.publishEvent(new SubmissionSubmittedEvent(this, savedSubmission.getId()));
+        eventPublisher.publish(new SubmissionSubmittedEvent(this, savedSubmission.getId()));
         log.debug("Published SubmissionSubmittedEvent for submission ID: {}", savedSubmission.getId());
 
         return savedSubmission;

@@ -2,7 +2,7 @@ package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.context.ApplicationEventPublisher;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.entities.Mark;
@@ -17,7 +17,7 @@ import java.util.Optional;
 public class MarkService {
 
     private final MarkRepository repository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AfterCommitEventPublisher eventPublisher;
 
     public Optional<Mark> findById(Long id) {
         return repository.findById(id);
@@ -50,7 +50,7 @@ public class MarkService {
         }
         Mark savedMark = repository.save(mark);
         if (savedMark.getReferenceImage() != null) {
-            eventPublisher.publishEvent(new MarkCreatedEvent(this, savedMark.getId(), savedMark.getReferenceImage().getId(), savedMark.getReferenceImage().getOriginalFilename()));
+            eventPublisher.publish(new MarkCreatedEvent(this, savedMark.getId(), savedMark.getReferenceImage().getId(), savedMark.getReferenceImage().getOriginalFilename()));
         }
         return savedMark;
     }

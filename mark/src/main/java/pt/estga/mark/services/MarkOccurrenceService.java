@@ -2,7 +2,7 @@ package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.context.ApplicationEventPublisher;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +20,7 @@ import java.util.Optional;
 public class MarkOccurrenceService {
 
     private final MarkOccurrenceRepository repository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AfterCommitEventPublisher eventPublisher;
     private final MediaService mediaService;
 
     public Optional<MarkOccurrence> findById(Long id) {
@@ -57,7 +57,7 @@ public class MarkOccurrenceService {
 
         MarkOccurrence savedOccurrence = repository.save(occurrence);
         if (savedOccurrence.getCover() != null) {
-            eventPublisher.publishEvent(new MarkOccurrenceCreatedEvent(this, savedOccurrence.getId(), savedOccurrence.getCover().getId(), savedOccurrence.getCover().getOriginalFilename()));
+            eventPublisher.publish(new MarkOccurrenceCreatedEvent(this, savedOccurrence.getId(), savedOccurrence.getCover().getId(), savedOccurrence.getCover().getOriginalFilename()));
         }
         return savedOccurrence;
     }

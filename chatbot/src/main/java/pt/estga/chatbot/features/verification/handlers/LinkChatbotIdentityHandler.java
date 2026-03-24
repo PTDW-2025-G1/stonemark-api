@@ -2,7 +2,7 @@ package pt.estga.chatbot.features.verification.handlers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
@@ -29,7 +29,7 @@ public class LinkChatbotIdentityHandler implements ConversationStateHandler {
 
     private final ChatbotAccountService chatbotAccountService;
     private final UserService userService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AfterCommitEventPublisher eventPublisher;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
@@ -48,7 +48,7 @@ public class LinkChatbotIdentityHandler implements ConversationStateHandler {
 
                 // Publish event so listeners (e.g., notification services) can notify the user
                 try {
-                    eventPublisher.publishEvent(new ChatbotAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
+                    eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", input.getUserId(), user.getId()));
                 } catch (Exception e) {
                     log.error("Failed to publish ChatbotAccountConnectedEvent for user {}: {}", user.getId(), e.getMessage());
                 }

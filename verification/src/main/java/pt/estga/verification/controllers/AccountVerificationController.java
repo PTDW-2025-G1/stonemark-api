@@ -3,7 +3,7 @@ package pt.estga.verification.controllers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +27,7 @@ public class AccountVerificationController {
     private final ChatbotVerificationService verificationService;
     private final UserService userService;
     private final ChatbotAccountService chatbotAccountService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
     @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
@@ -50,7 +50,7 @@ public class AccountVerificationController {
         chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
 
         // Publish event for chatbot to handle notification, platform set to TELEGRAM for now
-        eventPublisher.publishEvent(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
+        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
 
         return ResponseEntity.ok(
                 MessageResponseDto.success("Messaging account linked successfully")

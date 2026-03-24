@@ -6,7 +6,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.services.storage.FileStorageService;
 
-import java.io.IOException;
 import java.io.InputStream;
 
 @Service
