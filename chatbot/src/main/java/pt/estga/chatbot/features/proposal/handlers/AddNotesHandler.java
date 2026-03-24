@@ -7,7 +7,7 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.submission.entities.MarkEvidenceSubmission;
-import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
+import pt.estga.submission.services.SubmissionService;
 import pt.estga.user.entities.User;
 import pt.estga.user.services.UserService;
 
@@ -16,7 +16,7 @@ import pt.estga.user.services.UserService;
 @Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final MarkOccurrenceSubmissionSubmitService submitService;
+    private final SubmissionService submitService;
     private final UserService userService;
 
     @Override
@@ -39,13 +39,19 @@ public class AddNotesHandler implements ConversationStateHandler {
                     ? userService.findById(domainUserId).orElse(null)
                     : null;
 
-            // Submit the submission with all collected data (authenticated or anonymous)
-            submitService.submitFromChatbot(
+            // Attach optional user and source on the submission object (preserve existing values)
+            if (user != null && markProposal.getSubmittedBy() == null) {
+                markProposal.setSubmittedBy(user);
+            }
+            if (context.getProposalContext().getSubmissionSource() != null && markProposal.getSubmissionSource() == null) {
+                markProposal.setSubmissionSource(context.getProposalContext().getSubmissionSource());
+            }
+
+            // Submit the submission using the simple 3-argument API: submission already contains user/source
+            submitService.submit(
                     markProposal,
                     context.getProposalContext().getPhotoData(),
-                    context.getProposalContext().getPhotoFilename(),
-                    user,
-                    context.getProposalContext().getSubmissionSource()
+                    context.getProposalContext().getPhotoFilename()
             );
 
             // Clean up the context
