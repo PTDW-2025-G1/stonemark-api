@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
@@ -15,9 +14,7 @@ import pt.estga.file.services.metadata.MediaMetadataService;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 
 /**
  * Handles the full upload orchestration in a linear, readable flow. Keeps
@@ -36,25 +33,26 @@ public class MediaUploadOrchestrator {
     private final StorageProperties storageProperties;
     private final StoragePathStrategy storagePathStrategy;
 
-    @Transactional
-    public MediaFile orchestrateUpload(InputStream input, String originalFilename, String contentType) throws IOException {
+    @SuppressWarnings("unused")
+    public MediaFile orchestrateUpload(InputStream input, String originalFilename) {
         // Generate a safe filename independent of DB id
         String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
 
         StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
 
-        // Create metadata instance in memory (do not persist yet)
+        // Persist initial metadata so a record exists even if storage fails. This
+        // allows retries/cleanup and avoids orphaned files without trace.
         MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
+        media = mediaMetadataService.saveMetadata(media);
 
-        // Compute storage relative path using strategy
+        // Compute storage relative path using strategy (based on filename)
         String relativePath = storagePathStrategy.generatePath(media);
 
-        // Store content
-        var counting = new pt.estga.file.util.CountingInputStream(input);
-        String storagePath = mediaContentService.saveContent(counting, relativePath);
+        // Store content and obtain size info
+        MediaContentService.SaveResult result = mediaContentService.saveContent(input, relativePath);
 
-        // Finalize entity state and persist once
-        media.completeUpload(counting.getCount(), storagePath, null, MediaStatus.UPLOADED, Instant.now());
+        // Finalize entity state and persist update
+        media.completeUpload(result.size(), result.storagePath(), null, MediaStatus.UPLOADED);
         MediaFile saved = mediaMetadataService.saveMetadata(media);
 
         // Publish event for async processing after commit

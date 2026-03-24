@@ -22,9 +22,13 @@ public class VariantStorageService {
     private final MediaContentService mediaContentService;
 
     public String storeVariant(MediaFile mediaFile, VariantResult variantResult, MediaVariantType type) throws IOException {
-        String variantPath = String.format("%d/derived/%s.webp", mediaFile.getId(), type.name().toLowerCase());
+        // Use the stored filename as base so derived variants are colocated with
+        // original content and avoid reliance on database id for pathing.
+        String baseName = mediaFile.getFilename();
+        String variantPath = String.format("derived/%s/%s.webp", baseName, type.name().toLowerCase());
         try (InputStream is = Files.newInputStream(variantResult.file())) {
-            return mediaContentService.saveContent(is, variantPath);
+            var res = mediaContentService.saveContent(is, variantPath);
+            return res.storagePath();
         }
     }
 }

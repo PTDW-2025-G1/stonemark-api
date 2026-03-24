@@ -87,14 +87,12 @@ public class MediaFile {
      * @param storagePath storage provider relative path where the file was saved
      * @param providerPublicId optional provider-specific id (e.g., S3 key)
      * @param finalStatus resulting media status (for example UPLOADED)
-     * @param uploadedAt timestamp when upload completed
      */
-    public void completeUpload(long size, String storagePath, String providerPublicId, MediaStatus finalStatus, Instant uploadedAt) {
+    public void completeUpload(long size, String storagePath, String providerPublicId, MediaStatus finalStatus) {
         this.size = size;
         this.storagePath = storagePath;
         this.providerPublicId = providerPublicId;
         this.status = finalStatus;
-        this.uploadedAt = uploadedAt;
     }
 
 }

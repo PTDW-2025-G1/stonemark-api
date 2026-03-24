@@ -19,13 +19,15 @@ public class StoragePathStrategy {
 
         String filename = mediaFile.getFilename().replace("\\", "/");
 
-        // Extract UUID prefix (first two chars) to distribute files
+        // Extract UUID prefix (first four chars) and split into two levels: ab/cd/filename
         String base = filename;
         int dot = filename.indexOf('.');
         if (dot > 0) base = filename.substring(0, dot);
 
-        String prefix = base.length() >= 2 ? base.substring(0,2) : "xx";
+        String part = base.length() >= 4 ? base.substring(0,4) : String.format("%4s", base).replace(' ', 'x');
+        String p1 = part.substring(0,2);
+        String p2 = part.substring(2,4);
 
-        return String.format("%s/%s", prefix, filename);
+        return String.format("%s/%s/%s", p1, p2, filename);
     }
 }

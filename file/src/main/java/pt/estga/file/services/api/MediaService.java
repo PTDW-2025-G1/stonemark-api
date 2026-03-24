@@ -2,7 +2,6 @@ package pt.estga.file.services.api;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +23,6 @@ public class MediaService {
     private final MediaUploadOrchestrator uploadOrchestrator;
     private final MediaMetadataService mediaMetadataService;
     private final MediaContentService mediaContentService;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     /**
      * Deprecated: use MediaUploadOrchestrator.orchestrateUpload instead. Kept for
@@ -33,7 +31,7 @@ public class MediaService {
     @Deprecated
     @Transactional
     public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, null);
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
     }
 
     public Resource loadFileById(Long fileId) {
