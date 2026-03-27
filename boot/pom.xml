@@ -48,7 +48,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>detection</artifactId>
+            <artifactId>vision</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

@@ -24,7 +24,7 @@
     <modules>
         <module>boot</module>
         <module>mark</module>
-        <module>detection</module>
+        <module>vision</module>
         <module>file</module>
         <module>user</module>
         <module>shared</module>

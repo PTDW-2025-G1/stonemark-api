@@ -1,4 +1,4 @@
-package pt.estga.detection;
+package pt.estga.vision;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
