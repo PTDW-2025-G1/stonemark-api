@@ -39,6 +39,7 @@
         <module>content-import</module>
         <module>monument</module>
         <module>notification</module>
+        <module>processing</module>
     </modules>
     <scm>
 		<connection/>
