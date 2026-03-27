@@ -58,7 +58,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>submission</artifactId>
+            <artifactId>intake</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

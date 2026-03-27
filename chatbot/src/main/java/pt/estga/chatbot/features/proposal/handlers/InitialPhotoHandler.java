@@ -9,8 +9,8 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.ProposalState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.submission.entities.MarkEvidenceSubmission;
-import pt.estga.submission.enums.SubmissionSource;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.enums.SubmissionSource;
 
 @Component
 @RequiredArgsConstructor

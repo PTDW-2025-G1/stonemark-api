@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.submission.entities.MarkEvidenceSubmission;
-import pt.estga.submission.services.ChatbotSubmissionFacade;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.services.ChatbotSubmissionFacade;
 
 @Component
 @RequiredArgsConstructor

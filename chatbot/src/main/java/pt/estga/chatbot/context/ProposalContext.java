@@ -1,8 +1,8 @@
 package pt.estga.chatbot.context;
 
 import lombok.Data;
-import pt.estga.submission.entities.MarkEvidenceSubmission;
-import pt.estga.submission.enums.SubmissionSource;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.enums.SubmissionSource;
 
 import java.util.List;
 
