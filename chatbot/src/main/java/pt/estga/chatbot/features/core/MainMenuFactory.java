@@ -32,7 +32,6 @@ public class MainMenuFactory {
         List<List<Button>> buttonRows = new ArrayList<>();
         boolean canStartProposal = chatbotAuthProperties.isOptional() || isAuthenticated;
 
-        // Each button in its own row for full width
         if (canStartProposal) {
             buttonRows.add(List.of(
                     Button.builder()

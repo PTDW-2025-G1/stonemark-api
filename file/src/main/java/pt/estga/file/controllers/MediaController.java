@@ -21,8 +21,8 @@ import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.mappers.MediaFileMapper;
-import pt.estga.file.services.MediaService;
-import pt.estga.file.services.MediaVariantService;
+import pt.estga.file.application.MediaService;
+import pt.estga.file.application.MediaVariantService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;

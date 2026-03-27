@@ -6,23 +6,20 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.proposal.ProposalCallbackData;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.submission.entities.MarkOccurrenceSubmission;
-import pt.estga.submission.services.MarkOccurrenceSubmissionSubmitService;
-import pt.estga.user.entities.User;
-import pt.estga.user.services.UserService;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.services.ChatbotSubmissionFacade;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final MarkOccurrenceSubmissionSubmitService submitService;
-    private final UserService userService;
+    private final ChatbotSubmissionFacade submitFacade;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        MarkOccurrenceSubmission submission = context.getProposalContext().getSubmission();
-        if (!(submission instanceof MarkOccurrenceSubmission markProposal)) {
+        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
+        if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }
 
@@ -34,17 +31,12 @@ public class AddNotesHandler implements ConversationStateHandler {
         }
 
         try {
-            Long domainUserId = context.getDomainUserId();
-            User user = domainUserId != null
-                    ? userService.findById(domainUserId).orElse(null)
-                    : null;
-
-            // Submit the submission with all collected data (authenticated or anonymous)
-            submitService.submitFromChatbot(
+            // Delegate chatbot-specific orchestration to the facade which resolves user and source
+            submitFacade.submitFromChatbot(
                     markProposal,
                     context.getProposalContext().getPhotoData(),
                     context.getProposalContext().getPhotoFilename(),
-                    user,
+                    context.getDomainUserId(),
                     context.getProposalContext().getSubmissionSource()
             );
 

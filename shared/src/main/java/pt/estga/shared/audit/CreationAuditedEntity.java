@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import pt.estga.shared.models.AuditActor;
 
 import java.time.Instant;
 
@@ -25,7 +26,11 @@ public abstract class CreationAuditedEntity {
     protected Instant createdAt;
 
     @CreatedBy
-    @Column(updatable = false)
-    protected Long createdById;
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "id", column = @Column(name = "created_by_id", updatable = false)),
+            @AttributeOverride(name = "identifier", column = @Column(name = "created_by_identifier", updatable = false))
+    })
+    protected AuditActor createdBy;
 
 }

@@ -2,13 +2,13 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.monument.Monument;
 import pt.estga.shared.audit.AuditedEntity;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -33,6 +33,9 @@ public class MarkOccurrence extends AuditedEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Monument monument;
+
+    @OneToMany(mappedBy = "occurrence", cascade = CascadeType.ALL)
+    private List<MarkEvidence> evidences;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User author;

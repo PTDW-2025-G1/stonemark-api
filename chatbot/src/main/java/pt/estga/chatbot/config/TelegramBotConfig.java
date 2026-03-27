@@ -1,5 +1,6 @@
 package pt.estga.chatbot.config;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.chatbot.telegram.TelegramAdapter;
 
 import java.util.concurrent.Executor;
+import org.springframework.util.StringUtils;
 
 /**
  * Configuration class for the Telegram Bot integration.
@@ -58,5 +60,12 @@ public class TelegramBotConfig {
             @Qualifier("botTaskExecutor") Executor botTaskExecutor) {
         return new StonemarkTelegramBot(botUsername, botToken, webhookPath,
                 conversationService, telegramAdapter, botTaskExecutor);
+    }
+
+    @PostConstruct
+    public void validateProperties() {
+        if (!StringUtils.hasText(botUsername) || !StringUtils.hasText(botToken)) {
+            throw new IllegalStateException("Missing required Telegram bot configuration: telegram.bot.username and telegram.bot.token must be set");
+        }
     }
 }

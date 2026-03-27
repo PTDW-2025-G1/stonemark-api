@@ -13,7 +13,7 @@ public class ProposalStartHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        return HandlerOutcome.SUCCESS;
+        return HandlerOutcome.RE_DISPATCH;
     }
 
     @Override
