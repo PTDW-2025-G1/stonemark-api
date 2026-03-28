@@ -12,13 +12,13 @@ import java.io.IOException;
  * Thin facade that encapsulates chatbot-specific submission orchestration:
  * - resolves an optional domain user id to a User and attaches it to the submission
  * - ensures a submission source is set
- * - delegates the actual persistence and media saving to the application SubmissionService
+ * - delegates the actual persistence and media saving to the application MarkEvidenceSubmissionService
  */
 @Component
 @RequiredArgsConstructor
 public class ChatbotSubmissionFacade {
 
-    private final SubmissionService submissionService;
+    private final MarkEvidenceSubmissionService markEvidenceSubmissionService;
     private final UserService userService;
 
     public void submitFromChatbot(
@@ -36,6 +36,6 @@ public class ChatbotSubmissionFacade {
             submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
         }
 
-        submissionService.submit(submission, photoData, photoFilename);
+        markEvidenceSubmissionService.submit(submission, photoData, photoFilename);
     }
 }

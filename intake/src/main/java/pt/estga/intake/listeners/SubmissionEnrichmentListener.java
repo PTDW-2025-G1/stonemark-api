@@ -11,7 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.DetectionService;
 import pt.estga.file.application.MediaService;
-import pt.estga.intake.events.SubmissionSubmittedEvent;
+import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 
 import java.io.InputStream;
@@ -28,8 +28,8 @@ public class SubmissionEnrichmentListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalSubmitted(SubmissionSubmittedEvent event) {
-        Long proposalId = event.getProposalId();
+    public void handleProposalSubmitted(MarkEvidenceSubmittedEvent event) {
+        Long proposalId = event.getSubmissionId();
         log.info("Async detection processing for submitted proposal ID: {}", proposalId);
 
         proposalRepo.findById(proposalId).ifPresentOrElse(proposal -> {

@@ -8,7 +8,7 @@ import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.intake.events.SubmissionSubmittedEvent;
+import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,17 +18,17 @@ import java.io.IOException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SubmissionService {
+public class MarkEvidenceSubmissionService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MediaUploadOrchestrator mediaUploadOrchestrator;
     private final AfterCommitEventPublisher eventPublisher;
 
     /**
-     * Submits a submission. The provided submission object already contains user and source information
+     * Submits a mark evidence submission. The provided submission object already contains user and source information
      * (if available) and will be preserved. The method stores the provided photo bytes, attaches the
      * resulting MediaFile to the submission, sets the status to SUBMITTED, persists the submission and
-     * publishes a SubmissionSubmittedEvent after commit.
+     * publishes a MarkEvidenceSubmittedEvent after commit.
      */
     @Transactional
     public void submit(
@@ -59,7 +59,7 @@ public class SubmissionService {
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
         // Publish event after transaction commit
-        eventPublisher.publish(new SubmissionSubmittedEvent(this, saved.getId()));
+        eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
 
         log.info("Submission submitted successfully with ID: {}", saved.getId());
     }
