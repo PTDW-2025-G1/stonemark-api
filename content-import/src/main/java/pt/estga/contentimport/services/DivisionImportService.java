@@ -5,14 +5,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.entities.Country;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 import pt.estga.territory.services.CountryService;
+import pt.estga.territory.exceptions.UnsupportedCountryException;
 import pt.estga.territory.services.DivisionParentMatchingService;
+import pt.estga.contentimport.mappers.DivisionFeatureMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,6 +34,7 @@ public class DivisionImportService {
     private final ObjectMapper objectMapper;
     private final DivisionParentMatchingService divisionParentMatchingService;
     private final CountryService countryService;
+    private final DivisionFeatureMapper featureMapper;
 
     public int importFromPbf(InputStream pbfStream, String countryCode) throws Exception {
 
@@ -59,12 +60,11 @@ public class DivisionImportService {
             String line;
             List<AdministrativeDivision> batch = new ArrayList<>(1000);
             int count = 0;
-            GeoJsonReader geoJsonReader = new GeoJsonReader();
 
             // Resolve provided country code to id using CountryService (normalization handled there)
             Country providedCountry = countryService.findByCode(countryCode);
             if (providedCountry == null) {
-                throw new IllegalStateException("Provided countryCode is missing or unknown: " + countryCode);
+                throw new UnsupportedCountryException("Provided countryCode is missing or unknown: " + countryCode);
             }
             Integer providedCountryId = providedCountry.getId();
 
@@ -75,7 +75,6 @@ public class DivisionImportService {
                 if (line.charAt(0) == 0x1E) {
                     line = line.substring(1);
                 }
-
                 JsonNode feature;
                 try {
                     feature = objectMapper.readTree(line);
@@ -84,69 +83,23 @@ public class DivisionImportService {
                     throw new IOException("Failed to parse GeoJSON output from osmium. The line was: '" + line + "'. Make sure 'osmium-tool' is installed and in the system's PATH.", e);
                 }
 
-                JsonNode props = feature.get("properties");
-                JsonNode geomNode = feature.get("geometry");
+                // Map feature to domain object using dedicated mapper
+                Optional<AdministrativeDivision> mapped = featureMapper.mapFeature(feature, providedCountryId);
+                if (mapped.isEmpty()) continue;
 
-                if (props == null || geomNode == null) continue;
-
-                if (!"administrative".equals(props.path("boundary").asText())) {
-                    continue;
-                }
-
-                if (!props.hasNonNull("admin_level")) {
-                    continue;
-                }
-                int adminLevel = props.path("admin_level").asInt(-1);
-
-                String name = resolveName(props);
-                
-                if (name == null || name.isBlank()) {
-                    continue;
-                }
-                
-                if (adminLevel != 6 && adminLevel != 7 && adminLevel != 8) {
-                    continue;
-                }
-
-                long osmId = props.path("@id").asLong(0);
-                String typeStr = props.path("@type").asText();
-
-                if (osmId == 0 || typeStr.isBlank()) {
-                    log.warn("Skipping division '{}' because of missing OSM ID or type from properties. ID: {}, Type: {}", name, osmId, typeStr);
-                    continue;
-                }
-
-                Geometry geometry = geoJsonReader.read(objectMapper.writeValueAsString(geomNode));
-                geometry.setSRID(4326);
-                
-                if (!geometry.isValid()) {
-                    log.warn("Fixing invalid geometry for OSM ID: {}", osmId);
-                    geometry = geometry.buffer(0);
-                    if (!geometry.isValid()) {
-                        log.error("Geometry still invalid after buffer(0) for OSM ID: {}", osmId);
-                    }
-                }
-
-                Optional<AdministrativeDivision> existingOpt = administrativeDivisionRepository.findById(osmId);
-                AdministrativeDivision div;
+                AdministrativeDivision div = mapped.get();
+                Optional<AdministrativeDivision> existingOpt = administrativeDivisionRepository.findById(div.getId());
 
                 if (existingOpt.isPresent()) {
-                    div = existingOpt.get();
-                    div.setName(name);
-                    div.setOsmAdminLevel(adminLevel);
-                    div.setGeometry(geometry);
-                    div.setCountry(Country.builder().id(providedCountryId).build());
+                    AdministrativeDivision existing = existingOpt.get();
+                    existing.setName(div.getName());
+                    existing.setOsmAdminLevel(div.getOsmAdminLevel());
+                    existing.setGeometry(div.getGeometry());
+                    existing.setCountry(div.getCountry());
+                    batch.add(existing);
                 } else {
-                    div = AdministrativeDivision.builder()
-                            .id(osmId)
-                            .osmAdminLevel(adminLevel)
-                            .name(name)
-                            .geometry(geometry)
-                            .country(Country.builder().id(providedCountryId).build())
-                            .build();
+                    batch.add(div);
                 }
-
-                batch.add(div);
                 count++;
 
                 if (batch.size() == 1000) {
@@ -170,12 +123,5 @@ public class DivisionImportService {
         } finally {
             Files.deleteIfExists(pbfFile);
         }
-    }
-
-    private String resolveName(JsonNode props) {
-        if (props.hasNonNull("name")) {
-            return props.get("name").asText();
-        }
-        return null;
     }
 }

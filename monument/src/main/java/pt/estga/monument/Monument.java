@@ -39,12 +39,15 @@ public class Monument extends BaseEntity {
     private Point location;
 
     // Todo: leave only 1 AD (parish -> division)
+    @Deprecated
     @ManyToOne(fetch = FetchType.EAGER)
     private AdministrativeDivision parish;
 
+    @Deprecated
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision municipality;
 
+    @Deprecated
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision district;
 
