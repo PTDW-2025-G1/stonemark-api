@@ -2,7 +2,6 @@ package pt.estga.support.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.repositories.ContactRequestRepository;
@@ -29,10 +28,6 @@ public class ContactRequestQueryService {
 				result.specification(),
 				result.pageable()
 		);
-	}
-
-	public Page<ContactRequest> findAllBySubmittedBy(Long submittedById, Pageable pageable) {
-		return repository.findBySubmittedById(submittedById, pageable);
 	}
 
 	public Optional<ContactRequest> findById(Long id) {
