@@ -1,4 +1,4 @@
-package pt.estga.intake.listeners;
+package pt.estga.processing.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.intake.services.EnrichmentService;
+import pt.estga.processing.services.EnrichmentService;
 
 @Component
 @RequiredArgsConstructor

@@ -26,14 +26,6 @@ public class MarkEvidenceSubmission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String userNotes;
-
-    @Enumerated(EnumType.STRING)
-    private SubmissionSource submissionSource;
-
-    @Enumerated(EnumType.STRING)
-    private SubmissionStatus status;
-
     @OneToOne(fetch = FetchType.LAZY)
     private MediaFile originalMediaFile;
 
@@ -42,6 +34,14 @@ public class MarkEvidenceSubmission {
 
     private Double latitude;
     private Double longitude;
+
+    private String userNotes;
+
+    @Enumerated(EnumType.STRING)
+    private SubmissionSource submissionSource;
+
+    @Enumerated(EnumType.STRING)
+    private SubmissionStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private User submittedBy;

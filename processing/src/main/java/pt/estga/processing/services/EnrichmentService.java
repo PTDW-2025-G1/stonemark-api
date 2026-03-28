@@ -1,4 +1,4 @@
-package pt.estga.intake.services;
+package pt.estga.processing.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
