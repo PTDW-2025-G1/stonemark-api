@@ -38,26 +38,6 @@ public class AdministrativeDivisionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping
-    public ResponseEntity<List<AdministrativeDivisionDto>> getDivisionsByType(
-            @RequestParam String type,
-            @RequestParam(required = false) boolean withMonuments
-    ) {
-        List<AdministrativeDivision> divisions;
-        int adminLevel = switch (type.toLowerCase()) {
-            case "district" -> 6;
-            case "municipality" -> 7;
-            case "parish" -> 8;
-            default -> throw new IllegalArgumentException("Invalid type: " + type);
-        };
-        if (withMonuments) {
-            divisions = service.findWithMonuments(adminLevel);
-        } else {
-            divisions = service.findByOsmAdminLevel(adminLevel);
-        }
-        return ResponseEntity.ok(mapper.toDtoList(divisions));
-    }
-
     @GetMapping("/districts/{districtId}/municipalities")
     public ResponseEntity<List<AdministrativeDivisionDto>> getMunicipalitiesByDistrict(@PathVariable Long districtId) {
         List<AdministrativeDivision> municipalities = service.findChildren(districtId);

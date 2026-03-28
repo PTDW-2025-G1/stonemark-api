@@ -29,7 +29,4 @@ public interface AdministrativeDivisionRepository extends BaseRepository<Adminis
             "WHERE ST_Contains(d.geometry, ST_SetSRID(ST_Point(:longitude, :latitude), 4326)) " +
             "ORDER BY d.osm_admin_level ASC", nativeQuery = true)
     List<AdministrativeDivision> findByCoordinates(@Param("latitude") double latitude, @Param("longitude") double longitude);
-
-    @Query("SELECT d FROM AdministrativeDivision d WHERE d.osmAdminLevel = :adminLevel AND d.monumentsCount > 0")
-    List<AdministrativeDivision> findWithMonuments(@Param("adminLevel") int adminLevel);
 }
