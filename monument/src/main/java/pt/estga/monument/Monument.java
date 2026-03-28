@@ -27,6 +27,7 @@ public class Monument extends BaseEntity {
     private String name;
     private String protectionTitle;
     private String description;
+    // Todo: delete latitude and longitude
     private Double latitude;
     private Double longitude;
     private String website;
@@ -37,6 +38,7 @@ public class Monument extends BaseEntity {
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point location;
 
+    // Todo: leave only 1 AD (parish -> division)
     @ManyToOne(fetch = FetchType.EAGER)
     private AdministrativeDivision parish;
 

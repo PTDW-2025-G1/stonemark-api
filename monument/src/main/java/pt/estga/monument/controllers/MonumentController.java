@@ -12,6 +12,7 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentQueryService;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.monument.dots.MonumentListDto;
+import pt.estga.sharedweb.models.PagedRequest;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")
@@ -32,13 +33,11 @@ public class MonumentController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/search")
+    @PostMapping("/search")
     public ResponseEntity<Page<MonumentListDto>> searchMonuments(
-            @RequestParam String query,
-            @PageableDefault(size = 9, sort = "name") Pageable pageable
+            @RequestBody PagedRequest request
     ) {
-        // Todo: implement proper search
-        return ResponseEntity.ok(service.searchByName(query, pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.search(request));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)
