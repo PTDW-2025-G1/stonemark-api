@@ -19,7 +19,7 @@ import java.io.InputStream;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DetectionService {
+public class VisionClient {
 
     private final RestTemplate restTemplate;
 

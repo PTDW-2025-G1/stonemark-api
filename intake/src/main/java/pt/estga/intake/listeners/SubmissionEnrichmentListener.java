@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.vision.DetectionResult;
-import pt.estga.vision.DetectionService;
+import pt.estga.vision.VisionClient;
 import pt.estga.file.application.MediaService;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
@@ -22,7 +22,7 @@ import java.io.InputStream;
 public class SubmissionEnrichmentListener {
 
     private final MarkEvidenceSubmissionRepository markEvidenceSubmissionRepository;
-    private final DetectionService detectionService;
+    private final VisionClient visionClient;
     private final MediaService mediaService;
 
     @Async
@@ -39,7 +39,7 @@ public class SubmissionEnrichmentListener {
             }
 
             try (InputStream detectionInputStream = mediaService.loadFileById(submission.getOriginalMediaFile().getId()).getInputStream()) {
-                DetectionResult detectionResult = detectionService.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
+                DetectionResult detectionResult = visionClient.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
                     submission.setEmbedding(detectionResult.embedding());
                     markEvidenceSubmissionRepository.save(submission);

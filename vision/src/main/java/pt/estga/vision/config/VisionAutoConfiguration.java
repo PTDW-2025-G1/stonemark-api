@@ -9,7 +9,7 @@ import org.springframework.web.client.RestTemplate;
 @AutoConfiguration
 @ComponentScan("pt.estga.vision")
 @EntityScan("pt.estga.analysis")
-public class DetectionAutoConfiguration {
+public class VisionAutoConfiguration {
 
     @Bean
     public RestTemplate restTemplate() {
