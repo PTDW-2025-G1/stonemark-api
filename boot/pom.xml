@@ -43,11 +43,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>report</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>vision</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
