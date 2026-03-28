@@ -113,6 +113,6 @@ public class BotEngineImpl implements BotEngine {
 
     private void resetContext(ChatbotContext context) {
         context.setCurrentState(CoreState.START);
-        context.getProposalContext().clear();
+        context.getSubmissionContext().clear();
     }
 }

@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal;
+package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -6,7 +6,7 @@ import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
@@ -31,21 +31,21 @@ import static pt.estga.chatbot.constants.EmojiKey.WARNING;
 
 @Component
 @RequiredArgsConstructor
-public class ProposalResponseProvider implements ResponseProvider {
+public class SubmissionResponseProvider implements ResponseProvider {
 
     private final UiTextService textService;
     private final MainMenuFactory mainMenuFactory;
 
     @Override
     public boolean supports(ConversationState state) {
-        return state instanceof ProposalState;
+        return state instanceof SubmissionState;
     }
 
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
-        ProposalState state = (ProposalState) context.getCurrentState();
+        SubmissionState state = (SubmissionState) context.getCurrentState();
         return switch (state) {
-            case PROPOSAL_START -> Collections.emptyList();
+            case SUBMISSION_STATE -> Collections.emptyList();
             case AWAITING_LOCATION -> createLocationRequestResponse();
             case AWAITING_NOTES -> createNotesResponse();
             case SUBMITTED -> createSubmissionSuccessResponse(input);
@@ -62,7 +62,7 @@ public class ProposalResponseProvider implements ResponseProvider {
                 .buttons(List.of(
                         List.of(Button.builder()
                                 .textNode(textService.get(new Message(MessageKey.SKIP_BTN, ARROW_RIGHT)))
-                                .callbackData(ProposalCallbackData.SKIP_NOTES)
+                                .callbackData(SubmissionCallbackData.SKIP_NOTES)
                                 .build())
                 ))
                 .build();
@@ -92,7 +92,7 @@ public class ProposalResponseProvider implements ResponseProvider {
                 .build());
     }
 
-    private Message getEntryMessageForState(ProposalState state) {
+    private Message getEntryMessageForState(SubmissionState state) {
         return switch (state) {
             case WAITING_FOR_PHOTO -> new Message(MessageKey.REQUEST_PHOTO_PROMPT, CAMERA);
             case AWAITING_LOCATION -> new Message(MessageKey.REQUEST_LOCATION_PROMPT, LOCATION, PAPERCLIP);

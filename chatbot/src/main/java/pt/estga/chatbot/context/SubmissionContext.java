@@ -7,10 +7,8 @@ import pt.estga.intake.enums.SubmissionSource;
 import java.util.List;
 
 @Data
-public class ProposalContext {
+public class SubmissionContext {
     private MarkEvidenceSubmission submission;
-    private List<String> suggestedMarkIds;
-    private List<String> suggestedMonumentIds;
 
     // Temporary data stored during chatbot flow (only submitted at the end)
     private byte[] photoData;
@@ -19,8 +17,6 @@ public class ProposalContext {
 
     public void clear() {
         this.submission = null;
-        this.suggestedMarkIds = null;
-        this.suggestedMonumentIds = null;
         this.photoData = null;
         this.photoFilename = null;
         this.submissionSource = null;

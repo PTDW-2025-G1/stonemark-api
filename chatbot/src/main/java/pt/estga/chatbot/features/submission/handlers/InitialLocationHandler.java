@@ -1,11 +1,11 @@
-package pt.estga.chatbot.features.proposal.handlers;
+package pt.estga.chatbot.features.submission.handlers;
 
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 
@@ -18,13 +18,13 @@ public class InitialLocationHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
-        if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
+        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
+        if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
             return HandlerOutcome.FAILURE;
         }
 
-        markProposal.setLatitude(input.getLocation().getLatitude());
-        markProposal.setLongitude(input.getLocation().getLongitude());
+        markEvidenceSubmission.setLatitude(input.getLocation().getLatitude());
+        markEvidenceSubmission.setLongitude(input.getLocation().getLongitude());
 
         // Flow strategy advances directly to optional notes.
         return HandlerOutcome.SUCCESS;
@@ -32,6 +32,6 @@ public class InitialLocationHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState canHandle() {
-        return ProposalState.AWAITING_LOCATION;
+        return SubmissionState.AWAITING_LOCATION;
     }
 }

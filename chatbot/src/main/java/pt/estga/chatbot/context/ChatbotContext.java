@@ -8,13 +8,13 @@ public class ChatbotContext {
     private Long domainUserId;
     private String userName;
     private String verificationCode;
-    private ProposalContext proposalContext;
+    private SubmissionContext submissionContext;
 
     public ChatbotContext() {
-        this.proposalContext = new ProposalContext();
+        this.submissionContext = new SubmissionContext();
     }
 
     public void clear() {
-        this.proposalContext.clear();
+        this.submissionContext.clear();
     }
 }

@@ -13,7 +13,7 @@ import pt.estga.mark.events.MarkOccurrenceCreatedEvent;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.vision.DetectionResult;
-import pt.estga.vision.DetectionService;
+import pt.estga.vision.VisionClient;
 import pt.estga.file.application.MediaService;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class MarkDetectionListener {
     private final MarkRepository markRepository;
     private final MarkOccurrenceRepository markOccurrenceRepository;
     private final MediaService mediaService;
-    private final DetectionService detectionService;
+    private final VisionClient visionClient;
 
     @Async
     @EventListener
@@ -35,7 +35,7 @@ public class MarkDetectionListener {
     public void handleMarkCreated(MarkCreatedEvent event) {
         try {
             var resource = mediaService.loadFileById(event.getCoverId());
-            DetectionResult detectionResult = detectionService.detect(resource.getInputStream(), event.getFilename());
+            DetectionResult detectionResult = visionClient.detect(resource.getInputStream(), event.getFilename());
 
             if (detectionResult.isMasonMark()) {
                 Optional<Mark> markOpt = markRepository.findById(event.getMarkId());
@@ -56,7 +56,7 @@ public class MarkDetectionListener {
     public void handleMarkOccurrenceCreated(MarkOccurrenceCreatedEvent event) {
         try {
             var resource = mediaService.loadFileById(event.getCoverId());
-            DetectionResult detectionResult = detectionService.detect(resource.getInputStream(), event.getFilename());
+            DetectionResult detectionResult = visionClient.detect(resource.getInputStream(), event.getFilename());
 
             if (detectionResult.isMasonMark()) {
                 Optional<MarkOccurrence> occurrenceOpt = markOccurrenceRepository.findById(event.getOccurrenceId());

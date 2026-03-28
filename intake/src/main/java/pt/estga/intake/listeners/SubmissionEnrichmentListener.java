@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.vision.DetectionResult;
-import pt.estga.vision.DetectionService;
+import pt.estga.vision.VisionClient;
 import pt.estga.file.application.MediaService;
-import pt.estga.intake.events.SubmissionSubmittedEvent;
+import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 
 import java.io.InputStream;
@@ -21,35 +21,35 @@ import java.io.InputStream;
 @Slf4j
 public class SubmissionEnrichmentListener {
 
-    private final MarkEvidenceSubmissionRepository proposalRepo;
-    private final DetectionService detectionService;
+    private final MarkEvidenceSubmissionRepository markEvidenceSubmissionRepository;
+    private final VisionClient visionClient;
     private final MediaService mediaService;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProposalSubmitted(SubmissionSubmittedEvent event) {
-        Long proposalId = event.getProposalId();
-        log.info("Async detection processing for submitted proposal ID: {}", proposalId);
+    public void handleMarkEvidenceSubmitted(MarkEvidenceSubmittedEvent event) {
+        Long submissionId = event.getSubmissionId();
+        log.info("Async detection processing for submission ID: {}", submissionId);
 
-        proposalRepo.findById(proposalId).ifPresentOrElse(proposal -> {
-            if (proposal.getOriginalMediaFile() == null) {
-                log.info("Proposal ID {} has no original media file. Skipping enrichment.", proposalId);
+        markEvidenceSubmissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
+            if (submission.getOriginalMediaFile() == null) {
+                log.info("Submission ID {} has no original media file. Skipping enrichment.", submissionId);
                 return;
             }
 
-            try (InputStream detectionInputStream = mediaService.loadFileById(proposal.getOriginalMediaFile().getId()).getInputStream()) {
-                DetectionResult detectionResult = detectionService.detect(detectionInputStream, proposal.getOriginalMediaFile().getOriginalFilename());
+            try (InputStream detectionInputStream = mediaService.loadFileById(submission.getOriginalMediaFile().getId()).getInputStream()) {
+                DetectionResult detectionResult = visionClient.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
-                    proposal.setEmbedding(detectionResult.embedding());
-                    proposalRepo.save(proposal);
-                    log.info("Embedding updated for proposal ID: {}", proposalId);
+                    submission.setEmbedding(detectionResult.embedding());
+                    markEvidenceSubmissionRepository.save(submission);
+                    log.info("Embedding updated for submission ID: {}", submissionId);
                 } else {
-                    log.info("No embedding detected for proposal ID: {}", proposalId);
+                    log.info("No embedding detected for submission ID: {}", submissionId);
                 }
             } catch (Exception e) {
-                log.warn("Detection service failed for proposal ID {}. Proceeding without detection.", proposalId, e);
+                log.warn("Detection service failed for submission ID {}. Proceeding without detection.", submissionId, e);
             }
-        }, () -> log.warn("Submitted proposal with ID {} not found during enrichment", proposalId));
+        }, () -> log.warn("Submitted submission with ID {} not found during enrichment", submissionId));
     }
 }

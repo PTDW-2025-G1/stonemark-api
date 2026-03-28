@@ -1,10 +1,10 @@
-package pt.estga.chatbot.features.proposal.handlers;
+package pt.estga.chatbot.features.submission.handlers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
-import pt.estga.chatbot.features.proposal.ProposalCallbackData;
+import pt.estga.chatbot.features.submission.SubmissionCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.ChatbotSubmissionFacade;
@@ -18,26 +18,26 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
-        if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
+        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
+        if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
             return HandlerOutcome.FAILURE;
         }
 
         // Handle "skip" or text input for notes
-        if (input.getCallbackData() == null || !input.getCallbackData().equals(ProposalCallbackData.SKIP_NOTES)) {
+        if (input.getCallbackData() == null || !input.getCallbackData().equals(SubmissionCallbackData.SKIP_NOTES)) {
             if (input.getText() != null) {
-                markProposal.setUserNotes(input.getText());
+                markEvidenceSubmission.setUserNotes(input.getText());
             }
         }
 
         try {
             // Delegate chatbot-specific orchestration to the facade which resolves user and source
             submitFacade.submitFromChatbot(
-                    markProposal,
-                    context.getProposalContext().getPhotoData(),
-                    context.getProposalContext().getPhotoFilename(),
+                    markEvidenceSubmission,
+                    context.getSubmissionContext().getPhotoData(),
+                    context.getSubmissionContext().getPhotoFilename(),
                     context.getDomainUserId(),
-                    context.getProposalContext().getSubmissionSource()
+                    context.getSubmissionContext().getSubmissionSource()
             );
 
             // Clean up the context
@@ -52,6 +52,6 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState canHandle() {
-        return ProposalState.AWAITING_NOTES;
+        return SubmissionState.AWAITING_NOTES;
     }
 }
