@@ -9,7 +9,9 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.io.geojson.GeoJsonReader;
 import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.territory.entities.Country;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
+import pt.estga.territory.services.CountryService;
 import pt.estga.territory.services.DivisionParentMatchingService;
 
 import java.io.BufferedReader;
@@ -28,11 +30,12 @@ import java.util.Optional;
 @Slf4j
 public class DivisionImportService {
 
-    private final AdministrativeDivisionRepository repository;
+    private final AdministrativeDivisionRepository administrativeDivisionRepository;
     private final ObjectMapper objectMapper;
     private final DivisionParentMatchingService divisionParentMatchingService;
+    private final CountryService countryService;
 
-    public int importFromPbf(InputStream pbfStream) throws Exception {
+    public int importFromPbf(InputStream pbfStream, String countryCode) throws Exception {
 
         Path pbfFile = Files.createTempFile("portugal-admin-", ".osm.pbf");
         try {
@@ -57,6 +60,13 @@ public class DivisionImportService {
             List<AdministrativeDivision> batch = new ArrayList<>(1000);
             int count = 0;
             GeoJsonReader geoJsonReader = new GeoJsonReader();
+
+            // Resolve provided country code to id using CountryService (normalization handled there)
+            Country providedCountry = countryService.findByCode(countryCode);
+            if (providedCountry == null) {
+                throw new IllegalStateException("Provided countryCode is missing or unknown: " + countryCode);
+            }
+            Integer providedCountryId = providedCountry.getId();
 
             while ((line = reader.readLine()) != null) {
                 if (line.isBlank()) {
@@ -117,7 +127,7 @@ public class DivisionImportService {
                     }
                 }
 
-                Optional<AdministrativeDivision> existingOpt = repository.findById(osmId);
+                Optional<AdministrativeDivision> existingOpt = administrativeDivisionRepository.findById(osmId);
                 AdministrativeDivision div;
 
                 if (existingOpt.isPresent()) {
@@ -125,14 +135,14 @@ public class DivisionImportService {
                     div.setName(name);
                     div.setOsmAdminLevel(adminLevel);
                     div.setGeometry(geometry);
-                    div.setCountryCode("PT");
+                    div.setCountry(Country.builder().id(providedCountryId).build());
                 } else {
                     div = AdministrativeDivision.builder()
                             .id(osmId)
                             .osmAdminLevel(adminLevel)
                             .name(name)
                             .geometry(geometry)
-                            .countryCode("PT")
+                            .country(Country.builder().id(providedCountryId).build())
                             .build();
                 }
 
@@ -140,13 +150,13 @@ public class DivisionImportService {
                 count++;
 
                 if (batch.size() == 1000) {
-                    repository.saveAll(batch);
+                    administrativeDivisionRepository.saveAll(batch);
                     batch.clear();
                 }
             }
 
             if (!batch.isEmpty()) {
-                repository.saveAll(batch);
+                administrativeDivisionRepository.saveAll(batch);
             }
 
             int exit = process.waitFor();
