@@ -3,6 +3,10 @@ package pt.estga.contentimport.mappers;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Component;
 import pt.estga.monument.Monument;
 
@@ -45,12 +49,15 @@ public class MonumentFeatureMapper {
         double lat = coordinates.get(1).asDouble(Double.NaN);
         if (Double.isNaN(lat) || Double.isNaN(lon)) return Optional.empty();
 
+        // Create Point location with SRID 4326
+        GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 4326);
+        Point point = gf.createPoint(new Coordinate(lon, lat));
+
         Monument monument = new Monument();
         monument.setExternalId(externalId);
         monument.setName(name);
         monument.setDescription(properties.path("description").asText(null));
-        monument.setLatitude(lat);
-        monument.setLongitude(lon);
+        monument.setLocation(point);
         monument.setWebsite(properties.path("website").asText(null));
         monument.setProtectionTitle(properties.path("protection_title").asText(null));
         monument.setStreet(properties.path("addr:street").asText(null));

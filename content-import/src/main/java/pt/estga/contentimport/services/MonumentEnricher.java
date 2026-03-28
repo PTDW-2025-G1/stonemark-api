@@ -19,17 +19,18 @@ public class MonumentEnricher {
      * Clears existing associations before setting found divisions.
      */
     public void enrichWithDivisions(Monument m) {
-        if (m.getLatitude() != null && m.getLongitude() != null) {
-            List<AdministrativeDivision> divisions = administrativeDivisionRepository.findByCoordinates(m.getLatitude(), m.getLongitude());
-            m.setParish(null);
-            m.setMunicipality(null);
-            m.setDistrict(null);
-            for (AdministrativeDivision division : divisions) {
-                switch (division.getOsmAdminLevel()) {
-                    case 6 -> m.setDistrict(division);
-                    case 7 -> m.setMunicipality(division);
-                    case 8 -> m.setParish(division);
-                }
+        if (m.getLocation() == null) return;
+        double lon = m.getLocation().getX();
+        double lat = m.getLocation().getY();
+        List<AdministrativeDivision> divisions = administrativeDivisionRepository.findByCoordinates(lat, lon);
+        m.setParish(null);
+        m.setMunicipality(null);
+        m.setDistrict(null);
+        for (AdministrativeDivision division : divisions) {
+            switch (division.getOsmAdminLevel()) {
+                case 6 -> m.setDistrict(division);
+                case 7 -> m.setMunicipality(division);
+                case 8 -> m.setParish(division);
             }
         }
     }
