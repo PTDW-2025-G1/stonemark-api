@@ -37,6 +37,7 @@ public class MonumentController {
             @RequestParam String query,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
+        // Todo: implement proper search
         return ResponseEntity.ok(service.searchByName(query, pageable).map(mapper::toListDto));
     }
 

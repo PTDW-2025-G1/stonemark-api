@@ -1,15 +1,12 @@
 package pt.estga.monument.controllers;
 
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
@@ -32,10 +29,10 @@ public class MonumentAdminController {
     private final MonumentQueryService queryService;
     private final MonumentMapper mapper;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
-            @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
-            @RequestPart(value = "file", required = false) MultipartFile file
+            @Parameter(description = "Monument form data", required = true)
+            @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
         Monument monument = mapper.toEntity(monumentDto);
 
@@ -51,11 +48,11 @@ public class MonumentAdminController {
         return ResponseEntity.created(location).body(response);
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}")
     public ResponseEntity<MonumentDto> updateMonument(
             @PathVariable Long id,
-            @RequestPart("data") @Parameter(content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)) @Valid MonumentRequestDto monumentDto,
-            @RequestPart(value = "file", required = false) MultipartFile file
+            @Parameter(description = "Monument form data", required = true)
+            @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
         Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
@@ -72,22 +69,5 @@ public class MonumentAdminController {
     ) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<MonumentDto> uploadPhoto(
-            @PathVariable Long id,
-            @RequestParam("file") MultipartFile file
-    ) {
-        if (file.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        Monument monument = service.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
-
-        Monument updatedMonument = service.update(monument);
-
-        return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
     }
 }

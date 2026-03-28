@@ -14,9 +14,6 @@ import java.util.Optional;
 public interface MonumentRepository extends BaseRepository<Monument, Long> {
 
     @EntityGraph(attributePaths = {"district", "parish", "municipality"})
-    Optional<Monument> findById(Long id);
-
-    @EntityGraph(attributePaths = {"district", "parish", "municipality"})
     Page<Monument> findByDistrictIdOrMunicipalityIdOrParishIdAndActive(Long districtId, Long municipalityId, Long parishId, Pageable pageable, boolean active);
 
     default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable, boolean active) {
