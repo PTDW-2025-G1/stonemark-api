@@ -5,13 +5,14 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import pt.estga.shared.repositories.BaseRepository;
 import pt.estga.territory.entities.AdministrativeDivision;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface AdministrativeDivisionRepository extends JpaRepository<AdministrativeDivision, Long>, JpaSpecificationExecutor<AdministrativeDivision> {
+public interface AdministrativeDivisionRepository extends BaseRepository<AdministrativeDivision, Long>, JpaSpecificationExecutor<AdministrativeDivision> {
     List<AdministrativeDivision> findByOsmAdminLevel(int osmAdminLevel);
 
     List<AdministrativeDivision> findByParentId(Long parentId);

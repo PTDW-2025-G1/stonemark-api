@@ -3,7 +3,7 @@ package pt.estga.territory.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Geometry;
-import pt.estga.shared.entities.AuditedEntity;
+import pt.estga.shared.entities.BaseEntity;
 
 @Entity
 @NoArgsConstructor
@@ -11,7 +11,7 @@ import pt.estga.shared.entities.AuditedEntity;
 @Getter
 @Setter
 @Builder
-public class AdministrativeDivision extends AuditedEntity {
+public class AdministrativeDivision extends BaseEntity {
 
     @Id
     private Long id;
@@ -26,6 +26,7 @@ public class AdministrativeDivision extends AuditedEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision parent;
 
+    // Todo: create country entity
     private String countryCode;
 
     private int monumentsCount = 0;

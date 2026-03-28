@@ -2,6 +2,7 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pt.estga.shared.entities.BaseEntity;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class MarkCategory {
+public class MarkCategory extends BaseEntity {
 
     @Id
     @GeneratedValue

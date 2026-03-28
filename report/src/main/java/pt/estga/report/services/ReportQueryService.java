@@ -11,7 +11,6 @@ import pt.estga.report.entities.Report;
 import pt.estga.report.mappers.ReportMapper;
 import pt.estga.report.repositories.ReportRepository;
 
-
 @Service
 @RequiredArgsConstructor
 public class ReportQueryService {

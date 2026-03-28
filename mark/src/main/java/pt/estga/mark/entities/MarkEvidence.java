@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.entities.AuditedEntity;
+import pt.estga.shared.entities.BaseEntity;
 
 import java.util.UUID;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-public class MarkEvidence extends AuditedEntity {
+public class MarkEvidence extends BaseEntity {
 
     @Id
     @GeneratedValue

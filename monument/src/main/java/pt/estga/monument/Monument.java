@@ -6,8 +6,8 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import pt.estga.shared.entities.BaseEntity;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.shared.entities.AuditedEntity;
 
 @Entity
 @NoArgsConstructor
@@ -15,7 +15,7 @@ import pt.estga.shared.entities.AuditedEntity;
 @Getter
 @Setter
 @Builder
-public class Monument extends AuditedEntity {
+public class Monument extends BaseEntity {
 
     @Id
     @GeneratedValue
@@ -45,9 +45,6 @@ public class Monument extends AuditedEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision district;
-
-    @Builder.Default
-    private Boolean active = true;
 
     @PrePersist
     @PreUpdate
