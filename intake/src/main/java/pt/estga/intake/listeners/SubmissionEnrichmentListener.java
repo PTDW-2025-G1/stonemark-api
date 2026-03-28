@@ -30,26 +30,26 @@ public class SubmissionEnrichmentListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleMarkEvidenceSubmitted(MarkEvidenceSubmittedEvent event) {
         Long submissionId = event.getSubmissionId();
-        log.info("Async detection processing for submitted proposal ID: {}", submissionId);
+        log.info("Async detection processing for submission ID: {}", submissionId);
 
-        markEvidenceSubmissionRepository.findById(submissionId).ifPresentOrElse(proposal -> {
-            if (proposal.getOriginalMediaFile() == null) {
-                log.info("Proposal ID {} has no original media file. Skipping enrichment.", submissionId);
+        markEvidenceSubmissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
+            if (submission.getOriginalMediaFile() == null) {
+                log.info("Submission ID {} has no original media file. Skipping enrichment.", submissionId);
                 return;
             }
 
-            try (InputStream detectionInputStream = mediaService.loadFileById(proposal.getOriginalMediaFile().getId()).getInputStream()) {
-                DetectionResult detectionResult = detectionService.detect(detectionInputStream, proposal.getOriginalMediaFile().getOriginalFilename());
+            try (InputStream detectionInputStream = mediaService.loadFileById(submission.getOriginalMediaFile().getId()).getInputStream()) {
+                DetectionResult detectionResult = detectionService.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
-                    proposal.setEmbedding(detectionResult.embedding());
-                    markEvidenceSubmissionRepository.save(proposal);
-                    log.info("Embedding updated for proposal ID: {}", submissionId);
+                    submission.setEmbedding(detectionResult.embedding());
+                    markEvidenceSubmissionRepository.save(submission);
+                    log.info("Embedding updated for submission ID: {}", submissionId);
                 } else {
-                    log.info("No embedding detected for proposal ID: {}", submissionId);
+                    log.info("No embedding detected for submission ID: {}", submissionId);
                 }
             } catch (Exception e) {
-                log.warn("Detection service failed for proposal ID {}. Proceeding without detection.", submissionId, e);
+                log.warn("Detection service failed for submission ID {}. Proceeding without detection.", submissionId, e);
             }
-        }, () -> log.warn("Submitted proposal with ID {} not found during enrichment", submissionId));
+        }, () -> log.warn("Submitted submission with ID {} not found during enrichment", submissionId));
     }
 }
