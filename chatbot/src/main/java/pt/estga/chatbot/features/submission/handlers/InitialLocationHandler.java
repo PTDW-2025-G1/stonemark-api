@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal.handlers;
+package pt.estga.chatbot.features.submission.handlers;
 
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
@@ -18,7 +18,7 @@ public class InitialLocationHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
+        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
             return HandlerOutcome.FAILURE;
         }

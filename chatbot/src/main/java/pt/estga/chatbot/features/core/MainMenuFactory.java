@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.config.ChatbotAuthProperties;
 import pt.estga.chatbot.constants.EmojiKey;
-import pt.estga.chatbot.features.proposal.ProposalCallbackData;
+import pt.estga.chatbot.features.submission.SubmissionCallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.ui.Button;
@@ -36,7 +36,7 @@ public class MainMenuFactory {
             buttonRows.add(List.of(
                     Button.builder()
                             .textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))
-                            .callbackData(ProposalCallbackData.START_SUBMISSION)
+                            .callbackData(SubmissionCallbackData.START_SUBMISSION)
                             .build()
             ));
         }

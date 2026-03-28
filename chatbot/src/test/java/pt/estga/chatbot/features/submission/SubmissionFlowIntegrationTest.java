@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal;
+package pt.estga.chatbot.features.submission;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,11 +12,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SubmissionFlowIntegrationTest {
 
-    private ProposalFlowStrategy strategy;
+    private SubmissionFlowStrategy strategy;
 
     @BeforeEach
     void setUp() {
-        strategy = new ProposalFlowStrategy();
+        strategy = new SubmissionFlowStrategy();
     }
 
     @Test

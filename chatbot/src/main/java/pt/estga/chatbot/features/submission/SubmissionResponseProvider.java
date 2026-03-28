@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal;
+package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ import static pt.estga.chatbot.constants.EmojiKey.WARNING;
 
 @Component
 @RequiredArgsConstructor
-public class ProposalResponseProvider implements ResponseProvider {
+public class SubmissionResponseProvider implements ResponseProvider {
 
     private final UiTextService textService;
     private final MainMenuFactory mainMenuFactory;
@@ -62,7 +62,7 @@ public class ProposalResponseProvider implements ResponseProvider {
                 .buttons(List.of(
                         List.of(Button.builder()
                                 .textNode(textService.get(new Message(MessageKey.SKIP_BTN, ARROW_RIGHT)))
-                                .callbackData(ProposalCallbackData.SKIP_NOTES)
+                                .callbackData(SubmissionCallbackData.SKIP_NOTES)
                                 .build())
                 ))
                 .build();

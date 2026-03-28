@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal;
+package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ import static pt.estga.chatbot.context.HandlerOutcome.*;
 
 @Component
 @RequiredArgsConstructor
-public class ProposalFlowStrategy implements FlowStrategy {
+public class SubmissionFlowStrategy implements FlowStrategy {
 
     private static final Map<ConversationState, ConversationState> SUCCESS_TRANSITIONS = Map.ofEntries(
             Map.entry(ProposalState.WAITING_FOR_PHOTO, ProposalState.AWAITING_LOCATION),

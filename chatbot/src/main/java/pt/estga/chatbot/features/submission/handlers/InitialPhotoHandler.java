@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.proposal.handlers;
+package pt.estga.chatbot.features.submission.handlers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -22,18 +22,18 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             return HandlerOutcome.FAILURE;
         }
 
-        MarkEvidenceSubmission submission = context.getProposalContext().getSubmission();
+        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
 
         // Initialize a submission object if not exists (but don't persist yet)
         if (submission == null) {
             MarkEvidenceSubmission markProposal = new MarkEvidenceSubmission();
-            context.getProposalContext().setSubmission(markProposal);
+            context.getSubmissionContext().setSubmission(markProposal);
         }
 
         // Store photo data and metadata in context (will be persisted at submission)
-        context.getProposalContext().setPhotoData(input.getFileData());
-        context.getProposalContext().setPhotoFilename(input.getFileName());
-        context.getProposalContext().setSubmissionSource(mapPlatformToSubmissionSource(input.getPlatform()));
+        context.getSubmissionContext().setPhotoData(input.getFileData());
+        context.getSubmissionContext().setPhotoFilename(input.getFileName());
+        context.getSubmissionContext().setSubmissionSource(mapPlatformToSubmissionSource(input.getPlatform()));
 
         return HandlerOutcome.SUCCESS;
     }
