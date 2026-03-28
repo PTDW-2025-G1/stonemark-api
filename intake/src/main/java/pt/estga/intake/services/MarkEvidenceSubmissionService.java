@@ -55,7 +55,7 @@ public class MarkEvidenceSubmissionService {
         // Preserve submittedBy and submissionSource that may already be present on the submission
 
         // Mark as submitted and persist
-        submission.setStatus(SubmissionStatus.SUBMITTED);
+        submission.setStatus(SubmissionStatus.PENDING_ANALYSIS);
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
         // Publish event after transaction commit
