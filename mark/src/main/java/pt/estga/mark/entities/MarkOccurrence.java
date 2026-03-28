@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.monument.Monument;
-import pt.estga.shared.audit.AuditedEntity;
+import pt.estga.shared.entities.BaseEntity;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class MarkOccurrence extends AuditedEntity {
+public class MarkOccurrence extends BaseEntity {
 
     @Id
     @GeneratedValue
@@ -41,9 +41,6 @@ public class MarkOccurrence extends AuditedEntity {
     private User author;
 
     private Instant publishedAt;
-
-    @Builder.Default
-    private Boolean active = true;
 
     @PrePersist
     public void prePersist() {

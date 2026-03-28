@@ -3,7 +3,7 @@ package pt.estga.report.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import pt.estga.shared.audit.CreationAuditedEntity;
+import pt.estga.shared.entities.CreationAuditedEntity;
 import pt.estga.mark.enums.TargetType;
 import pt.estga.report.enums.ReportReason;
 import pt.estga.report.enums.ReportStatus;

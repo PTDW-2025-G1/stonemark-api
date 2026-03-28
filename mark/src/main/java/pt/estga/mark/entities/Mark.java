@@ -3,7 +3,7 @@ package pt.estga.mark.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.audit.AuditedEntity;
+import pt.estga.shared.entities.BaseEntity;
 
 import java.util.HashSet;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.Set;
 @Getter
 @Setter
 @Builder
-public class Mark extends AuditedEntity {
+public class Mark extends BaseEntity {
 
     @Id
     @GeneratedValue
@@ -43,6 +43,4 @@ public class Mark extends AuditedEntity {
     @OneToMany(mappedBy = "mark")
     private List<MarkOccurrence> occurrences;
 
-    @Builder.Default
-    private Boolean active = true;
 }

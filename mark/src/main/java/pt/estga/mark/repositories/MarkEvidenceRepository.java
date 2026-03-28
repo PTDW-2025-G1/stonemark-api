@@ -1,9 +1,9 @@
 package pt.estga.mark.repositories;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.shared.repositories.BaseRepository;
 
 import java.util.UUID;
 
-public interface MarkEvidenceRepository extends JpaRepository<MarkEvidence, UUID> {
+public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUID> {
 }

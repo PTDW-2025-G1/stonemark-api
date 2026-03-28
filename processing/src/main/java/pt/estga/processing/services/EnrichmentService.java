@@ -1,37 +1,39 @@
-package pt.estga.intake.listeners;
+package pt.estga.processing.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
+import pt.estga.file.application.MediaService;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;
-import pt.estga.file.application.MediaService;
-import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 
 import java.io.InputStream;
 
-@Component
+/**
+ * Service responsible for enriching mark evidence submissions by running
+ * vision detection and persisting any produced embeddings.
+ */
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class SubmissionEnrichmentListener {
+public class EnrichmentService {
 
     private final MarkEvidenceSubmissionRepository markEvidenceSubmissionRepository;
     private final VisionClient visionClient;
     private final MediaService mediaService;
 
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    /**
+     * Enriches the submission identified by the provided id. This method runs
+     * in a new transaction so it can safely execute after the origin transaction
+     * has committed.
+     *
+     * @param submissionId id of the submission to enrich
+     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleMarkEvidenceSubmitted(MarkEvidenceSubmittedEvent event) {
-        Long submissionId = event.getSubmissionId();
-        log.info("Async detection processing for submission ID: {}", submissionId);
-
+    public void enrichSubmission(Long submissionId) {
         markEvidenceSubmissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
             if (submission.getOriginalMediaFile() == null) {
                 log.info("Submission ID {} has no original media file. Skipping enrichment.", submissionId);
@@ -53,3 +55,4 @@ public class SubmissionEnrichmentListener {
         }, () -> log.warn("Submitted submission with ID {} not found during enrichment", submissionId));
     }
 }
+

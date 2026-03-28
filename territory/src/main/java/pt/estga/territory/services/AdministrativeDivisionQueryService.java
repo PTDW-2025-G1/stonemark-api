@@ -41,16 +41,8 @@ public class AdministrativeDivisionQueryService {
 		return repository.findById(id);
 	}
 
-	public List<AdministrativeDivision> findByOsmAdminLevel(int adminLevel) {
-		return repository.findByOsmAdminLevel(adminLevel);
-	}
-
 	public List<AdministrativeDivision> findChildren(Long parentId) {
 		return repository.findByParentId(parentId);
-	}
-
-	public Optional<AdministrativeDivision> findParentByGeometry(Long childId, int parentLevel) {
-		return repository.findParentByGeometry(childId, parentLevel);
 	}
 
 	public Optional<AdministrativeDivision> findParent(Long childId) {
@@ -59,14 +51,6 @@ public class AdministrativeDivisionQueryService {
 
 	public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
 		return repository.findByCoordinates(latitude, longitude);
-	}
-
-	public List<AdministrativeDivision> findWithMonuments(int adminLevel) {
-		return repository.findWithMonuments(adminLevel);
-	}
-
-	public List<AdministrativeDivision> findAllRoots() {
-		return repository.findAllByParentIsNull();
 	}
 }
 
