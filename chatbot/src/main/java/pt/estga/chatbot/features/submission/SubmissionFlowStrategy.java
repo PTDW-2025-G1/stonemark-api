@@ -6,7 +6,7 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.services.FlowStrategy;
 
 import java.util.Map;
@@ -18,15 +18,15 @@ import static pt.estga.chatbot.context.HandlerOutcome.*;
 public class SubmissionFlowStrategy implements FlowStrategy {
 
     private static final Map<ConversationState, ConversationState> SUCCESS_TRANSITIONS = Map.ofEntries(
-            Map.entry(ProposalState.WAITING_FOR_PHOTO, ProposalState.AWAITING_LOCATION),
-            Map.entry(ProposalState.AWAITING_LOCATION, ProposalState.AWAITING_NOTES),
-            Map.entry(ProposalState.AWAITING_NOTES, ProposalState.SUBMITTED),
-            Map.entry(ProposalState.SUBMITTED, CoreState.MAIN_MENU)
+            Map.entry(SubmissionState.WAITING_FOR_PHOTO, SubmissionState.AWAITING_LOCATION),
+            Map.entry(SubmissionState.AWAITING_LOCATION, SubmissionState.AWAITING_NOTES),
+            Map.entry(SubmissionState.AWAITING_NOTES, SubmissionState.SUBMITTED),
+            Map.entry(SubmissionState.SUBMITTED, CoreState.MAIN_MENU)
     );
 
     @Override
     public boolean supports(ConversationState state) {
-        return state instanceof ProposalState;
+        return state instanceof SubmissionState;
     }
 
     @Override
@@ -35,8 +35,8 @@ public class SubmissionFlowStrategy implements FlowStrategy {
             return currentState;
         }
 
-        if (currentState == ProposalState.PROPOSAL_START) {
-            return ProposalState.WAITING_FOR_PHOTO;
+        if (currentState == SubmissionState.SUBMISSION_STATE) {
+            return SubmissionState.WAITING_FOR_PHOTO;
         }
 
         if (outcome == SUCCESS) {

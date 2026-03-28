@@ -20,13 +20,17 @@ import java.util.stream.Collectors;
 public class ConversationDispatcher {
 
     private final Map<ConversationState, ConversationStateHandler> handlers;
-    private final ConversationFlowManager proposalFlow;
+    private final ConversationFlowManager submissionFlow;
     private final ResponseFactory responseFactory;
 
-    public ConversationDispatcher(List<ConversationStateHandler> handlerList, ConversationFlowManager proposalFlow, ResponseFactory responseFactory) {
+    public ConversationDispatcher(
+            List<ConversationStateHandler> handlerList,
+            ConversationFlowManager submissionFlow,
+            ResponseFactory responseFactory
+    ) {
         this.handlers = handlerList.stream()
                 .collect(Collectors.toMap(ConversationStateHandler::canHandle, Function.identity()));
-        this.proposalFlow = proposalFlow;
+        this.submissionFlow = submissionFlow;
         this.responseFactory = responseFactory;
     }
 
@@ -55,7 +59,7 @@ public class ConversationDispatcher {
         }
 
         // Determine the next state.
-        ConversationState nextState = proposalFlow.getNextState(context, currentState, outcome);
+        ConversationState nextState = submissionFlow.getNextState(context, currentState, outcome);
         log.info("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         context.setCurrentState(nextState);
 
@@ -72,7 +76,7 @@ public class ConversationDispatcher {
 
             // If automatic handler needs state transition, handle it recursively
             if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
-                ConversationState autoNextState = proposalFlow.getNextState(context, nextState, autoOutcome);
+                ConversationState autoNextState = submissionFlow.getNextState(context, nextState, autoOutcome);
                 log.info("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
                 context.setCurrentState(autoNextState);
             }

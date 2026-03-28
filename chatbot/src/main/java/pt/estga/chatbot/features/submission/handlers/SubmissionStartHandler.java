@@ -5,7 +5,7 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 
 @Component
@@ -18,7 +18,7 @@ public class SubmissionStartHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState canHandle() {
-        return ProposalState.PROPOSAL_START;
+        return SubmissionState.SUBMISSION_STATE;
     }
 
     @Override

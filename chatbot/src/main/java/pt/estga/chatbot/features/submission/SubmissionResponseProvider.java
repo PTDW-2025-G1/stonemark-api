@@ -6,7 +6,7 @@ import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
@@ -38,14 +38,14 @@ public class SubmissionResponseProvider implements ResponseProvider {
 
     @Override
     public boolean supports(ConversationState state) {
-        return state instanceof ProposalState;
+        return state instanceof SubmissionState;
     }
 
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
-        ProposalState state = (ProposalState) context.getCurrentState();
+        SubmissionState state = (SubmissionState) context.getCurrentState();
         return switch (state) {
-            case PROPOSAL_START -> Collections.emptyList();
+            case SUBMISSION_STATE -> Collections.emptyList();
             case AWAITING_LOCATION -> createLocationRequestResponse();
             case AWAITING_NOTES -> createNotesResponse();
             case SUBMITTED -> createSubmissionSuccessResponse(input);
@@ -92,7 +92,7 @@ public class SubmissionResponseProvider implements ResponseProvider {
                 .build());
     }
 
-    private Message getEntryMessageForState(ProposalState state) {
+    private Message getEntryMessageForState(SubmissionState state) {
         return switch (state) {
             case WAITING_FOR_PHOTO -> new Message(MessageKey.REQUEST_PHOTO_PROMPT, CAMERA);
             case AWAITING_LOCATION -> new Message(MessageKey.REQUEST_LOCATION_PROMPT, LOCATION, PAPERCLIP);

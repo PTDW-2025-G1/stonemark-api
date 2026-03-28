@@ -19,21 +19,21 @@ public class AddNotesHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
-        if (!(submission instanceof MarkEvidenceSubmission markProposal)) {
+        if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
             return HandlerOutcome.FAILURE;
         }
 
         // Handle "skip" or text input for notes
         if (input.getCallbackData() == null || !input.getCallbackData().equals(SubmissionCallbackData.SKIP_NOTES)) {
             if (input.getText() != null) {
-                markProposal.setUserNotes(input.getText());
+                markEvidenceSubmission.setUserNotes(input.getText());
             }
         }
 
         try {
             // Delegate chatbot-specific orchestration to the facade which resolves user and source
             submitFacade.submitFromChatbot(
-                    markProposal,
+                    markEvidenceSubmission,
                     context.getSubmissionContext().getPhotoData(),
                     context.getSubmissionContext().getPhotoFilename(),
                     context.getDomainUserId(),
@@ -52,6 +52,6 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState canHandle() {
-        return ProposalState.AWAITING_NOTES;
+        return SubmissionState.AWAITING_NOTES;
     }
 }

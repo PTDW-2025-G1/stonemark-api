@@ -6,7 +6,7 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -26,8 +26,8 @@ public class InitialPhotoHandler implements ConversationStateHandler {
 
         // Initialize a submission object if not exists (but don't persist yet)
         if (submission == null) {
-            MarkEvidenceSubmission markProposal = new MarkEvidenceSubmission();
-            context.getSubmissionContext().setSubmission(markProposal);
+            MarkEvidenceSubmission markEvidenceSubmission = new MarkEvidenceSubmission();
+            context.getSubmissionContext().setSubmission(markEvidenceSubmission);
         }
 
         // Store photo data and metadata in context (will be persisted at submission)
@@ -40,7 +40,7 @@ public class InitialPhotoHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState canHandle() {
-        return ProposalState.WAITING_FOR_PHOTO;
+        return SubmissionState.WAITING_FOR_PHOTO;
     }
 
     private SubmissionSource mapPlatformToSubmissionSource(Platform platform) {

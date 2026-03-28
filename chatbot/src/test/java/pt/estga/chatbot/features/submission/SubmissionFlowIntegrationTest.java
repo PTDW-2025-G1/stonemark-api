@@ -6,7 +6,7 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -23,17 +23,17 @@ class SubmissionFlowIntegrationTest {
     void testCompleteLinearFlow_ToMainMenu() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, ProposalState.PROPOSAL_START, HandlerOutcome.SUCCESS);
-        assertEquals(ProposalState.WAITING_FOR_PHOTO, state);
+        ConversationState state = strategy.getNextState(context, SubmissionState.SUBMISSION_STATE, HandlerOutcome.SUCCESS);
+        assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
 
         state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
-        assertEquals(ProposalState.AWAITING_LOCATION, state);
+        assertEquals(SubmissionState.AWAITING_LOCATION, state);
 
         state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
-        assertEquals(ProposalState.AWAITING_NOTES, state);
+        assertEquals(SubmissionState.AWAITING_NOTES, state);
 
         state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
-        assertEquals(ProposalState.SUBMITTED, state);
+        assertEquals(SubmissionState.SUBMITTED, state);
 
         state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
         assertEquals(CoreState.MAIN_MENU, state);
@@ -43,8 +43,8 @@ class SubmissionFlowIntegrationTest {
     void testFailure_DoesNotAdvanceState() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, ProposalState.WAITING_FOR_PHOTO, HandlerOutcome.FAILURE);
+        ConversationState state = strategy.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, HandlerOutcome.FAILURE);
 
-        assertEquals(ProposalState.WAITING_FOR_PHOTO, state);
+        assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
     }
 }

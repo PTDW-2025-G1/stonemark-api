@@ -30,9 +30,9 @@ public class MainMenuFactory {
         boolean isAuthenticated = authService.isAuthenticated(input.getUserId());
 
         List<List<Button>> buttonRows = new ArrayList<>();
-        boolean canStartProposal = chatbotAuthProperties.isOptional() || isAuthenticated;
+        boolean canStartSubmission = chatbotAuthProperties.isOptional() || isAuthenticated;
 
-        if (canStartProposal) {
+        if (canStartSubmission) {
             buttonRows.add(List.of(
                     Button.builder()
                             .textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))

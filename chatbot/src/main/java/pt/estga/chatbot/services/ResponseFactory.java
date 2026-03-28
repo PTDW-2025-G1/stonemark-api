@@ -6,7 +6,7 @@ import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.ProposalState;
+import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
@@ -15,7 +15,6 @@ import pt.estga.chatbot.models.ui.Menu;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import static pt.estga.chatbot.constants.EmojiKey.WARNING;
 
@@ -57,8 +56,8 @@ public class ResponseFactory {
     }
 
     private Message getFailureMessageForState(ConversationState state) {
-        if (state instanceof ProposalState proposalState) {
-            return switch (proposalState) {
+        if (state instanceof SubmissionState submissionState) {
+            return switch (submissionState) {
                 case WAITING_FOR_PHOTO -> new Message(MessageKey.EXPECTING_PHOTO_ERROR, WARNING);
                 case AWAITING_LOCATION -> new Message(MessageKey.EXPECTING_LOCATION_ERROR, WARNING);
                 default -> null;
