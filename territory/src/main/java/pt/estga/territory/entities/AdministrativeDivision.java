@@ -26,8 +26,11 @@ public class AdministrativeDivision extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision parent;
 
-    // Todo: create country entity
+    @Deprecated
     private String countryCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Country country;
 
     private int monumentsCount = 0;
 
