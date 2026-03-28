@@ -3,7 +3,7 @@ package pt.estga.mark.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.audit.AuditedEntity;
+import pt.estga.shared.entities.AuditedEntity;
 
 import java.util.HashSet;
 import java.util.List;

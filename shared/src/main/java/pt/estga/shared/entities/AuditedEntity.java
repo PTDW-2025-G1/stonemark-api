@@ -1,4 +1,4 @@
-package pt.estga.shared.audit;
+package pt.estga.shared.entities;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import pt.estga.shared.models.AuditActor;
 
@@ -19,7 +21,7 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
-public abstract class CreationAuditedEntity {
+public abstract class AuditedEntity {
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -33,4 +35,14 @@ public abstract class CreationAuditedEntity {
     })
     protected AuditActor createdBy;
 
+    @LastModifiedDate
+    protected Instant lastModifiedAt;
+
+    @LastModifiedBy
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "id", column = @Column(name = "modified_by_id")),
+            @AttributeOverride(name = "identifier", column = @Column(name = "modified_by_identifier"))
+    })
+    protected AuditActor modifiedBy;
 }

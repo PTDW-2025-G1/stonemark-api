@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.audit.AuditedEntity;
+import pt.estga.shared.entities.AuditedEntity;
 
 import java.util.UUID;
 

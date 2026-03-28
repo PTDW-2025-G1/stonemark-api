@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
-import pt.estga.shared.audit.CreationAuditedEntity;
+import pt.estga.shared.entities.CreationAuditedEntity;
 
 import java.util.ArrayList;
 import java.util.List;
