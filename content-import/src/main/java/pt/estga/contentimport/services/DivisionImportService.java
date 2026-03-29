@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.entities.Country;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
-import pt.estga.territory.services.CountryService;
+import pt.estga.territory.services.CountryQueryService;
 import pt.estga.territory.exceptions.UnsupportedCountryException;
 import pt.estga.territory.services.DivisionParentMatchingService;
 import pt.estga.contentimport.mappers.DivisionFeatureMapper;
@@ -33,7 +33,7 @@ public class DivisionImportService {
     private final AdministrativeDivisionRepository administrativeDivisionRepository;
     private final ObjectMapper objectMapper;
     private final DivisionParentMatchingService divisionParentMatchingService;
-    private final CountryService countryService;
+    private final CountryQueryService countryQueryService;
     private final DivisionFeatureMapper featureMapper;
 
     public int importFromPbf(InputStream pbfStream, String countryCode) throws Exception {
@@ -62,7 +62,7 @@ public class DivisionImportService {
             int count = 0;
 
             // Resolve provided country code to id using CountryService (normalization handled there)
-            Country providedCountry = countryService.findByCode(countryCode);
+            Country providedCountry = countryQueryService.findByCode(countryCode);
             if (providedCountry == null) {
                 throw new UnsupportedCountryException("Provided countryCode is missing or unknown: " + countryCode);
             }

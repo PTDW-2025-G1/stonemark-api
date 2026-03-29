@@ -13,10 +13,6 @@ public class MarkCategoryService {
 
     private final MarkCategoryRepository repository;
 
-    public Optional<MarkCategory> getById(Long id) {
-        return repository.findById(id);
-    }
-
     public MarkCategory create(MarkCategory category) {
         return repository.save(category);
     }

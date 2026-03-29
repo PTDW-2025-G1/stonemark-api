@@ -10,10 +10,9 @@ import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.events.MarkOccurrenceCreatedEvent;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.application.MediaService;
+import pt.estga.file.services.application.MediaService;
 
 import java.io.IOException;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +21,6 @@ public class MarkOccurrenceService {
     private final MarkOccurrenceRepository repository;
     private final AfterCommitEventPublisher eventPublisher;
     private final MediaService mediaService;
-
-    public Optional<MarkOccurrence> findById(Long id) {
-        return repository.findById(id);
-    }
 
     @Transactional
     public MarkOccurrence create(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {

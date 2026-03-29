@@ -1,4 +1,4 @@
-package pt.estga.file.storage.variant;
+package pt.estga.file.services.storage.variant;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
-import pt.estga.file.naming.StoragePathStrategy;
+import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.MediaContentService;
 
 import java.io.IOException;

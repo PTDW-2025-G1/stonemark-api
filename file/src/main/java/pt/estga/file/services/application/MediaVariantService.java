@@ -1,4 +1,4 @@
-package pt.estga.file.application;
+package pt.estga.file.services.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.file.storage.FileStorageService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 @Service

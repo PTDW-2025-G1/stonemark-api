@@ -6,17 +6,11 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentRepository;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class MonumentService {
 
     private final MonumentRepository repository;
-
-    public Optional<Monument> findById(Long id) {
-        return repository.findById(id);
-    }
 
     @Transactional
     public Monument create(Monument monument) {

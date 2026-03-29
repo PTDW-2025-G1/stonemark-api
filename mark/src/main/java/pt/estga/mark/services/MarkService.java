@@ -10,18 +10,12 @@ import pt.estga.mark.events.MarkCreatedEvent;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.file.entities.MediaFile;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class MarkService {
 
     private final MarkRepository repository;
     private final AfterCommitEventPublisher eventPublisher;
-
-    public Optional<Mark> findById(Long id) {
-        return repository.findById(id);
-    }
 
     @Transactional
     public Mark create(Mark mark) {

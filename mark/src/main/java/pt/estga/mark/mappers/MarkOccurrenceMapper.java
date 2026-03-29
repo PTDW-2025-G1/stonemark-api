@@ -22,8 +22,6 @@ public interface MarkOccurrenceMapper {
     @Mapping(target = "authorName", source = "author.username")
     MarkOccurrenceDto toDto(MarkOccurrence entity);
 
-    List<MarkOccurrenceDto> toDto(List<MarkOccurrence> entities);
-
     @Mapping(target = "cover", ignore = true)
     @Mapping(source = "markId", target = "mark.id")
     @Mapping(source = "monumentId", target = "monument.id")
@@ -38,5 +36,4 @@ public interface MarkOccurrenceMapper {
     @Mapping(target = "author", ignore = true)
     @Mapping(target = "embedding", ignore = true)
     void updateEntityFromDto(MarkOccurrenceRequestDto dto, @MappingTarget MarkOccurrence entity);
-
 }

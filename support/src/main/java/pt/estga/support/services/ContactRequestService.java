@@ -7,7 +7,6 @@ import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
@@ -18,10 +17,6 @@ public class ContactRequestService {
     private final ContactRequestRepository repository;
 
     public ContactRequest create(ContactRequestDto dto) {
-        return create(dto, null);
-    }
-
-    public ContactRequest create(ContactRequestDto dto, Long submittedById) {
         ContactRequest contact = new ContactRequest();
 
         contact.setName(dto.name());
@@ -30,7 +25,6 @@ public class ContactRequestService {
         contact.setMessage(dto.message());
         contact.setStatus(ContactStatus.PENDING);
         contact.setCreatedAt(Instant.now());
-        contact.setSubmittedBy(User.builder().id(submittedById).build());
 
         return repository.save(contact);
     }

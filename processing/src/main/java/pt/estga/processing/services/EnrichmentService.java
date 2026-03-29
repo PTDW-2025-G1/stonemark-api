@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.file.application.MediaService;
+import pt.estga.file.services.application.MediaService;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;

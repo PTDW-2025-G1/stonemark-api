@@ -13,12 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.file.application.MediaService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
+import pt.estga.user.services.UserQueryService;
 import pt.estga.user.services.UserService;
 
 @RestController
@@ -29,8 +29,8 @@ import pt.estga.user.services.UserService;
 public class AccountController {
 
     private final UserService userService;
+    private final UserQueryService userQueryService;
     private final UserMapper mapper;
-    private final MediaService mediaService;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
     @ApiResponses(value = {
@@ -40,7 +40,7 @@ public class AccountController {
     })
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService
+        User user = userQueryService
                 .findByIdForProfile(principal.getId())
                 .orElseThrow();
         return ResponseEntity.ok(mapper.toDto(user));
@@ -58,7 +58,7 @@ public class AccountController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
+        User user = userQueryService.findById(principal.getId()).orElseThrow();
         mapper.update(user, request);
         userService.update(user);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));

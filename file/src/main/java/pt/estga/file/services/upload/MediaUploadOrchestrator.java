@@ -4,14 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
+import pt.estga.file.dtos.SaveResult;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.file.naming.FileNamingService;
-import pt.estga.file.naming.StoragePathStrategy;
+import pt.estga.file.services.naming.FileNamingService;
+import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
 
@@ -38,7 +39,7 @@ public class MediaUploadOrchestrator {
 
         String relativePath = storagePathStrategy.generatePath(media);
 
-        MediaContentService.SaveResult result;
+        SaveResult result;
         try (InputStream in = input) {
             result = mediaContentService.saveContent(in, relativePath);
         } catch (Exception e) {

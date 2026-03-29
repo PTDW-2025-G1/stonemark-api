@@ -24,6 +24,7 @@ import java.time.Duration;
 public class KeycloakJitProvisioningService {
 
     private final UserService userService;
+    private final UserQueryService userQueryService;
     private KeycloakJitProvisioningService self;
     private static final Logger log = LoggerFactory.getLogger(KeycloakJitProvisioningService.class);
     private static final int SUB_SUFFIX_LENGTH = 8;
@@ -47,14 +48,14 @@ public class KeycloakJitProvisioningService {
             throw new IllegalArgumentException("Keycloak snapshot must contain a subject (sub)");
         }
 
-        return userService.findByKeycloakSub(snapshot.sub())
+        return userQueryService.findByKeycloakSub(snapshot.sub())
                 .map(existing -> syncSnapshot(existing, snapshot))
                 .orElseGet(() -> linkOrCreate(snapshot));
     }
 
     private User linkOrCreate(KeycloakIdentitySnapshot snapshot) {
         if (snapshot.email() != null && snapshot.emailVerified()) {
-            return userService.findByEmail(snapshot.email())
+            return userQueryService.findByEmail(snapshot.email())
                     .map(existing -> linkExistingUser(existing, snapshot))
                     .orElseGet(() -> createUser(snapshot));
         }

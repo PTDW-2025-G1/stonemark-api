@@ -1,36 +1,31 @@
-package pt.estga.bookmark;
+package pt.estga.bookmark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.CreationTimestamp;
-import pt.estga.mark.enums.TargetType;
+import org.hibernate.annotations.UuidGenerator;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
+import java.util.UUID;
 
-@Entity
+@MappedSuperclass
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
-public class Bookmark {
+@SuperBuilder
+public abstract class BaseBookmark {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator
+    private UUID id;
 
     @ManyToOne(optional = false)
-    private User user;
-
-    @Column(nullable = false)
-    private String targetId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TargetType targetType;
+    private User createdBy;
 
     @CreationTimestamp
     private Instant createdAt;
 }
-
