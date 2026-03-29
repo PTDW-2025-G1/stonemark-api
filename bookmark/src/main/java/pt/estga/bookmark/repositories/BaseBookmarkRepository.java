@@ -1,4 +1,4 @@
-package pt.estga.bookmark.repository;
+package pt.estga.bookmark.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import pt.estga.bookmark.entities.BaseBookmark;

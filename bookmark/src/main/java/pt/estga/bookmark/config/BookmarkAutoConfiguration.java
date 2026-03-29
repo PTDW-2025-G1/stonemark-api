@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @AutoConfiguration
 @ComponentScan("pt.estga.bookmark")
-@EnableJpaRepositories("pt.estga.bookmark")
-@EntityScan("pt.estga.bookmark")
+@EnableJpaRepositories("pt.estga.bookmark.repositories")
+@EntityScan("pt.estga.bookmark.emtities")
 public class BookmarkAutoConfiguration {
 }

@@ -29,4 +29,3 @@ public abstract class BaseBookmark {
     @CreationTimestamp
     private Instant createdAt;
 }
-
