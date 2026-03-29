@@ -24,7 +24,7 @@ public abstract class BaseBookmark {
     private UUID id;
 
     @ManyToOne(optional = false)
-    private User user;
+    private User createdBy;
 
     @CreationTimestamp
     private Instant createdAt;
