@@ -24,22 +24,21 @@
     <modules>
         <module>boot</module>
         <module>mark</module>
-        <module>detection</module>
+        <module>vision</module>
         <module>file</module>
         <module>user</module>
         <module>shared</module>
-        <module>submission</module>
+        <module>intake</module>
         <module>support</module>
         <module>chatbot</module>
         <module>verification</module>
-        <module>report</module>
         <module>territory</module>
-        <module>decision</module>
         <module>shared-web</module>
         <module>bookmark</module>
         <module>content-import</module>
         <module>monument</module>
         <module>notification</module>
+        <module>processing</module>
     </modules>
     <scm>
 		<connection/>
@@ -140,6 +139,13 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.pgvector/pgvector -->
+        <dependency>
+            <groupId>com.pgvector</groupId>
+            <artifactId>pgvector</artifactId>
+            <version>0.1.6</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Utilities & Tools -->

@@ -7,6 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentRepository;
+import pt.estga.monument.dots.MonumentListDto;
+import pt.estga.monument.MonumentMapper;
+import pt.estga.sharedweb.filtering.QueryProcessor;
+import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.sharedweb.models.QueryResult;
 
 import java.util.Optional;
 
@@ -16,20 +21,29 @@ import java.util.Optional;
 public class MonumentQueryService {
 
     private final MonumentRepository repository;
+    private final QueryProcessor<Monument> queryProcessor;
+    private final MonumentMapper mapper;
 
     public Optional<Monument> findById(Long id) {
         return repository.findById(id);
     }
 
-    public Page<Monument> searchByName(String query, Pageable pageable) {
-        return repository.findByNameContainingIgnoreCaseAndActive(query, pageable, true);
+    public Page<MonumentListDto> search(PagedRequest request) {
+        QueryResult<Monument> result = queryProcessor.process(request);
+
+        Page<Monument> monuments = repository.findAll(
+                result.specification(),
+                result.pageable()
+        );
+
+        return monuments.map(mapper::toListDto);
     }
 
     public Page<Monument> findByPolygon(String geoJson, Pageable pageable) {
-        return repository.findByPolygon(geoJson, pageable, true);
+        return repository.findByPolygon(geoJson, pageable);
     }
 
     public Page<Monument> findByDivisionId(Long id, Pageable pageable) {
-        return repository.findByDivisionId(id, pageable, true);
+        return repository.findByDivisionId(id, pageable);
     }
 }

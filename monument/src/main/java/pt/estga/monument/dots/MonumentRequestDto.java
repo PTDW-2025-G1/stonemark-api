@@ -12,8 +12,6 @@ public record MonumentRequestDto(
         @NotNull Double longitude,
         String street,
         String houseNumber,
-        Long parishId,
-        Long municipalityId,
-        Long districtId,
+        Long divisionId,
         Boolean active
 ) { }

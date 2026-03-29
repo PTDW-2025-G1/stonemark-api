@@ -2,8 +2,10 @@ package pt.estga.file.dtos;
 
 import pt.estga.file.enums.MediaStatus;
 
+import java.util.UUID;
+
 public record MediaFileDto(
-        Long id,
+        UUID id,
         String filename,
         String originalFilename,
         Long size,

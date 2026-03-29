@@ -1,6 +1,7 @@
 package pt.estga.chatbot.services;
 
-import com.github.benmanes.caffeine.cache.Cache;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +22,7 @@ import java.util.Optional;
 public class BotEngineImpl implements BotEngine {
 
     private final ConversationDispatcher conversationDispatcher;
-    private final Cache<String, ChatbotContext> conversationContexts;
+    private final CacheManager cacheManager;
     private final AuthServiceFactory authServiceFactory;
 
     @Override
@@ -35,7 +36,8 @@ public class BotEngineImpl implements BotEngine {
                     .orElse(null);
         }
 
-        ChatbotContext context = getOrCreateContext(userId);
+        String conversationKey = deriveConversationKey(input, userId);
+        ChatbotContext context = getOrCreateContext(conversationKey);
 
         currentUserId.ifPresent(id -> {
             if (context.getDomainUserId() == null) {
@@ -57,8 +59,31 @@ public class BotEngineImpl implements BotEngine {
         return conversationDispatcher.dispatch(context, input);
     }
 
-    private ChatbotContext getOrCreateContext(String userId) {
-        return conversationContexts.get(userId, k -> new ChatbotContext());
+    private ChatbotContext getOrCreateContext(String conversationKey) {
+        Cache cache = cacheManager.getCache("conversations");
+        if (cache == null) {
+            // Fallback to an in-memory ChatbotContext if no cache manager is available
+            return new ChatbotContext();
+        }
+        // Use the Spring Cache abstraction to create or retrieve the ChatbotContext
+        return cache.get(conversationKey, () -> new ChatbotContext());
+    }
+
+    /**
+     * Derives a stable, non-null cache key for conversation contexts.
+     * Priority:
+     * 1. Resolved domain user id (USER:{id})
+     * 2. Platform + chat id (PLATFORM:{chatId})
+     * If neither can be derived an IllegalArgumentException is thrown.
+     */
+    private String deriveConversationKey(BotInput input, String resolvedUserId) {
+        if (resolvedUserId != null) {
+            return "USER:" + resolvedUserId;
+        }
+        if (input.getPlatform() != null && input.getChatId() != 0L) {
+            return input.getPlatform().name() + ":" + input.getChatId();
+        }
+        throw new IllegalArgumentException("Cannot derive conversation key from input: missing userId and platform/chatId");
     }
 
     private void authenticateUserIfPossible(ChatbotContext context, BotInput input) {
@@ -88,6 +113,6 @@ public class BotEngineImpl implements BotEngine {
 
     private void resetContext(ChatbotContext context) {
         context.setCurrentState(CoreState.START);
-        context.getProposalContext().clear();
+        context.getSubmissionContext().clear();
     }
 }

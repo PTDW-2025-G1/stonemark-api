@@ -3,9 +3,11 @@ package pt.estga.user.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import pt.estga.file.entities.MediaFile;
+import pt.estga.shared.entities.BaseEntity;
 import pt.estga.shared.enums.UserRole;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -16,7 +18,10 @@ import java.util.Objects;
 @Getter
 @Setter
 @Builder
-public class User {
+public class User extends BaseEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue
@@ -29,6 +34,13 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    /**
+     * External Keycloak subject identifier (subclaim).
+     * <p>
+     * This value is used only as an external lookup key for JIT provisioning and
+     * account linking. Internal domain relationships should reference the local
+     * database id (Long) to preserve local data ownership and portability.
+     */
     @Column(name = "keycloak_sub", unique = true)
     private String keycloakSub;
 
@@ -41,9 +53,6 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private MediaFile photo;
-
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
@@ -54,25 +63,21 @@ public class User {
     @CreationTimestamp
     private Instant createdAt;
 
+    private Instant lastLoginAt;
+
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return accountLocked == user.accountLocked
-                && enabled == user.enabled
-                && emailVerified == user.emailVerified
-                && Objects.equals(id, user.id)
-                && Objects.equals(firstName, user.firstName)
-                && Objects.equals(lastName, user.lastName)
-                && Objects.equals(username, user.username)
-                && Objects.equals(email, user.email)
-                && Objects.equals(keycloakSub, user.keycloakSub)
-                && role == user.role
-                && Objects.equals(createdAt, user.createdAt);
+        if (keycloakSub != null && user.keycloakSub != null) {
+            return Objects.equals(keycloakSub, user.keycloakSub);
+        }
+        return Objects.equals(id, user.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, firstName, lastName, username, email, keycloakSub, emailVerified, role, accountLocked, enabled, createdAt);
+        return keycloakSub != null ? Objects.hash(keycloakSub) : Objects.hash(id);
     }
 }

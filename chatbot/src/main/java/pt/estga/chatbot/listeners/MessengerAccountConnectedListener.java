@@ -9,8 +9,8 @@ import pt.estga.chatbot.constants.EmojiKey;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.chatbot.services.MessengerNotificationService;
-import pt.estga.chatbot.services.MessengerNotificationServiceFactory;
+import pt.estga.chatbot.services.notifications.MessengerNotificationService;
+import pt.estga.chatbot.services.notifications.MessengerNotificationServiceFactory;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 
 @Component

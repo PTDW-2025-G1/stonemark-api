@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>submission</artifactId>
+            <artifactId>intake</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -63,6 +63,14 @@
             <artifactId>telegrambots-abilities</artifactId>
             <version>9.5.0</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
     </dependencies>
 

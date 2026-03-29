@@ -2,14 +2,13 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.monument.Monument;
-import pt.estga.shared.audit.AuditedEntity;
-import pt.estga.shared.utils.PgVectorType;
+import pt.estga.shared.entities.BaseEntity;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -17,16 +16,12 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class MarkOccurrence extends AuditedEntity {
+public class MarkOccurrence extends BaseEntity {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private MediaFile cover;
-
-    @Type(PgVectorType.class)
     @Column(columnDefinition = "vector")
     private float[] embedding;
 
@@ -36,19 +31,7 @@ public class MarkOccurrence extends AuditedEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private Monument monument;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User author;
-
-    private Instant publishedAt;
-
-    @Builder.Default
-    private Boolean active = true;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.publishedAt == null) {
-            this.publishedAt = Instant.now();
-        }
-    }
+    @OneToMany(mappedBy = "occurrence", cascade = CascadeType.ALL)
+    private List<MarkEvidence> evidences;
 
 }

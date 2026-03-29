@@ -1,0 +1,19 @@
+package pt.estga.mark.services.category;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import pt.estga.mark.entities.MarkCategory;
+import pt.estga.mark.repositories.MarkCategoryRepository;
+
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class MarkCategoryQueryService {
+
+    private final MarkCategoryRepository repository;
+
+    public Optional<MarkCategory> getById(Long id) {
+        return repository.findById(id);
+    }
+}

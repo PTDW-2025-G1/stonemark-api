@@ -2,10 +2,11 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
-import pt.estga.file.entities.MediaFile;
-import pt.estga.shared.audit.AuditedEntity;
-import pt.estga.shared.utils.PgVectorType;
+import pt.estga.shared.entities.BaseEntity;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @NoArgsConstructor
@@ -13,22 +14,28 @@ import pt.estga.shared.utils.PgVectorType;
 @Getter
 @Setter
 @Builder
-public class Mark extends AuditedEntity {
+public class Mark extends BaseEntity {
 
     @Id
     @GeneratedValue
     private Long id;
 
+    private String title;
+
     private String description;
 
-    @OneToOne
-    private MediaFile cover;
-
-    @Type(PgVectorType.class)
     @Column(columnDefinition = "vector")
-    private float[] embedding;
+    private float[] canonicalEmbedding;
 
-    @Builder.Default
-    private Boolean active = true;
+    @ManyToMany
+    @JoinTable(
+            name = "mark_category_mapping",
+            joinColumns = @JoinColumn(name = "mark_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
+    )
+    private Set<MarkCategory> categories = new HashSet<>();
+
+    @OneToMany(mappedBy = "mark")
+    private List<MarkOccurrence> occurrences;
 
 }

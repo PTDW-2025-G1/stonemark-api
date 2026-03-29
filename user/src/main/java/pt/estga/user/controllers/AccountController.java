@@ -9,22 +9,17 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaService;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserService;
-
-import java.io.IOException;
+import pt.estga.user.services.UserQueryService;
+import pt.estga.user.services.UserCommandService;
 
 @RestController
 @RequestMapping("/api/v1/account")
@@ -33,9 +28,9 @@ import java.io.IOException;
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
-    private final UserService userService;
+    private final UserCommandService userCommandService;
+    private final UserQueryService userQueryService;
     private final UserMapper mapper;
-    private final MediaService mediaService;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
     @ApiResponses(value = {
@@ -45,7 +40,7 @@ public class AccountController {
     })
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService
+        User user = userQueryService
                 .findByIdForProfile(principal.getId())
                 .orElseThrow();
         return ResponseEntity.ok(mapper.toDto(user));
@@ -63,28 +58,10 @@ public class AccountController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
+        User user = userQueryService.findById(principal.getId()).orElseThrow();
         mapper.update(user, request);
-
-        if (request.photoId() != null) {
-            mediaService.findById(request.photoId()).ifPresent(user::setPhoto);
-        }
-
-        userService.update(user);
+        userCommandService.update(user);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
-    }
-
-
-    @PostMapping(value = "/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<UserDto> uploadPhoto(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @RequestParam("file") MultipartFile file
-    ) throws IOException {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-        user.setPhoto(mediaFile);
-        User updatedUser = userService.update(user);
-        return ResponseEntity.ok(mapper.toDto(updatedUser));
     }
 
     @Operation(summary = "Delete user account", description = "Deletes the authenticated user's account.")
@@ -96,7 +73,7 @@ public class AccountController {
     })
     @DeleteMapping
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        userService.softDeleteUser(principal.getId());
+        userCommandService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
     }
 }

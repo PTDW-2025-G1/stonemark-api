@@ -11,6 +11,7 @@ import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.file.controllers.MediaController;
 
 import java.io.File;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class TelegramFileService {
         }
     }
 
-    public InputFile createInputFileFromMediaId(Long mediaId) {
+    public InputFile createInputFileFromMediaId(UUID mediaId) {
         InputFile inputFile = new InputFile();
         try {
             var responseEntity = mediaController.getMediaById(mediaId);
