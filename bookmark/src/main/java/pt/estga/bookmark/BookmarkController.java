@@ -17,10 +17,20 @@ import java.util.List;
 public class BookmarkController {
 
     private final BookmarkService service;
+    private final BookmarkQueryService queryService;
 
     @GetMapping
     public List<BookmarkDto> getUserBookmarks(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        return service.getUserBookmarks(principal.getId());
+        return queryService.getUserBookmarks(principal.getId());
+    }
+
+    @GetMapping("/check/{type}/{targetId}")
+    public boolean isBookmarked(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @PathVariable TargetType type,
+            @PathVariable String targetId
+    ) {
+        return queryService.isBookmarked(principal.getId(), type, targetId);
     }
 
     @PostMapping("/{type}/{targetId}")
@@ -39,14 +49,5 @@ public class BookmarkController {
     ) {
         service.deleteBookmark(principal.getId(), bookmarkId);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/check/{type}/{targetId}")
-    public boolean isBookmarked(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @PathVariable TargetType type,
-            @PathVariable String targetId
-    ) {
-        return service.isBookmarked(principal.getId(), type, targetId);
     }
 }
