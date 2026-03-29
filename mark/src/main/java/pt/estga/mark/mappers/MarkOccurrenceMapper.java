@@ -10,8 +10,6 @@ import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.monument.MonumentMapper;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring", uses = {MarkMapper.class, MonumentMapper.class})
 public interface MarkOccurrenceMapper {
 
@@ -27,5 +25,10 @@ public interface MarkOccurrenceMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "markId", target = "mark.id")
     @Mapping(target = "embedding", ignore = true)
-    void updateEntityFromDto(MarkOccurrenceRequestDto dto, @MappingTarget MarkOccurrence entity);
+    void updateFromRequest(MarkOccurrenceRequestDto dto, @MappingTarget MarkOccurrence entity);
+    
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(source = "markId", target = "mark.id")
+    @Mapping(target = "embedding", ignore = true)
+    void updateEntityFromDto(MarkOccurrenceDto dto, @MappingTarget MarkOccurrence entity);
 }
