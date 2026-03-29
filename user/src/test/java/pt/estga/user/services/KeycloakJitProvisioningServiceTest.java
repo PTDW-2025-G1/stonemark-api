@@ -25,6 +25,9 @@ class KeycloakJitProvisioningServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private UserQueryService userQueryService;
+
     @InjectMocks
     private KeycloakJitProvisioningService service;
 
@@ -47,8 +50,8 @@ class KeycloakJitProvisioningServiceTest {
         String sub = "550e8400-e29b-41d4-a716-446655440000";
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, "John😊.Doe", "John", "Doe", "john@example.com", true);
 
-        when(userService.findByKeycloakSub(sub)).thenReturn(Optional.empty());
-        when(userService.findByEmail("john@example.com")).thenReturn(Optional.empty());
+        when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.empty());
+        when(userQueryService.findByEmail("john@example.com")).thenReturn(Optional.empty());
         when(userService.create(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.resolveOrProvision(snapshot);
@@ -77,7 +80,7 @@ class KeycloakJitProvisioningServiceTest {
 
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, null, null, null, "john@example.com", true);
 
-        when(userService.findByKeycloakSub(sub)).thenReturn(Optional.of(existing));
+        when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.of(existing));
         when(userService.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = service.resolveOrProvision(snapshot);
@@ -103,8 +106,8 @@ class KeycloakJitProvisioningServiceTest {
 
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(newSub, null, null, null, "jane@example.com", true);
 
-        when(userService.findByKeycloakSub(newSub)).thenReturn(Optional.empty());
-        when(userService.findByEmail("jane@example.com")).thenReturn(Optional.of(existing));
+        when(userQueryService.findByKeycloakSub(newSub)).thenReturn(Optional.empty());
+        when(userQueryService.findByEmail("jane@example.com")).thenReturn(Optional.of(existing));
 
         assertThrows(IllegalStateException.class, () -> service.resolveOrProvision(snapshot));
 
