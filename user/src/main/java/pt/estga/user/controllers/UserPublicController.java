@@ -16,7 +16,7 @@ import pt.estga.user.services.UserQueryService;
 @RequestMapping("/api/v1/public/users")
 @RequiredArgsConstructor
 @Tag(name = "Users", description = "Public endpoints for users.")
-public class PublicUserController {
+public class UserPublicController {
 
     private final UserQueryService service;
     private final UserMapper mapper;

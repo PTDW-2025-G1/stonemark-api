@@ -23,7 +23,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class KeycloakJitProvisioningService {
 
-    private final UserService userService;
+    private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
     private KeycloakJitProvisioningService self;
     private static final Logger log = LoggerFactory.getLogger(KeycloakJitProvisioningService.class);
@@ -90,7 +90,7 @@ public class KeycloakJitProvisioningService {
                 .build();
 
         log.info("Creating new user username={} email={} keycloakSub={}", user.getUsername(), user.getEmail(), user.getKeycloakSub());
-        return userService.create(user);
+        return userCommandService.create(user);
     }
 
     private User syncSnapshot(User user, KeycloakIdentitySnapshot snapshot) {
@@ -120,7 +120,7 @@ public class KeycloakJitProvisioningService {
         }
 
         if (changed) {
-            User updated = userService.update(user);
+            User updated = userCommandService.update(user);
             // Use 'self' proxy to trigger @CacheEvict
             if (self != null) {
                 self.evictProvisioningCache(updated.getKeycloakSub());

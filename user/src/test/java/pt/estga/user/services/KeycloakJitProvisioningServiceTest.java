@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
 class KeycloakJitProvisioningServiceTest {
 
     @Mock
-    private UserService userService;
+    private UserCommandService userCommandService;
 
     @Mock
     private UserQueryService userQueryService;
@@ -52,11 +52,11 @@ class KeycloakJitProvisioningServiceTest {
 
         when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.empty());
         when(userQueryService.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(userService.create(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userCommandService.create(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.resolveOrProvision(snapshot);
 
-        verify(userService).create(userCaptor.capture());
+        verify(userCommandService).create(userCaptor.capture());
         User passed = userCaptor.getValue();
 
         assertEquals("john.doe_550e8400", passed.getUsername());
@@ -81,11 +81,11 @@ class KeycloakJitProvisioningServiceTest {
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, null, null, null, "john@example.com", true);
 
         when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.of(existing));
-        when(userService.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userCommandService.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = service.resolveOrProvision(snapshot);
 
-        verify(userService, times(1)).update(userCaptor.capture());
+        verify(userCommandService, times(1)).update(userCaptor.capture());
         User updated = userCaptor.getValue();
 
         assertTrue(updated.isEmailVerified());
@@ -111,7 +111,7 @@ class KeycloakJitProvisioningServiceTest {
 
         assertThrows(IllegalStateException.class, () -> service.resolveOrProvision(snapshot));
 
-        verify(userService, never()).create(any());
-        verify(userService, never()).update(any());
+        verify(userCommandService, never()).create(any());
+        verify(userCommandService, never()).update(any());
     }
 }
