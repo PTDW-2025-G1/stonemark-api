@@ -2,6 +2,7 @@ package pt.estga.bookmark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import pt.estga.mark.entities.MarkOccurrence;
 
 @Entity
@@ -9,7 +10,7 @@ import pt.estga.mark.entities.MarkOccurrence;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 public class MarkOccurrenceBookmark extends BaseBookmark {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
