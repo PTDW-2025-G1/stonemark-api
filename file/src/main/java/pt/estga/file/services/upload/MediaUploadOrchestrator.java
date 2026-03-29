@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
+import pt.estga.file.dtos.SaveResult;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
@@ -38,7 +39,7 @@ public class MediaUploadOrchestrator {
 
         String relativePath = storagePathStrategy.generatePath(media);
 
-        MediaContentService.SaveResult result;
+        SaveResult result;
         try (InputStream in = input) {
             result = mediaContentService.saveContent(in, relativePath);
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import pt.estga.file.dtos.SaveResult;
 import pt.estga.file.storage.FileStorageService;
 
 import java.io.InputStream;
@@ -14,11 +15,6 @@ import java.io.InputStream;
 public class MediaContentService {
 
     private final FileStorageService fileStorageService;
-
-    /**
-     * Result for content save operation returning storage path and number of bytes written.
-     */
-    public record SaveResult(String storagePath, long size) {}
 
     /**
      * Saves the provided stream using the underlying FileStorageService while
