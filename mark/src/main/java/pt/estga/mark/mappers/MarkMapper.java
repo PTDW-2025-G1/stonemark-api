@@ -16,11 +16,8 @@ public interface MarkMapper {
 
     MarkDto toDto(Mark mark);
 
-    List<MarkDto> toDto(List<Mark> marks);
-
     Mark toEntity(MarkRequestDto markDto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(MarkRequestDto dto, @MappingTarget Mark entity);
-
 }

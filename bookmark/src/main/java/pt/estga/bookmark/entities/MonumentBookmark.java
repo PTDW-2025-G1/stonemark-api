@@ -2,6 +2,7 @@ package pt.estga.bookmark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import pt.estga.monument.Monument;
 
 @Entity
@@ -9,7 +10,7 @@ import pt.estga.monument.Monument;
 @AllArgsConstructor
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 public class MonumentBookmark extends BaseBookmark {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
