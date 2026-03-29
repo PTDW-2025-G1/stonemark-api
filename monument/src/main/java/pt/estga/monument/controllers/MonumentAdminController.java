@@ -54,7 +54,7 @@ public class MonumentAdminController {
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument existingMonument = service.findById(id)
+        Monument existingMonument = queryService.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
         mapper.updateEntityFromDto(monumentDto, existingMonument);
