@@ -1,7 +1,7 @@
 package pt.estga.bookmark;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import pt.estga.mark.enums.TargetType;
+import pt.estga.shared.enums.TargetType;
 
 import java.util.List;
 import java.util.Optional;

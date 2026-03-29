@@ -2,7 +2,7 @@ package pt.estga.bookmark;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pt.estga.mark.enums.TargetType;
+import pt.estga.shared.enums.TargetType;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.MonumentMapper;

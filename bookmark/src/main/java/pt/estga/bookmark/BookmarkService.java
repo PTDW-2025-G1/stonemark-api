@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.mark.enums.TargetType;
+import pt.estga.shared.enums.TargetType;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.user.entities.User;

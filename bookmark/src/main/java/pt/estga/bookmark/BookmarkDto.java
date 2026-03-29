@@ -1,6 +1,6 @@
 package pt.estga.bookmark;
 
-import pt.estga.mark.enums.TargetType;
+import pt.estga.shared.enums.TargetType;
 
 public record BookmarkDto(
         Long id,
