@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -13,10 +12,6 @@ import java.util.UUID;
 public class MarkEvidenceService {
 
     private final MarkEvidenceRepository repository;
-
-    public Optional<MarkEvidence> findById(UUID id) {
-        return repository.findById(id);
-    }
 
     public MarkEvidence create(MarkEvidence evidence) {
         return repository.save(evidence);
