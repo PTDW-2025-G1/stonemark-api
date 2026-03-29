@@ -1,7 +1,6 @@
 package pt.estga.user.mappers;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserPublicDto;
@@ -20,5 +19,7 @@ public interface UserMapper {
     void update(@MappingTarget User user, ProfileUpdateRequestDto dto);
 
     void updateFromDto(UserDto dto, @MappingTarget User user);
+
+    void update(User source, @MappingTarget User target);
 
 }

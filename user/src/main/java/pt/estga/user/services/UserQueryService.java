@@ -37,6 +37,10 @@ public class UserQueryService {
         return repository.findById(id);
     }
 
+    public Optional<UserDto> findDtoById(Long id) {
+        return repository.findById(id).map(mapper::toDto);
+    }
+
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(String email) {
         return repository.findByEmail(email);

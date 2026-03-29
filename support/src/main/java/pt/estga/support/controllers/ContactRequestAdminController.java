@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.services.ContactRequestQueryService;
-import pt.estga.support.services.ContactRequestService;
+import pt.estga.support.services.ContactRequestCommandService;
 import pt.estga.sharedweb.models.PagedRequest;
 
 @RestController
@@ -20,7 +20,7 @@ import pt.estga.sharedweb.models.PagedRequest;
 public class ContactRequestAdminController {
 
     private final ContactRequestQueryService queryService;
-    private final ContactRequestService service;
+    private final ContactRequestCommandService service;
 
     @PostMapping("/search")
     public ResponseEntity<Page<ContactRequest>> search(@RequestBody PagedRequest request) {

@@ -14,21 +14,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.user.dtos.UserDto;
-import pt.estga.user.entities.User;
-import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserService;
+import pt.estga.user.services.UserCommandService;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "User Management", description = "Endpoints for managing users (Admin).")
 @PreAuthorize("hasRole('ADMIN')")
-public class AdminUserController {
+public class UserAdminController {
 
-    private final UserService service;
+    private final UserCommandService service;
     private final UserQueryService queryService;
-    private final UserMapper mapper;
 
     @Operation(summary = "Search users", description = "Searches for users based on dynamic filters.")
     @ApiResponses(value = {
@@ -52,8 +49,7 @@ public class AdminUserController {
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return queryService.findById(id)
-                .map(mapper::toDto)
+        return queryService.findDtoById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -71,9 +67,7 @@ public class AdminUserController {
             @PathVariable Long id,
             @Parameter(description = "Updated user details", required = true)
             @RequestBody UserDto userDto) {
-        User user = mapper.toEntity(userDto);
-        user.setId(id);
-        return ResponseEntity.ok(mapper.toDto(service.update(user)));
+        return ResponseEntity.ok(service.updateFromDto(id, userDto));
     }
 
     @Operation(summary = "Delete a user", description = "Deletes a user by their ID.")

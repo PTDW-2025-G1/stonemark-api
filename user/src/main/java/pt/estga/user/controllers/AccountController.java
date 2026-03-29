@@ -19,7 +19,7 @@ import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserService;
+import pt.estga.user.services.UserCommandService;
 
 @RestController
 @RequestMapping("/api/v1/account")
@@ -28,7 +28,7 @@ import pt.estga.user.services.UserService;
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
-    private final UserService userService;
+    private final UserCommandService userCommandService;
     private final UserQueryService userQueryService;
     private final UserMapper mapper;
 
@@ -60,7 +60,7 @@ public class AccountController {
             @Valid @RequestBody ProfileUpdateRequestDto request) {
         User user = userQueryService.findById(principal.getId()).orElseThrow();
         mapper.update(user, request);
-        userService.update(user);
+        userCommandService.update(user);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
     }
 
@@ -73,7 +73,7 @@ public class AccountController {
     })
     @DeleteMapping
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        userService.softDeleteUser(principal.getId());
+        userCommandService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
     }
 }

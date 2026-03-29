@@ -13,7 +13,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class DivisionParentMatchingService {
+public class AdministrativeDivisionParentMatchingService {
 
     private final AdministrativeDivisionRepository repository;
 

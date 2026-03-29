@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.services.ContactRequestService;
+import pt.estga.support.services.ContactRequestCommandService;
 
 @RestController
 @RequestMapping("/api/v1/public/contact-requests")
@@ -18,7 +18,7 @@ import pt.estga.support.services.ContactRequestService;
 @Tag(name = "Public Contact Requests", description = "Public endpoints for contact requests.")
 public class ContactRequestPublicController {
 
-    private final ContactRequestService service;
+    private final ContactRequestCommandService service;
 
     @PostMapping
     public ResponseEntity<ContactRequest> create(
