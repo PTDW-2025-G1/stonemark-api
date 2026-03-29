@@ -1,4 +1,4 @@
-package pt.estga.bookmark;
+package pt.estga.bookmark.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;

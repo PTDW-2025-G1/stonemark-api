@@ -1,7 +1,11 @@
-package pt.estga.bookmark;
+package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pt.estga.bookmark.Bookmark;
+import pt.estga.bookmark.BookmarkDto;
+import pt.estga.bookmark.BookmarkMapper;
+import pt.estga.bookmark.BookmarkRepository;
 import pt.estga.shared.enums.TargetType;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkRepository;

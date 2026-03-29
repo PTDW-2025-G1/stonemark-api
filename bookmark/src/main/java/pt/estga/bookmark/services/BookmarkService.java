@@ -1,15 +1,21 @@
-package pt.estga.bookmark;
+package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.bookmark.Bookmark;
+import pt.estga.bookmark.BookmarkDto;
+import pt.estga.bookmark.BookmarkMapper;
+import pt.estga.bookmark.BookmarkRepository;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.shared.enums.TargetType;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
+import pt.estga.sharedweb.exceptions.DuplicateResourceException;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +34,7 @@ public class BookmarkService {
     public BookmarkDto createBookmark(Long userId, TargetType type, String targetId) {
 
         if (bookmarkQueryService.isBookmarked(userId, type, targetId)) {
-            throw new IllegalStateException("Bookmarked already exists");
+            throw new DuplicateResourceException("Bookmark already exists");
         }
 
         Object content = switch (type) {
@@ -36,21 +42,21 @@ public class BookmarkService {
                 Long parsedId = Long.parseLong(targetId);
                 yield monumentRepository.findById(parsedId)
                         .map(monumentMapper::toResponseDto)
-                        .orElseThrow(() -> new IllegalArgumentException("Monument not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
             }
 
             case MARK -> {
                 Long parsedId = Long.parseLong(targetId);
                 yield markRepository.findById(parsedId)
                         .map(markMapper::toDto)
-                        .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+                        .orElseThrow(() -> new ResourceNotFoundException("Mark not found"));
             }
 
             default -> null;
         };
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Bookmark bookmark = Bookmark.builder()
                 .user(user)
@@ -67,7 +73,7 @@ public class BookmarkService {
     @Transactional
     public void deleteBookmark(Long userId, Long bookmarkId) {
         Bookmark bookmark = bookmarkRepository.findByIdAndUserId(bookmarkId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Bookmark not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found"));
         bookmarkRepository.delete(bookmark);
     }
 }
