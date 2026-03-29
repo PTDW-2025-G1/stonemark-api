@@ -14,6 +14,7 @@ import pt.estga.sharedweb.exceptions.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -34,7 +35,7 @@ public class MediaService {
         return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
     }
 
-    public Resource loadFileById(Long fileId) {
+    public Resource loadFileById(UUID fileId) {
         log.info("Loading file with ID: {}", fileId);
         MediaFile mediaFile = mediaMetadataService.findById(fileId)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
@@ -48,7 +49,7 @@ public class MediaService {
         return mediaContentService.loadContent(mediaFile.getStoragePath());
     }
 
-    public Optional<MediaFile> findById(Long id) {
+    public Optional<MediaFile> findById(UUID id) {
         return mediaMetadataService.findById(id);
     }
 }

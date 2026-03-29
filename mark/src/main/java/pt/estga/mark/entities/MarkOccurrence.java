@@ -22,9 +22,6 @@ public class MarkOccurrence extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private MediaFile cover;
-
     @Column(columnDefinition = "vector")
     private float[] embedding;
 
@@ -36,17 +33,5 @@ public class MarkOccurrence extends BaseEntity {
 
     @OneToMany(mappedBy = "occurrence", cascade = CascadeType.ALL)
     private List<MarkEvidence> evidences;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User author;
-
-    private Instant publishedAt;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.publishedAt == null) {
-            this.publishedAt = Instant.now();
-        }
-    }
 
 }

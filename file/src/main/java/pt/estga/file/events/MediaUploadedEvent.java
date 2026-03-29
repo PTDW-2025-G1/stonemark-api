@@ -1,3 +1,5 @@
 package pt.estga.file.events;
 
-public record MediaUploadedEvent(Long mediaFileId) {}
+import java.util.UUID;
+
+public record MediaUploadedEvent(UUID mediaFileId) {}

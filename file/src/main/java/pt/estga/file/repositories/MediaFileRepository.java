@@ -9,9 +9,10 @@ import pt.estga.file.enums.MediaStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface MediaFileRepository extends JpaRepository<MediaFile, Long> {
+public interface MediaFileRepository extends JpaRepository<MediaFile, UUID> {
 
 	@Query("select m from MediaFile m where m.status = :status and m.createdAt < :before")
 	List<MediaFile> findProcessingOlderThan(@Param("status") MediaStatus status, @Param("before") Instant before);

@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Orchestrates media processing. Delegates validation, variant generation and storage
@@ -45,7 +46,7 @@ public class MediaProcessingService {
         }
     }
 
-    public void process(Long mediaFileId) {
+    public void process(UUID mediaFileId) {
         log.info("Starting processing for media file ID: {}", mediaFileId);
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)

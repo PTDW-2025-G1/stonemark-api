@@ -6,6 +6,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.BeanMapping;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.mark.dtos.MarkEvidenceRequestDto;
 import pt.estga.mark.entities.MarkEvidence;
 
 @Mapper(componentModel = "spring", uses = {MarkMapper.class})
@@ -25,4 +26,14 @@ public interface MarkEvidenceMapper {
     @Mapping(target = "file", ignore = true)
     @Mapping(target = "occurrence", ignore = true)
     void updateEntityFromDto(MarkEvidenceDto dto, @MappingTarget MarkEvidence entity);
+
+    @Mapping(target = "file", ignore = true)
+    @Mapping(target = "occurrence", ignore = true)
+    @Mapping(target = "embedding", source = "embedding")
+    MarkEvidence toEntityFromRequest(MarkEvidenceRequestDto dto);
+
+    @Mapping(target = "file", ignore = true)
+    @Mapping(target = "occurrence", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateFromRequest(MarkEvidenceRequestDto dto, @MappingTarget MarkEvidence entity);
 }

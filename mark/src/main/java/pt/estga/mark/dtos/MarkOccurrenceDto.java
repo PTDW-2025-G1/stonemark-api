@@ -7,9 +7,6 @@ public record MarkOccurrenceDto(
     Long markId,
     Long monumentId,
     MarkDto mark,
-    Long coverId,
-    Long authorId,
-    String authorName,
     Instant publishedAt,
     Boolean active
 ) { }

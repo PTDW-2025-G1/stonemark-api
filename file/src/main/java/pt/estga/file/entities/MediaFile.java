@@ -2,12 +2,14 @@ package pt.estga.file.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.shared.entities.CreationAuditedEntity;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
@@ -19,7 +21,8 @@ public class MediaFile extends CreationAuditedEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator
+    private UUID id;
 
     @Column(nullable = false)
     private String filename;

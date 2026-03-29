@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -73,7 +74,7 @@ public class MediaMetadataService {
         }
     }
 
-    public Optional<MediaFile> findById(Long id) {
+    public Optional<MediaFile> findById(UUID id) {
         return mediaFileRepository.findById(id);
     }
 
