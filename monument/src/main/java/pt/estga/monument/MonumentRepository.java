@@ -15,11 +15,11 @@ import java.util.Optional;
 @Repository
 public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaSpecificationExecutor<Monument> {
 
-    @EntityGraph(attributePaths = {"district", "parish", "municipality"})
-    Page<Monument> findByDistrictIdOrMunicipalityIdOrParishIdAndStatus(Long districtId, Long municipalityId, Long parishId, Pageable pageable, EntityStatus status);
+    @EntityGraph(attributePaths = {"division"})
+    Page<Monument> findByDivisionIdAndStatus(Long divisionId, Pageable pageable, EntityStatus status);
 
     default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable) {
-        return findByDistrictIdOrMunicipalityIdOrParishIdAndStatus(divisionId, divisionId, divisionId, pageable, EntityStatus.ACTIVE);
+        return findByDivisionIdAndStatus(divisionId, pageable, EntityStatus.ACTIVE);
     }
 
     Optional<Monument> findByExternalId(String externalId);

@@ -32,7 +32,6 @@
         <module>support</module>
         <module>chatbot</module>
         <module>verification</module>
-        <module>report</module>
         <module>territory</module>
         <module>shared-web</module>
         <module>bookmark</module>

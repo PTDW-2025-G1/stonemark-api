@@ -14,6 +14,7 @@ import pt.estga.shared.entities.BaseEntity;
 public class AdministrativeDivision extends BaseEntity {
 
     @Id
+    @GeneratedValue
     private Long id;
 
     private Integer osmAdminLevel;
@@ -26,9 +27,7 @@ public class AdministrativeDivision extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision parent;
 
-    // Todo: create country entity
-    private String countryCode;
-
-    private int monumentsCount = 0;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Country country;
 
 }

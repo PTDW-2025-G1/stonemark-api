@@ -1,5 +1,6 @@
 package pt.estga.monument.dots;
 
+import org.locationtech.jts.geom.Geometry;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 
 import java.time.Instant;
@@ -14,9 +15,7 @@ public record MonumentDto(
         Double longitude,
         String street,
         String houseNumber,
-        AdministrativeDivisionDto parish,
-        AdministrativeDivisionDto municipality,
-        AdministrativeDivisionDto district,
+        AdministrativeDivisionDto division,
         Instant createdAt,
         Instant lastModifiedAt,
         Boolean active

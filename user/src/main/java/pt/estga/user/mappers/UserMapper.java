@@ -19,4 +19,6 @@ public interface UserMapper {
 
     void update(@MappingTarget User user, ProfileUpdateRequestDto dto);
 
+    void updateFromDto(UserDto dto, @MappingTarget User user);
+
 }
