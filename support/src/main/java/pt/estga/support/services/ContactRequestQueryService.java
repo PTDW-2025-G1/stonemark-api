@@ -12,7 +12,7 @@ import java.util.Optional;
 
 /**
  * Read-only query service for contact requests. This keeps read operations
- * separate from mutation logic in ContactRequestService.
+ * separate from mutation logic in ContactRequestCommandService.
  */
 @Service
 @RequiredArgsConstructor
