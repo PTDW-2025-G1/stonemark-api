@@ -13,6 +13,7 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.application.MediaService;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,12 +24,14 @@ public class MarkOccurrenceService {
     private final MediaService mediaService;
 
     @Transactional
-    public MarkOccurrence create(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
+    public MarkOccurrence create(MarkOccurrence occurrence, MultipartFile file, UUID coverId
+    ) throws IOException {
         return setImageAndSave(occurrence, file, coverId);
     }
 
     @Transactional
-    public MarkOccurrence update(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
+    public MarkOccurrence update(MarkOccurrence occurrence, MultipartFile file, UUID coverId
+    ) throws IOException {
         return setImageAndSave(occurrence, file, coverId);
     }
 
@@ -37,7 +40,12 @@ public class MarkOccurrenceService {
     }
 
     @NonNull
-    private MarkOccurrence setImageAndSave(MarkOccurrence occurrence, MultipartFile file, Long coverId) throws IOException {
+    private MarkOccurrence setImageAndSave(
+            MarkOccurrence occurrence,
+            MultipartFile file,
+            UUID coverId
+    ) throws IOException {
+
         MediaFile mediaFile = null;
 
         if (file != null && !file.isEmpty()) {
@@ -52,7 +60,14 @@ public class MarkOccurrenceService {
 
         MarkOccurrence savedOccurrence = repository.save(occurrence);
         if (savedOccurrence.getCover() != null) {
-            eventPublisher.publish(new MarkOccurrenceCreatedEvent(this, savedOccurrence.getId(), savedOccurrence.getCover().getId(), savedOccurrence.getCover().getOriginalFilename()));
+            eventPublisher.publish(
+                    new MarkOccurrenceCreatedEvent(
+                            this,
+                            savedOccurrence.getId(),
+                            savedOccurrence.getCover().getId(),
+                            savedOccurrence.getCover().getOriginalFilename()
+                    )
+            );
         }
         return savedOccurrence;
     }

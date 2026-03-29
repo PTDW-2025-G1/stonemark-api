@@ -26,6 +26,7 @@ import pt.estga.file.services.application.MediaVariantService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -62,7 +63,7 @@ public class MediaController {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> getMediaById(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         log.info("Request to get media with id: {}", id);
 
         // Fetch metadata first
