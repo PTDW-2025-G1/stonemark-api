@@ -14,7 +14,7 @@ import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;
-import pt.estga.file.application.MediaService;
+import pt.estga.file.services.application.MediaService;
 
 import java.io.IOException;
 import java.util.Optional;

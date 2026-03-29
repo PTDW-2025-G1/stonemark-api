@@ -13,7 +13,7 @@ import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.upload.MediaValidationService;
-import pt.estga.file.storage.variant.VariantStorageService;
+import pt.estga.file.services.storage.variant.VariantStorageService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;

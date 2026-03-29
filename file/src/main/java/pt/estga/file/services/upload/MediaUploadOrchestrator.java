@@ -11,8 +11,8 @@ import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.file.naming.FileNamingService;
-import pt.estga.file.naming.StoragePathStrategy;
+import pt.estga.file.services.naming.FileNamingService;
+import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
 

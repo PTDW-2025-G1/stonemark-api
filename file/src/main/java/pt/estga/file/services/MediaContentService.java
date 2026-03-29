@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.dtos.SaveResult;
-import pt.estga.file.storage.FileStorageService;
+import pt.estga.file.services.storage.FileStorageService;
 
 import java.io.InputStream;
 
