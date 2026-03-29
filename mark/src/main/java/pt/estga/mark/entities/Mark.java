@@ -2,7 +2,6 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.entities.BaseEntity;
 
 import java.util.HashSet;
@@ -21,13 +20,9 @@ public class Mark extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    private String name;
+    private String title;
 
-    @Column
     private String description;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    private MediaFile referenceImage;
 
     @Column(columnDefinition = "vector")
     private float[] canonicalEmbedding;

@@ -18,7 +18,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class MarkEvidenceService {
+public class MarkEvidenceCommandService {
 
     private final MarkEvidenceRepository repository;
     private final MarkEvidenceMapper mapper;

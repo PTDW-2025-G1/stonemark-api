@@ -12,7 +12,7 @@ import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class MarkCategoryService {
+public class MarkCategoryCommandService {
 
     private final MarkCategoryRepository repository;
     private final MarkCategoryMapper mapper;
