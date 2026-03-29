@@ -16,6 +16,7 @@ import pt.estga.user.repositories.UserRepository;
 public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
+    private final BookmarkQueryService bookmarkQueryService;
     private final MonumentRepository monumentRepository;
     private final MarkRepository markRepository;
     private final MonumentMapper monumentMapper;
@@ -26,10 +27,9 @@ public class BookmarkService {
     @Transactional
     public BookmarkDto createBookmark(Long userId, TargetType type, String targetId) {
 
-        bookmarkRepository.findByUserIdAndTargetTypeAndTargetId(userId, type, targetId)
-                .ifPresent(existing -> {
-                    throw new IllegalStateException("Bookmark already exists");
-                });
+        if (bookmarkQueryService.isBookmarked(userId, type, targetId)) {
+            throw new IllegalStateException("Bookmarked already exists");
+        }
 
         Object content = switch (type) {
             case MONUMENT -> {

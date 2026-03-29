@@ -21,7 +21,7 @@ public class BookmarkQueryService {
     private final MarkMapper markMapper;
     private final BookmarkMapper mapper;
 
-    public List<BookmarkDto> getUserBookmarks(Long userId) {
+    public List<BookmarkDto> findByUserId(Long userId) {
         return bookmarkRepository.findAllByUserId(userId)
                 .stream()
                 .map(b -> {
@@ -46,6 +46,10 @@ public class BookmarkQueryService {
                     return new BookmarkDto(dto.id(), dto.type(), dto.targetId(), content);
                 })
                 .toList();
+    }
+
+    public List<Bookmark> findByUserIdAndTargetType(Long userId, TargetType type) {
+        return bookmarkRepository.findByUserIdAndTargetType(userId, type);
     }
 
     public boolean isBookmarked(Long userId, TargetType type, String targetId) {

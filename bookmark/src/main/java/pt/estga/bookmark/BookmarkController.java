@@ -21,7 +21,7 @@ public class BookmarkController {
 
     @GetMapping
     public List<BookmarkDto> getUserBookmarks(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        return queryService.getUserBookmarks(principal.getId());
+        return queryService.findByUserId(principal.getId());
     }
 
     @GetMapping("/check/{type}/{targetId}")
