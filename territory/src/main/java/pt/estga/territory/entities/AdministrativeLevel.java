@@ -14,7 +14,7 @@ public class AdministrativeLevel extends BaseEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    private Integer id;
 
     private String name;
 

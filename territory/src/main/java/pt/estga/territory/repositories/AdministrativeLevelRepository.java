@@ -6,7 +6,7 @@ import pt.estga.territory.entities.Country;
 
 import java.util.Optional;
 
-public interface AdministrativeLevelRepository extends BaseRepository<AdministrativeLevel, Long> {
+public interface AdministrativeLevelRepository extends BaseRepository<AdministrativeLevel, Integer> {
 
 	Optional<AdministrativeLevel> findByCountryAndOsmLevel(Country country, int osmLevel);
 
