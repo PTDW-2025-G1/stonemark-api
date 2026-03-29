@@ -1,4 +1,4 @@
-package pt.estga.mark.services;
+package pt.estga.mark.services.category;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
