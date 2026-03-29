@@ -11,7 +11,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentQueryService;
-import pt.estga.monument.services.MonumentService;
+import pt.estga.monument.services.MonumentCommandService;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
@@ -25,7 +25,7 @@ import java.net.URI;
 @PreAuthorize("hasRole('MODERATOR')")
 public class MonumentAdminController {
 
-    private final MonumentService service;
+    private final MonumentCommandService service;
     private final MonumentQueryService queryService;
     private final MonumentMapper mapper;
 
