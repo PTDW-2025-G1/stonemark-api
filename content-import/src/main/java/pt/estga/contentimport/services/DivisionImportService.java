@@ -11,7 +11,7 @@ import pt.estga.territory.entities.Country;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 import pt.estga.territory.services.CountryQueryService;
 import pt.estga.territory.exceptions.UnsupportedCountryException;
-import pt.estga.territory.services.DivisionParentMatchingService;
+import pt.estga.territory.services.AdministrativeDivisionParentMatchingService;
 import pt.estga.contentimport.mappers.DivisionFeatureMapper;
 
 import java.io.BufferedReader;
@@ -32,7 +32,7 @@ public class DivisionImportService {
 
     private final AdministrativeDivisionRepository administrativeDivisionRepository;
     private final ObjectMapper objectMapper;
-    private final DivisionParentMatchingService divisionParentMatchingService;
+    private final AdministrativeDivisionParentMatchingService administrativeDivisionParentMatchingService;
     private final CountryQueryService countryQueryService;
     private final DivisionFeatureMapper featureMapper;
 
@@ -61,7 +61,7 @@ public class DivisionImportService {
             List<AdministrativeDivision> batch = new ArrayList<>(1000);
             int count = 0;
 
-            // Resolve provided country code to id using CountryService (normalization handled there)
+            // Resolve provided country code to id using CountryCommandService (normalization handled there)
             Country providedCountry = countryQueryService.findByCode(countryCode);
             if (providedCountry == null) {
                 throw new UnsupportedCountryException("Provided countryCode is missing or unknown: " + countryCode);
@@ -117,7 +117,7 @@ public class DivisionImportService {
                 throw new IllegalStateException("osmium failed with exit code " + exit);
             }
             
-            divisionParentMatchingService.matchAllDivisions();
+            administrativeDivisionParentMatchingService.matchAllDivisions();
             
             return count;
         } finally {
