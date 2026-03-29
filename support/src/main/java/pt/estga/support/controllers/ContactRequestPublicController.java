@@ -4,12 +4,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.services.ContactRequestService;
@@ -24,10 +22,8 @@ public class ContactRequestPublicController {
 
     @PostMapping
     public ResponseEntity<ContactRequest> create(
-            @Valid @RequestBody ContactRequestDto dto,
-            @AuthenticationPrincipal AuthenticatedPrincipal principal
+            @Valid @RequestBody ContactRequestDto dto
     ) {
-        ContactRequest created = service.create(dto, principal.getId());
-        return ResponseEntity.ok(created);
+        return ResponseEntity.ok(service.create(dto));
     }
 }
