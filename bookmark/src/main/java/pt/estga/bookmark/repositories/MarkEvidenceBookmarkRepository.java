@@ -11,7 +11,9 @@ import java.util.UUID;
 @Repository
 public interface MarkEvidenceBookmarkRepository extends BaseRepository<MarkEvidenceBookmark, UUID> {
 
-    List<MarkEvidenceBookmark> findAllByUserId(Long userId);
+    List<MarkEvidenceBookmark> findAllByCreatedById(Long userId);
 
-    Optional<MarkEvidenceBookmark> findByIdAndUserId(UUID id, Long userId);
+    Optional<MarkEvidenceBookmark> findByIdAndCreatedById(UUID id, Long userId);
+
+    boolean existsByCreatedByIdAndMarkEvidenceId(Long userId, java.util.UUID evidenceId);
 }

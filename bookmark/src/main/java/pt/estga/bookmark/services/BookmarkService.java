@@ -13,6 +13,7 @@ import pt.estga.bookmark.repositories.MarkBookmarkRepository;
 import pt.estga.bookmark.repositories.MarkEvidenceBookmarkRepository;
 import pt.estga.bookmark.repositories.MarkOccurrenceBookmarkRepository;
 import pt.estga.bookmark.repositories.MonumentBookmarkRepository;
+import pt.estga.bookmark.repositories.BaseBookmarkRepository;
 import pt.estga.sharedweb.exceptions.DuplicateResourceException;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
@@ -29,10 +30,11 @@ public class BookmarkService {
 	private final MarkBookmarkRepository markRepo;
 	private final MarkOccurrenceBookmarkRepository markOccurrenceRepo;
 	private final MarkEvidenceBookmarkRepository markEvidenceRepo;
+    private final BaseBookmarkRepository baseBookmarkRepo;
 	private final UserRepository userRepository;
 
 	@Transactional
-	public BookmarkResponse createBookmark(Long userId, BookmarkCreateRequest request) {
+	public BookmarkResponse create(Long userId, BookmarkCreateRequest request) {
 		if (queryService.existsByUserAndTarget(userId, request.targetType(), request.targetId())) {
 			throw new DuplicateResourceException("Bookmark already exists");
 		}
@@ -67,11 +69,8 @@ public class BookmarkService {
 	}
 
 	@Transactional
-	public void deleteBookmark(Long userId, UUID bookmarkId) {
-		// Attempt delete on each concrete repository; if found and owned by user delete it
-		monumentRepo.findByIdAndUserId(bookmarkId, userId).ifPresent(monumentRepo::delete);
-		markRepo.findByIdAndUserId(bookmarkId, userId).ifPresent(markRepo::delete);
-		markOccurrenceRepo.findByIdAndUserId(bookmarkId, userId).ifPresent(markOccurrenceRepo::delete);
-		markEvidenceRepo.findByIdAndUserId(bookmarkId, userId).ifPresent(markEvidenceRepo::delete);
+	public void delete(Long userId, UUID bookmarkId) {
+		baseBookmarkRepo.findByIdAndCreatedById(bookmarkId, userId)
+				.ifPresent(baseBookmarkRepo::delete);
 	}
 }

@@ -11,7 +11,9 @@ import java.util.UUID;
 @Repository
 public interface MonumentBookmarkRepository extends BaseRepository<MonumentBookmark, UUID> {
 
-    List<MonumentBookmark> findAllByUserId(Long userId);
+    List<MonumentBookmark> findAllByCreatedById(Long userId);
 
-    Optional<MonumentBookmark> findByIdAndUserId(UUID id, Long userId);
+    Optional<MonumentBookmark> findByIdAndCreatedById(UUID id, Long userId);
+
+    boolean existsByCreatedByIdAndMonumentId(Long userId, Long monumentId);
 }

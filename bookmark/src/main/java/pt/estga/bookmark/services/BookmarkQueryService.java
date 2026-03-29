@@ -1,6 +1,7 @@
 package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.bookmark.dto.BookmarkResponse;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookmarkQueryService {
@@ -36,19 +38,19 @@ public class BookmarkQueryService {
     private final MarkEvidenceMapper markEvidenceMapper;
 
 	public List<BookmarkResponse> listByUser(Long userId) {
-		List<BookmarkResponse> monuments = monumentRepo.findAllByUserId(userId).stream()
+		List<BookmarkResponse> monuments = monumentRepo.findAllByCreatedById(userId).stream()
 				.map(b -> toResponse(b, BookmarkTargetType.MONUMENT))
 				.collect(Collectors.toList());
 
-		List<BookmarkResponse> marks = markRepo.findAllByUserId(userId).stream()
+		List<BookmarkResponse> marks = markRepo.findAllByCreatedById(userId).stream()
 				.map(b -> toResponse(b, BookmarkTargetType.MARK))
 				.toList();
 
-		List<BookmarkResponse> occurrences = markOccurrenceRepo.findAllByUserId(userId).stream()
+		List<BookmarkResponse> occurrences = markOccurrenceRepo.findAllByCreatedById(userId).stream()
 				.map(b -> toResponse(b, BookmarkTargetType.MARK_OCCURRENCE))
 				.toList();
 
-		List<BookmarkResponse> evidences = markEvidenceRepo.findAllByUserId(userId).stream()
+		List<BookmarkResponse> evidences = markEvidenceRepo.findAllByCreatedById(userId).stream()
 				.map(b -> toResponse(b, BookmarkTargetType.MARK_EVIDENCE))
 				.toList();
 
@@ -60,13 +62,31 @@ public class BookmarkQueryService {
 	}
 
 	public boolean existsByUserAndTarget(Long userId, BookmarkTargetType type, String targetId) {
-		return switch (type) {
-			case MONUMENT -> monumentRepo.findAllByUserId(userId).stream().anyMatch(b -> b.getMonument().getId().toString().equals(targetId));
-			case MARK -> markRepo.findAllByUserId(userId).stream().anyMatch(b -> b.getMark().getId().toString().equals(targetId));
-			case MARK_OCCURRENCE -> markOccurrenceRepo.findAllByUserId(userId).stream().anyMatch(b -> b.getMarkOccurrence().getId().toString().equals(targetId));
-			case MARK_EVIDENCE -> markEvidenceRepo.findAllByUserId(userId).stream().anyMatch(b -> b.getMarkEvidence().getId().toString().equals(targetId));
-			default -> false;
-		};
+		try {
+			return switch (type) {
+				case MONUMENT -> {
+					Long mid = Long.parseLong(targetId);
+					yield monumentRepo.existsByCreatedByIdAndMonumentId(userId, mid);
+				}
+				case MARK -> {
+					Long mid = Long.parseLong(targetId);
+					yield markRepo.existsByCreatedByIdAndMarkId(userId, mid);
+				}
+				case MARK_OCCURRENCE -> {
+					Long occId = Long.parseLong(targetId);
+					yield markOccurrenceRepo.existsByCreatedByIdAndMarkOccurrenceId(userId, occId);
+				}
+				case MARK_EVIDENCE -> {
+					// Mark evidence ids are UUIDs
+					UUID evidenceUuid = UUID.fromString(targetId);
+					yield markEvidenceRepo.existsByCreatedByIdAndMarkEvidenceId(userId, evidenceUuid);
+				}
+				default -> false;
+			};
+		} catch (IllegalArgumentException e) {
+			log.warn("Invalid target ID format for type {}: {}", type, targetId);
+			return false;
+		}
 	}
 
 	private BookmarkResponse toResponse(BaseBookmark b, BookmarkTargetType type) {

@@ -27,12 +27,12 @@ public class BookmarkController {
 
 	@PostMapping("/user/{userId}")
 	public BookmarkResponse create(@PathVariable Long userId, @RequestBody BookmarkCreateRequest request) {
-		return service.createBookmark(userId, request);
+		return service.create(userId, request);
 	}
 
 	@DeleteMapping("/user/{userId}/{bookmarkId}")
 	public void delete(@PathVariable Long userId, @PathVariable UUID bookmarkId) {
-		service.deleteBookmark(userId, bookmarkId);
+		service.delete(userId, bookmarkId);
 	}
 
 }
