@@ -3,6 +3,7 @@ package pt.estga.user.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import pt.estga.shared.entities.BaseEntity;
 import pt.estga.shared.enums.UserRole;
 
 import java.io.Serial;
@@ -17,7 +18,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @Builder
-public class User implements Serializable {
+public class User extends BaseEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
