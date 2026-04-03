@@ -24,9 +24,6 @@ public class Mark extends BaseEntity {
 
     private String description;
 
-    @Column(columnDefinition = "vector")
-    private float[] canonicalEmbedding;
-
     @ManyToMany
     @JoinTable(
             name = "mark_category_mapping",
