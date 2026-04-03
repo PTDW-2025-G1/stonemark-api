@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.services.application.MediaService;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
+import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;
 
@@ -21,7 +22,8 @@ import java.io.InputStream;
 @Slf4j
 public class EmbeddingEnricher implements Enricher {
 
-    private final MarkEvidenceSubmissionRepository markEvidenceSubmissionRepository;
+    private final MarkEvidenceSubmissionCommandService commandService;
+    private final MarkEvidenceSubmissionQueryService queryService;
     private final VisionClient visionClient;
     private final MediaService mediaService;
 
@@ -32,7 +34,7 @@ public class EmbeddingEnricher implements Enricher {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void enrich(Long submissionId) {
-        markEvidenceSubmissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
+        queryService.findById(submissionId).ifPresentOrElse(submission -> {
             if (submission.getOriginalMediaFile() == null) {
                 log.info("Submission ID {} has no original media file. Skipping embedding enrichment.", submissionId);
                 return;
@@ -42,7 +44,7 @@ public class EmbeddingEnricher implements Enricher {
                 DetectionResult detectionResult = visionClient.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
                     submission.setEmbedding(detectionResult.embedding());
-                    markEvidenceSubmissionRepository.save(submission);
+                    commandService.create(submission);
                     log.info("Embedding updated for submission ID: {}", submissionId);
                 } else {
                     log.info("No embedding detected for submission ID: {}", submissionId);

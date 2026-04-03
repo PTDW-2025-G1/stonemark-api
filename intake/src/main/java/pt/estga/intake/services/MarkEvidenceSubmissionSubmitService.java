@@ -9,7 +9,6 @@ import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
@@ -20,7 +19,7 @@ import java.io.IOException;
 @Slf4j
 public class MarkEvidenceSubmissionSubmitService {
 
-    private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final MarkEvidenceSubmissionCommandService commandService;
     private final MediaUploadOrchestrator mediaUploadOrchestrator;
     private final AfterCommitEventPublisher eventPublisher;
 
@@ -56,7 +55,7 @@ public class MarkEvidenceSubmissionSubmitService {
 
         // Mark as submitted and persist
         submission.setStatus(SubmissionStatus.PENDING_ANALYSIS);
-        MarkEvidenceSubmission saved = submissionRepository.save(submission);
+        MarkEvidenceSubmission saved = commandService.create(submission);
 
         // Publish event after transaction commit
         eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
