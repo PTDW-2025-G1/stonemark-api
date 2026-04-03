@@ -1,5 +1,7 @@
 package pt.estga.processing.services.draft;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.processing.repositories.DraftMarkEvidenceRepository;
@@ -19,5 +21,12 @@ public class DraftMarkEvidenceQueryService {
 
     public Optional<DraftMarkEvidence> findById(Long id) {
         return repository.findById(id);
+    }
+
+    /**
+     * Load draft with a pessimistic write lock to ensure safe concurrent review processing.
+     */
+    public Optional<DraftMarkEvidence> findByIdForUpdate(Long id) {
+        return repository.findByIdForUpdate(id);
     }
 }

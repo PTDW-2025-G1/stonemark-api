@@ -30,6 +30,11 @@ public class DraftReview {
 
     private String reviewerNotes;
 
+    /**
+     * Optional reviewer id for simpler storage when user entity is not available.
+     */
+    private Long reviewerId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @CreatedBy
     private User reviewedBy;
