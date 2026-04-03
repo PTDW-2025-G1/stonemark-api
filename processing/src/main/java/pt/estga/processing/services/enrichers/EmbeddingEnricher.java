@@ -44,7 +44,7 @@ public class EmbeddingEnricher implements Enricher {
                 DetectionResult detectionResult = visionClient.detect(detectionInputStream, draft.getSubmission().getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
                     draft.setEmbedding(detectionResult.embedding());
-                    draftCommandService.create(draft);
+                    draftCommandService.update(draft);
 
                     log.info("Embedding updated for draft ID: {}", draftId);
                 } else {
