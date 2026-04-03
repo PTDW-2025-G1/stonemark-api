@@ -6,8 +6,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.services.application.MediaService;
-import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
+import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
+import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;
 
@@ -22,7 +24,8 @@ import java.io.InputStream;
 @Slf4j
 public class EmbeddingEnricher implements Enricher {
 
-    private final MarkEvidenceSubmissionCommandService commandService;
+    private final DraftMarkEvidenceCommandService draftCommandService;
+    private final DraftMarkEvidenceQueryService draftQueryService;
     private final MarkEvidenceSubmissionQueryService queryService;
     private final VisionClient visionClient;
     private final MediaService mediaService;
@@ -43,9 +46,14 @@ public class EmbeddingEnricher implements Enricher {
             try (InputStream detectionInputStream = mediaService.loadFileById(submission.getOriginalMediaFile().getId()).getInputStream()) {
                 DetectionResult detectionResult = visionClient.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
-                    submission.setEmbedding(detectionResult.embedding());
-                    commandService.create(submission);
-                    log.info("Embedding updated for submission ID: {}", submissionId);
+                    // Persist embedding to a processing draft record instead of the submission entity.
+                    DraftMarkEvidence draft = draftQueryService.findBySubmissionId(submissionId)
+                            .orElse(DraftMarkEvidence.builder().submission(submission).build());
+
+                    draft.setEmbedding(detectionResult.embedding());
+                    draftCommandService.create(draft);
+
+                    log.info("Embedding updated for submission ID (stored in draft): {}", submissionId);
                 } else {
                     log.info("No embedding detected for submission ID: {}", submissionId);
                 }
