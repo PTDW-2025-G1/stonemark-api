@@ -18,7 +18,7 @@ import java.io.IOException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MarkEvidenceSubmissionService {
+public class MarkEvidenceSubmissionSubmitService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MediaUploadOrchestrator mediaUploadOrchestrator;

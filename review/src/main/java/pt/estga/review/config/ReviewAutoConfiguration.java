@@ -1,4 +1,4 @@
-package pt.estga.review;
+package pt.estga.review.config;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
