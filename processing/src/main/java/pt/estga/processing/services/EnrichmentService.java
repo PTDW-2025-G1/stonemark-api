@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.entities.DraftMarkEvidence;
+import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
+import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
 import pt.estga.processing.services.enrichers.Enricher;
 
 import java.util.List;
@@ -23,9 +26,9 @@ import java.util.List;
 public class EnrichmentService {
 
     private final List<Enricher> enrichers;
-    private final pt.estga.processing.services.draft.DraftMarkEvidenceCommandService draftCommandService;
-    private final pt.estga.processing.services.draft.DraftMarkEvidenceQueryService draftQueryService;
-    private final pt.estga.intake.services.MarkEvidenceSubmissionQueryService submissionQueryService;
+    private final DraftMarkEvidenceCommandService draftCommandService;
+    private final DraftMarkEvidenceQueryService draftQueryService;
+    private final MarkEvidenceSubmissionQueryService submissionQueryService;
 
     /**
      * Enrich the submission by delegating to configured enrichers.

@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.mark.entities.MarkOccurrence;
-
-import java.time.Instant;
+import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.shared.entities.BaseEntity;
 
 @Entity
 @NoArgsConstructor
@@ -13,24 +13,31 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class DraftMarkEvidence {
+public class DraftMarkEvidence extends BaseEntity {
 
     @Id
     @GeneratedValue
     private Long id;
 
-    @OneToOne
-    private MarkEvidenceSubmission submission;
-
     @Column(columnDefinition = "vector")
     private float[] embedding;
 
-    private String aiSuggestions;
+    @Column(columnDefinition = "TEXT")
+    private String aiMetadataJson;
+
     private Boolean aiFlagged;
 
-    @ManyToOne
-    private MarkOccurrence occurrence;
+    private Integer version;
+    private Boolean active;
 
-    private Instant createdAt;
+    @Enumerated(EnumType.STRING)
+    private ProcessingStatus processingStatus;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submission_id", nullable = false)
+    private MarkEvidenceSubmission submission;
+
+    @ManyToOne
+    private MarkOccurrence suggestedOccurrence;
 
 }
