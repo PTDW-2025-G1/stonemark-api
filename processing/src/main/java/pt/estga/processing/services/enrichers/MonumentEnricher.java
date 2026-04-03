@@ -14,7 +14,7 @@ public class MonumentEnricher implements Enricher {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void enrich(Long submissionId) {
-        log.debug("MonumentEnricher invoked for submission {} - no-op placeholder.", submissionId);
+    public void enrich(Long draftId) {
+        log.debug("MonumentEnricher invoked for draft {} - no-op placeholder.", draftId);
     }
 }

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.processing.services.enrichers.Enricher;
 
 import java.util.List;
@@ -22,6 +23,9 @@ import java.util.List;
 public class EnrichmentService {
 
     private final List<Enricher> enrichers;
+    private final pt.estga.processing.services.draft.DraftMarkEvidenceCommandService draftCommandService;
+    private final pt.estga.processing.services.draft.DraftMarkEvidenceQueryService draftQueryService;
+    private final pt.estga.intake.services.MarkEvidenceSubmissionQueryService submissionQueryService;
 
     /**
      * Enrich the submission by delegating to configured enrichers.
@@ -33,12 +37,22 @@ public class EnrichmentService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void enrichSubmission(Long submissionId) {
-        for (Enricher enricher : enrichers) {
-            try {
-                enricher.enrich(submissionId);
-            } catch (Exception e) {
-                log.warn("Enricher {} failed for submission {} - continuing with next enricher", enricher.getClass().getSimpleName(), submissionId, e);
+        // Ensure there is a draft linked to the submission and obtain its id.
+        submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
+            DraftMarkEvidence draft = draftQueryService.findBySubmissionId(submissionId)
+                    .orElseGet(() -> draftCommandService.createIfMissingForSubmission(
+                            DraftMarkEvidence.builder().submission(submission).build()
+                    ));
+
+            Long draftId = draft.getId();
+
+            for (Enricher enricher : enrichers) {
+                try {
+                    enricher.enrich(draftId);
+                } catch (Exception e) {
+                    log.warn("Enricher {} failed for draft {} - continuing with next enricher", enricher.getClass().getSimpleName(), draftId, e);
+                }
             }
-        }
+        }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
     }
 }

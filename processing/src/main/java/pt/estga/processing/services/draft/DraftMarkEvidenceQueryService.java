@@ -16,4 +16,8 @@ public class DraftMarkEvidenceQueryService {
     public Optional<DraftMarkEvidence> findBySubmissionId(Long submissionId) {
         return Optional.ofNullable(repository.findBySubmissionId(submissionId));
     }
+
+    public Optional<DraftMarkEvidence> findById(Long id) {
+        return repository.findById(id);
+    }
 }

@@ -6,10 +6,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.services.application.MediaService;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
 import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
-import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.vision.DetectionResult;
 import pt.estga.vision.VisionClient;
 
@@ -26,7 +24,6 @@ public class EmbeddingEnricher implements Enricher {
 
     private final DraftMarkEvidenceCommandService draftCommandService;
     private final DraftMarkEvidenceQueryService draftQueryService;
-    private final MarkEvidenceSubmissionQueryService queryService;
     private final VisionClient visionClient;
     private final MediaService mediaService;
 
@@ -36,30 +33,26 @@ public class EmbeddingEnricher implements Enricher {
      */
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void enrich(Long submissionId) {
-        queryService.findById(submissionId).ifPresentOrElse(submission -> {
-            if (submission.getOriginalMediaFile() == null) {
-                log.info("Submission ID {} has no original media file. Skipping embedding enrichment.", submissionId);
+    public void enrich(Long draftId) {
+        draftQueryService.findById(draftId).ifPresentOrElse(draft -> {
+            if (draft.getSubmission() == null || draft.getSubmission().getOriginalMediaFile() == null) {
+                log.info("Draft {} has no linked submission media. Skipping embedding enrichment.", draftId);
                 return;
             }
 
-            try (InputStream detectionInputStream = mediaService.loadFileById(submission.getOriginalMediaFile().getId()).getInputStream()) {
-                DetectionResult detectionResult = visionClient.detect(detectionInputStream, submission.getOriginalMediaFile().getOriginalFilename());
+            try (InputStream detectionInputStream = mediaService.loadFileById(draft.getSubmission().getOriginalMediaFile().getId()).getInputStream()) {
+                DetectionResult detectionResult = visionClient.detect(detectionInputStream, draft.getSubmission().getOriginalMediaFile().getOriginalFilename());
                 if (detectionResult != null && detectionResult.embedding() != null && detectionResult.embedding().length > 0) {
-                    // Persist embedding to a processing draft record instead of the submission entity.
-                    DraftMarkEvidence draft = draftQueryService.findBySubmissionId(submissionId)
-                            .orElse(DraftMarkEvidence.builder().submission(submission).build());
-
                     draft.setEmbedding(detectionResult.embedding());
                     draftCommandService.create(draft);
 
-                    log.info("Embedding updated for submission ID (stored in draft): {}", submissionId);
+                    log.info("Embedding updated for draft ID: {}", draftId);
                 } else {
-                    log.info("No embedding detected for submission ID: {}", submissionId);
+                    log.info("No embedding detected for draft ID: {}", draftId);
                 }
             } catch (Exception e) {
-                log.warn("Detection service failed for submission ID {}. Proceeding without detection.", submissionId, e);
+                log.warn("Detection service failed for draft ID {}. Proceeding without detection.", draftId, e);
             }
-        }, () -> log.warn("Submission with ID {} not found during embedding enrichment", submissionId));
+        }, () -> log.warn("Draft with ID {} not found during embedding enrichment", draftId));
     }
 }
