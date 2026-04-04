@@ -123,10 +123,25 @@ public class EnrichmentService {
     }
 
     private void appendError(DraftMarkEvidence draft, String error) {
-        String existing = draft.getProcessingError();
-        String merged = (existing == null || existing.isEmpty()) ? error : existing + "\n" + error;
+        String merged = mergeErrors(draft, java.util.List.of(error));
         draft.setProcessingError(merged);
         draftCommandService.update(draft);
+    }
+
+    /**
+     * Merge existing draft processing error with a list of new errors, preserving line breaks.
+     * Returns null when there are no existing or new errors.
+     */
+    private String mergeErrors(DraftMarkEvidence draft, List<String> newErrors) {
+        String existing = draft.getProcessingError();
+        String newJoined = (newErrors == null || newErrors.isEmpty()) ? null : String.join("\n", newErrors);
+
+        if ((existing == null || existing.isEmpty()) && (newJoined == null || newJoined.isEmpty())) {
+            return null;
+        }
+        if (existing == null || existing.isEmpty()) return newJoined;
+        if (newJoined == null || newJoined.isEmpty()) return existing;
+        return existing + "\n" + newJoined;
     }
 
     public void finalizeDraftTx(Long draftId, List<String> collectedErrors) {
@@ -136,12 +151,8 @@ public class EnrichmentService {
             DraftMarkEvidence draft = draftQueryService.findByIdForUpdate(draftId)
                     .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found during finalization"));
 
-            // Merge errors
-            String merged = draft.getProcessingError();
-            if (collectedErrors != null && !collectedErrors.isEmpty()) {
-                String joined = String.join("\n", collectedErrors);
-                merged = (merged == null || merged.isEmpty()) ? joined : merged + "\n" + joined;
-            }
+            // Merge errors using helper that preserves line breaks
+            String merged = mergeErrors(draft, collectedErrors);
 
             if (draft.getEmbedding() == null) {
                 if (merged == null || merged.isEmpty()) merged = "Missing embedding after enrichment";
