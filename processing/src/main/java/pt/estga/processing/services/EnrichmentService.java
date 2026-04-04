@@ -71,20 +71,20 @@ public class EnrichmentService {
 
             // --- PRE-CHECK (no lock) ---
             if (draft.getProcessingStatus() == ProcessingStatus.COMPLETED) {
-                log.info("Draft {} already COMPLETED - skipping enrichment", draftId);
+                log.info("Draft {} submission {} already COMPLETED - skipping enrichment", draftId, submissionId);
                 return;
             }
             if (Boolean.FALSE.equals(draft.getActive())) {
-                log.info("Draft {} is inactive - skipping enrichment", draftId);
+                log.info("Draft {} submission {} is inactive - skipping enrichment", draftId, submissionId);
                 return;
             }
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
                 if (last != null && last.isAfter(Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
-                    log.info("Draft {} already IN_PROGRESS - skipping concurrent enrichment", draftId);
+                    log.info("Draft {} submission {} already IN_PROGRESS - skipping concurrent enrichment", draftId, submissionId);
                     return;
                 }
-                log.warn("Draft {} IN_PROGRESS is stale - will attempt recovery", draftId);
+                log.warn("Draft {} submission {} IN_PROGRESS is stale - will attempt recovery", draftId, submissionId);
             }
 
             // --- MARK IN_PROGRESS (REQUIRES_NEW) ---
@@ -97,7 +97,8 @@ public class EnrichmentService {
                     enricher.enrich(draftId);
                 } catch (Exception e) {
                     String msg = e.getMessage() == null ? e.toString() : e.getMessage();
-                    log.warn("Enricher {} failed for draft {} - collecting error", enricher.getClass().getSimpleName(), draftId, e);
+                    log.warn("Enricher {} failed for draft {} submission {} - collecting error",
+                            enricher.getClass().getSimpleName(), draftId, submissionId, e);
                     errors.add(msg);
                 }
             }
@@ -113,6 +114,8 @@ public class EnrichmentService {
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
                 if (last == null || last.isBefore(Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
+                    Long submissionId = draft.getSubmission() == null ? null : draft.getSubmission().getId();
+                    log.warn("Stale IN_PROGRESS detected for draft {} submission {} - appending recovery error", draft.getId(), submissionId);
                     appendError(draft, "Stale IN_PROGRESS detected - attempting recovery");
                 } else {
                     // Already in progress and not stale
@@ -127,6 +130,8 @@ public class EnrichmentService {
     }
 
     private void appendError(DraftMarkEvidence draft, String error) {
+        Long submissionId = draft.getSubmission() == null ? null : draft.getSubmission().getId();
+        log.warn("Appending processing error to draft {} submission {}: {}", draft.getId(), submissionId, error);
         String merged = mergeErrors(draft, java.util.List.of(error));
         draft.setProcessingError(merged);
         draftCommandService.update(draft);
@@ -150,6 +155,7 @@ public class EnrichmentService {
 
     public void finalizeDraftTx(Long draftId, List<String> collectedErrors) {
         executeInNewTransaction(draftId, draft -> {
+            Long submissionId = draft.getSubmission() == null ? null : draft.getSubmission().getId();
             // Merge errors using helper that preserves line breaks
             String merged = mergeErrors(draft, collectedErrors);
 
@@ -157,9 +163,11 @@ public class EnrichmentService {
                 if (merged == null || merged.isEmpty()) merged = "Missing embedding after enrichment";
                 draft.setProcessingStatus(ProcessingStatus.FAILED);
                 draft.setProcessingError(merged);
+                log.warn("Finalizing draft {} submission {} marked FAILED. Errors: {}", draft.getId(), submissionId, merged);
             } else {
                 draft.setProcessingStatus(ProcessingStatus.COMPLETED);
                 draft.setProcessingError(null);
+                log.info("Finalizing draft {} submission {} marked COMPLETED", draft.getId(), submissionId);
             }
 
             draftCommandService.update(draft);
