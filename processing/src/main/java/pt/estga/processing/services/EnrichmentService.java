@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.entities.DraftMarkEvidence;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
 import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
 import pt.estga.processing.services.enrichers.Enricher;
@@ -47,15 +48,26 @@ public class EnrichmentService {
                             DraftMarkEvidence.builder().submission(submission).build()
                     ));
 
+            // Mark the draft as in-progress and persist the change before running enrichers.
+            draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
+            draftCommandService.update(draft);
+
             Long draftId = draft.getId();
+
+            boolean anySuccess = false;
 
             for (Enricher enricher : enrichers) {
                 try {
                     enricher.enrich(draftId);
+                    anySuccess = true; // treat successful return as progress
                 } catch (Exception e) {
                     log.warn("Enricher {} failed for draft {} - continuing with next enricher", enricher.getClass().getSimpleName(), draftId, e);
                 }
             }
+
+            // If at least one enricher succeeded mark as COMPLETED, otherwise mark as FAILED.
+            draft.setProcessingStatus(anySuccess ? ProcessingStatus.COMPLETED : ProcessingStatus.FAILED);
+            draftCommandService.update(draft);
         }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
     }
 }
