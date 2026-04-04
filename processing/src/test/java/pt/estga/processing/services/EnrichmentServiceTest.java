@@ -20,10 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.time.Duration;
+import java.time.Instant;
 
 public class EnrichmentServiceTest {
 
@@ -38,6 +41,27 @@ public class EnrichmentServiceTest {
     private MarkEvidenceSubmission submission;
     private DraftMarkEvidence initialDraft;
     private DraftMarkEvidence lockedDraft;
+
+    // Reflection helper to set the protected lastModifiedAt field defined on AuditedEntity
+    private static void setLastModifiedAt(Object target, Instant instant) {
+        try {
+            Class<?> c = target.getClass();
+            java.lang.reflect.Field field = null;
+            while (c != null) {
+                try {
+                    field = c.getDeclaredField("lastModifiedAt");
+                    break;
+                } catch (NoSuchFieldException e) {
+                    c = c.getSuperclass();
+                }
+            }
+            if (field == null) throw new IllegalStateException("Field lastModifiedAt not found on target");
+            field.setAccessible(true);
+            field.set(target, instant);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @BeforeEach
     public void setUp() {
@@ -117,5 +141,85 @@ public class EnrichmentServiceTest {
 
         assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus(), "Final draft should be marked FAILED when enricher throws");
         assertNotNull(finalDraft.getProcessingError(), "Processing error should be set when enricher throws");
+    }
+
+    @Test
+    public void enrichSubmission_shouldSkip_whenAlreadyCompleted() {
+        // Arrange - mark the draft as already completed
+        initialDraft.setProcessingStatus(ProcessingStatus.COMPLETED);
+
+        // Act
+        service.enrichSubmission(submissionId);
+
+        // Assert - no enrichers or updates should be invoked
+        verify(enricher, times(0)).enrich(any(Long.class));
+        verify(draftCommandService, times(0)).update(any(DraftMarkEvidence.class));
+    }
+
+    @Test
+    public void enrichSubmission_shouldFail_whenEmbeddingMissing() {
+        // Arrange - ensure embedding is missing on locked draft
+        lockedDraft.setEmbedding(null);
+
+        // Act
+        service.enrichSubmission(submissionId);
+
+        // Assert - final draft should be FAILED and contain processingError
+        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
+        verify(draftCommandService, atLeast(1)).update(captor.capture());
+
+        List<DraftMarkEvidence> updated = captor.getAllValues();
+        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
+
+        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus(), "Final draft should be marked FAILED when embedding is missing");
+        assertNotNull(finalDraft.getProcessingError(), "Processing error should be set when embedding validation fails");
+    }
+
+    @Test
+    public void enrichSubmission_shouldSkip_whenDraftInactive() {
+        // Arrange - mark the draft as inactive
+        initialDraft.setActive(false);
+
+        // Act
+        service.enrichSubmission(submissionId);
+
+        // Assert - enricher and updates must not be called
+        verify(enricher, times(0)).enrich(any(Long.class));
+        verify(draftCommandService, times(0)).update(any(DraftMarkEvidence.class));
+    }
+
+    @Test
+    public void enrichSubmission_shouldSkip_whenAlreadyInProgress() {
+        // Arrange - draft is already in progress and not stale
+        initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
+        setLastModifiedAt(initialDraft, Instant.now());
+
+        // Act
+        service.enrichSubmission(submissionId);
+
+        // Assert - should skip without calling enrichers
+        verify(enricher, times(0)).enrich(any(Long.class));
+    }
+
+    @Test
+    public void enrichSubmission_shouldRecover_whenInProgressIsStale() {
+        // Arrange - simulate stale IN_PROGRESS older than 10 minutes
+        initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
+        setLastModifiedAt(initialDraft, Instant.now().minus(Duration.ofMinutes(20)));
+
+        // Ensure final locked draft contains embedding so recovery can complete
+        lockedDraft.setEmbedding(new float[]{0.1f});
+
+        // Act
+        service.enrichSubmission(submissionId);
+
+        // Assert - at least two updates (mark FAILED for recovery and finalization)
+        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
+        verify(draftCommandService, atLeast(2)).update(captor.capture());
+
+        List<DraftMarkEvidence> updated = captor.getAllValues();
+        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
+
+        assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus(), "Final draft should be COMPLETED after recovering from stale IN_PROGRESS");
     }
 }
