@@ -3,7 +3,6 @@ package pt.estga.processing.services;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -12,22 +11,15 @@ import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.services.enrichers.Enricher;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeast;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class EnrichmentServiceTest {
 
@@ -44,7 +36,6 @@ public class EnrichmentServiceTest {
     private DraftMarkEvidence lockedDraft;
     private AtomicReference<DraftMarkEvidence> dbDraft;
 
-    // Reflection helper to set the protected lastModifiedAt field defined on AuditedEntity
     private static void setLastModifiedAt(Object target, Instant instant) {
         try {
             Class<?> c = target.getClass();
@@ -78,7 +69,8 @@ public class EnrichmentServiceTest {
                 enrichers,
                 draftCommandService,
                 draftQueryService,
-                submissionQueryService
+                submissionQueryService,
+                mock(org.springframework.transaction.PlatformTransactionManager.class)
         );
 
         submission = MarkEvidenceSubmission.builder().id(submissionId).build();
@@ -89,20 +81,18 @@ public class EnrichmentServiceTest {
                 .processingStatus(ProcessingStatus.PENDING)
                 .build();
 
-        // This instance is used to seed the DB-like storage returned for findByIdForUpdate
         lockedDraft = DraftMarkEvidence.builder()
                 .id(initialDraft.getId())
                 .active(true)
                 .processingStatus(ProcessingStatus.PENDING)
                 .build();
-        // Initialize in-memory DB draft and wire mocks to use it. findByIdForUpdate returns a copy to simulate separate transactional instances.
+
         dbDraft = new AtomicReference<>(copyOf(lockedDraft));
 
         when(submissionQueryService.findById(submissionId)).thenReturn(Optional.of(submission));
         when(draftQueryService.findBySubmissionId(submissionId)).thenReturn(Optional.of(initialDraft));
         when(draftQueryService.findByIdForUpdate(initialDraft.getId())).thenAnswer(invocation -> Optional.of(copyOf(dbDraft.get())));
 
-        // Make update persist into the in-memory DB and return the passed argument to mimic repository behavior
         when(draftCommandService.update(any(DraftMarkEvidence.class))).thenAnswer(invocation -> {
             DraftMarkEvidence arg = invocation.getArgument(0);
             dbDraft.set(copyOf(arg));
@@ -130,172 +120,112 @@ public class EnrichmentServiceTest {
 
     @Test
     public void enrichSubmission_shouldMarkCompleted_whenAllEnrichersSucceed() {
-        // Arrange - ensure embedding exists so validation passes
-        lockedDraft.setEmbedding(new float[]{0.1f});
-        setDbEmbedding(lockedDraft.getEmbedding());
-
-        // Act
+        setDbEmbedding(new float[]{0.1f});
         service.enrichSubmission(submissionId);
 
-        // Assert final state only; avoid brittle exact update counts
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
-        assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus(), "Final draft should be marked COMPLETED");
-        assertNull(finalDraft.getProcessingError(), "Processing error should be null when completed successfully");
+        DraftMarkEvidence finalDraft = dbDraft.get();
+        assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
+        assertNull(finalDraft.getProcessingError());
     }
 
     @Test
     public void enrichSubmission_shouldMarkFailed_whenEnricherThrows() {
-        // Arrange - make the enricher throw
-        RuntimeException boom = new RuntimeException("boom");
-        org.mockito.Mockito.doThrow(boom).when(enricher).enrich(any(Long.class));
-
-        // Act
+        doThrow(new RuntimeException("boom")).when(enricher).enrich(any(Long.class));
         service.enrichSubmission(submissionId);
 
-        // Assert final state only; avoid brittle exact update counts
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
-        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus(), "Final draft should be marked FAILED when enricher throws");
-        assertNotNull(finalDraft.getProcessingError(), "Processing error should be set when enricher throws");
+        DraftMarkEvidence finalDraft = dbDraft.get();
+        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
+        assertNotNull(finalDraft.getProcessingError());
+        assertTrue(finalDraft.getProcessingError().contains("boom"));
     }
 
     @Test
     public void enrichSubmission_shouldSkip_whenAlreadyCompleted() {
-        // Arrange - mark the draft as already completed
         initialDraft.setProcessingStatus(ProcessingStatus.COMPLETED);
-
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert - no enrichers or updates should be invoked
         verify(enricher, times(0)).enrich(any(Long.class));
-        verify(draftCommandService, times(0)).update(any(DraftMarkEvidence.class));
+        verify(draftCommandService, times(0)).update(any());
     }
 
     @Test
     public void enrichSubmission_shouldFail_whenEmbeddingMissing() {
-        // Arrange - ensure embedding is missing on locked draft
-        lockedDraft.setEmbedding(null);
         setDbEmbedding(null);
-
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert - final draft should be FAILED and contain processingError
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
-        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus(), "Final draft should be marked FAILED when embedding is missing");
-        assertNotNull(finalDraft.getProcessingError(), "Processing error should be set when embedding validation fails");
+        DraftMarkEvidence finalDraft = dbDraft.get();
+        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
+        assertNotNull(finalDraft.getProcessingError());
+        assertTrue(finalDraft.getProcessingError().contains("Missing embedding"));
     }
 
     @Test
     public void enrichSubmission_shouldSkip_whenDraftInactive() {
-        // Arrange - mark the draft as inactive
         initialDraft.setActive(false);
-
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert - enricher and updates must not be called
-        verify(enricher, times(0)).enrich(any(Long.class));
-        verify(draftCommandService, times(0)).update(any(DraftMarkEvidence.class));
+        verify(enricher, times(0)).enrich(any());
+        verify(draftCommandService, times(0)).update(any());
     }
 
     @Test
     public void enrichSubmission_shouldSkip_whenAlreadyInProgress() {
-        // Arrange - draft is already in progress and not stale
         initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
         setLastModifiedAt(initialDraft, Instant.now());
-
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert - should skip without calling enrichers
-        verify(enricher, times(0)).enrich(any(Long.class));
+        verify(enricher, times(0)).enrich(any());
     }
 
     @Test
     public void enrichSubmission_shouldRecover_whenInProgressIsStale() {
-        // Arrange - simulate stale IN_PROGRESS older than 10 minutes
         initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
         setLastModifiedAt(initialDraft, Instant.now().minus(Duration.ofMinutes(20)));
+        setDbEmbedding(new float[]{0.1f});
 
-        // Ensure final locked draft contains embedding so recovery can complete
-        lockedDraft.setEmbedding(new float[]{0.1f});
-        setDbEmbedding(lockedDraft.getEmbedding());
-
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert final state only; avoid brittle exact update counts
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
-        assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus(), "Final draft should be COMPLETED after recovering from stale IN_PROGRESS");
+        DraftMarkEvidence finalDraft = dbDraft.get();
+        assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
+        assertNull(finalDraft.getProcessingError());
     }
 
     @Test
-    public void enrichSubmission_shouldFail_whenEnricherDoesNotProduceEmbedding() {
-        // Arrange - enricher runs but does not produce embedding (lockedDraft remains null embedding)
-        lockedDraft.setEmbedding(null);
-        setDbEmbedding(null);
-
-        // Act
-        service.enrichSubmission(submissionId);
-
-        // Assert
-        verify(enricher, atLeast(1)).enrich(any(Long.class));
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
-        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
-        assertNotNull(finalDraft.getProcessingError());
-    }
-
-    @Test
-    public void enrichSubmission_shouldComplete_whenOneEnricherFails_butOthersSucceed() {
-        // Arrange - two enrichers: one fails, one succeeds and writes embedding to shared lockedDraft
+    public void enrichSubmission_shouldComplete_whenOneEnricherFails_butOtherSucceeds() {
         Enricher failing = mock(Enricher.class);
         Enricher working = mock(Enricher.class);
 
-        org.mockito.Mockito.doThrow(new RuntimeException("fail")).when(failing).enrich(any(Long.class));
-        org.mockito.Mockito.doAnswer(invocation -> {
-            // Simulate successful enricher persisting embedding to the DB representation
+        doThrow(new RuntimeException("fail")).when(failing).enrich(any());
+        doAnswer(invocation -> {
             setDbEmbedding(new float[]{0.1f});
             return null;
-        }).when(working).enrich(any(Long.class));
+        }).when(working).enrich(any());
 
-        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService);
+        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(org.springframework.transaction.PlatformTransactionManager.class));
 
-        // Act
         service.enrichSubmission(submissionId);
 
-        // Assert
-        ArgumentCaptor<DraftMarkEvidence> captor = ArgumentCaptor.forClass(DraftMarkEvidence.class);
-        verify(draftCommandService, atLeast(1)).update(captor.capture());
-
-        List<DraftMarkEvidence> updated = captor.getAllValues();
-        DraftMarkEvidence finalDraft = updated.get(updated.size() - 1);
-
+        DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
+        assertNull(finalDraft.getProcessingError());
+    }
+
+    @Test
+    public void enrichSubmission_shouldMergeErrors_whenMultipleEnrichersFail() {
+        Enricher e1 = mock(Enricher.class);
+        Enricher e2 = mock(Enricher.class);
+
+        doThrow(new RuntimeException("fail1")).when(e1).enrich(any());
+        doThrow(new RuntimeException("fail2")).when(e2).enrich(any());
+
+        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(org.springframework.transaction.PlatformTransactionManager.class));
+
+        setDbEmbedding(null); // no embedding to force FAILED
+        service.enrichSubmission(submissionId);
+
+        DraftMarkEvidence finalDraft = dbDraft.get();
+        assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
+        assertTrue(finalDraft.getProcessingError().contains("fail1"));
+        assertTrue(finalDraft.getProcessingError().contains("fail2"));
     }
 }
