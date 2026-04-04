@@ -54,6 +54,14 @@ public class EnrichmentService {
 
     @Async
     public void enrichSubmission(Long submissionId) {
+        enrichSubmissionInternal(submissionId);
+    }
+
+    /*
+     * Internal synchronous implementation of enrichment flow. Extracted to allow deterministic
+     * invocation from tests while the public method remains @Async for production use.
+     */
+    private void enrichSubmissionInternal(Long submissionId) {
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
             DraftMarkEvidence draft = draftQueryService.findBySubmissionId(submissionId)
                     .orElseGet(() -> draftCommandService.createIfMissingForSubmission(

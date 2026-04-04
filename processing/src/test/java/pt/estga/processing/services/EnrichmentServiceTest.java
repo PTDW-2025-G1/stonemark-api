@@ -59,6 +59,16 @@ public class EnrichmentServiceTest {
         }
     }
 
+    private void invokeInternal(EnrichmentService svc, Long submissionId) {
+        try {
+            java.lang.reflect.Method m = EnrichmentService.class.getDeclaredMethod("enrichSubmissionInternal", Long.class);
+            m.setAccessible(true);
+            m.invoke(svc, submissionId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @BeforeEach
     public void setUp() {
         enricher = mock(Enricher.class);
@@ -128,7 +138,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldMarkCompleted_whenAllEnrichersSucceed() {
         setDbEmbedding(new float[]{0.1f});
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
@@ -138,7 +148,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldMarkFailed_whenEnricherThrows() {
         doThrow(new RuntimeException("boom")).when(enricher).enrich(any(Long.class));
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
@@ -149,7 +159,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldSkip_whenAlreadyCompleted() {
         initialDraft.setProcessingStatus(ProcessingStatus.COMPLETED);
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         verify(enricher, times(0)).enrich(any(Long.class));
         verify(draftCommandService, times(0)).update(any());
@@ -158,7 +168,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldFail_whenEmbeddingMissing() {
         setDbEmbedding(null);
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
@@ -169,7 +179,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldSkip_whenDraftInactive() {
         initialDraft.setActive(false);
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         verify(enricher, times(0)).enrich(any());
         verify(draftCommandService, times(0)).update(any());
@@ -179,7 +189,7 @@ public class EnrichmentServiceTest {
     public void enrichSubmission_shouldSkip_whenAlreadyInProgress() {
         initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
         setLastModifiedAt(initialDraft, Instant.now(clock));
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         verify(enricher, times(0)).enrich(any());
     }
@@ -190,7 +200,7 @@ public class EnrichmentServiceTest {
         setLastModifiedAt(initialDraft, Instant.now(clock).minus(Duration.ofMinutes(20)));
         setDbEmbedding(new float[]{0.1f});
 
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
@@ -210,7 +220,7 @@ public class EnrichmentServiceTest {
 
         service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L, clock);
 
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.COMPLETED, finalDraft.getProcessingStatus());
@@ -228,7 +238,7 @@ public class EnrichmentServiceTest {
         service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L, clock);
 
         setDbEmbedding(null); // no embedding to force FAILED
-        service.enrichSubmission(submissionId);
+        invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
         assertEquals(ProcessingStatus.FAILED, finalDraft.getProcessingStatus());
