@@ -2,7 +2,7 @@ package pt.estga.processing.services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.PlatformTransactionManager;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -70,7 +70,8 @@ public class EnrichmentServiceTest {
                 draftCommandService,
                 draftQueryService,
                 submissionQueryService,
-                mock(org.springframework.transaction.PlatformTransactionManager.class)
+                mock(PlatformTransactionManager.class),
+                10L
         );
 
         submission = MarkEvidenceSubmission.builder().id(submissionId).build();
@@ -201,7 +202,7 @@ public class EnrichmentServiceTest {
             return null;
         }).when(working).enrich(any());
 
-        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(org.springframework.transaction.PlatformTransactionManager.class));
+        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L);
 
         service.enrichSubmission(submissionId);
 
@@ -218,7 +219,7 @@ public class EnrichmentServiceTest {
         doThrow(new RuntimeException("fail1")).when(e1).enrich(any());
         doThrow(new RuntimeException("fail2")).when(e2).enrich(any());
 
-        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(org.springframework.transaction.PlatformTransactionManager.class));
+        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L);
 
         setDbEmbedding(null); // no embedding to force FAILED
         service.enrichSubmission(submissionId);

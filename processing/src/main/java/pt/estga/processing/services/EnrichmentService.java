@@ -1,8 +1,8 @@
 package pt.estga.processing.services;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.entities.DraftMarkEvidence;
@@ -17,7 +17,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EnrichmentService {
 
@@ -26,6 +25,25 @@ public class EnrichmentService {
     private final DraftMarkEvidenceQueryService draftQueryService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final PlatformTransactionManager txManager;
+    private final long staleTimeoutMinutes;
+
+    /**
+     * Explicit constructor to allow injection of a configurable stale timeout for in-progress drafts.
+     * The property `processing.staleTimeoutMinutes` defaults to 10 when not provided.
+     */
+    public EnrichmentService(List<Enricher> enrichers,
+                             DraftMarkEvidenceCommandService draftCommandService,
+                             DraftMarkEvidenceQueryService draftQueryService,
+                             MarkEvidenceSubmissionQueryService submissionQueryService,
+                             PlatformTransactionManager txManager,
+                             @Value("${processing.stale-timeout-minutes:10}") long staleTimeoutMinutes) {
+        this.enrichers = enrichers;
+        this.draftCommandService = draftCommandService;
+        this.draftQueryService = draftQueryService;
+        this.submissionQueryService = submissionQueryService;
+        this.txManager = txManager;
+        this.staleTimeoutMinutes = staleTimeoutMinutes;
+    }
 
     @Async
     public void enrichSubmission(Long submissionId) {
@@ -48,7 +66,7 @@ public class EnrichmentService {
             }
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
-                if (last != null && last.isAfter(Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
+                if (last != null && last.isAfter(Instant.now().minus(java.time.Duration.ofMinutes(staleTimeoutMinutes)))) {
                     log.info("Draft {} already IN_PROGRESS - skipping concurrent enrichment", draftId);
                     return;
                 }
@@ -85,7 +103,7 @@ public class EnrichmentService {
 
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
-                if (last == null || last.isBefore(Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
+                if (last == null || last.isBefore(Instant.now().minus(java.time.Duration.ofMinutes(staleTimeoutMinutes)))) {
                     appendError(draft, "Stale IN_PROGRESS detected - attempting recovery");
                 } else {
                     // Already in progress and not stale
