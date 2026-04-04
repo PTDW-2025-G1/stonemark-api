@@ -1,7 +1,5 @@
 package pt.estga.processing.services.draft;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.processing.repositories.DraftMarkEvidenceRepository;
@@ -28,5 +26,14 @@ public class DraftMarkEvidenceQueryService {
      */
     public Optional<DraftMarkEvidence> findByIdForUpdate(Long id) {
         return repository.findByIdForUpdate(id);
+    }
+
+    /**
+     * Check whether the draft for the given submission id is ready for review.
+     */
+    public boolean isDraftReadyForReview(Long submissionId) {
+        return findBySubmissionId(submissionId)
+                .map(DraftMarkEvidence::isReadyForReview)
+                .orElse(false);
     }
 }

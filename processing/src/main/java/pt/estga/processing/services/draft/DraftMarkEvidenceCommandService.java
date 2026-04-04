@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.processing.repositories.DraftMarkEvidenceRepository;
 import pt.estga.processing.entities.DraftMarkEvidence;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.mappers.DraftMarkEvidenceMapper;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
@@ -16,6 +17,11 @@ public class DraftMarkEvidenceCommandService {
 
     public DraftMarkEvidence create(DraftMarkEvidence draft) {
         if (draft == null) throw new IllegalArgumentException("Draft must not be null");
+        // Ensure newly created drafts have sensible defaults.
+        if (draft.getActive() == null) draft.setActive(true);
+        if (draft.getVersion() == null) draft.setVersion(1);
+        if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
+
         return repository.save(draft);
     }
 
@@ -25,7 +31,13 @@ public class DraftMarkEvidenceCommandService {
         }
 
         DraftMarkEvidence existing = repository.findBySubmissionId(draft.getSubmission().getId());
-        if (existing != null) return existing;
+        // If an active draft already exists for the submission, reuse it to avoid duplicates.
+        if (existing != null && Boolean.TRUE.equals(existing.getActive())) return existing;
+
+        // Ensure sensible defaults for a freshly created draft.
+        if (draft.getActive() == null) draft.setActive(true);
+        if (draft.getVersion() == null) draft.setVersion(1);
+        if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
 
         return repository.save(draft);
     }

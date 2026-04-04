@@ -3,6 +3,7 @@ package pt.estga.processing.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
@@ -33,12 +34,14 @@ public class EnrichmentService {
 
     /**
      * Enrich the submission by delegating to configured enrichers.
-     * The method is executed with REQUIRES_NEW to ensure it runs after the
+     * This method is executed asynchronously so intake callers are not blocked.
+     * The method runs with REQUIRES_NEW to ensure it executes after the
      * origin transaction commits. Individual enrichers also run in their own
      * REQUIRES_NEW transactions.
      *
      * @param submissionId id of the submission to enrich
      */
+    @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void enrichSubmission(Long submissionId) {
         // Ensure there is a draft linked to the submission and obtain its id.
@@ -47,6 +50,17 @@ public class EnrichmentService {
                     .orElseGet(() -> draftCommandService.createIfMissingForSubmission(
                             DraftMarkEvidence.builder().submission(submission).build()
                     ));
+
+            // Idempotency: if processing already completed or draft inactive, skip re-processing.
+            if (draft.getProcessingStatus() == ProcessingStatus.COMPLETED) {
+                log.info("Draft {} already COMPLETED - skipping enrichment", draft.getId());
+                return;
+            }
+
+            if (Boolean.FALSE.equals(draft.getActive())) {
+                log.info("Draft {} is inactive - skipping enrichment", draft.getId());
+                return;
+            }
 
             // Mark the draft as in-progress and persist the change before running enrichers.
             draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
@@ -61,12 +75,26 @@ public class EnrichmentService {
                     enricher.enrich(draftId);
                     anySuccess = true; // treat successful return as progress
                 } catch (Exception e) {
-                    log.warn("Enricher {} failed for draft {} - continuing with next enricher", enricher.getClass().getSimpleName(), draftId, e);
+                    log.warn("Enricher {} failed for draft {} - recording processing error and continuing", enricher.getClass().getSimpleName(), draftId, e);
+
+                    // Load the draft with lock and record processing error to avoid leaving it in an indeterminate state.
+                    draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
+                        d.setProcessingStatus(ProcessingStatus.FAILED);
+                        d.setProcessingError(e.getMessage());
+                        draftCommandService.update(d);
+                    });
                 }
             }
 
             // If at least one enricher succeeded mark as COMPLETED, otherwise mark as FAILED.
-            draft.setProcessingStatus(anySuccess ? ProcessingStatus.COMPLETED : ProcessingStatus.FAILED);
+            if (anySuccess) {
+                draft.setProcessingStatus(ProcessingStatus.COMPLETED);
+                draft.setProcessingError(null);
+            } else {
+                draft.setProcessingStatus(ProcessingStatus.FAILED);
+                // processingError already set when individual enrichers failed; leave as-is if present
+            }
+
             draftCommandService.update(draft);
         }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
     }
