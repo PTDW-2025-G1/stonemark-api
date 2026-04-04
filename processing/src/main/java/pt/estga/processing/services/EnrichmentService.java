@@ -102,16 +102,33 @@ public class EnrichmentService {
                 }
             }
 
-            // If all enrichers succeeded mark as COMPLETED, otherwise mark as FAILED.
+            // Reload the draft with a pessimistic lock before finalizing to avoid
+            // overwriting updates that were persisted by individual enrichers.
+            DraftMarkEvidence finalDraft = draftQueryService.findByIdForUpdate(draftId)
+                    .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found while finalizing enrichment"));
+
+            // Basic validation: ensure required outputs were produced by enrichers.
+            // At minimum require an embedding to consider processing fully successful.
             if (allSuccess) {
-                draft.setProcessingStatus(ProcessingStatus.COMPLETED);
-                draft.setProcessingError(null);
-            } else {
-                draft.setProcessingStatus(ProcessingStatus.FAILED);
-                // processingError already accumulated per-enricher
+                if (finalDraft.getEmbedding() == null) {
+                    allSuccess = false;
+                    String existing = finalDraft.getProcessingError();
+                    String appended = (existing == null || existing.isEmpty()) ? "Missing embedding after enrichment"
+                            : existing + "\n" + "Missing embedding after enrichment";
+                    finalDraft.setProcessingError(appended);
+                }
             }
 
-            draftCommandService.update(draft);
+            // If all enrichers succeeded and validation passed mark as COMPLETED, otherwise mark as FAILED.
+            if (allSuccess) {
+                finalDraft.setProcessingStatus(ProcessingStatus.COMPLETED);
+                finalDraft.setProcessingError(null);
+            } else {
+                finalDraft.setProcessingStatus(ProcessingStatus.FAILED);
+                // processingError already accumulated per-enricher and/or during validation
+            }
+
+            draftCommandService.update(finalDraft);
         }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
     }
 }
