@@ -68,6 +68,7 @@ public class EnrichmentService {
                     ));
 
             Long draftId = draft.getId();
+            Instant now = Instant.now(clock);
 
             // --- PRE-CHECK (no lock) ---
             if (draft.getProcessingStatus() == ProcessingStatus.COMPLETED) {
@@ -80,7 +81,7 @@ public class EnrichmentService {
             }
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
-                if (last != null && last.isAfter(Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
+                if (last != null && last.isAfter(now.minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
                     log.info("Draft {} submission {} already IN_PROGRESS - skipping concurrent enrichment", draftId, submissionId);
                     return;
                 }
@@ -111,10 +112,11 @@ public class EnrichmentService {
 
     public void markInProgressTx(Long draftId) {
         executeInNewTransaction(draftId, draft -> {
+            Instant now = Instant.now(clock);
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
-                if (last == null || last.isBefore(Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
-                    Long submissionId = draft.getSubmission() == null ? null : draft.getSubmission().getId();
+                if (last == null || last.isBefore(now.minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
+                    Long submissionId = getSubmissionId(draft);
                     log.warn("Stale IN_PROGRESS detected for draft {} submission {} - appending recovery error", draft.getId(), submissionId);
                     appendError(draft, "Stale IN_PROGRESS detected - attempting recovery");
                 } else {
@@ -124,17 +126,17 @@ public class EnrichmentService {
             }
 
             draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
+            // single update after any modifications (including appended error)
             draftCommandService.update(draft);
             return null;
         });
     }
 
     private void appendError(DraftMarkEvidence draft, String error) {
-        Long submissionId = draft.getSubmission() == null ? null : draft.getSubmission().getId();
+        Long submissionId = getSubmissionId(draft);
         log.warn("Appending processing error to draft {} submission {}: {}", draft.getId(), submissionId, error);
         String merged = mergeErrors(draft, java.util.List.of(error));
         draft.setProcessingError(merged);
-        draftCommandService.update(draft);
     }
 
     /**
@@ -151,6 +153,10 @@ public class EnrichmentService {
         if (existing == null || existing.isEmpty()) return newJoined;
         if (newJoined == null || newJoined.isEmpty()) return existing;
         return existing + "\n" + newJoined;
+    }
+
+    private Long getSubmissionId(DraftMarkEvidence draft) {
+        return draft == null || draft.getSubmission() == null ? null : draft.getSubmission().getId();
     }
 
     public void finalizeDraftTx(Long draftId, List<String> collectedErrors) {
