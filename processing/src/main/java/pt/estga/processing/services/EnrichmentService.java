@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.Clock;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -101,24 +102,20 @@ public class EnrichmentService {
     }
 
     public void markInProgressTx(Long draftId) {
-        TransactionTemplate tt = new TransactionTemplate(txManager);
-        tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        tt.executeWithoutResult(_status -> {
-            DraftMarkEvidence draft = draftQueryService.findByIdForUpdate(draftId)
-                    .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found"));
-
+        executeInNewTransaction(draftId, draft -> {
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
                 if (last == null || last.isBefore(Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
                     appendError(draft, "Stale IN_PROGRESS detected - attempting recovery");
                 } else {
                     // Already in progress and not stale
-                    return;
+                    return null;
                 }
             }
 
             draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
             draftCommandService.update(draft);
+            return null;
         });
     }
 
@@ -145,12 +142,7 @@ public class EnrichmentService {
     }
 
     public void finalizeDraftTx(Long draftId, List<String> collectedErrors) {
-        TransactionTemplate tt = new TransactionTemplate(txManager);
-        tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        tt.executeWithoutResult(_status -> {
-            DraftMarkEvidence draft = draftQueryService.findByIdForUpdate(draftId)
-                    .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found during finalization"));
-
+        executeInNewTransaction(draftId, draft -> {
             // Merge errors using helper that preserves line breaks
             String merged = mergeErrors(draft, collectedErrors);
 
@@ -164,6 +156,21 @@ public class EnrichmentService {
             }
 
             draftCommandService.update(draft);
+            return null;
+        });
+    }
+
+    /**
+     * Execute an operation on a draft inside a new transaction. The draft is loaded with a FOR UPDATE
+     * lock to prevent concurrent modifications.
+     */
+    private <T> T executeInNewTransaction(Long draftId, Function<DraftMarkEvidence, T> action) {
+        TransactionTemplate tt = new TransactionTemplate(txManager);
+        tt.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        return tt.execute(status -> {
+            DraftMarkEvidence draft = draftQueryService.findByIdForUpdate(draftId)
+                    .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found"));
+            return action.apply(draft);
         });
     }
 }
