@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class EnrichmentServiceTest {
 
@@ -41,6 +42,7 @@ public class EnrichmentServiceTest {
     private MarkEvidenceSubmission submission;
     private DraftMarkEvidence initialDraft;
     private DraftMarkEvidence lockedDraft;
+    private AtomicReference<DraftMarkEvidence> dbDraft;
 
     // Reflection helper to set the protected lastModifiedAt field defined on AuditedEntity
     private static void setLastModifiedAt(Object target, Instant instant) {
@@ -87,19 +89,25 @@ public class EnrichmentServiceTest {
                 .processingStatus(ProcessingStatus.PENDING)
                 .build();
 
-        // This instance is returned for findByIdForUpdate so modifications persist across calls in the test.
+        // This instance is used to seed the DB-like storage returned for findByIdForUpdate
         lockedDraft = DraftMarkEvidence.builder()
                 .id(initialDraft.getId())
                 .active(true)
                 .processingStatus(ProcessingStatus.PENDING)
                 .build();
+        // Initialize in-memory DB draft and wire mocks to use it. findByIdForUpdate returns a copy to simulate separate transactional instances.
+        dbDraft = new AtomicReference<>(copyOf(lockedDraft));
 
         when(submissionQueryService.findById(submissionId)).thenReturn(Optional.of(submission));
         when(draftQueryService.findBySubmissionId(submissionId)).thenReturn(Optional.of(initialDraft));
-        when(draftQueryService.findByIdForUpdate(initialDraft.getId())).thenAnswer(invocation -> Optional.of(copyOf(lockedDraft)));
+        when(draftQueryService.findByIdForUpdate(initialDraft.getId())).thenAnswer(invocation -> Optional.of(copyOf(dbDraft.get())));
 
-        // Make update return its argument to mimic repository behavior
-        when(draftCommandService.update(any(DraftMarkEvidence.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        // Make update persist into the in-memory DB and return the passed argument to mimic repository behavior
+        when(draftCommandService.update(any(DraftMarkEvidence.class))).thenAnswer(invocation -> {
+            DraftMarkEvidence arg = invocation.getArgument(0);
+            dbDraft.set(copyOf(arg));
+            return arg;
+        });
     }
 
     private DraftMarkEvidence copyOf(DraftMarkEvidence source) {
@@ -113,10 +121,18 @@ public class EnrichmentServiceTest {
                 .build();
     }
 
+    private void setDbEmbedding(float[] embedding) {
+        DraftMarkEvidence cur = dbDraft.get();
+        DraftMarkEvidence temp = copyOf(cur);
+        temp.setEmbedding(embedding == null ? null : embedding.clone());
+        dbDraft.set(temp);
+    }
+
     @Test
     public void enrichSubmission_shouldMarkCompleted_whenAllEnrichersSucceed() {
         // Arrange - ensure embedding exists so validation passes
         lockedDraft.setEmbedding(new float[]{0.1f});
+        setDbEmbedding(lockedDraft.getEmbedding());
 
         // Act
         service.enrichSubmission(submissionId);
@@ -169,6 +185,7 @@ public class EnrichmentServiceTest {
     public void enrichSubmission_shouldFail_whenEmbeddingMissing() {
         // Arrange - ensure embedding is missing on locked draft
         lockedDraft.setEmbedding(null);
+        setDbEmbedding(null);
 
         // Act
         service.enrichSubmission(submissionId);
@@ -218,6 +235,7 @@ public class EnrichmentServiceTest {
 
         // Ensure final locked draft contains embedding so recovery can complete
         lockedDraft.setEmbedding(new float[]{0.1f});
+        setDbEmbedding(lockedDraft.getEmbedding());
 
         // Act
         service.enrichSubmission(submissionId);
@@ -236,6 +254,7 @@ public class EnrichmentServiceTest {
     public void enrichSubmission_shouldFail_whenEnricherDoesNotProduceEmbedding() {
         // Arrange - enricher runs but does not produce embedding (lockedDraft remains null embedding)
         lockedDraft.setEmbedding(null);
+        setDbEmbedding(null);
 
         // Act
         service.enrichSubmission(submissionId);
@@ -261,7 +280,7 @@ public class EnrichmentServiceTest {
         org.mockito.Mockito.doThrow(new RuntimeException("fail")).when(failing).enrich(any(Long.class));
         org.mockito.Mockito.doAnswer(invocation -> {
             // Simulate successful enricher persisting embedding to the DB representation
-            lockedDraft.setEmbedding(new float[]{0.1f});
+            setDbEmbedding(new float[]{0.1f});
             return null;
         }).when(working).enrich(any(Long.class));
 

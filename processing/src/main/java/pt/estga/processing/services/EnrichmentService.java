@@ -13,6 +13,7 @@ import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
 import pt.estga.processing.services.draft.DraftMarkEvidenceQueryService;
 import pt.estga.processing.services.enrichers.Enricher;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -51,84 +52,110 @@ public class EnrichmentService {
                             DraftMarkEvidence.builder().submission(submission).build()
                     ));
 
-            // Idempotency: if processing already completed or draft inactive, skip re-processing.
+            Long draftId = draft.getId();
+
+            // PRE-CHECK (no lock) - quick exits before acquiring the pessimistic lock.
+            // These checks use the read model and avoid taking a lock when unnecessary.
             if (draft.getProcessingStatus() == ProcessingStatus.COMPLETED) {
-                log.info("Draft {} already COMPLETED - skipping enrichment", draft.getId());
+                log.info("Draft {} already COMPLETED - skipping enrichment", draftId);
                 return;
             }
 
             if (Boolean.FALSE.equals(draft.getActive())) {
-                log.info("Draft {} is inactive - skipping enrichment", draft.getId());
+                log.info("Draft {} is inactive - skipping enrichment", draftId);
                 return;
             }
 
-            // Recovery: if a previous run left the draft IN_PROGRESS for too long, consider it FAILED and proceed.
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
-                // Use lastModifiedAt from AuditedEntity as heuristic when available.
-                if (draft.getLastModifiedAt() != null && draft.getLastModifiedAt().isBefore(java.time.Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
-                    log.warn("Draft {} was IN_PROGRESS for too long - marking FAILED and attempting reprocess", draft.getId());
-                    draft.setProcessingStatus(ProcessingStatus.FAILED);
-                    draft.setProcessingError("Stale IN_PROGRESS state detected; marking FAILED for recovery");
-                    draftCommandService.update(draft);
-                } else {
-                    log.info("Draft {} is already IN_PROGRESS - skipping concurrent enrichment", draft.getId());
+                Instant last = draft.getLastModifiedAt();
+                if (last != null && last.isAfter(Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
+                    log.info("Draft {} already IN_PROGRESS - skipping concurrent enrichment", draftId);
                     return;
                 }
+                // stale IN_PROGRESS will be handled after acquiring a lock
             }
 
-            // Mark the draft as in-progress and persist the change before running enrichers.
-            draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
-            draftCommandService.update(draft);
+            // Acquire pessimistic lock to make a safe decision. All subsequent modifications
+            // will reload the entity under lock before applying changes.
+            DraftMarkEvidence locked = draftQueryService.findByIdForUpdate(draftId)
+                    .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found"));
 
-            Long draftId = draft.getId();
+            // Re-check under lock for IN_PROGRESS state to handle races between the pre-check
+            // and acquiring the lock. If still IN_PROGRESS and not stale, skip. If stale, record
+            // a recovery note and proceed.
+            if (locked.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
+                Instant last = locked.getLastModifiedAt();
+                if (last != null && last.isAfter(Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
+                    log.info("Draft {} is already IN_PROGRESS and not stale - skipping concurrent enrichment", draftId);
+                    return;
+                }
 
-            boolean allSuccess = true;
+                log.warn("Draft {} is IN_PROGRESS but stale (under lock) - recording recovery note and proceeding", draftId);
+                appendError(draftId, "Stale IN_PROGRESS state detected; attempting recovery");
+            }
 
+            // Now mark as IN_PROGRESS (fresh load + update under lock)
+            markInProgress(draftId);
+
+            // Run all enrichers (each runs in its own REQUIRES_NEW transaction). Collect and persist errors per-enricher.
             for (Enricher enricher : enrichers) {
                 try {
                     enricher.enrich(draftId);
                 } catch (Exception e) {
-                    allSuccess = false;
-                    log.warn("Enricher {} failed for draft {} - recording processing error and continuing", enricher.getClass().getSimpleName(), draftId, e);
-
-                    // Append error message while preserving existing errors.
-                    draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
-                        d.setProcessingStatus(ProcessingStatus.FAILED);
-                        String existing = d.getProcessingError();
-                        String appended = (existing == null || existing.isEmpty()) ? e.getMessage() : existing + "\n" + e.getMessage();
-                        d.setProcessingError(appended);
-                        draftCommandService.update(d);
-                    });
+                    log.warn("Enricher {} failed for draft {} - persisting error and continuing", enricher.getClass().getSimpleName(), draftId, e);
+                    appendError(draftId, e.getMessage() == null ? e.toString() : e.getMessage());
                 }
             }
 
-            // Reload the draft with a pessimistic lock before finalizing to avoid
-            // overwriting updates that were persisted by individual enrichers.
-            DraftMarkEvidence finalDraft = draftQueryService.findByIdForUpdate(draftId)
+            // Finalize: reload locked draft and decide final state based only on embedding presence.
+            DraftMarkEvidence finalLocked = draftQueryService.findByIdForUpdate(draftId)
                     .orElseThrow(() -> new IllegalStateException("Draft with id " + draftId + " not found while finalizing enrichment"));
 
-            // Basic validation: ensure required outputs were produced by enrichers.
-            // At minimum require an embedding to consider processing fully successful.
-            if (allSuccess) {
-                if (finalDraft.getEmbedding() == null) {
-                    allSuccess = false;
-                    String existing = finalDraft.getProcessingError();
-                    String appended = (existing == null || existing.isEmpty()) ? "Missing embedding after enrichment"
-                            : existing + "\n" + "Missing embedding after enrichment";
-                    finalDraft.setProcessingError(appended);
-                }
-            }
-
-            // If all enrichers succeeded and validation passed mark as COMPLETED, otherwise mark as FAILED.
-            if (allSuccess) {
-                finalDraft.setProcessingStatus(ProcessingStatus.COMPLETED);
-                finalDraft.setProcessingError(null);
+            if (finalLocked.getEmbedding() == null) {
+                // Ensure missing-embedding error is persisted and mark as FAILED.
+                String existing = finalLocked.getProcessingError();
+                String appended = (existing == null || existing.isEmpty()) ? "Missing embedding after enrichment"
+                        : existing + "\n" + "Missing embedding after enrichment";
+                markFailed(draftId, appended);
             } else {
-                finalDraft.setProcessingStatus(ProcessingStatus.FAILED);
-                // processingError already accumulated per-enricher and/or during validation
+                markCompleted(draftId);
             }
-
-            draftCommandService.update(finalDraft);
         }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
+    }
+
+    // --- Command-style helpers that always reload under pessimistic lock and persist changes ---
+
+    private void markInProgress(Long draftId) {
+        draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
+            d.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
+            // Persist the change via command service; update should merge the state.
+            draftCommandService.update(d);
+        });
+    }
+
+    private void appendError(Long draftId, String error) {
+        if (error == null || error.isEmpty()) return;
+        draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
+            String existing = d.getProcessingError();
+            String appended = (existing == null || existing.isEmpty()) ? error : existing + "\n" + error;
+            d.setProcessingError(appended);
+            draftCommandService.update(d);
+        });
+    }
+
+    private void markFailed(Long draftId, String error) {
+        draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
+            d.setProcessingStatus(ProcessingStatus.FAILED);
+            d.setProcessingError(error);
+            draftCommandService.update(d);
+        });
+    }
+
+    private void markCompleted(Long draftId) {
+        draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
+            d.setProcessingStatus(ProcessingStatus.COMPLETED);
+            d.setProcessingError(null);
+            draftCommandService.update(d);
+        });
     }
 }
