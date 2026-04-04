@@ -13,6 +13,8 @@ import pt.estga.processing.services.enrichers.Enricher;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,7 @@ public class EnrichmentServiceTest {
     private MarkEvidenceSubmissionQueryService submissionQueryService;
     private List<Enricher> enrichers;
     private EnrichmentService service;
+    private Clock clock;
 
     private final Long submissionId = 42L;
     private MarkEvidenceSubmission submission;
@@ -65,13 +68,16 @@ public class EnrichmentServiceTest {
 
         enrichers = Collections.singletonList(enricher);
 
+        clock = Clock.fixed(Instant.parse("2020-01-01T00:00:00Z"), ZoneOffset.UTC);
+
         service = new EnrichmentService(
                 enrichers,
                 draftCommandService,
                 draftQueryService,
                 submissionQueryService,
                 mock(PlatformTransactionManager.class),
-                10L
+                10L,
+                clock
         );
 
         submission = MarkEvidenceSubmission.builder().id(submissionId).build();
@@ -172,7 +178,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldSkip_whenAlreadyInProgress() {
         initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
-        setLastModifiedAt(initialDraft, Instant.now());
+        setLastModifiedAt(initialDraft, Instant.now(clock));
         service.enrichSubmission(submissionId);
 
         verify(enricher, times(0)).enrich(any());
@@ -181,7 +187,7 @@ public class EnrichmentServiceTest {
     @Test
     public void enrichSubmission_shouldRecover_whenInProgressIsStale() {
         initialDraft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
-        setLastModifiedAt(initialDraft, Instant.now().minus(Duration.ofMinutes(20)));
+        setLastModifiedAt(initialDraft, Instant.now(clock).minus(Duration.ofMinutes(20)));
         setDbEmbedding(new float[]{0.1f});
 
         service.enrichSubmission(submissionId);
@@ -202,7 +208,7 @@ public class EnrichmentServiceTest {
             return null;
         }).when(working).enrich(any());
 
-        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L);
+        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L, clock);
 
         service.enrichSubmission(submissionId);
 
@@ -219,7 +225,7 @@ public class EnrichmentServiceTest {
         doThrow(new RuntimeException("fail1")).when(e1).enrich(any());
         doThrow(new RuntimeException("fail2")).when(e2).enrich(any());
 
-        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L);
+        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 10L, clock);
 
         setDbEmbedding(null); // no embedding to force FAILED
         service.enrichSubmission(submissionId);
