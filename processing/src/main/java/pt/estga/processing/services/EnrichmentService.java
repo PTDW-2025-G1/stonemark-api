@@ -29,7 +29,8 @@ public class EnrichmentService {
     private final DraftMarkEvidenceQueryService draftQueryService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final PlatformTransactionManager txManager;
-    private final long staleTimeoutMinutes;
+    @Value("${processing.enrichment.stale-timeout-minutes:10}")
+    private long staleTimeoutMinutes;
     private final Clock clock;
 
     /**
@@ -41,14 +42,12 @@ public class EnrichmentService {
                              DraftMarkEvidenceQueryService draftQueryService,
                              MarkEvidenceSubmissionQueryService submissionQueryService,
                              PlatformTransactionManager txManager,
-                             @Value("${processing.stale-timeout-minutes:10}") long staleTimeoutMinutes,
                              @Value("#{T(java.time.Clock).systemUTC()}") Clock clock) {
         this.enrichers = enrichers;
         this.draftCommandService = draftCommandService;
         this.draftQueryService = draftQueryService;
         this.submissionQueryService = submissionQueryService;
         this.txManager = txManager;
-        this.staleTimeoutMinutes = staleTimeoutMinutes;
         this.clock = clock;
     }
 
