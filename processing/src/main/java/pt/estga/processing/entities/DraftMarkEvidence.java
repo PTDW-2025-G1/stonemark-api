@@ -8,6 +8,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.shared.entities.BaseEntity;
 
 @Entity
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"submission_id", "active"})})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -20,8 +21,7 @@ public class DraftMarkEvidence extends BaseEntity {
     private Long id;
 
     @Column(columnDefinition = "vector")
-    // Use wrapper Float[] to avoid JPA issues with primitive arrays; the column holds embedding vector data.
-    private Float[] embedding;
+    private float[] embedding;
 
     @Column(columnDefinition = "TEXT")
     private String aiMetadataJson;
@@ -29,12 +29,21 @@ public class DraftMarkEvidence extends BaseEntity {
     private Boolean aiFlagged;
 
     private Integer version;
+
+    @Column(name = "active")
     private Boolean active;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "submission_id", nullable = false)
+    private MarkEvidenceSubmission submission;
+
+    @ManyToOne
+    private MarkOccurrence suggestedOccurrence;
 
     @Enumerated(EnumType.STRING)
     private ProcessingStatus processingStatus;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "processing_error", columnDefinition = "TEXT")
     private String processingError;
 
     /**
@@ -48,11 +57,5 @@ public class DraftMarkEvidence extends BaseEntity {
         return Boolean.TRUE.equals(this.active) && this.processingStatus == ProcessingStatus.COMPLETED;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "submission_id", nullable = false)
-    private MarkEvidenceSubmission submission;
-
-    @ManyToOne
-    private MarkOccurrence suggestedOccurrence;
 
 }

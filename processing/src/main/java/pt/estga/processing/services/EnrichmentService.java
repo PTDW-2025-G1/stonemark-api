@@ -62,37 +62,53 @@ public class EnrichmentService {
                 return;
             }
 
+            // Recovery: if a previous run left the draft IN_PROGRESS for too long, consider it FAILED and proceed.
+            if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
+                // Use lastModifiedAt from AuditedEntity as heuristic when available.
+                if (draft.getLastModifiedAt() != null && draft.getLastModifiedAt().isBefore(java.time.Instant.now().minus(java.time.Duration.ofMinutes(10)))) {
+                    log.warn("Draft {} was IN_PROGRESS for too long - marking FAILED and attempting reprocess", draft.getId());
+                    draft.setProcessingStatus(ProcessingStatus.FAILED);
+                    draft.setProcessingError("Stale IN_PROGRESS state detected; marking FAILED for recovery");
+                    draftCommandService.update(draft);
+                } else {
+                    log.info("Draft {} is already IN_PROGRESS - skipping concurrent enrichment", draft.getId());
+                    return;
+                }
+            }
+
             // Mark the draft as in-progress and persist the change before running enrichers.
             draft.setProcessingStatus(ProcessingStatus.IN_PROGRESS);
             draftCommandService.update(draft);
 
             Long draftId = draft.getId();
 
-            boolean anySuccess = false;
+            boolean allSuccess = true;
 
             for (Enricher enricher : enrichers) {
                 try {
                     enricher.enrich(draftId);
-                    anySuccess = true; // treat successful return as progress
                 } catch (Exception e) {
+                    allSuccess = false;
                     log.warn("Enricher {} failed for draft {} - recording processing error and continuing", enricher.getClass().getSimpleName(), draftId, e);
 
-                    // Load the draft with lock and record processing error to avoid leaving it in an indeterminate state.
+                    // Append error message while preserving existing errors.
                     draftQueryService.findByIdForUpdate(draftId).ifPresent(d -> {
                         d.setProcessingStatus(ProcessingStatus.FAILED);
-                        d.setProcessingError(e.getMessage());
+                        String existing = d.getProcessingError();
+                        String appended = (existing == null || existing.isEmpty()) ? e.getMessage() : existing + "\n" + e.getMessage();
+                        d.setProcessingError(appended);
                         draftCommandService.update(d);
                     });
                 }
             }
 
-            // If at least one enricher succeeded mark as COMPLETED, otherwise mark as FAILED.
-            if (anySuccess) {
+            // If all enrichers succeeded mark as COMPLETED, otherwise mark as FAILED.
+            if (allSuccess) {
                 draft.setProcessingStatus(ProcessingStatus.COMPLETED);
                 draft.setProcessingError(null);
             } else {
                 draft.setProcessingStatus(ProcessingStatus.FAILED);
-                // processingError already set when individual enrichers failed; leave as-is if present
+                // processingError already accumulated per-enricher
             }
 
             draftCommandService.update(draft);

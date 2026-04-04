@@ -29,17 +29,32 @@ public class DraftMarkEvidenceCommandService {
         if (draft == null || draft.getSubmission() == null || draft.getSubmission().getId() == null) {
             throw new IllegalArgumentException("Draft and linked submission id must be provided");
         }
+        Long submissionId = draft.getSubmission().getId();
 
-        DraftMarkEvidence existing = repository.findBySubmissionId(draft.getSubmission().getId());
-        // If an active draft already exists for the submission, reuse it to avoid duplicates.
+        // First check without lock for quick path
+        DraftMarkEvidence existing = repository.findBySubmissionId(submissionId);
         if (existing != null && Boolean.TRUE.equals(existing.getActive())) return existing;
 
-        // Ensure sensible defaults for a freshly created draft.
-        if (draft.getActive() == null) draft.setActive(true);
-        if (draft.getVersion() == null) draft.setVersion(1);
-        if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
+        // Synchronize on interned submission id string to reduce duplicate creation in JVM.
+        synchronized (String.valueOf(submissionId).intern()) {
+            existing = repository.findBySubmissionId(submissionId);
+            if (existing != null && Boolean.TRUE.equals(existing.getActive())) return existing;
 
-        return repository.save(draft);
+            // Ensure sensible defaults for a freshly created draft.
+            if (draft.getActive() == null) draft.setActive(true);
+            if (draft.getVersion() == null) draft.setVersion(1);
+            if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
+
+            try {
+                return repository.save(draft);
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                // Another thread/process may have inserted the row concurrently; try to load it.
+                DraftMarkEvidence concurrent = repository.findBySubmissionId(submissionId);
+                if (concurrent != null) return concurrent;
+                // If still missing, rethrow as we cannot recover.
+                throw ex;
+            }
+        }
     }
 
     public DraftMarkEvidence update(DraftMarkEvidence draft) {
