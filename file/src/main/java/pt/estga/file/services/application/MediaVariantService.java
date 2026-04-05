@@ -28,7 +28,7 @@ public class MediaVariantService {
     }
 
     private String findVariantPath(Long mediaId, MediaVariantType type) {
-        log.info("Fetching variant path from DB for media ID: {} type: {}", mediaId, type);
+        log.debug("Fetching variant path from DB for media ID: {} type: {}", mediaId, type);
         return mediaVariantRepository.findByMediaFileIdAndType(mediaId, type)
                 .map(MediaVariant::getStoragePath)
                 .orElseThrow(() -> new FileNotFoundException(
