@@ -145,14 +145,14 @@ public class TelegramAdapter {
 
     private BotInput processImageFile(long chatId, String fileId, String fileName) {
         try {
-            log.info("Processing image file with ID: {} and name: {}", fileId, fileName);
+            log.debug("Processing image file with ID: {} and name: {}", fileId, fileName);
             File downloadedFile = fileService.downloadFile(fileId);
             if (downloadedFile == null || !downloadedFile.exists()) {
                 log.error("Failed to download file or file does not exist. File ID: {}", fileId);
                 return null;
             }
             byte[] photoData = Files.readAllBytes(downloadedFile.toPath());
-            log.info("Successfully read {} bytes from file {}", photoData.length, fileName);
+            log.debug("Successfully read {} bytes from file {}", photoData.length, fileName);
 
             return BotInput.builder()
                     .userId(String.valueOf(chatId))

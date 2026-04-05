@@ -38,7 +38,7 @@ public class VisionClient {
 
         // Determine the MediaType based on the filename
         MediaType fileMediaType = getMediaType(originalFilename);
-        log.info("Determined MediaType for file {}: {}", originalFilename, fileMediaType);
+        log.debug("Determined MediaType for file {}: {}", originalFilename, fileMediaType);
 
         // Use MultipartBodyBuilder to construct the request body
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
@@ -53,7 +53,7 @@ public class VisionClient {
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity =
                 new HttpEntity<>(builder.build(), headers);
 
-        log.info("Sending request to detection server at: {}", detectionServerUrl + "/process");
+        log.debug("Sending request to detection server at: {}", detectionServerUrl + "/process");
 
         // Use DetectionResult directly for the response
         ResponseEntity<DetectionResult> response = restTemplate.postForEntity(detectionServerUrl + "/process", requestEntity, DetectionResult.class);
@@ -79,7 +79,7 @@ public class VisionClient {
             } else if (lowerCaseFilename.endsWith(".png")) {
                 fileMediaType = MediaType.IMAGE_PNG;
             }
-            // Add other image types if necessary
+            // Other image types later
         }
         return fileMediaType;
     }
