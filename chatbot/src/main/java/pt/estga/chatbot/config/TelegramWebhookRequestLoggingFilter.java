@@ -53,7 +53,7 @@ public class TelegramWebhookRequestLoggingFilter extends OncePerRequestFilter {
         var wrapped = new CachedBodyHttpServletRequest(request, bodyBytes);
         int status = 0;
         try {
-            log.info("Incoming request {} {} to webhook path {}", request.getMethod(), request.getRequestURI(), webhookPath);
+            log.debug("Incoming request {} {} to webhook path {}", request.getMethod(), request.getRequestURI(), webhookPath);
             // Log headers of interest
             Collections.list(request.getHeaderNames()).forEach(name -> log.debug("Header: {}={} ", name, request.getHeader(name)));
 
@@ -77,7 +77,7 @@ public class TelegramWebhookRequestLoggingFilter extends OncePerRequestFilter {
                             telegramBot.onWebhookUpdateReceived(update);
                             wrapped.setAttribute("BOT_DISPATCHED", Boolean.TRUE);
                             status = HttpServletResponse.SC_OK;
-                            log.info("Filter handled callback_query and dispatched to bot");
+                            log.debug("Filter handled callback_query and dispatched to bot");
                             return;
                         } catch (Exception e) {
                             log.error("Filter dispatch error invoking bot", e);
@@ -104,19 +104,18 @@ public class TelegramWebhookRequestLoggingFilter extends OncePerRequestFilter {
             }
         } finally {
             // After chain, log request body (if any) and attach it to the request for downstream handlers.
-            byte[] buf = bodyBytes;
             String payload;
-            if (buf.length > 0) {
-                payload = new String(buf, StandardCharsets.UTF_8);
-                log.info("Telegram webhook request body: {}", payload);
+            if (bodyBytes.length > 0) {
+                payload = new String(bodyBytes, StandardCharsets.UTF_8);
+                log.debug("Telegram webhook request body length: {}", bodyBytes.length);
             } else {
                 payload = null;
-                log.info("Telegram webhook request body: <empty>");
+                log.debug("Telegram webhook request body: <empty>");
             }
 
             // Check whether controller set BOT_DISPATCHED attribute on the wrapped request.
             Object dispatched = wrapped.getAttribute("BOT_DISPATCHED");
-            log.info("BOT_DISPATCHED attribute after dispatch: {}", dispatched);
+            log.debug("BOT_DISPATCHED attribute after dispatch: {}", dispatched);
 
             // Controlled fallback: if controller did not handle the request (non-200) and
             // the payload contains a callback_query, parse and dispatch to the bot so
@@ -124,7 +123,7 @@ public class TelegramWebhookRequestLoggingFilter extends OncePerRequestFilter {
             // checking BOT_DISPATCHED attribute.
             if (status != 200 && payload != null && payload.contains("\"callback_query\"") && wrapped.getAttribute("BOT_DISPATCHED") == null) {
                 try {
-                    log.info("Controller returned {} for webhook; attempting fallback dispatch for callback_query", status);
+                    log.debug("Controller returned {} for webhook; attempting fallback dispatch for callback_query", status);
                     var parsed = objectMapper.readValue(payload, com.fasterxml.jackson.databind.JsonNode.class);
                     // Basic sanity check for presence of callback_query node
                     if (parsed != null && parsed.has("callback_query")) {
@@ -133,7 +132,7 @@ public class TelegramWebhookRequestLoggingFilter extends OncePerRequestFilter {
                             var update = objectMapper.treeToValue(parsed, org.telegram.telegrambots.meta.api.objects.Update.class);
                             telegramBot.onWebhookUpdateReceived(update);
                             wrapped.setAttribute("BOT_DISPATCHED", Boolean.TRUE);
-                            log.info("Fallback dispatch: delivered Update to bot");
+                            log.debug("Fallback dispatch: delivered Update to bot");
                         } catch (Exception e) {
                             log.error("Fallback dispatch: error invoking bot", e);
                         }

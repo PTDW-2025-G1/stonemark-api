@@ -36,7 +36,7 @@ public class MediaService {
     }
 
     public Resource loadFileById(UUID fileId) {
-        log.info("Loading file with ID: {}", fileId);
+        log.debug("Loading file with ID: {}", fileId);
         MediaFile mediaFile = mediaMetadataService.findById(fileId)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
         return loadFile(mediaFile);

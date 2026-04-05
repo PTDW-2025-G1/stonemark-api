@@ -40,8 +40,7 @@ vision:
 
 logging:
   level:
-    org.springframework: INFO
-    pt.estga: DEBUG
+    root: info
 
 application:
   base-url: https://api.stonemark.pt
@@ -67,6 +66,3 @@ management:
         liveness:
           include: [livenessState]
       validate-group-membership: false
-
-# Note: Prometheus metrics are enabled by adding micrometer-registry-prometheus dependency.
-# Secure actuator endpoints in production via network restrictions or Spring Security.

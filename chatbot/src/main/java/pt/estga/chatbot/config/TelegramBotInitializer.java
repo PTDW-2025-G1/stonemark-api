@@ -25,13 +25,13 @@ public class TelegramBotInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         String webhookUrl = baseUrl + webhookPath;
-        log.info("Setting Telegram webhook to: {}", webhookUrl);
+        log.debug("Setting Telegram webhook (url suppressed)");
 
         try {
             SetWebhook setWebhook = new SetWebhook();
             setWebhook.setUrl(webhookUrl);
             telegramBot.execute(setWebhook);
-            log.info("Telegram webhook set successfully");
+            log.debug("Telegram webhook set successfully");
         } catch (TelegramApiException e) {
             log.error("Error setting Telegram webhook: {}", e.getMessage());
         }
