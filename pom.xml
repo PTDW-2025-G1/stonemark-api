@@ -39,6 +39,7 @@
         <module>monument</module>
         <module>notification</module>
         <module>processing</module>
+        <module>review</module>
     </modules>
     <scm>
 		<connection/>

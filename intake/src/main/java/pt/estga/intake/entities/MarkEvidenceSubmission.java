@@ -29,9 +29,6 @@ public class MarkEvidenceSubmission {
     @OneToOne(fetch = FetchType.LAZY)
     private MediaFile originalMediaFile;
 
-    @Column(columnDefinition = "vector")
-    private float[] embedding;
-
     private Double latitude;
     private Double longitude;
 
