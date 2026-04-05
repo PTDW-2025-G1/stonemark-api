@@ -69,16 +69,6 @@ public class EnrichmentServiceTest {
         }
     }
 
-    private void setStaleTimeout(EnrichmentService svc, long minutes) {
-        try {
-            java.lang.reflect.Field f = EnrichmentService.class.getDeclaredField("staleTimeoutMinutes");
-            f.setAccessible(true);
-            f.setLong(svc, minutes);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     @BeforeEach
     public void setUp() {
         enricher = mock(Enricher.class);
@@ -96,9 +86,9 @@ public class EnrichmentServiceTest {
                 draftQueryService,
                 submissionQueryService,
                 mock(PlatformTransactionManager.class),
+                1L,
                 clock
         );
-        setStaleTimeout(service, 1L);
 
         submission = MarkEvidenceSubmission.builder().id(submissionId).build();
 
@@ -228,8 +218,7 @@ public class EnrichmentServiceTest {
             return null;
         }).when(working).enrich(any());
 
-        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), clock);
-        setStaleTimeout(service, 1L);
+        service = new EnrichmentService(List.of(failing, working), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 1L, clock);
         invokeInternal(service, submissionId);
 
         DraftMarkEvidence finalDraft = dbDraft.get();
@@ -245,8 +234,7 @@ public class EnrichmentServiceTest {
         doThrow(new RuntimeException("fail1")).when(e1).enrich(any());
         doThrow(new RuntimeException("fail2")).when(e2).enrich(any());
 
-        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), clock);
-        setStaleTimeout(service, 1L);
+        service = new EnrichmentService(List.of(e1, e2), draftCommandService, draftQueryService, submissionQueryService, mock(PlatformTransactionManager.class), 1L, clock);
         setDbEmbedding(null); // no embedding to force FAILED
         invokeInternal(service, submissionId);
 
