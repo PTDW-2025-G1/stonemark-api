@@ -69,6 +69,24 @@ public class VisionClient {
         return result;
     }
 
+    /**
+     * Lightweight health check against the vision server. Returns true when the
+     * configured health endpoint responds with a 2xx status.
+     */
+    public boolean isAvailable() {
+        if (detectionServerUrl == null || detectionServerUrl.isBlank()) {
+            log.debug("Vision server url not configured - treating as unavailable");
+            return false;
+        }
+        try {
+            ResponseEntity<Void> resp = restTemplate.getForEntity(detectionServerUrl + "/health", Void.class);
+            return resp.getStatusCode() != null && resp.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.debug("Vision health check failed", e);
+            return false;
+        }
+    }
+
     @NonNull
     private static MediaType getMediaType(String originalFilename) {
         MediaType fileMediaType = MediaType.APPLICATION_OCTET_STREAM;
