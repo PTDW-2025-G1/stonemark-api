@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,21 +20,21 @@ public class TelegramBotWebhook {
     public ResponseEntity<Void> handleUpdate(HttpServletRequest request, @RequestBody(required = false) Update update) {
         try {
             if (update == null) {
-                log.info("Received null Telegram update");
+                log.debug("Received null Telegram update");
             } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
-                log.info("Received Telegram callback query id={} data={}", update.getCallbackQuery().getId(), update.getCallbackQuery().getData());
+                log.debug("Received Telegram callback query id={}", update.getCallbackQuery().getId());
             } else if (update.hasMessage() && update.getMessage() != null) {
-                log.info("Received Telegram message updateId={} chatId={}", update.getUpdateId(), update.getMessage().getChatId());
+                log.debug("Received Telegram message updateId={} chatId={}", update.getUpdateId(), update.getMessage().getChatId());
             } else {
-                log.info("Received Telegram update: updateId={}", update.getUpdateId());
+                log.debug("Received Telegram update: updateId={}", update.getUpdateId());
             }
 
-            log.debug("Full Update payload: {}", update);
+            log.trace("Full Update payload: {}", update);
 
             // If the filter pre-dispatched the Update, avoid double-processing but still return OK
             Object dispatched = request.getAttribute("BOT_DISPATCHED");
             if (Boolean.TRUE.equals(dispatched)) {
-                log.info("Skipping controller dispatch because filter already dispatched the Update");
+                log.debug("Skipping controller dispatch because filter already dispatched the Update");
                 return ResponseEntity.ok().build();
             }
 

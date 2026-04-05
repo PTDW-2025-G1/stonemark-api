@@ -27,26 +27,26 @@ public class WhatsAppWebhookController {
     @PostMapping
     public ResponseEntity<Void> onMessage(@RequestBody WhatsAppWebhookPayload payload) {
         try {
-            log.info("Received WhatsApp payload: {}", payload);
+            log.debug("Received WhatsApp payload: {}", payload);
 
             BotInput input = WhatsAppMapper.toBotMessage(payload);
 
             if (input == null) {
-                log.info("Mapper returned null — no actionable message");
+                log.debug("Mapper returned null — no actionable message");
                 return ResponseEntity.ok().build();
             }
 
-            log.info("Mapped BotInput: {}", input);
+            log.debug("Mapped BotInput: {}", input);
 
             List<BotResponse> responses = botEngine.handleInput(input);
             if (responses == null || responses.isEmpty()) {
-                log.info("BotEngine returned no responses");
+                log.debug("BotEngine returned no responses");
                 return ResponseEntity.ok().build();
             }
 
             for (BotResponse response : responses) {
                 try {
-                    log.info("Sending message to {}: {}", input.getChatId(), response.getTextNode());
+                    log.debug("Sending message to {}", input.getChatId());
                     apiClient.sendMessage(String.valueOf(input.getChatId()), response);
                 } catch (Exception e) {
                     log.error("Failed to send message to {}: {}", input.getChatId(), response, e);
@@ -67,13 +67,10 @@ public class WhatsAppWebhookController {
             @RequestParam("hub.mode") String mode,
             @RequestParam("hub.challenge") String challenge,
             @RequestParam("hub.verify_token") String token) {
-
-        log.info("WhatsApp webhook verification request received");
-        log.info("Mode: {}, Challenge: {}, Token: {}", mode, challenge, token);
-        log.info("Expected token: {}", verifyToken);
+        log.debug("WhatsApp webhook verification request received (mode={})", mode);
 
         if ("subscribe".equals(mode) && verifyToken.equals(token)) {
-            log.info("WhatsApp webhook verification successful");
+            log.debug("WhatsApp webhook verification successful");
             return ResponseEntity.ok(challenge);
         } else {
             log.warn("WhatsApp webhook verification failed");
