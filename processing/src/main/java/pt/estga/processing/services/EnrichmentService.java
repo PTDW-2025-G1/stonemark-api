@@ -3,7 +3,6 @@ package pt.estga.processing.services;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -29,8 +28,7 @@ public class EnrichmentService {
     private final DraftMarkEvidenceQueryService draftQueryService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final PlatformTransactionManager txManager;
-    @Value("${processing.enrichment.stale-timeout-minutes:10}")
-    private long staleTimeoutMinutes;
+    private final long staleTimeoutMinutes;
     private final Clock clock;
 
     /**
@@ -42,16 +40,17 @@ public class EnrichmentService {
                              DraftMarkEvidenceQueryService draftQueryService,
                              MarkEvidenceSubmissionQueryService submissionQueryService,
                              PlatformTransactionManager txManager,
+                             @Value("${processing.enrichment.stale-timeout-minutes:10}") long staleTimeoutMinutes,
                              @Value("#{T(java.time.Clock).systemUTC()}") Clock clock) {
         this.enrichers = enrichers;
         this.draftCommandService = draftCommandService;
         this.draftQueryService = draftQueryService;
         this.submissionQueryService = submissionQueryService;
         this.txManager = txManager;
+        this.staleTimeoutMinutes = staleTimeoutMinutes;
         this.clock = clock;
     }
 
-    @Async
     public void enrichSubmission(Long submissionId) {
         enrichSubmissionInternal(submissionId);
     }

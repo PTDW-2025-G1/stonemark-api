@@ -4,14 +4,25 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.processing.repositories.DraftMarkEvidenceRepository;
 import pt.estga.processing.entities.DraftMarkEvidence;
+import pt.estga.processing.enums.ProcessingStatus;
 
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DraftMarkEvidenceQueryService {
 
     private final DraftMarkEvidenceRepository repository;
+    private final Clock clock;
+    @Value("${processing.enrichment.stale-timeout-minutes:10}")
+    private long staleTimeoutMinutes;
 
     public Optional<DraftMarkEvidence> findBySubmissionId(Long submissionId) {
         return Optional.ofNullable(repository.findBySubmissionId(submissionId));
@@ -19,6 +30,23 @@ public class DraftMarkEvidenceQueryService {
 
     public Optional<DraftMarkEvidence> findById(Long id) {
         return repository.findById(id);
+    }
+
+    /**
+     * Return IDs of drafts that are ready for processing.
+     * Criteria: processingStatus = QUEUED OR processingStatus = IN_PROGRESS but lastModifiedAt older than staleTimeoutMinutes.
+     */
+    public List<Long> findSubmissionsReadyForProcessing(Pageable pageable) {
+        Instant cutoff = Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes));
+        List<Long> draftIds = repository.findDraftIdsReadyForProcessing(pageable);
+        return draftIds.stream()
+                .filter(draftId -> repository.findById(draftId).map(d -> {
+                    if (d.getProcessingStatus() == ProcessingStatus.QUEUED) return true;
+                    if (d.getProcessingStatus() == ProcessingStatus.IN_PROGRESS)
+                        return d.getLastModifiedAt() == null || d.getLastModifiedAt().isBefore(cutoff);
+                    return false;
+                }).orElse(false))
+                .collect(Collectors.toList());
     }
 
     /**

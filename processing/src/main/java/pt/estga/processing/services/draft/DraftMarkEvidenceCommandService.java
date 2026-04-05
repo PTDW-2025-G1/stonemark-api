@@ -20,7 +20,7 @@ public class DraftMarkEvidenceCommandService {
         // Ensure newly created drafts have sensible defaults.
         if (draft.getActive() == null) draft.setActive(true);
         if (draft.getVersion() == null) draft.setVersion(1);
-        if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
+        if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.QUEUED);
 
         return repository.save(draft);
     }
@@ -43,7 +43,7 @@ public class DraftMarkEvidenceCommandService {
             // Ensure sensible defaults for a freshly created draft.
             if (draft.getActive() == null) draft.setActive(true);
             if (draft.getVersion() == null) draft.setVersion(1);
-            if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.PENDING);
+            if (draft.getProcessingStatus() == null) draft.setProcessingStatus(ProcessingStatus.QUEUED);
 
             try {
                 return repository.save(draft);

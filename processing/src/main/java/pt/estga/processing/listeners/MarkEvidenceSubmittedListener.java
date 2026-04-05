@@ -2,26 +2,34 @@ package pt.estga.processing.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.processing.services.EnrichmentService;
+import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
+import pt.estga.processing.entities.DraftMarkEvidence;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MarkEvidenceSubmittedListener {
 
-    private final EnrichmentService enrichmentService;
+    private final DraftMarkEvidenceCommandService draftCommandService;
+    private final MarkEvidenceSubmissionQueryService submissionQueryService;
 
-    @Async
+    /**
+     * After a submission is committed, ensure a processing draft exists and is queued.
+     * Actual enrichment is performed by the scheduled orchestrator.
+     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
         Long submissionId = event.getSubmissionId();
-        log.info("Async detection processing for submission ID: {}", submissionId);
+        log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
-        enrichmentService.enrichSubmission(submissionId);
+        submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
+            DraftMarkEvidence draft = DraftMarkEvidence.builder().submission(submission).build();
+            draftCommandService.createIfMissingForSubmission(draft);
+        }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));
     }
 }
