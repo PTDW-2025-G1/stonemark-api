@@ -7,6 +7,7 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.enums.ProcessingStatus;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -36,5 +37,8 @@ public class MarkEvidenceProcessing {
     private Instant failedAt;
 
     private String errorMessage;
+
+    @OneToMany(mappedBy = "processing")
+    List<MarkSuggestion> suggestions;
 
 }

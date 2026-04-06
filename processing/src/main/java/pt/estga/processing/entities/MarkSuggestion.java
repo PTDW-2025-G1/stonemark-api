@@ -5,7 +5,10 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
 import pt.estga.mark.entities.Mark;
+
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
@@ -17,7 +20,8 @@ public class MarkSuggestion {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator
+    private UUID id;
 
     @ManyToOne
     private MarkEvidenceProcessing processing;
@@ -27,5 +31,4 @@ public class MarkSuggestion {
 
     private double confidence;
 
-    private boolean isNewMarkSuggestion;
 }
