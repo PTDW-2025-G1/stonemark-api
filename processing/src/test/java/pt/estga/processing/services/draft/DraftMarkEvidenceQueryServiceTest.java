@@ -31,10 +31,10 @@ public class DraftMarkEvidenceQueryServiceTest {
 
         service = new DraftMarkEvidenceQueryService(repository, clock);
 
-        // set staleTimeoutMinutes field via reflection to 10
+        // set staleTimeoutMinutes field via reflection to a small value for faster tests
         Field f = DraftMarkEvidenceQueryService.class.getDeclaredField("staleTimeoutMinutes");
         f.setAccessible(true);
-        f.setLong(service, 10L);
+        f.setLong(service, 1L);
     }
 
     private DraftMarkEvidence buildDraft(long id, ProcessingStatus status, Instant lastModified) {
@@ -87,4 +87,3 @@ public class DraftMarkEvidenceQueryServiceTest {
         assertFalse(result.contains(2L));
     }
 }
-

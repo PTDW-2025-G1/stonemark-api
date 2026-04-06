@@ -3,6 +3,7 @@ package pt.estga.processing.services;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.entities.DraftMarkEvidence;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -28,20 +29,39 @@ public class EnrichmentService {
     private final DraftMarkEvidenceQueryService draftQueryService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final PlatformTransactionManager txManager;
-    private final long staleTimeoutMinutes;
+    @Value("${processing.enrichment.stale-timeout-minutes:10}")
+    private long staleTimeoutMinutes;
     private final Clock clock;
 
     /**
-     * Explicit constructor to allow injection of a configurable stale timeout for in-progress drafts.
-     * The property `processing.staleTimeoutMinutes` defaults to 10 when not provided.
+     * Explicit constructor to allow injection of required collaborators. The stale timeout is injected
+     * via field-level configuration property `processing.enrichment.stale-timeout-minutes` (defaults to 10).
      */
+    @Autowired
     public EnrichmentService(List<Enricher> enrichers,
                              DraftMarkEvidenceCommandService draftCommandService,
                              DraftMarkEvidenceQueryService draftQueryService,
                              MarkEvidenceSubmissionQueryService submissionQueryService,
                              PlatformTransactionManager txManager,
-                             @Value("${processing.enrichment.stale-timeout-minutes:10}") long staleTimeoutMinutes,
                              @Value("#{T(java.time.Clock).systemUTC()}") Clock clock) {
+        this.enrichers = enrichers;
+        this.draftCommandService = draftCommandService;
+        this.draftQueryService = draftQueryService;
+        this.submissionQueryService = submissionQueryService;
+        this.txManager = txManager;
+        this.clock = clock;
+    }
+
+    /**
+     * Convenience constructor for tests to allow passing a custom stale timeout.
+     */
+    EnrichmentService(List<Enricher> enrichers,
+                             DraftMarkEvidenceCommandService draftCommandService,
+                             DraftMarkEvidenceQueryService draftQueryService,
+                             MarkEvidenceSubmissionQueryService submissionQueryService,
+                             PlatformTransactionManager txManager,
+                             long staleTimeoutMinutes,
+                             Clock clock) {
         this.enrichers = enrichers;
         this.draftCommandService = draftCommandService;
         this.draftQueryService = draftQueryService;
@@ -71,20 +91,20 @@ public class EnrichmentService {
 
             // --- PRE-CHECK (no lock) ---
             if (draft.getProcessingStatus() == ProcessingStatus.COMPLETED) {
-                log.info("Draft {} submission {} already COMPLETED - skipping enrichment", draftId, submissionId);
+                log.info("action=enrich skip reason=already_completed draftId={} submissionId={}", draftId, submissionId);
                 return;
             }
             if (Boolean.FALSE.equals(draft.getActive())) {
-                log.info("Draft {} submission {} is inactive - skipping enrichment", draftId, submissionId);
+                log.info("action=enrich skip reason=inactive draftId={} submissionId={}", draftId, submissionId);
                 return;
             }
             if (draft.getProcessingStatus() == ProcessingStatus.IN_PROGRESS) {
                 Instant last = draft.getLastModifiedAt();
                 if (last != null && last.isAfter(now.minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
-                    log.info("Draft {} submission {} already IN_PROGRESS - skipping concurrent enrichment", draftId, submissionId);
+                    log.info("action=enrich skip reason=concurrent_in_progress draftId={} submissionId={}", draftId, submissionId);
                     return;
                 }
-                log.warn("Draft {} submission {} IN_PROGRESS is stale - will attempt recovery", draftId, submissionId);
+                log.warn("action=enrich warning=stale_in_progress draftId={} submissionId={}", draftId, submissionId);
             }
 
             // --- MARK IN_PROGRESS (REQUIRES_NEW) ---
@@ -97,8 +117,8 @@ public class EnrichmentService {
                     enricher.enrich(draftId);
                 } catch (Exception e) {
                     String msg = e.getMessage() == null ? e.toString() : e.getMessage();
-                    log.warn("Enricher {} failed for draft {} submission {} - collecting error",
-                            enricher.getClass().getSimpleName(), draftId, submissionId, e);
+                    log.warn("action=enrich enricher={} warning=failed draftId={} submissionId={} error={}",
+                            enricher.getClass().getSimpleName(), draftId, submissionId, msg, e);
                     errors.add(msg);
                 }
             }
@@ -106,7 +126,7 @@ public class EnrichmentService {
             // --- FINALIZE DRAFT (REQUIRES_NEW) ---
             finalizeDraftTx(draftId, errors);
 
-        }, () -> log.warn("Submission with id {} not found - skipping enrichment", submissionId));
+        }, () -> log.warn("action=enrich warning=submission_not_found submissionId={}", submissionId));
     }
 
     public void markInProgressTx(Long draftId) {
@@ -116,7 +136,7 @@ public class EnrichmentService {
                 Instant last = draft.getLastModifiedAt();
                 if (last == null || last.isBefore(now.minus(Duration.ofMinutes(staleTimeoutMinutes)))) {
                     Long submissionId = getSubmissionId(draft);
-                    log.warn("Stale IN_PROGRESS detected for draft {} submission {} - appending recovery error", draft.getId(), submissionId);
+                    log.warn("action=markInProgress warning=stale_in_progress draftId={} submissionId={}", draft.getId(), submissionId);
                     appendError(draft, "Stale IN_PROGRESS detected - attempting recovery");
                 } else {
                     // Already in progress and not stale
@@ -133,7 +153,7 @@ public class EnrichmentService {
 
     private void appendError(DraftMarkEvidence draft, String error) {
         Long submissionId = getSubmissionId(draft);
-        log.warn("Appending processing error to draft {} submission {}: {}", draft.getId(), submissionId, error);
+        log.warn("action=appendError draftId={} submissionId={} error={}", draft.getId(), submissionId, error);
         String merged = mergeErrors(draft, java.util.List.of(error));
         draft.setProcessingError(merged);
     }
@@ -168,11 +188,12 @@ public class EnrichmentService {
                 if (merged == null || merged.isEmpty()) merged = "Missing embedding after enrichment";
                 draft.setProcessingStatus(ProcessingStatus.FAILED);
                 draft.setProcessingError(merged);
-                log.warn("Finalizing draft {} submission {} marked FAILED. Errors: {}", draft.getId(), submissionId, merged);
+                // Structured warning with merged errors for easier debugging
+                log.warn("action=finalize outcome=FAILED draftId={} submissionId={} errors={}", draft.getId(), submissionId, merged);
             } else {
                 draft.setProcessingStatus(ProcessingStatus.COMPLETED);
                 draft.setProcessingError(null);
-                log.info("Finalizing draft {} submission {} marked COMPLETED", draft.getId(), submissionId);
+                log.info("action=finalize outcome=COMPLETED draftId={} submissionId={}", draft.getId(), submissionId);
             }
 
             draftCommandService.update(draft);

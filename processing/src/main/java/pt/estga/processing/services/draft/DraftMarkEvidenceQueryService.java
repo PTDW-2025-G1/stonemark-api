@@ -1,6 +1,7 @@
 package pt.estga.processing.services.draft;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.processing.repositories.DraftMarkEvidenceRepository;
 import pt.estga.processing.entities.DraftMarkEvidence;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DraftMarkEvidenceQueryService {
 
     private final DraftMarkEvidenceRepository repository;
@@ -39,7 +41,9 @@ public class DraftMarkEvidenceQueryService {
     public List<Long> findSubmissionsReadyForProcessing(Pageable pageable) {
         Instant cutoff = Instant.now(clock).minus(Duration.ofMinutes(staleTimeoutMinutes));
         List<Long> draftIds = repository.findDraftIdsReadyForProcessing(pageable);
-        return draftIds.stream()
+        if (log.isDebugEnabled()) log.debug("Repository returned {} candidate draft ids: {}", draftIds == null ? 0 : draftIds.size(), draftIds);
+
+        List<Long> filtered = draftIds.stream()
                 .filter(draftId -> repository.findById(draftId).map(d -> {
                     if (d.getProcessingStatus() == ProcessingStatus.QUEUED) return true;
                     if (d.getProcessingStatus() == ProcessingStatus.IN_PROGRESS)
@@ -47,6 +51,9 @@ public class DraftMarkEvidenceQueryService {
                     return false;
                 }).orElse(false))
                 .collect(Collectors.toList());
+
+        if (log.isDebugEnabled()) log.debug("After filtering by status/cutoff ({}), returning {} draft ids: {}", staleTimeoutMinutes, filtered.size(), filtered);
+        return filtered;
     }
 
     /**
