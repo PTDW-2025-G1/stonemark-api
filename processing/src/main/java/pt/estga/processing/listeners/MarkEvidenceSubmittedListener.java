@@ -7,15 +7,12 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
-import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
-import pt.estga.processing.entities.DraftMarkEvidence;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MarkEvidenceSubmittedListener {
 
-    private final DraftMarkEvidenceCommandService draftCommandService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
 
     /**
@@ -28,8 +25,7 @@ public class MarkEvidenceSubmittedListener {
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
-            DraftMarkEvidence draft = DraftMarkEvidence.builder().submission(submission).build();
-            draftCommandService.createIfMissingForSubmission(draft);
+            // initiate processing here
         }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));
     }
 }
