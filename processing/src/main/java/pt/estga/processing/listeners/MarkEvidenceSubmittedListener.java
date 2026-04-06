@@ -7,6 +7,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -14,6 +15,7 @@ import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 public class MarkEvidenceSubmittedListener {
 
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
+    private final MarkEvidenceProcessingRepository processingRepository;
 
     /**
      * After a submission is committed, ensure a processing draft exists and is queued.
@@ -23,6 +25,10 @@ public class MarkEvidenceSubmittedListener {
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
         Long submissionId = event.getSubmissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
+
+        if (processingRepository.existsBySubmissionId(submissionId)) {
+            return; // already processed or in progress
+        }
 
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
             // initiate processing here
