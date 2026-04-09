@@ -2,9 +2,10 @@ package pt.estga.processing.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
+import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
@@ -23,8 +25,10 @@ import java.util.stream.Collectors;
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
-    // Tunable threshold to filter out poor matches. Keep as a constant for now; consider making configurable later.
-    private static final double DISTANCE_THRESHOLD = 0.8;
+    // Tunable threshold to filter out poor matches. Configurable via application properties.
+    @Value("${processing.similarity.max-distance:0.8}")
+    private double distanceThreshold;
+    private final MarkOccurrenceRepository occurrenceRepository;
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -41,11 +45,20 @@ public class SimilarityService {
         }
 
         // Preserve ordering from the distance query by iterating over projections.
-        List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toList());
 
-        // Load occurrences and marks with a single fetch-join query to avoid N+1 lazy loads.
-        List<MarkEvidence> evidences = evidenceRepository.findAllWithOccurrenceAndMarkByIdIn(ids);
-        Map<UUID, MarkEvidence> evidenceById = evidences.stream().collect(Collectors.toMap(MarkEvidence::getId, e -> e));
+        // Instead of loading full MarkEvidence entities, load only occurrences with their marks
+        // using the occurrence ids returned by the projection. This avoids over-fetching.
+        List<Long> occurrenceIds = hits.stream()
+                .map(MarkEvidenceDistanceProjection::getOccurrenceId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, Mark> markByOccurrenceId = Map.of();
+        if (!occurrenceIds.isEmpty()) {
+            List<pt.estga.mark.entities.MarkOccurrence> occurrences = occurrenceRepository.findAllWithMarkByIdIn(occurrenceIds);
+            markByOccurrenceId = occurrences.stream().collect(Collectors.toMap(pt.estga.mark.entities.MarkOccurrence::getId, pt.estga.mark.entities.MarkOccurrence::getMark));
+        }
 
         Set<UUID> seen = new HashSet<>();
         for (int idx = 0; idx < hits.size(); idx++) {
@@ -56,16 +69,17 @@ public class SimilarityService {
                 continue;
             }
 
-            MarkEvidence e = evidenceById.get(id);
-            if (e == null) {
+            // We avoid loading the full MarkEvidence entity. Use occurrenceId from projection to find the mark.
+            Long occurrenceId = p.getOccurrenceId();
+            if (occurrenceId == null) {
                 continue;
             }
 
-            if (e.getOccurrence() == null || e.getOccurrence().getMark() == null) {
+            Mark mark = markByOccurrenceId.get(occurrenceId);
+            if (mark == null) {
                 continue;
             }
 
-            Mark mark = e.getOccurrence().getMark();
 
             Double distance = p.getDistance();
             if (distance == null) {
@@ -73,7 +87,7 @@ public class SimilarityService {
             }
 
             // Apply simple quality filter to drop poor matches (tunable threshold).
-            if (distance > DISTANCE_THRESHOLD) {
+            if (distance > distanceThreshold) {
                 continue;
             }
 
