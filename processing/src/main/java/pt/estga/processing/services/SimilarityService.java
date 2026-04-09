@@ -34,14 +34,21 @@ public class SimilarityService {
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
+        if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
+            log.warn("Processing {} has no embedding, skipping similarity", processing == null ? "null" : processing.getId());
+            return List.of();
+        }
+
         String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
 
         // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
         List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, null, k);
 
         if (log.isDebugEnabled()) {
-            List<Double> distances = hits.stream().map(MarkEvidenceDistanceProjection::getDistance).toList();
-            log.debug("Top {} distances: {}", hits.size(), distances);
+            log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()
+                    .map(MarkEvidenceDistanceProjection::getDistance)
+                    .limit(5)
+                    .toList());
         }
 
         Map<Mark, Double> scores = new HashMap<>();
@@ -118,7 +125,12 @@ public class SimilarityService {
                 .map(entry -> {
                     Mark mark = entry.getKey();
                     double totalScore = entry.getValue();
-                    double weightSum = weightSums.getOrDefault(mark, 1.0);
+                    Double weightSum = weightSums.get(mark);
+                    if (weightSum == null || weightSum == 0.0) {
+                        // This should never happen — signal an invariant violation so it can be investigated.
+                        log.warn("Invariant violation: weightSum missing for mark {}", mark.getId());
+                        return null;
+                    }
 
                     // Normalize by the total weight to produce a weighted average confidence.
                     double confidence = totalScore / weightSum;
@@ -129,6 +141,7 @@ public class SimilarityService {
                             .confidence(confidence)
                             .build();
                 })
+                .filter(Objects::nonNull)
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
