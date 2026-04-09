@@ -1,6 +1,7 @@
 package pt.estga.processing.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
@@ -37,8 +39,14 @@ public class SimilarityService {
         // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
         List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, null, k);
 
+        if (log.isDebugEnabled()) {
+            List<Double> distances = hits.stream().map(MarkEvidenceDistanceProjection::getDistance).toList();
+            log.debug("Top {} distances: {}", hits.size(), distances);
+        }
+
         Map<Mark, Double> scores = new HashMap<>();
-        Map<Mark, Integer> counts = new HashMap<>();
+        // Sum of weights per mark — used to normalize weighted scores into a confidence value.
+        Map<Mark, Double> weightSums = new HashMap<>();
 
         if (hits.isEmpty()) {
             return List.of();
@@ -99,7 +107,7 @@ public class SimilarityService {
             double weighted = similarity * weight;
 
             scores.merge(mark, weighted, Double::sum);
-            counts.merge(mark, 1, Integer::sum);
+            weightSums.merge(mark, weight, Double::sum);
         }
 
         if (scores.isEmpty()) {
@@ -110,9 +118,10 @@ public class SimilarityService {
                 .map(entry -> {
                     Mark mark = entry.getKey();
                     double totalScore = entry.getValue();
-                    int count = counts.get(mark);
+                    double weightSum = weightSums.getOrDefault(mark, 1.0);
 
-                    double confidence = totalScore / count; // average
+                    // Normalize by the total weight to produce a weighted average confidence.
+                    double confidence = totalScore / weightSum;
 
                     return MarkSuggestion.builder()
                             .processing(processing)
