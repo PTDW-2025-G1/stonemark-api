@@ -6,4 +6,5 @@ import pt.estga.processing.entities.MarkSuggestion;
 import java.util.UUID;
 
 public interface MarkSuggestionRepository extends JpaRepository<MarkSuggestion, UUID> {
+	void deleteByProcessingId(UUID processingId);
 }
