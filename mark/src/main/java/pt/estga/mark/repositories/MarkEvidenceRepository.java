@@ -26,4 +26,12 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 			@Param("occurrenceId") Long occurrenceId,
 			@Param("k") int k
 	);
+
+	@Query("""
+	SELECT me FROM MarkEvidence me
+	JOIN FETCH me.occurrence o
+	JOIN FETCH o.mark
+	WHERE me.id IN :ids
+	""")
+	List<MarkEvidence> findAllWithOccurrenceAndMarkByIdIn(@Param("ids") List<UUID> ids);
 }

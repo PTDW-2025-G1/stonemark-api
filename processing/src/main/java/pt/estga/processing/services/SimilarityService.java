@@ -39,7 +39,8 @@ public class SimilarityService {
         // Preserve ordering from the distance query by iterating over projections.
         List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toList());
 
-        List<MarkEvidence> evidences = evidenceRepository.findAllById(ids);
+        // Load occurrences and marks with a single fetch-join query to avoid N+1 lazy loads.
+        List<MarkEvidence> evidences = evidenceRepository.findAllWithOccurrenceAndMarkByIdIn(ids);
         Map<UUID, MarkEvidence> evidenceById = evidences.stream().collect(Collectors.toMap(MarkEvidence::getId, e -> e));
 
         for (MarkEvidenceDistanceProjection p : hits) {
@@ -60,11 +61,20 @@ public class SimilarityService {
                 continue;
             }
 
-            // Convert distance to similarity in range (0,1], higher is better.
-            double similarity = 1.0 / (1.0 + distance);
+            // Apply simple quality filter to drop poor matches (tunable threshold).
+            if (distance > 0.8) {
+                continue;
+            }
+
+            // Convert distance to similarity. Use exponential decay for sharper separation.
+            double similarity = Math.exp(-distance);
 
             scores.merge(mark, similarity, Double::sum);
             counts.merge(mark, 1, Integer::sum);
+        }
+
+        if (scores.isEmpty()) {
+            return List.of();
         }
 
         return scores.entrySet().stream()
