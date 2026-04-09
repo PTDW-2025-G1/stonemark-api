@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
+    // Tunable threshold to filter out poor matches. Keep as a constant for now; consider making configurable later.
+    private static final double DISTANCE_THRESHOLD = 0.8;
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -43,8 +47,15 @@ public class SimilarityService {
         List<MarkEvidence> evidences = evidenceRepository.findAllWithOccurrenceAndMarkByIdIn(ids);
         Map<UUID, MarkEvidence> evidenceById = evidences.stream().collect(Collectors.toMap(MarkEvidence::getId, e -> e));
 
-        for (MarkEvidenceDistanceProjection p : hits) {
+        Set<UUID> seen = new HashSet<>();
+        for (int idx = 0; idx < hits.size(); idx++) {
+            MarkEvidenceDistanceProjection p = hits.get(idx);
             UUID id = p.getId();
+            // Deduplicate repeated evidence ids if present
+            if (!seen.add(id)) {
+                continue;
+            }
+
             MarkEvidence e = evidenceById.get(id);
             if (e == null) {
                 continue;
@@ -62,14 +73,18 @@ public class SimilarityService {
             }
 
             // Apply simple quality filter to drop poor matches (tunable threshold).
-            if (distance > 0.8) {
+            if (distance > DISTANCE_THRESHOLD) {
                 continue;
             }
 
             // Convert distance to similarity. Use exponential decay for sharper separation.
             double similarity = Math.exp(-distance);
 
-            scores.merge(mark, similarity, Double::sum);
+            // Weight contribution by rank (DB order). This gives higher-ranked evidence more influence.
+            double weight = 1.0 / (1 + idx); // idx==0 => weight 1.0
+            double weighted = similarity * weight;
+
+            scores.merge(mark, weighted, Double::sum);
             counts.merge(mark, 1, Integer::sum);
         }
 
