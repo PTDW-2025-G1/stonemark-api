@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
+import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
@@ -12,6 +13,8 @@ import pt.estga.shared.utils.VectorUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,12 +25,29 @@ public class SimilarityService {
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
         String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
-        List<MarkEvidence> evidences = evidenceRepository.findTopKSimilarEvidence(vector, null, k);
+
+        // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
+        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, null, k);
 
         Map<Mark, Double> scores = new HashMap<>();
         Map<Mark, Integer> counts = new HashMap<>();
 
-        for (MarkEvidence e : evidences) {
+        if (hits.isEmpty()) {
+            return List.of();
+        }
+
+        // Preserve ordering from the distance query by iterating over projections.
+        List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toList());
+
+        List<MarkEvidence> evidences = evidenceRepository.findAllById(ids);
+        Map<UUID, MarkEvidence> evidenceById = evidences.stream().collect(Collectors.toMap(MarkEvidence::getId, e -> e));
+
+        for (MarkEvidenceDistanceProjection p : hits) {
+            UUID id = p.getId();
+            MarkEvidence e = evidenceById.get(id);
+            if (e == null) {
+                continue;
+            }
 
             if (e.getOccurrence() == null || e.getOccurrence().getMark() == null) {
                 continue;
@@ -35,9 +55,15 @@ public class SimilarityService {
 
             Mark mark = e.getOccurrence().getMark();
 
-            double score = 1.0;
+            Double distance = p.getDistance();
+            if (distance == null) {
+                continue;
+            }
 
-            scores.merge(mark, score, Double::sum);
+            // Convert distance to similarity in range (0,1], higher is better.
+            double similarity = 1.0 / (1.0 + distance);
+
+            scores.merge(mark, similarity, Double::sum);
             counts.merge(mark, 1, Integer::sum);
         }
 
