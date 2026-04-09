@@ -1,0 +1,4 @@
+processing:
+  similarity:
+    # Maximum pgvector distance to accept a match. Tune this per embedding model/dimension.
+    max-distance: 0.8
