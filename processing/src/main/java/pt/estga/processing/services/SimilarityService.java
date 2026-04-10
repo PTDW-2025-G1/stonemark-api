@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
@@ -31,6 +30,12 @@ public class SimilarityService {
     private double minSimilarity;
     @Value("${processing.similarity.max-distance:0.8}")
     private double maxDistance;
+    /**
+     * If true, apply a small rank-based weight to evidence contributions. When false, all
+     * evidence contributions are treated equally (pure similarity aggregation).
+     */
+    @Value("${processing.similarity.use-rank-weighting:true}")
+    private boolean useRankWeighting;
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -69,7 +74,12 @@ public class SimilarityService {
         Map<UUID, Mark> markByEvidenceId = Map.of();
         if (!idSet.isEmpty()) {
             List<EvidenceMarkProjection> rows = evidenceRepository.findMarksByEvidenceIds(List.copyOf(idSet));
-            markByEvidenceId = rows.stream().collect(Collectors.toMap(EvidenceMarkProjection::getId, EvidenceMarkProjection::getMark));
+            // Use a safe merge function to tolerate duplicate keys in case of bad data or join issues.
+            markByEvidenceId = rows.stream().collect(Collectors.toMap(
+                    EvidenceMarkProjection::getId,
+                    EvidenceMarkProjection::getMark,
+                    (a, b) -> a
+            ));
         }
 
         Set<UUID> seen = new HashSet<>();
@@ -97,8 +107,8 @@ public class SimilarityService {
             // Apply simple quality filter using a configurable minimum similarity
             if (similarity < minSimilarity) continue;
 
-            // Weight contribution by rank (DB order). Higher-ranked evidence has more influence.
-            double weight = 1.0 / (1 + idx);
+            // Weight contribution by rank (DB order) if enabled. Otherwise treat all hits equally.
+            double weight = useRankWeighting ? 1.0 / (1 + idx) : 1.0;
             double weighted = similarity * weight;
 
             scores.merge(mark, weighted, Double::sum);
@@ -110,15 +120,20 @@ public class SimilarityService {
         }
 
         return scores.entrySet().stream()
+                // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
+                .filter(entry -> {
+                    Mark mark = entry.getKey();
+                    Double weightSum = weightSums.get(mark);
+                    if (weightSum == null || weightSum == 0.0) {
+                        log.warn("Invariant violation: weightSum missing for mark {}", mark.getId());
+                        return false;
+                    }
+                    return true;
+                })
                 .map(entry -> {
                     Mark mark = entry.getKey();
                     double totalScore = entry.getValue();
-                    Double weightSum = weightSums.get(mark);
-                    if (weightSum == null || weightSum == 0.0) {
-                        // This should never happen — signal an invariant violation so it can be investigated.
-                        log.warn("Invariant violation: weightSum missing for mark {}", mark.getId());
-                        return null;
-                    }
+                    double weightSum = weightSums.get(mark);
 
                     // Normalize by the total weight to produce a weighted average confidence.
                     double confidence = totalScore / weightSum;
@@ -129,7 +144,6 @@ public class SimilarityService {
                             .confidence(confidence)
                             .build();
                 })
-                .filter(Objects::nonNull)
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
