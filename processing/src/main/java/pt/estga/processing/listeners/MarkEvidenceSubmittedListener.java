@@ -8,7 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.AsyncProcessingService;
+import pt.estga.processing.services.processing.AsyncProcessingService;
 
 @Component
 @RequiredArgsConstructor

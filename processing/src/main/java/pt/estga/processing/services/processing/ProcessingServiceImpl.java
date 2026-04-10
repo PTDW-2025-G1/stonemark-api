@@ -1,4 +1,4 @@
-package pt.estga.processing.services;
+package pt.estga.processing.services.processing;
 
 import jakarta.persistence.LockTimeoutException;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -15,6 +15,7 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.services.SimilarityService;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.services.MediaContentService;
 import io.micrometer.core.instrument.MeterRegistry;
