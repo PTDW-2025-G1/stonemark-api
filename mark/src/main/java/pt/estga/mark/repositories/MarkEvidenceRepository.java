@@ -1,6 +1,7 @@
 package pt.estga.mark.repositories;
 
 import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.shared.repositories.BaseRepository;
 
@@ -28,18 +29,10 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	);
 
 	@Query("""
-	SELECT me FROM MarkEvidence me
-	JOIN FETCH me.occurrence o
-	JOIN FETCH o.mark
-	WHERE me.id IN :ids
-	""")
-	List<MarkEvidence> findAllWithOccurrenceAndMarkByIdIn(@Param("ids") List<UUID> ids);
-
-	@Query("""
-	SELECT e.id, m FROM MarkEvidence e
+	SELECT e.id as id, m as mark FROM MarkEvidence e
 	JOIN e.occurrence o
 	JOIN o.mark m
 	WHERE e.id IN :ids
 	""")
-	List<Object[]> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
+	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 }

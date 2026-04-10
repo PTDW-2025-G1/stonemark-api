@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
+import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
@@ -61,11 +62,12 @@ public class SimilarityService {
         // We rely on DB to compute cosine distance (pgvector). The projection returned by
         // findTopKSimilarEvidence contains the distance value. Convert distance -> similarity
         // and fetch only the lightweight (id, mark) mapping for aggregation.
-        List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).distinct().toList();
+        // Collect unique evidence ids to fetch lightweight mark mapping once.
+        Set<UUID> idSet = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toSet());
         Map<UUID, Mark> markByEvidenceId = Map.of();
-        if (!ids.isEmpty()) {
-            List<Object[]> rows = evidenceRepository.findMarksByEvidenceIds(ids);
-            markByEvidenceId = rows.stream().collect(Collectors.toMap(r -> (UUID) r[0], r -> (Mark) r[1]));
+        if (!idSet.isEmpty()) {
+            List<EvidenceMarkProjection> rows = evidenceRepository.findMarksByEvidenceIds(List.copyOf(idSet));
+            markByEvidenceId = rows.stream().collect(Collectors.toMap(EvidenceMarkProjection::getId, EvidenceMarkProjection::getMark));
         }
 
         Set<UUID> seen = new HashSet<>();
