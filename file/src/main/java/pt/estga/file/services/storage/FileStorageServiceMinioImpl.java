@@ -28,7 +28,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
 
     @Override
     public String storeFile(InputStream fileStream, String filename) {
-        log.info("Storing file with filename: {}", filename);
+        log.debug("Storing file with filename: {}", filename);
         if (fileStream == null) {
             log.error("Cannot store empty file stream");
             throw new FileStorageException("Cannot store empty file stream");
@@ -45,7 +45,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
                             .build()
             );
 
-            log.info("File stored successfully with object name: {}", filename);
+            log.debug("File stored successfully with object name: {}", filename);
             return filename;
         } catch (MinioException e) {
             log.error("Failed to store file in MinIO", e);
@@ -75,7 +75,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
 
     @Override
     public void deleteFile(String path) {
-        log.info("Deleting file from path: {}", path);
+        log.debug("Deleting file from path: {}", path);
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
@@ -83,7 +83,7 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
                             .object(path)
                             .build()
             );
-            log.info("File deleted successfully from path: {}", path);
+            log.debug("File deleted successfully from path: {}", path);
         } catch (MinioException e) {
             log.error("Could not delete file from MinIO with path: {}", path, e);
             throw new FileStorageException("Could not delete file from MinIO", e);

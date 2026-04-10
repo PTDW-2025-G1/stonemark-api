@@ -39,7 +39,7 @@ public class TelegramNotificationService implements MessengerNotificationService
             }
 
             telegramBot.execute(sendMessage);
-            log.info("Notification sent to Telegram user: {}", recipientId);
+            log.debug("Notification sent to Telegram user: {}", recipientId);
         } catch (TelegramApiException e) {
             log.error("Failed to send notification to Telegram user {}: {}", recipientId, e.getMessage());
         }
@@ -62,7 +62,7 @@ public class TelegramNotificationService implements MessengerNotificationService
                     .build();
 
             telegramBot.dispatchAndSend(menuInput);
-            log.info("Main menu dispatched and sent to Telegram user: {}", recipientId);
+            log.debug("Main menu dispatched and sent to Telegram user: {}", recipientId);
         } catch (NumberFormatException e) {
             log.error("Invalid telegram recipient id '{}': {}", recipientId, e.getMessage());
         }

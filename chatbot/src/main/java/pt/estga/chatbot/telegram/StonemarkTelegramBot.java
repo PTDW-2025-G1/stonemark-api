@@ -62,8 +62,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        log.info("onWebhookUpdateReceived invoked for updateId={}", update == null ? "<null>" : update.getUpdateId());
-        // Synchronous quick-handling: log update type and immediately acknowledge callback queries
+        log.debug("onWebhookUpdateReceived invoked for updateId={}", update == null ? "<null>" : update.getUpdateId());
         try {
             if (update == null) {
                 log.warn("Received null Telegram update");
@@ -81,7 +80,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                     AnswerCallbackQuery ack = new AnswerCallbackQuery(callbackId);
                     ack.setText("");
                     execute(ack);
-                    log.info("Sent AnswerCallbackQuery ack for id={}", callbackId);
+                    log.debug("Sent AnswerCallbackQuery ack for id={}", callbackId);
                 } catch (TelegramApiException e) {
                     String msg = e.getMessage();
                     if (msg != null && msg.contains("query is too old")) {

@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    include: chatbot, notification, file, security
+    include: chatbot, notification, file, security, processing
   servlet:
     multipart:
       max-file-size: 50MB
@@ -67,6 +67,3 @@ management:
         liveness:
           include: [livenessState]
       validate-group-membership: false
-
-# Note: Prometheus metrics are enabled by adding micrometer-registry-prometheus dependency.
-# Secure actuator endpoints in production via network restrictions or Spring Security.

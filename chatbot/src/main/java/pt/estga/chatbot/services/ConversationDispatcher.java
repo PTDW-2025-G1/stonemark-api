@@ -60,7 +60,7 @@ public class ConversationDispatcher {
 
         // Determine the next state.
         ConversationState nextState = submissionFlow.getNextState(context, currentState, outcome);
-        log.info("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
+        log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         context.setCurrentState(nextState);
 
         // If the next state is automatic, execute it first to populate context before generating response
@@ -77,7 +77,7 @@ public class ConversationDispatcher {
             // If automatic handler needs state transition, handle it recursively
             if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
                 ConversationState autoNextState = submissionFlow.getNextState(context, nextState, autoOutcome);
-                log.info("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
+                log.debug("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
                 context.setCurrentState(autoNextState);
             }
         }

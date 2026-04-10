@@ -29,7 +29,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
         // Store code in context to display
         context.setVerificationCode(actionCode.getCode());
 
-        log.info("Generated verification code for platform user: {}", platformUserId);
+        log.debug("Generated verification code for platform user: {}", platformUserId);
 
         return HandlerOutcome.SUCCESS;
     }

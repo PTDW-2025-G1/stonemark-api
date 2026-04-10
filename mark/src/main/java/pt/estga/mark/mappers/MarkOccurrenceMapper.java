@@ -19,16 +19,13 @@ public interface MarkOccurrenceMapper {
 
     @Mapping(source = "markId", target = "mark.id")
     @Mapping(source = "monumentId", target = "monument.id")
-    @Mapping(target = "embedding", ignore = true)
     MarkOccurrence toEntity(MarkOccurrenceRequestDto dto);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "markId", target = "mark.id")
-    @Mapping(target = "embedding", ignore = true)
     void updateFromRequest(MarkOccurrenceRequestDto dto, @MappingTarget MarkOccurrence entity);
     
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(source = "markId", target = "mark.id")
-    @Mapping(target = "embedding", ignore = true)
     void updateEntityFromDto(MarkOccurrenceDto dto, @MappingTarget MarkOccurrence entity);
 }

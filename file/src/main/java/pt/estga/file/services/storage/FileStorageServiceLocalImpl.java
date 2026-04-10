@@ -26,7 +26,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
         this.rootPath = Paths.get(rootDir).toAbsolutePath().normalize();
 
         try {
-            log.info("Creating storage directory at: {}", rootPath);
+            log.debug("Creating storage directory at: {}", rootPath);
             Files.createDirectories(rootPath);
         } catch (IOException e) {
             log.error("Could not initialize storage directory", e);
@@ -36,7 +36,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
 
     @Override
     public String storeFile(InputStream fileStream, String filename) {
-        log.info("Storing file with filename: {}", filename);
+        log.debug("Storing file with filename: {}", filename);
         if (fileStream == null) {
             log.error("Cannot store empty file stream");
             throw new FileStorageException("Cannot store empty file stream");
@@ -63,7 +63,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
             // Return the relative path (which is the filename passed in)
             // Ensure we use forward slashes for consistency
             String relativePath = filename.replace("\\", "/");
-            log.info("File stored successfully at: {}", relativePath);
+            log.debug("File stored successfully at: {}", relativePath);
             return relativePath;
 
         } catch (IOException e) {
@@ -74,7 +74,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
 
     @Override
     public Resource loadFile(String path) {
-        log.info("Loading file from path: {}", path);
+        log.debug("Loading file from path: {}", path);
         try {
             Path filePath = rootPath.resolve(path).normalize();
             Resource resource = new UrlResource(filePath.toUri());
@@ -84,7 +84,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
                 throw new FileNotFoundException("File not found: " + path);
             }
 
-            log.info("File loaded successfully from path: {}", path);
+            log.debug("File loaded successfully from path: {}", path);
             return resource;
         } catch (MalformedURLException e) {
             log.error("File not found: {}", path, e);
@@ -94,7 +94,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
 
     @Override
     public void deleteFile(String path) {
-        log.info("Deleting file from path: {}", path);
+        log.debug("Deleting file from path: {}", path);
         try {
             Path filePath = rootPath.resolve(path).normalize();
             Files.deleteIfExists(filePath);
@@ -111,7 +111,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
                 }
             }
 
-            log.info("File deleted successfully from path: {}", path);
+            log.debug("File deleted successfully from path: {}", path);
         } catch (IOException e) {
             log.error("Could not delete file: {}", path, e);
             throw new FileStorageException("Could not delete file: " + path, e);

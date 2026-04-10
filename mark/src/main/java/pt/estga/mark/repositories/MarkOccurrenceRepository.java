@@ -13,4 +13,5 @@ public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence,
     @Override
     @EntityGraph(attributePaths = {"monument", "mark", "author"})
     Page<MarkOccurrence> findAll(Pageable pageable);
+
 }

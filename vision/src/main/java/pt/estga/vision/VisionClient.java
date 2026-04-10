@@ -33,12 +33,12 @@ public class VisionClient {
      * @param originalFilename The original filename of the image.
      * @return A {@link DetectionResult} containing the outcome of the analysis.
      */
-    public DetectionResult detect(InputStream imageInputStream, String originalFilename) {
+    public DetectionResult detectMark(InputStream imageInputStream, String originalFilename) {
         log.info("Starting detection process for file: {}", originalFilename);
 
         // Determine the MediaType based on the filename
         MediaType fileMediaType = getMediaType(originalFilename);
-        log.info("Determined MediaType for file {}: {}", originalFilename, fileMediaType);
+        log.debug("Determined MediaType for file {}: {}", originalFilename, fileMediaType);
 
         // Use MultipartBodyBuilder to construct the request body
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
@@ -53,7 +53,7 @@ public class VisionClient {
         HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity =
                 new HttpEntity<>(builder.build(), headers);
 
-        log.info("Sending request to detection server at: {}", detectionServerUrl + "/process");
+        log.debug("Sending request to detection server at: {}", detectionServerUrl + "/process");
 
         // Use DetectionResult directly for the response
         ResponseEntity<DetectionResult> response = restTemplate.postForEntity(detectionServerUrl + "/process", requestEntity, DetectionResult.class);
@@ -69,6 +69,24 @@ public class VisionClient {
         return result;
     }
 
+    /**
+     * Lightweight health check against the vision server. Returns true when the
+     * configured health endpoint responds with a 2xx status.
+     */
+    public boolean isAvailable() {
+        if (detectionServerUrl == null || detectionServerUrl.isBlank()) {
+            log.debug("Vision server url not configured - treating as unavailable");
+            return false;
+        }
+        try {
+            ResponseEntity<Void> resp = restTemplate.getForEntity(detectionServerUrl + "/health", Void.class);
+            return resp.getStatusCode() != null && resp.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.debug("Vision health check failed", e);
+            return false;
+        }
+    }
+
     @NonNull
     private static MediaType getMediaType(String originalFilename) {
         MediaType fileMediaType = MediaType.APPLICATION_OCTET_STREAM;
@@ -79,7 +97,7 @@ public class VisionClient {
             } else if (lowerCaseFilename.endsWith(".png")) {
                 fileMediaType = MediaType.IMAGE_PNG;
             }
-            // Add other image types if necessary
+            // Other image types later
         }
         return fileMediaType;
     }
