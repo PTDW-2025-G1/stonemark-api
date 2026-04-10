@@ -13,8 +13,10 @@ import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.services.MediaContentService;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -29,26 +31,38 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final VisionClient visionClient;
     private final MediaContentService mediaContentService;
     private final SimilarityService similarityService;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public void processSubmission(Long submissionId) {
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
             MarkEvidenceProcessing processing = null;
+            long startNanos = System.nanoTime();
             try {
                 // Phase A: short DB work - create or reuse processing record
                 processing = createOrReuseProcessingRecord(submissionId, submission);
+
+                // createOrReuseProcessingRecord returns null when work should be skipped (idempotency)
+                if (processing == null) {
+                    meterRegistry.counter("processing.submissions.skipped", "reason", "already_processed_or_in_progress").increment();
+                    return;
+                }
+
+                // record an attempt
+                meterRegistry.counter("processing.submissions.attempts").increment();
 
                 // Phase B: external work (outside transaction)
                 if (!visionClient.isAvailable()) {
                     log.warn("Vision unavailable, skipping processing {}", submissionId);
                     // revert to PENDING so it can be retried later
                     setProcessingPending(processing.getId());
+                    meterRegistry.counter("processing.submissions.skipped", "reason", "vision_unavailable").increment();
                     return;
                 }
 
                 var mediaFile = submission.getOriginalMediaFile();
                 if (mediaFile == null) {
-                    setProcessingFailed(processing.getId(), "No original media file available");
+                    setProcessingFailed(processing.getId(), "No original media file available", true, startNanos);
                     return;
                 }
 
@@ -59,7 +73,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 }
 
                 if (embedding == null || embedding.length == 0) {
-                    setProcessingFailed(processing.getId(), "Empty embedding returned");
+                    setProcessingFailed(processing.getId(), "Empty embedding returned", true, startNanos);
                     return;
                 }
 
@@ -70,18 +84,18 @@ public class ProcessingServiceImpl implements ProcessingService {
                 List<MarkSuggestion> suggestions = similarityService.findSimilar(processing, 20);
 
                 // Phase C: short DB work - persist embedding, suggestions and mark completed
-                finalizeProcessingSuccess(processing.getId(), embedding, suggestions);
+                finalizeProcessingSuccess(processing.getId(), embedding, suggestions, startNanos);
 
             } catch (Exception e) {
                 log.error("Error processing submission {}: {}", submissionId, e.getMessage(), e);
                 try {
                     if (processing != null) {
-                        setProcessingFailed(processing.getId(), e.getMessage());
+                        setProcessingFailed(processing.getId(), e.getMessage(), false, startNanos);
                     } else {
-                        // best-effort: find by submission and mark failed
+                        // best-effort: find by submission and mark failed (retryable)
                         var p = processingRepository.findBySubmissionId(submissionId).orElse(null);
                         if (p != null) {
-                            setProcessingFailed(p.getId(), e.getMessage());
+                            setProcessingFailed(p.getId(), e.getMessage(), false, startNanos);
                         }
                     }
                 } catch (Exception ex) {
@@ -93,13 +107,17 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     // --- helper DB operations (short transactions executed by repository methods) ---
 
+    /**
+     * Create a processing record or reuse an existing one.
+     * Returns null when no work should be performed (idempotency - already completed or in progress).
+     */
     protected MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId, MarkEvidenceSubmission submission) {
         var existingOpt = processingRepository.findBySubmissionId(submissionId);
         if (existingOpt.isPresent()) {
             MarkEvidenceProcessing p = existingOpt.get();
             if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
                 log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
-                return p;
+                return null; // signal caller to skip work
             }
             p.setStatus(ProcessingStatus.PROCESSING);
             p.setFailedAt(null);
@@ -121,16 +139,28 @@ public class ProcessingServiceImpl implements ProcessingService {
         });
     }
 
-    protected void setProcessingFailed(UUID processingId, String message) {
+    /**
+     * Mark processing as failed. 'permanent' indicates whether the failure is non-retryable.
+     * Records metrics (failure counter and processing duration).
+     */
+    protected void setProcessingFailed(UUID processingId, String message, boolean permanent, long startNanos) {
         processingRepository.findById(processingId).ifPresent(p -> {
             p.setStatus(ProcessingStatus.FAILED);
             p.setFailedAt(Instant.now());
             p.setErrorMessage(message);
             processingRepository.save(p);
+
+            // metrics
+            meterRegistry.counter("processing.submissions.failed", "permanent", String.valueOf(permanent)).increment();
+            long durationNanos = System.nanoTime() - startNanos;
+            meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
         });
     }
 
-    protected void finalizeProcessingSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions) {
+    /**
+     * Finalize successful processing: persist embedding and suggestions, mark completed and record metrics.
+     */
+    protected void finalizeProcessingSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
         processingRepository.findById(processingId).ifPresent(p -> {
             p.setEmbedding(embedding);
             p.setStatus(ProcessingStatus.COMPLETED);
@@ -141,6 +171,11 @@ public class ProcessingServiceImpl implements ProcessingService {
                 suggestionRepository.saveAll(suggestions);
             }
             processingRepository.save(p);
+
+            // metrics
+            meterRegistry.counter("processing.submissions.success").increment();
+            long durationNanos = System.nanoTime() - startNanos;
+            meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
         });
     }
 }

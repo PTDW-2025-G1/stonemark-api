@@ -34,7 +34,7 @@ public class MarkEvidenceSubmittedListener {
 
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
             // Kick off processing asynchronously so the transaction/commit thread is not blocked.
-            asyncProcessingService.processAsync(submissionId);
+            asyncProcessingService.processAsync(submission.getId());
         }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));
     }
 }

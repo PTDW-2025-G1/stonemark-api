@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.AsyncProcessingService;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class ProcessingRetryScheduler {
 
     private final MarkEvidenceProcessingRepository processingRepository;
     private final AsyncProcessingService asyncProcessingService;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Periodically retry PENDING and FAILED processing entries.
@@ -30,12 +32,14 @@ public class ProcessingRetryScheduler {
                 return;
             }
             log.info("Retrying {} pending/failed processing entries", pending.size());
+            meterRegistry.counter("processing.retry.invocations").increment();
             for (var p : pending) {
                 Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
                 if (submissionId == null) {
                     log.warn("Skipping processing entry {} with no submission linked", p.getId());
                     continue;
                 }
+                meterRegistry.counter("processing.retry.scheduled").increment();
                 asyncProcessingService.processAsync(submissionId);
             }
         } catch (Exception e) {

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import io.micrometer.core.instrument.MeterRegistry;
 
 @Service
 @RequiredArgsConstructor
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 public class AsyncProcessingService {
 
     private final ProcessingService processingService;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Offload processing to a background thread so the transaction listener can return quickly.
@@ -20,6 +22,7 @@ public class AsyncProcessingService {
     public void processAsync(Long submissionId) {
         log.info("Starting async processing for submission {}", submissionId);
         try {
+            meterRegistry.counter("processing.async.invocations").increment();
             processingService.processSubmission(submissionId);
         } catch (Exception e) {
             log.error("Async processing failed for submission {}: {}", submissionId, e.getMessage(), e);
