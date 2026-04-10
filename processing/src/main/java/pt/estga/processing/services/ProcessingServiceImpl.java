@@ -226,6 +226,10 @@ public class ProcessingServiceImpl implements ProcessingService {
             meterRegistry.counter("processing.submissions.failed", "permanent", String.valueOf(permanent)).increment();
             long durationNanos = System.nanoTime() - startNanos;
             meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
+            // Observability: log duration and that it failed
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+            Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+            log.info("Processing {} failed for submission {} after {} ms: {}", processingId, submissionId, durationMs, message);
         });
     }
 
@@ -248,6 +252,11 @@ public class ProcessingServiceImpl implements ProcessingService {
             meterRegistry.counter("processing.submissions.success").increment();
             long durationNanos = System.nanoTime() - startNanos;
             meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
+            // Observability: log duration and suggestion count
+            long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+            int suggestionCount = suggestions == null ? 0 : suggestions.size();
+            Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+            log.info("Processing {} completed for submission {} after {} ms — suggestions={}", processingId, submissionId, durationMs, suggestionCount);
         });
     }
 }
