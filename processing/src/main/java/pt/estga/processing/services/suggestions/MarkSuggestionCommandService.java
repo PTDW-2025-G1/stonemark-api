@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +55,23 @@ public class MarkSuggestionCommandService {
                 saved.getId(),
                 saved.getProcessing() == null ? null : saved.getProcessing().getId(),
                 saved.getMark() == null ? null : saved.getMark().getId());
+        return saved;
+    }
+
+    /**
+     * Persist a batch of suggestions in a single transaction. Existing ids on the provided
+     * entities will be ignored and replaced by newly generated ids.
+     *
+     * @param suggestions list of suggestions to persist (must not be null)
+     * @return list of persisted suggestions
+     */
+    @Transactional
+    public List<MarkSuggestion> createAll(List<MarkSuggestion> suggestions) {
+        Objects.requireNonNull(suggestions, "suggestions must not be null");
+        // Ensure we create new rows
+        suggestions.forEach(s -> s.setId(null));
+        List<MarkSuggestion> saved = markSuggestionRepository.saveAll(suggestions);
+        log.debug("Created {} MarkSuggestions", saved.size());
         return saved;
     }
 
