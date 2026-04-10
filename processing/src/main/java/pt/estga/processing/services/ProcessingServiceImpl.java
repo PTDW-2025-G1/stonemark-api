@@ -1,7 +1,10 @@
 package pt.estga.processing.services;
 
+import jakarta.persistence.LockTimeoutException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.LockAcquisitionException;
 import org.springframework.stereotype.Service;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -93,10 +96,8 @@ public class ProcessingServiceImpl implements ProcessingService {
                         setProcessingFailed(processing.getId(), e.getMessage(), false, startNanos);
                     } else {
                         // best-effort: find by submission and mark failed (retryable)
-                        var p = processingRepository.findBySubmissionId(submissionId).orElse(null);
-                        if (p != null) {
-                            setProcessingFailed(p.getId(), e.getMessage(), false, startNanos);
-                        }
+                        processingRepository.findBySubmissionId(submissionId)
+                                .ifPresent(p -> setProcessingFailed(p.getId(), e.getMessage(), false, startNanos));
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to persist failure state for submission {}: {}", submissionId, ex.getMessage());
@@ -111,24 +112,48 @@ public class ProcessingServiceImpl implements ProcessingService {
      * Create a processing record or reuse an existing one.
      * Returns null when no work should be performed (idempotency - already completed or in progress).
      */
+    @Transactional
     protected MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId, MarkEvidenceSubmission submission) {
-        var existingOpt = processingRepository.findBySubmissionId(submissionId);
-        if (existingOpt.isPresent()) {
-            MarkEvidenceProcessing p = existingOpt.get();
-            if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
-                log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
-                return null; // signal caller to skip work
+        // Try to fetch existing record with a pessimistic lock to avoid races between concurrent processors.
+        try {
+            var existingOpt = processingRepository.findBySubmissionIdForUpdate(submissionId);
+            if (existingOpt.isPresent()) {
+                MarkEvidenceProcessing p = existingOpt.get();
+                if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
+                    log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
+                    return null; // signal caller to skip work
+                }
+                p.setStatus(ProcessingStatus.PROCESSING);
+                p.setFailedAt(null);
+                p.setErrorMessage(null);
+                return processingRepository.save(p);
             }
-            p.setStatus(ProcessingStatus.PROCESSING);
-            p.setFailedAt(null);
-            p.setErrorMessage(null);
-            return processingRepository.save(p);
-        } else {
+
+            // No existing record; attempt to create one. Another concurrent inserter may produce a unique constraint
+            // violation; handle it gracefully by reading that record and deciding what to do next.
             MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
                     .submission(submission)
                     .status(ProcessingStatus.PROCESSING)
                     .build();
-            return processingRepository.save(p);
+            try {
+                return processingRepository.save(p);
+            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                log.warn("Race detected creating processing for submission {} — reading existing record", submissionId);
+                // Read the existing record (no lock needed here; it was just created by the raced transaction).
+                return processingRepository.findBySubmissionId(submissionId).map(existing -> {
+                    if (existing.getStatus() == ProcessingStatus.COMPLETED || existing.getStatus() == ProcessingStatus.PROCESSING) {
+                        return null;
+                    }
+                    existing.setStatus(ProcessingStatus.PROCESSING);
+                    existing.setFailedAt(null);
+                    existing.setErrorMessage(null);
+                    return processingRepository.save(existing);
+                }).orElseThrow(() -> ex);
+            }
+        } catch (LockTimeoutException | LockAcquisitionException lockEx) {
+            // Lock acquisition failed — treat as a retryable condition by skipping work now; the scheduler will retry later.
+            log.warn("Could not acquire lock for submission {}: {}", submissionId, lockEx.getMessage());
+            return null;
         }
     }
 
