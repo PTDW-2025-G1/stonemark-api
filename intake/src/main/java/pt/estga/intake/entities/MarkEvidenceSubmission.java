@@ -11,9 +11,9 @@ import pt.estga.user.entities.User;
 import java.time.Instant;
 
 @Entity
-@Table(name = "mark_occurrence_submission", indexes = {
-        @Index(name = "idx_submission_submitted_by", columnList = "submitted_by_id"),
-        @Index(name = "idx_submission_status", columnList = "status")
+@Table(indexes = {
+        @Index(name = "idx_evidence_submitted_by", columnList = "submitted_by_id"),
+        @Index(name = "idx_evidence_status", columnList = "status")
 })
 @NoArgsConstructor
 @AllArgsConstructor

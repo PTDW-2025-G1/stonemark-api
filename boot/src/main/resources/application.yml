@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    include: chatbot, notification, file, security
+    include: chatbot, notification, file, security, processing
   servlet:
     multipart:
       max-file-size: 50MB
@@ -40,7 +40,8 @@ vision:
 
 logging:
   level:
-    root: info
+    org.springframework: INFO
+    pt.estga: DEBUG
 
 application:
   base-url: https://api.stonemark.pt

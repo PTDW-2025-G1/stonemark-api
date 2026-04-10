@@ -33,7 +33,7 @@ public class VisionClient {
      * @param originalFilename The original filename of the image.
      * @return A {@link DetectionResult} containing the outcome of the analysis.
      */
-    public DetectionResult detect(InputStream imageInputStream, String originalFilename) {
+    public DetectionResult detectMark(InputStream imageInputStream, String originalFilename) {
         log.info("Starting detection process for file: {}", originalFilename);
 
         // Determine the MediaType based on the filename
@@ -67,6 +67,24 @@ public class VisionClient {
 
         log.info("Detection process completed. Mason mark detected: {}", result.isMasonMark());
         return result;
+    }
+
+    /**
+     * Lightweight health check against the vision server. Returns true when the
+     * configured health endpoint responds with a 2xx status.
+     */
+    public boolean isAvailable() {
+        if (detectionServerUrl == null || detectionServerUrl.isBlank()) {
+            log.debug("Vision server url not configured - treating as unavailable");
+            return false;
+        }
+        try {
+            ResponseEntity<Void> resp = restTemplate.getForEntity(detectionServerUrl + "/health", Void.class);
+            return resp.getStatusCode() != null && resp.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.debug("Vision health check failed", e);
+            return false;
+        }
     }
 
     @NonNull
