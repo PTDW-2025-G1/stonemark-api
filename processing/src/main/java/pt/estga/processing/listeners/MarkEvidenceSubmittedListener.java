@@ -7,16 +7,17 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
-import pt.estga.processing.services.draft.DraftMarkEvidenceCommandService;
-import pt.estga.processing.entities.DraftMarkEvidence;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.services.AsyncProcessingService;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MarkEvidenceSubmittedListener {
 
-    private final DraftMarkEvidenceCommandService draftCommandService;
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
+    private final MarkEvidenceProcessingRepository processingRepository;
+    private final AsyncProcessingService asyncProcessingService;
 
     /**
      * After a submission is committed, ensure a processing draft exists and is queued.
@@ -27,9 +28,13 @@ public class MarkEvidenceSubmittedListener {
         Long submissionId = event.getSubmissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
+        if (processingRepository.existsBySubmissionId(submissionId)) {
+            return; // already processed or in progress
+        }
+
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
-            DraftMarkEvidence draft = DraftMarkEvidence.builder().submission(submission).build();
-            draftCommandService.createIfMissingForSubmission(draft);
+            // Kick off processing asynchronously so the transaction/commit thread is not blocked.
+            asyncProcessingService.processAsync(submission.getId());
         }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));
     }
 }

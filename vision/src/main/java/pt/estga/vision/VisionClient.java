@@ -33,7 +33,7 @@ public class VisionClient {
      * @param originalFilename The original filename of the image.
      * @return A {@link DetectionResult} containing the outcome of the analysis.
      */
-    public DetectionResult detect(InputStream imageInputStream, String originalFilename) {
+    public DetectionResult detectMark(InputStream imageInputStream, String originalFilename) {
         log.info("Starting detection process for file: {}", originalFilename);
 
         // Determine the MediaType based on the filename

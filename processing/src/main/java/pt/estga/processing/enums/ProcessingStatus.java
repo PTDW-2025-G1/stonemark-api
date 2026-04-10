@@ -1,9 +1,8 @@
 package pt.estga.processing.enums;
 
 public enum ProcessingStatus {
-    QUEUED,
     PENDING,
-    IN_PROGRESS,
+    PROCESSING,
     COMPLETED,
     FAILED
 }
