@@ -8,7 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.ProcessingService;
+import pt.estga.processing.services.AsyncProcessingService;
 
 @Component
 @RequiredArgsConstructor
@@ -17,7 +17,7 @@ public class MarkEvidenceSubmittedListener {
 
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final ProcessingService processingService;
+    private final AsyncProcessingService asyncProcessingService;
 
     /**
      * After a submission is committed, ensure a processing draft exists and is queued.
@@ -33,8 +33,8 @@ public class MarkEvidenceSubmittedListener {
         }
 
         submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
-            // Kick off processing (idempotent). ProcessingService will handle retries and failures.
-            processingService.processSubmission(submissionId);
+            // Kick off processing asynchronously so the transaction/commit thread is not blocked.
+            asyncProcessingService.processAsync(submissionId);
         }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));
     }
 }
