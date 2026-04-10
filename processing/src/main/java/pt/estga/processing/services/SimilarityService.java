@@ -47,7 +47,7 @@ public class SimilarityService {
         String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
 
         // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
-        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, null, k);
+        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
 
         if (log.isDebugEnabled()) {
             log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()

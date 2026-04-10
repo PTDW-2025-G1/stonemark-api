@@ -18,13 +18,11 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 		me.occurrence_id,
 		(me.embedding <#> CAST(:vector AS vector)) AS distance
 	FROM mark_evidence me
-	WHERE (:occurrenceId IS NULL OR me.occurrence_id = :occurrenceId)
 	ORDER BY distance ASC
 	LIMIT :k
 	""", nativeQuery = true)
 	List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(
 			@Param("vector") String vector,
-			@Param("occurrenceId") Long occurrenceId,
 			@Param("k") int k
 	);
 
