@@ -27,8 +27,10 @@ import java.util.stream.Collectors;
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
-    @Value("${processing.similarity.min-score:0.2}")
+    @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
+    @Value("${processing.similarity.max-distance:0.8}")
+    private double maxDistance;
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -84,6 +86,9 @@ public class SimilarityService {
 
             Double distance = p.getDistance();
             if (distance == null) continue;
+
+            // Discard evidences where raw distance is above configured maximum (if set).
+            if (distance > maxDistance) continue;
 
             // Convert distance (cosine-distance) to similarity. For pgvector '<#>' operator,
             // distance ~= 1 - cosine_similarity for normalized vectors.
