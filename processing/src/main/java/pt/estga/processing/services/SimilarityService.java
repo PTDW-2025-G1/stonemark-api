@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
@@ -27,10 +26,8 @@ import java.util.stream.Collectors;
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
-    // Tunable threshold to filter out poor matches. Configurable via application properties.
-    @Value("${processing.similarity.max-distance:0.8}")
-    private double distanceThreshold;
-    private final MarkOccurrenceRepository occurrenceRepository;
+    @Value("${processing.similarity.min-score:0.2}")
+    private double minSimilarity;
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -61,56 +58,41 @@ public class SimilarityService {
 
         // Preserve ordering from the distance query by iterating over projections.
 
-        // Instead of loading full MarkEvidence entities, load only occurrences with their marks
-        // using the occurrence ids returned by the projection. This avoids over-fetching.
-        List<Long> occurrenceIds = hits.stream()
-                .map(MarkEvidenceDistanceProjection::getOccurrenceId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .toList();
-
-        Map<Long, Mark> markByOccurrenceId = Map.of();
-        if (!occurrenceIds.isEmpty()) {
-            List<pt.estga.mark.entities.MarkOccurrence> occurrences = occurrenceRepository.findAllWithMarkByIdIn(occurrenceIds);
-            markByOccurrenceId = occurrences.stream().collect(Collectors.toMap(pt.estga.mark.entities.MarkOccurrence::getId, pt.estga.mark.entities.MarkOccurrence::getMark));
+        // We will compute cosine similarity in Java. Fetch full MarkEvidence entities (includes embedding)
+        // for the top-K hits and map them by id. This is slightly heavier but gives exact cosine similarity
+        // and avoids relying on DB operator differences between environments.
+        List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).distinct().toList();
+        Map<UUID, pt.estga.mark.entities.MarkEvidence> evidenceById = Map.of();
+        if (!ids.isEmpty()) {
+            List<pt.estga.mark.entities.MarkEvidence> evidences = evidenceRepository.findAllWithOccurrenceAndMarkByIdIn(ids);
+            evidenceById = evidences.stream().collect(Collectors.toMap(pt.estga.mark.entities.MarkEvidence::getId, e -> e));
         }
 
         Set<UUID> seen = new HashSet<>();
         for (int idx = 0; idx < hits.size(); idx++) {
             MarkEvidenceDistanceProjection p = hits.get(idx);
             UUID id = p.getId();
-            // Deduplicate repeated evidence ids if present
-            if (!seen.add(id)) {
-                continue;
-            }
+            if (!seen.add(id)) continue; // dedupe
 
-            // We avoid loading the full MarkEvidence entity. Use occurrenceId from projection to find the mark.
-            Long occurrenceId = p.getOccurrenceId();
-            if (occurrenceId == null) {
-                continue;
-            }
+            pt.estga.mark.entities.MarkEvidence ev = evidenceById.get(id);
+            if (ev == null) continue; // missing entity
 
-            Mark mark = markByOccurrenceId.get(occurrenceId);
-            if (mark == null) {
-                continue;
-            }
+            pt.estga.mark.entities.MarkOccurrence occ = ev.getOccurrence();
+            if (occ == null) continue;
+            Mark mark = occ.getMark();
+            if (mark == null) continue;
 
+            // Compute cosine similarity between processing embedding and evidence embedding
+            float[] a = processing.getEmbedding();
+            float[] b = ev.getEmbedding();
+            double similarity = cosineSimilarity(a, b);
+            if (Double.isNaN(similarity)) continue;
 
-            Double distance = p.getDistance();
-            if (distance == null) {
-                continue;
-            }
+            // Apply simple quality filter using a configurable minimum similarity
+            if (similarity < minSimilarity) continue;
 
-            // Apply simple quality filter to drop poor matches (tunable threshold).
-            if (distance > distanceThreshold) {
-                continue;
-            }
-
-            // Convert distance to similarity. Use exponential decay for sharper separation.
-            double similarity = Math.exp(-distance);
-
-            // Weight contribution by rank (DB order). This gives higher-ranked evidence more influence.
-            double weight = 1.0 / (1 + idx); // idx==0 => weight 1.0
+            // Weight contribution by rank (DB order). Higher-ranked evidence has more influence.
+            double weight = 1.0 / (1 + idx);
             double weighted = similarity * weight;
 
             scores.merge(mark, weighted, Double::sum);
@@ -145,5 +127,22 @@ public class SimilarityService {
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
+    }
+
+    // Helper: compute cosine similarity between two float[] embeddings
+    private static double cosineSimilarity(float[] a, float[] b) {
+        if (a == null || b == null || a.length == 0 || b.length == 0 || a.length != b.length) return Double.NaN;
+        double dot = 0.0;
+        double na = 0.0;
+        double nb = 0.0;
+        for (int i = 0; i < a.length; i++) {
+            double va = a[i];
+            double vb = b[i];
+            dot += va * vb;
+            na += va * va;
+            nb += vb * vb;
+        }
+        if (na == 0.0 || nb == 0.0) return Double.NaN;
+        return dot / (Math.sqrt(na) * Math.sqrt(nb));
     }
 }
