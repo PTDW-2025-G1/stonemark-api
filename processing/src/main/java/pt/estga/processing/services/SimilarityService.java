@@ -58,14 +58,14 @@ public class SimilarityService {
 
         // Preserve ordering from the distance query by iterating over projections.
 
-        // We will compute cosine similarity in Java. Fetch full MarkEvidence entities (includes embedding)
-        // for the top-K hits and map them by id. This is slightly heavier but gives exact cosine similarity
-        // and avoids relying on DB operator differences between environments.
+        // We rely on DB to compute cosine distance (pgvector). The projection returned by
+        // findTopKSimilarEvidence contains the distance value. Convert distance -> similarity
+        // and fetch only the lightweight (id, mark) mapping for aggregation.
         List<UUID> ids = hits.stream().map(MarkEvidenceDistanceProjection::getId).distinct().toList();
-        Map<UUID, pt.estga.mark.entities.MarkEvidence> evidenceById = Map.of();
+        Map<UUID, Mark> markByEvidenceId = Map.of();
         if (!ids.isEmpty()) {
-            List<pt.estga.mark.entities.MarkEvidence> evidences = evidenceRepository.findAllWithOccurrenceAndMarkByIdIn(ids);
-            evidenceById = evidences.stream().collect(Collectors.toMap(pt.estga.mark.entities.MarkEvidence::getId, e -> e));
+            List<Object[]> rows = evidenceRepository.findMarksByEvidenceIds(ids);
+            markByEvidenceId = rows.stream().collect(Collectors.toMap(r -> (UUID) r[0], r -> (Mark) r[1]));
         }
 
         Set<UUID> seen = new HashSet<>();
@@ -74,19 +74,18 @@ public class SimilarityService {
             UUID id = p.getId();
             if (!seen.add(id)) continue; // dedupe
 
-            pt.estga.mark.entities.MarkEvidence ev = evidenceById.get(id);
-            if (ev == null) continue; // missing entity
+            Long occurrenceId = p.getOccurrenceId();
+            if (occurrenceId == null) continue;
 
-            pt.estga.mark.entities.MarkOccurrence occ = ev.getOccurrence();
-            if (occ == null) continue;
-            Mark mark = occ.getMark();
+            Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
 
-            // Compute cosine similarity between processing embedding and evidence embedding
-            float[] a = processing.getEmbedding();
-            float[] b = ev.getEmbedding();
-            double similarity = cosineSimilarity(a, b);
-            if (Double.isNaN(similarity)) continue;
+            Double distance = p.getDistance();
+            if (distance == null) continue;
+
+            // Convert distance (cosine-distance) to similarity. For pgvector '<#>' operator,
+            // distance ~= 1 - cosine_similarity for normalized vectors.
+            double similarity = 1.0 - distance;
 
             // Apply simple quality filter using a configurable minimum similarity
             if (similarity < minSimilarity) continue;
@@ -127,22 +126,5 @@ public class SimilarityService {
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
-    }
-
-    // Helper: compute cosine similarity between two float[] embeddings
-    private static double cosineSimilarity(float[] a, float[] b) {
-        if (a == null || b == null || a.length == 0 || b.length == 0 || a.length != b.length) return Double.NaN;
-        double dot = 0.0;
-        double na = 0.0;
-        double nb = 0.0;
-        for (int i = 0; i < a.length; i++) {
-            double va = a[i];
-            double vb = b[i];
-            dot += va * vb;
-            na += va * va;
-            nb += vb * vb;
-        }
-        if (na == 0.0 || nb == 0.0) return Double.NaN;
-        return dot / (Math.sqrt(na) * Math.sqrt(nb));
     }
 }

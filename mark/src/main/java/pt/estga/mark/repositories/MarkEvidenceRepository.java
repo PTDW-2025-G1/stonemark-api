@@ -15,7 +15,7 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	SELECT
 		me.id,
 		me.occurrence_id,
-		(me.embedding <-> CAST(:vector AS vector)) AS distance
+		(me.embedding <#> CAST(:vector AS vector)) AS distance
 	FROM mark_evidence me
 	WHERE (:occurrenceId IS NULL OR me.occurrence_id = :occurrenceId)
 	ORDER BY distance ASC
@@ -34,4 +34,12 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	WHERE me.id IN :ids
 	""")
 	List<MarkEvidence> findAllWithOccurrenceAndMarkByIdIn(@Param("ids") List<UUID> ids);
+
+	@Query("""
+	SELECT e.id, m FROM MarkEvidence e
+	JOIN e.occurrence o
+	JOIN o.mark m
+	WHERE e.id IN :ids
+	""")
+	List<Object[]> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 }
