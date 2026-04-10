@@ -1,7 +1,8 @@
 package pt.estga.processing.services;
 
 import jakarta.persistence.LockTimeoutException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.LockAcquisitionException;
@@ -19,6 +20,10 @@ import pt.estga.file.services.MediaContentService;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +40,22 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MediaContentService mediaContentService;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
+    private final PlatformTransactionManager transactionManager;
+    private TransactionTemplate transactionTemplate;
+
+    @Value("${processing.vision.max-concurrency:4}")
+    private int visionMaxConcurrency;
+
+    @Value("${processing.vision.acquire-timeout-ms:10000}")
+    private long visionAcquireTimeoutMs;
+
+    private Semaphore visionSemaphore;
+
+    @PostConstruct
+    protected void init() {
+        this.visionSemaphore = new Semaphore(Math.max(1, visionMaxConcurrency));
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+    }
 
     @Override
     public void processSubmission(Long submissionId) {
@@ -69,25 +90,50 @@ public class ProcessingServiceImpl implements ProcessingService {
                     return;
                 }
 
-                float[] embedding;
-                try (InputStream in = mediaContentService.loadContent(mediaFile.getStoragePath()).getInputStream()) {
-                    var detection = visionClient.detectMark(in, mediaFile.getOriginalFilename());
-                    embedding = detection.embedding();
-                }
+                // Apply backpressure for Vision calls: limit concurrent detection requests using a semaphore.
+                boolean acquired = false;
+                try {
+                    try {
+                        acquired = visionSemaphore.tryAcquire(visionAcquireTimeoutMs, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        log.warn("Interrupted while waiting for vision permit, deferring processing {}", submissionId);
+                        setProcessingPending(processing.getId());
+                        meterRegistry.counter("processing.submissions.throttled").increment();
+                        return;
+                    }
 
-                if (embedding == null || embedding.length == 0) {
-                    setProcessingFailed(processing.getId(), "Empty embedding returned", true, startNanos);
-                    return;
-                }
+                    if (!acquired) {
+                        log.warn("Could not obtain vision permit in {}ms, deferring processing {}", visionAcquireTimeoutMs, submissionId);
+                        setProcessingPending(processing.getId());
+                        meterRegistry.counter("processing.submissions.throttled").increment();
+                        return;
+                    }
 
-                // Attach embedding to the in-memory processing object for similarity search
-                processing.setEmbedding(embedding);
+                    float[] embedding;
+                    try (InputStream in = mediaContentService.loadContent(mediaFile.getStoragePath()).getInputStream()) {
+                        var detection = visionClient.detectMark(in, mediaFile.getOriginalFilename());
+                        embedding = detection.embedding();
+                    }
+
+                    if (embedding == null || embedding.length == 0) {
+                        setProcessingFailed(processing.getId(), "Empty embedding returned", true, startNanos);
+                        return;
+                    }
+
+                    // Attach embedding to the in-memory processing object for similarity search
+                    processing.setEmbedding(embedding);
+                } finally {
+                    if (acquired) {
+                        visionSemaphore.release();
+                    }
+                }
 
                 // Run similarity outside transaction
                 List<MarkSuggestion> suggestions = similarityService.findSimilar(processing, 20);
 
                 // Phase C: short DB work - persist embedding, suggestions and mark completed
-                finalizeProcessingSuccess(processing.getId(), embedding, suggestions, startNanos);
+                finalizeProcessingSuccess(processing.getId(), processing.getEmbedding(), suggestions, startNanos);
 
             } catch (Exception e) {
                 log.error("Error processing submission {}: {}", submissionId, e.getMessage(), e);
@@ -112,49 +158,50 @@ public class ProcessingServiceImpl implements ProcessingService {
      * Create a processing record or reuse an existing one.
      * Returns null when no work should be performed (idempotency - already completed or in progress).
      */
-    @Transactional
     protected MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId, MarkEvidenceSubmission submission) {
-        // Try to fetch existing record with a pessimistic lock to avoid races between concurrent processors.
-        try {
-            var existingOpt = processingRepository.findBySubmissionIdForUpdate(submissionId);
-            if (existingOpt.isPresent()) {
-                MarkEvidenceProcessing p = existingOpt.get();
-                if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
-                    log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
-                    return null; // signal caller to skip work
-                }
-                p.setStatus(ProcessingStatus.PROCESSING);
-                p.setFailedAt(null);
-                p.setErrorMessage(null);
-                return processingRepository.save(p);
-            }
-
-            // No existing record; attempt to create one. Another concurrent inserter may produce a unique constraint
-            // violation; handle it gracefully by reading that record and deciding what to do next.
-            MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
-                    .submission(submission)
-                    .status(ProcessingStatus.PROCESSING)
-                    .build();
+        return transactionTemplate.execute(status -> {
+            // Try to fetch existing record with a pessimistic lock to avoid races between concurrent processors.
             try {
-                return processingRepository.save(p);
-            } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-                log.warn("Race detected creating processing for submission {} — reading existing record", submissionId);
-                // Read the existing record (no lock needed here; it was just created by the raced transaction).
-                return processingRepository.findBySubmissionId(submissionId).map(existing -> {
-                    if (existing.getStatus() == ProcessingStatus.COMPLETED || existing.getStatus() == ProcessingStatus.PROCESSING) {
-                        return null;
+                var existingOpt = processingRepository.findBySubmissionIdForUpdate(submissionId);
+                if (existingOpt.isPresent()) {
+                    MarkEvidenceProcessing p = existingOpt.get();
+                    if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
+                        log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
+                        return null; // signal caller to skip work
                     }
-                    existing.setStatus(ProcessingStatus.PROCESSING);
-                    existing.setFailedAt(null);
-                    existing.setErrorMessage(null);
-                    return processingRepository.save(existing);
-                }).orElseThrow(() -> ex);
+                    p.setStatus(ProcessingStatus.PROCESSING);
+                    p.setFailedAt(null);
+                    p.setErrorMessage(null);
+                    return processingRepository.save(p);
+                }
+
+                // No existing record; attempt to create one. Another concurrent inserter may produce a unique constraint
+                // violation; handle it gracefully by reading that record and deciding what to do next.
+                MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
+                        .submission(submission)
+                        .status(ProcessingStatus.PROCESSING)
+                        .build();
+                try {
+                    return processingRepository.save(p);
+                } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                    log.warn("Race detected creating processing for submission {} — reading existing record", submissionId);
+                    // Read the existing record (no lock needed here; it was just created by the raced transaction).
+                    return processingRepository.findBySubmissionId(submissionId).map(existing -> {
+                        if (existing.getStatus() == ProcessingStatus.COMPLETED || existing.getStatus() == ProcessingStatus.PROCESSING) {
+                            return null;
+                        }
+                        existing.setStatus(ProcessingStatus.PROCESSING);
+                        existing.setFailedAt(null);
+                        existing.setErrorMessage(null);
+                        return processingRepository.save(existing);
+                    }).orElseThrow(() -> ex);
+                }
+            } catch (LockTimeoutException | LockAcquisitionException lockEx) {
+                // Lock acquisition failed — treat as a retryable condition by skipping work now; the scheduler will retry later.
+                log.warn("Could not acquire lock for submission {}: {}", submissionId, lockEx.getMessage());
+                return null;
             }
-        } catch (LockTimeoutException | LockAcquisitionException lockEx) {
-            // Lock acquisition failed — treat as a retryable condition by skipping work now; the scheduler will retry later.
-            log.warn("Could not acquire lock for submission {}: {}", submissionId, lockEx.getMessage());
-            return null;
-        }
+        });
     }
 
     protected void setProcessingPending(UUID processingId) {

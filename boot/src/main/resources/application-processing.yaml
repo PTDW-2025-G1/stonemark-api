@@ -4,3 +4,8 @@ processing:
     max-distance: 0.8
   retry:
     interval: 60000
+  vision:
+    # Maximum concurrent requests to the Vision service performed by this application.
+    max-concurrency: 4
+    # How long (ms) to wait for a vision permit before deferring the processing (set to 0 for immediate fail/skip).
+    acquire-timeout-ms: 10000
