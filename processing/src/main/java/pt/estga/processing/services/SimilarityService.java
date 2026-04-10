@@ -29,8 +29,6 @@ public class SimilarityService {
     private final MarkEvidenceRepository evidenceRepository;
     @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
-    @Value("${processing.similarity.max-distance:0.8}")
-    private double maxDistance;
     /**
      * If true, apply a small rank-based weight to evidence contributions. When false, all
      * evidence contributions are treated equally (pure similarity aggregation).
@@ -74,6 +72,8 @@ public class SimilarityService {
         // Collect unique evidence ids to fetch lightweight mark mapping once.
         Set<UUID> idSet = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toSet());
         Map<UUID, Mark> markByEvidenceId = Map.of();
+        // build a marksById lookup here to avoid an extra pass later
+        Map<Long, Mark> marksById = new java.util.HashMap<>();
         if (!idSet.isEmpty()) {
             List<EvidenceMarkProjection> rows = evidenceRepository.findMarksByEvidenceIds(List.copyOf(idSet));
             // Use a safe merge function to tolerate duplicate keys in case of bad data or join issues.
@@ -82,12 +82,20 @@ public class SimilarityService {
                     EvidenceMarkProjection::getMark,
                     (a, b) -> {
                         // If duplicates happen, keep the first but log so data issues can be investigated.
+                        // Defensive null checks in case projections unexpectedly contain nulls.
                         if (a != null && b != null && !Objects.equals(a.getId(), b.getId())) {
                             log.warn("Duplicate mark mapping encountered for same evidence id: keeping mark id {} over {}", a.getId(), b.getId());
                         }
                         return a;
                     }
             ));
+            // Populate marksById from the rows in a single pass (avoid extra stream operations).
+            for (EvidenceMarkProjection row : rows) {
+                Mark m = row.getMark();
+                if (m != null && m.getId() != null) {
+                    marksById.putIfAbsent(m.getId(), m);
+                }
+            }
         }
 
         Set<UUID> seen = new HashSet<>();
@@ -95,9 +103,6 @@ public class SimilarityService {
             MarkEvidenceDistanceProjection p = hits.get(idx);
             UUID id = p.getId();
             if (!seen.add(id)) continue; // dedupe
-
-            Long occurrenceId = p.getOccurrenceId();
-            if (occurrenceId == null) continue;
 
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
@@ -107,17 +112,15 @@ public class SimilarityService {
             Double distance = p.getDistance();
             if (distance == null) continue;
 
-            // Discard evidences where raw distance is above configured maximum (if set).
-            if (distance > maxDistance) continue;
-
             // Convert distance (cosine-distance) to similarity. For pgvector '<#>' operator,
-            // distance ~= 1 - cosine_similarity for normalized vectors.
+            // distance ~= 1 - cosine_similarity for normalized vectors. Use similarity threshold
+            // as the primary filter.
             double similarity = 1.0 - distance;
-
-            // Apply simple quality filter using a configurable minimum similarity
             if (similarity < minSimilarity) continue;
 
             // Weight contribution by rank (DB order) if enabled. Otherwise treat all hits equally.
+            // NOTE: this ranking depends on DB ordering being stable for identical distances;
+            // changes to the vector operator or planner may alter ordering and thus affect weights.
             double weight = useRankWeighting ? 1.0 / (1 + idx) : 1.0;
             double weighted = similarity * weight;
 
@@ -129,21 +132,7 @@ public class SimilarityService {
             return List.of();
         }
 
-        // Build a markId -> Mark lookup from the lightweight mapping we fetched earlier.
-        Map<Long, Mark> marksById = markByEvidenceId.values().stream()
-                .filter(m -> m != null && m.getId() != null)
-                .collect(Collectors.toMap(
-                        Mark::getId,
-                        m -> m,
-                        (a, b) -> {
-                            if (a != null && b != null && !Objects.equals(a.getId(), b.getId())) {
-                                log.warn("Duplicate Mark entity for id {} when building marksById; keeping first", a.getId());
-                            }
-                            return a;
-                        }
-                ));
-
-        return scores.entrySet().stream()
+        List<MarkSuggestion> result = scores.entrySet().stream()
                 // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
                 .filter(entry -> {
                     Long markId = entry.getKey();
@@ -176,5 +165,16 @@ public class SimilarityService {
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
+
+        // Log summary for observability.
+        if (log.isDebugEnabled()) {
+            Double topConfidence = result.stream().findFirst().map(MarkSuggestion::getConfidence).orElse(null);
+            log.debug("Processing {} → {} suggestions (top confidence={})",
+                    processing.getId(),
+                    result.size(),
+                    topConfidence);
+        }
+
+        return result;
     }
 }
