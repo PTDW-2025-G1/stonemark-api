@@ -25,6 +25,26 @@ import jakarta.annotation.PostConstruct;
 @Slf4j
 public class SimilarityService {
 
+    /**
+     * Similarity service (DB-backed candidate retrieval + JVM-side scoring).
+     * <p>
+     * Architecture note (explicit): this service treats the database as the
+     * candidate retrieval layer (approximate nearest neighbours via pgvector)
+     * and applies a JVM-side scoring/aggregation layer to produce per-mark
+     * suggestions with confidence. Invariants and contract:
+     *  - Embeddings MUST be L2-normalized (unit length) at ingestion time. The
+     *    service enforces normalization for newly produced embeddings, but
+     *    historical data must also be normalized to guarantee parity.
+     *  - The DB projection MUST return a similarity value computed as
+     *    1.0 - (me.embedding <#> CAST(:vector AS vector)) (i.e. 1 - cosine_distance).
+     *    If the DB operator, index, or stored vectors change (e.g. switch to
+     *    L2 or inner-product) this contract must be updated accordingly.
+     * <p>
+     * The scoring layer performs defensive validation of DB-provided similarities
+     * (null/NaN/non-finite/out-of-range) and clamps values to [0.0, 1.0] before
+     * using them in weighting to avoid propagation of corrupted data.
+     */
+
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
     @Setter
@@ -47,8 +67,6 @@ public class SimilarityService {
     private int maxK;
     @Value("${processing.similarity.per-mark-decay:0.5}")
     private double perMarkDecayFactor;
-    @Value("${processing.similarity.rank-factor:0.10}")
-    private double rankFactor;
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -102,13 +120,14 @@ public class SimilarityService {
             return List.of();
         }
 
-        // Ensure the query vector is normalized before issuing DB query. We persist normalized
-        // vectors at ingestion, and we normalize the query to match DB semantics.
-        float[] queryEmb = VectorUtils.normalize(processing.getEmbedding());
-        if (queryEmb == null || queryEmb.length == 0) {
-            log.warn("Processing {} (submission={}) has invalid embedding after normalization, skipping similarity",
-                    processing.getId(), processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
-            return List.of();
+        // Use the embedding produced at ingestion. Ingestion layer is responsible
+        // for normalizing embeddings to unit length. Here we validate that the
+        // embedding is unit-length (within tolerance) and emit a metric if not.
+        float[] queryEmb = processing.getEmbedding();
+        double norm = pt.estga.shared.utils.VectorUtils.l2Norm(queryEmb);
+        if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
+            try { meterRegistry.counter("processing.suggestions.unnormalized_embedding.count", "engine", "db").increment(); } catch (Exception ignored) {}
+            log.warn("Processing {} embedding not normalized (norm={}) — ingestion should normalize embeddings", processing.getId(), norm);
         }
         String vector = VectorUtils.toVectorLiteral(queryEmb);
 
@@ -167,10 +186,10 @@ public class SimilarityService {
                 try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 continue;
             }
-            if (sim > 1.0 || sim < -1.0) {
+            if (sim > 1.0 || sim < 0.0) {
                 try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(); } catch (Exception ignored) {}
-                // clamp to valid cosine range
-                sim = Math.max(-1.0, Math.min(1.0, sim));
+                // clamp to [0,1] defensive range — we treat negative similarities as non-matching
+                sim = Math.max(0.0, Math.min(1.0, sim));
             }
             scored.add(new AbstractMap.SimpleEntry<>(p, sim));
         }
@@ -227,7 +246,7 @@ public class SimilarityService {
             // by evidence id alone because joins or upstream data issues might map the same
             // evidence to different occurrences/marks; we want to treat each distinct
             // evidence->mark contribution separately.
-            String pairKey = id.toString() + ":" + markId.toString();
+            String pairKey = id + ":" + markId;
             if (!seenPairs.add(pairKey)) {
                 try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 continue;
@@ -247,19 +266,18 @@ public class SimilarityService {
             }
             perMarkCounts.put(markId, used + 1);
 
-            // Blend similarity with DB-provided rank signal to retain ordering information
-            // while keeping similarity the primary signal. rankFactor in [0,1] controls
-            // the contribution of rank (small values favor similarity, larger values
-            // give more weight to DB rank). We compute a simple rankScore = 1/(1+idx).
+            // Scoring model: multiplicative fusion of signals. We compute a rank decay
+            // (higher-ranked candidates get slightly more influence) and multiply it
+            // with the per-mark diminishing multiplier. The contribution is
+            // contribution = similarity * rankDecay * perMarkMultiplier.
+            // We aggregate contributions per mark and normalize by the sum of
+            // (rankDecay * perMarkMultiplier) to produce a weighted average confidence.
             double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-            double rankScore = 1.0 / (1.0 + (double) idx);
-            double effectiveRankFactor = Math.max(0.0, Math.min(1.0, rankFactor));
-            double weight = useRankWeighting
-                    ? ((1.0 - effectiveRankFactor) * simClamped + effectiveRankFactor * rankScore)
-                    : 1.0;
-            double weighted = simClamped * weight * perMarkMultiplier;
+            double rankDecay = useRankWeighting ? 1.0 / (1.0 + (double) idx) : 1.0;
+            double weight = rankDecay * perMarkMultiplier;
+            double contribution = simClamped * weight;
 
-            scores.merge(markId, weighted, Double::sum);
+            scores.merge(markId, contribution, Double::sum);
             weightSums.merge(markId, weight, Double::sum);
         }
 

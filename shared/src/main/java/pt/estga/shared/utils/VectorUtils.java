@@ -60,4 +60,14 @@ public final class VectorUtils {
         for (int i = 0; i < v.length; i++) out[i] = (float) (v[i] / norm);
         return out;
     }
+
+    /**
+     * Compute L2 norm of a float[] vector. Returns NaN for null or empty inputs.
+     */
+    public static double l2Norm(float[] v) {
+        if (v == null || v.length == 0) return Double.NaN;
+        double sumSq = 0.0;
+        for (float x : v) sumSq += (double) x * x;
+        return Math.sqrt(sumSq);
+    }
 }
