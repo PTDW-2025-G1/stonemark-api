@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity.aggregation;
 import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.enums.FanOutStrategy;
 import pt.estga.processing.models.CandidateEvidence;
+import pt.estga.processing.models.ScoringResult;
 
 import java.util.*;
 
@@ -13,8 +14,6 @@ public class MarkScoringStage {
     public MarkScoringStage(ScoringPolicy scoringPolicy) {
         this.scoringPolicy = scoringPolicy;
     }
-
-    public static record ScoringResult(Map<Long, Double> scores, Map<Long, Double> weightSums, int perMarkContributions, int perMarkDecayApplied, int fanOutContributionCount, int weightAnomalies) {}
 
     public ScoringResult score(Map<Long, List<CandidateEvidence>> dedupedByMark, Map<java.util.UUID, Integer> fanOutCounts) {
         Map<Long, Double> scores = new TreeMap<>();
@@ -34,12 +33,13 @@ public class MarkScoringStage {
             List<CandidateEvidence> list = dedupedByMark.get(markId);
             if (list == null || list.isEmpty()) continue;
 
-            // Sort deterministically within the group
-            CandidateGrouper.sortGroupsEvidencesDeterministically(list);
+            // Do not mutate input lists: make a defensive copy and sort that.
+            List<CandidateEvidence> sorted = new ArrayList<>(list);
+            CandidateGrouper.sortGroupsEvidencesDeterministically(sorted);
 
             int used = 0;
-            for (int i = 0; i < list.size(); i++) {
-                CandidateEvidence ce = list.get(i);
+            for (int i = 0; i < sorted.size(); i++) {
+                CandidateEvidence ce = sorted.get(i);
                 if (ce == null) continue;
                 java.util.UUID evidenceId = ce.evidenceId();
                 double similarity = ce.similarity();

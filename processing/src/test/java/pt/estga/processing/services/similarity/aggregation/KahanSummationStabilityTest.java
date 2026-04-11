@@ -17,10 +17,6 @@ public class KahanSummationStabilityTest {
         ScoringPolicy policy = new ScoringPolicy(false, 1.0, "FULL");
         ScoreCalculator calc = new ScoreCalculator(policy);
 
-        // Use reflection to invoke private kahanScoresSum
-        Method m = ScoreCalculator.class.getDeclaredMethod("kahanScoresSum", Map.class, Map.class, Long.class, double.class);
-        m.setAccessible(true);
-
         Map<Long, Double> wSumsA = new HashMap<>();
         Map<Long, Double> wCompsA = new HashMap<>();
 
@@ -32,14 +28,14 @@ public class KahanSummationStabilityTest {
         double[] values = new double[100];
         Arrays.fill(values, 1e-8);
 
-        // Add values in forward order
+        // Add values in forward order using KahanAccumulator directly
         for (double v : values) {
-            m.invoke(calc, wSumsA, wCompsA, markId, v);
+            KahanAccumulator.kahanScoresSum(wSumsA, wCompsA, markId, v);
         }
 
         // Add values in reverse order
         for (int i = values.length - 1; i >= 0; i--) {
-            m.invoke(calc, wSumsB, wCompsB, markId, values[i]);
+            KahanAccumulator.kahanScoresSum(wSumsB, wCompsB, markId, values[i]);
         }
 
         double sumA = wSumsA.getOrDefault(markId, 0.0);
