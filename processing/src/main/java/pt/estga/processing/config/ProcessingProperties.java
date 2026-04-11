@@ -39,6 +39,14 @@ public class ProcessingProperties {
         @Setter
         private double perMarkDecay = 0.5;
 
+        /**
+         * Return the maximum DB distance corresponding to the configured minScore.
+         * Encapsulating this conversion keeps domain rules in configuration.
+         */
+        public double getMaxDistance() {
+            return Math.max(0.0, 1.0 - minScore);
+        }
+
         public void setParityCheck(ParityCheck parityCheck) {
             this.parityCheck = Objects.requireNonNullElseGet(parityCheck, ParityCheck::new);
         }

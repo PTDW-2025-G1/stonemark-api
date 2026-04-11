@@ -1,15 +1,16 @@
 package pt.estga.processing.services.similarity.helpers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.EvidenceKey;
+import pt.estga.processing.models.MarkScore;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Core business logic: aggregate CandidateEvidence into per-mark scores and weight sums.
@@ -17,20 +18,23 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MarkAggregator {
 
     private final ProcessingProperties properties;
 
-    public AggregationResult aggregate(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId) {
+    public AggregationResult aggregate(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId, int k) {
         Map<Long, Double> scores = new TreeMap<>();
         Map<Long, Double> weightSums = new TreeMap<>();
         Map<Long, Double> scoreComps = new TreeMap<>();
         Map<Long, Double> weightComps = new TreeMap<>();
 
-        // Build marksById map
-        Map<Long, Mark> marksById = markByEvidenceId.values().stream().filter(Objects::nonNull)
-                .filter(m -> m.getId() != null)
-                .collect(Collectors.toMap(Mark::getId, m -> m, (a,b) -> a, TreeMap::new));
+        // Build marksById map deterministically and tolerate duplicates
+        Map<Long, Mark> marksById = new TreeMap<>();
+        for (Mark m : markByEvidenceId.values()) {
+            if (m == null || m.getId() == null) continue;
+            marksById.putIfAbsent(m.getId(), m);
+        }
 
         // Group candidates by mark id
         Map<Long, List<CandidateEvidence>> contributionsByMark = new HashMap<>();
@@ -113,6 +117,40 @@ public class MarkAggregator {
             }
         }
 
-        return new AggregationResult(scores, weightSums, marksById, duplicates, perMarkContributions, perMarkDecayApplied);
+        // Build final per-mark confidences
+        List<MarkScore> topScores = new ArrayList<>();
+        for (Map.Entry<Long, Double> entry : scores.entrySet()) {
+            Long markId = entry.getKey();
+            double totalScore = entry.getValue();
+            Double weight = weightSums.get(markId);
+            if (weight == null || weight == 0.0) {
+                // data issue: missing weight for markId
+                log.warn("Invariant violation in aggregator: missing weightSum for mark id {}", markId);
+                continue;
+            }
+            Mark m = marksById.get(markId);
+            if (m == null) {
+                log.warn("Missing Mark entity for id {} while computing final confidence", markId);
+                continue;
+            }
+            double confidence = totalScore / weight;
+            double quantized = Math.round(confidence * 1_000_000d) / 1_000_000d;
+            topScores.add(new MarkScore(markId, m, quantized));
+        }
+
+        // Sort deterministically: confidence desc, markId asc
+        topScores.sort((a, b) -> {
+            int cmp = Double.compare(b.confidence(), a.confidence());
+            if (cmp != 0) return cmp;
+            if (a.markId() == null && b.markId() == null) return 0;
+            if (a.markId() == null) return 1;
+            if (b.markId() == null) return -1;
+            return a.markId().compareTo(b.markId());
+        });
+
+        // Apply limit k if requested
+        List<MarkScore> limited = (k > 0 && topScores.size() > k) ? topScores.subList(0, k) : topScores;
+
+        return new AggregationResult(limited, duplicates, perMarkContributions, perMarkDecayApplied);
     }
 }

@@ -1,15 +1,13 @@
 package pt.estga.processing.models;
 
-import lombok.Builder;
-import pt.estga.mark.entities.Mark;
+import java.util.List;
 
-import java.util.Map;
-
-@Builder
+/**
+ * AggregationResult now contains a final ranked list of MarkScore and counters
+ * describing aggregation diagnostics.
+ */
 public record AggregationResult(
-        Map<Long, Double> scores,
-        Map<Long, Double> weightSums,
-        Map<Long, Mark> marksById,
+        List<MarkScore> topScores,
         int duplicates,
         int perMarkContributions,
         int perMarkDecayApplied

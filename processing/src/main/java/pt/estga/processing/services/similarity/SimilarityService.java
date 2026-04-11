@@ -13,7 +13,6 @@ import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.SanitizationResult;
@@ -78,7 +77,7 @@ public class SimilarityService {
             try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
             log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, properties.getSimilarity().getMaxK(), safeK);
         }
-        double maxDistance = Math.max(0.0, 1.0 - properties.getSimilarity().getMinScore());
+        double maxDistance = properties.getSimilarity().getMaxDistance();
 
         // Fetch DB candidates (DB boundary)
         List<MarkEvidenceDistanceProjection> hits = candidateFetcher.fetchCandidates(vector, safeK, maxDistance);
@@ -94,11 +93,17 @@ public class SimilarityService {
             UUID id = r.getId();
             Mark m = r.getMark();
             if (id == null || m == null) continue;
-            markByEvidenceId.putIfAbsent(id, m);
+            Mark existing = markByEvidenceId.get(id);
+            if (existing == null) {
+                markByEvidenceId.put(id, m);
+            } else if (!Objects.equals(existing.getId(), m.getId())) {
+                // Data inconsistency: same evidence id mapped to different marks — keep first mapping
+                log.warn("Duplicate mark mapping encountered for evidence id {}: keeping mark id {} over {}", id, existing.getId(), m.getId());
+            }
         }
 
         // Aggregate contributions (core business logic)
-        AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId);
+        AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId, k);
 
         // Emit aggregated metrics collected during sanitization/aggregation
         try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(sanitized.invalidSimilarityCount()); } catch (Exception ignored) {}
@@ -108,7 +113,7 @@ public class SimilarityService {
         try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(aggregation.perMarkDecayApplied()); } catch (Exception ignored) {}
 
         // Build final suggestions from aggregation results (pure transformation)
-        result = suggestionBuilder.buildSuggestions(aggregation.scores(), aggregation.weightSums(), aggregation.marksById(), processing, k);
+        result = suggestionBuilder.buildSuggestions(aggregation.topScores(), processing);
 
 
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
