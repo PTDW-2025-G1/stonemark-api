@@ -2,10 +2,8 @@ package pt.estga.processing.services.similarity;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
@@ -27,23 +25,12 @@ import pt.estga.processing.services.similarity.helpers.*;
 public class SimilarityService {
 
     /**
-     * Similarity service (DB-backed candidate retrieval + JVM-side scoring).
+     * Computes similarity-based Mark suggestions for a processed submission.
      * <p>
-     * Architecture note (explicit): this service treats the database as the
-     * candidate retrieval layer (approximate nearest neighbours via pgvector)
-     * and applies a JVM-side scoring/aggregation layer to produce per-mark
-     * suggestions with confidence. Invariants and contract:
-     *  - Embeddings MUST be L2-normalized (unit length) at ingestion time. The
-     *    service enforces normalization for newly produced embeddings, but
-     *    historical data must also be normalized to guarantee parity.
-     *  - The DB projection MUST return a similarity value computed as
-     *    1.0 - (me.embedding <#> CAST(:vector AS vector)) (i.e. 1 - cosine_distance).
-     *    If the DB operator, index, or stored vectors change (e.g. switch to
-     *    L2 or inner-product) this contract must be updated accordingly.
+     * Uses DB-backed vector search for candidate retrieval and JVM-side aggregation
+     * to compute per-mark confidence scores.
      * <p>
-     * The scoring layer performs defensive validation of DB-provided similarities
-     * (null/NaN/non-finite/out-of-range) and clamps values to [0.0, 1.0] before
-     * using them in weighting to avoid propagation of corrupted data.
+     * Returns up to k ranked MarkSuggestion results.
      */
 
     private final MeterRegistry meterRegistry;
