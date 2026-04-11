@@ -7,7 +7,7 @@ import java.util.UUID;
 public record SanitizationResult(
         List<CandidateEvidence> candidates,
         Set<UUID> idSet,
-        java.util.Set<CandidateKey> candidateKeys,
+        Set<CandidateKey> candidateKeys,
         int rawHitCount,
         int invalidSimilarityCount,
         int outOfRangeCount

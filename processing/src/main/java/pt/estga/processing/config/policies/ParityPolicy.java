@@ -21,6 +21,10 @@ public class ParityPolicy {
             @Value("${processing.similarity.parity-check.tolerance:0.001}") double tolerance,
             @Value("${processing.similarity.parity-check.sample-size:3}") int sampleSize
     ) {
+        // Validate parity policy values. sampleSize must be >= 1 and tolerance >= 0.
+        if (sampleSize < 1) throw new IllegalArgumentException("ParityPolicy.sampleSize must be >= 1: " + sampleSize);
+        if (Double.isNaN(tolerance) || tolerance < 0.0) throw new IllegalArgumentException("ParityPolicy.tolerance must be >= 0: " + tolerance);
+
         this.async = async;
         this.tolerance = tolerance;
         this.sampleSize = sampleSize;

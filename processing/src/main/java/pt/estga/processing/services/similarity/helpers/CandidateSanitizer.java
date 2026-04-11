@@ -21,7 +21,9 @@ public class CandidateSanitizer {
     private final SanitizationPolicy policy;
 
     public SanitizationResult sanitize(List<MarkEvidenceDistanceProjection> hits) {
-        if (hits == null || hits.isEmpty()) return new SanitizationResult(List.of(), Collections.emptySet(), 0, 0, 0);
+        if (hits == null || hits.isEmpty()) {
+            return new SanitizationResult(List.of(), Collections.emptySet(), Collections.emptySet(), 0, 0, 0);
+        }
 
         List<MarkEvidenceDistanceProjection> nonNull = hits.stream().filter(Objects::nonNull).toList();
         List<CandidateEvidence> candidates = new ArrayList<>();
