@@ -9,6 +9,7 @@ public record AggregationState(
         int duplicates,
         int perMarkContributions,
         int perMarkDecayApplied,
+        int fanOutExpandedContributions,
         int weightAnomalies
 ) {
 }

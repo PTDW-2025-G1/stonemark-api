@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity.aggregation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.processing.config.policies.ScoringPolicy;
+import pt.estga.processing.enums.FanOutStrategy;
 import pt.estga.processing.models.AggregationState;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.CandidateKey;
@@ -15,7 +16,7 @@ public class ScoreCalculator {
 
     private final ScoringPolicy scoringPolicy;
 
-    public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark) {
+    public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark, Map<UUID, Integer> fanOutCounts) {
         Map<Long, Double> scores = new TreeMap<>();
         Map<Long, Double> weightSums = new TreeMap<>();
         Map<Long, Double> scoreComps = new TreeMap<>();
@@ -25,6 +26,7 @@ public class ScoreCalculator {
         int duplicates = 0;
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
+        int fanOutExpandedContributions = 0;
 
         double decay = Math.max(0.0, scoringPolicy.getPerMarkDecay());
 
@@ -53,8 +55,16 @@ public class ScoreCalculator {
                 double signal = simClamped * (scoringPolicy.isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
-                kahanScoresSum(scores, scoreComps, markId, contribution);
-                kahanScoresSum(weightSums, weightComps, markId, perMarkMultiplier);
+                // Apply fan-out scaling: if an evidence mapped to multiple marks and the
+                // policy requests SPLIT, divide contribution and weight among marks to
+                // avoid inflating aggregate scores. If FULL, duplicate full contribution.
+                int fanOut = 1;
+                try { fanOut = fanOutCounts.getOrDefault(evidenceId, 1); } catch (Exception ignored) {}
+                double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / Math.max(1, fanOut) : 1.0;
+                if (fanOut > 1) fanOutExpandedContributions++;
+
+                kahanScoresSum(scores, scoreComps, markId, contribution * scale);
+                kahanScoresSum(weightSums, weightComps, markId, perMarkMultiplier * scale);
 
                 used++;
             }
@@ -82,7 +92,7 @@ public class ScoreCalculator {
             confidences.put(markId, conf);
         }
 
-        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, perMarkDecayApplied, weightAnomalies);
+        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, fanOutExpandedContributions, perMarkDecayApplied, weightAnomalies);
     }
 
     private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {

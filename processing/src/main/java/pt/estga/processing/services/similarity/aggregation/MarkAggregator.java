@@ -14,6 +14,12 @@ import java.util.*;
  * - CandidateGrouper: grouping & sorting
  * - ScoreCalculator: scoring, accumulation
  * - AggregationResultBuilder: final confidence computation, sorting and limiting
+ * <p>
+ * Deterministic ordering contract:
+ * - Input evidence id order is preserved from the sanitizer's LinkedHashSet and
+ *   from the `markByEvidenceId` LinkedHashMap built by the service.
+ * - Grouping and per-mark iteration use TreeMap to guarantee ascending mark id
+ *   order across runs. Sorting within groups is explicit and deterministic.
  */
 @Service
 @RequiredArgsConstructor
@@ -45,7 +51,17 @@ public class MarkAggregator {
         }
 
         var contributionsByMark = grouper.groupAndSort(candidates, markByEvidenceId);
-        var state = calculator.compute(contributionsByMark);
+        // Build fan-out counts (evidenceId -> number of associated marks) for
+        // correct scaling decisions in the ScoreCalculator.
+        Map<UUID, Integer> fanOutCounts = new LinkedHashMap<>();
+        if (markByEvidenceId != null) {
+            for (Map.Entry<UUID, List<Mark>> e : markByEvidenceId.entrySet()) {
+                List<Mark> list = e.getValue();
+                fanOutCounts.put(e.getKey(), list == null ? 0 : list.size());
+            }
+        }
+
+        var state = calculator.compute(contributionsByMark, fanOutCounts);
         return resultBuilder.build(state, marksById, k, missingMarkMappings);
     }
 }

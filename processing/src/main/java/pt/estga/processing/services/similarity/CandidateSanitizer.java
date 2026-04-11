@@ -13,6 +13,23 @@ import java.util.stream.Collectors;
 /**
  * Trust boundary: converts DB projections into domain-shaped CandidateEvidence
  * instances and returns counts and sets useful for orchestration.
+ *
+ * Contract guarantees:
+ * - The returned {@code candidates} list preserves the input (DB) ordering after
+ *   removing null rows and invalid similarity values. Candidates are not deduplicated
+ *   in this list; duplicates may appear if the DB returned duplicated projections.
+ * - The returned {@code idSet} is a LinkedHashSet preserving the first-seen order of
+ *   evidence ids and contains one entry per distinct evidence id.
+ * - The returned {@code candidateKeys} is a LinkedHashSet of deduplicated
+ *   (evidenceId, occurrenceId) pairs in the order they were first seen; it is useful
+ *   for detecting duplicate occurrence-level contributions without mutating the
+ *   primary candidates list.
+ * - Similarity values outside configured bounds are clamped (not dropped) and
+ *   counted in {@code outOfRangeCount}.
+ * - The sanitizer does NOT enforce aggregation-time deduplication by mark.
+ *   It is the aggregator's responsibility to enforce uniqueness of
+ *   (evidenceId, occurrenceId, markId) contributions; sanitizer only provides
+ *   occurrence-level keys for higher-level orchestration and diagnostics.
  */
 @Service
 @RequiredArgsConstructor

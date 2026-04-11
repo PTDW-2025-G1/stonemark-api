@@ -105,6 +105,15 @@ public class SimilarityService {
         // Build deterministic mapping from evidence id -> list of marks. Multiple projections
         // for the same evidence id are preserved as a list so that aggregation can
         // explicitly expand contributions to all associated marks (avoids silent data loss).
+        // Note on determinism and fan-out handling:
+        // - `sanitized.idSet()` is a LinkedHashSet preserving first-seen DB order of evidence ids.
+        // - We build `markByEvidenceId` using a LinkedHashMap to keep that ordering when iterating.
+        // - The aggregator uses a configurable fan-out strategy (ScoringPolicy.FanOutStrategy) to
+        //   decide whether an evidence's contribution should be duplicated for every associated mark
+        //   (FULL) or split among them (SPLIT). The default is SPLIT to avoid accidental score inflation.
+        if (log.isDebugEnabled()) {
+            log.debug("Similarity policy: minScore={} maxDistance={}", similarityPolicy.getMinScore(), similarityPolicy.getMaxDistance());
+        }
         Map<UUID, List<Mark>> markByEvidenceId = new LinkedHashMap<>();
         for (EvidenceMarkProjection r : rows) {
             if (r == null) continue;
