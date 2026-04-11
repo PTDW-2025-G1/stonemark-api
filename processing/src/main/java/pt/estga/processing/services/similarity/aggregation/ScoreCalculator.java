@@ -63,6 +63,7 @@ public class ScoreCalculator {
             // Deduplicate by AggregationKey keeping the highest-similarity entry per key.
             Map<AggregationKey, CandidateEvidence> bestPerKey = new LinkedHashMap<>();
             for (CandidateEvidence ce : list) {
+                if (ce == null) continue; // tolerate null entries in lists
                 AggregationKey key = AggregationKey.of(ce.evidenceId(), ce.occurrenceId(), markId);
                 CandidateEvidence prev = bestPerKey.get(key);
                 if (prev == null) {

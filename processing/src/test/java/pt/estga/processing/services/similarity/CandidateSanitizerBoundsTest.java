@@ -34,12 +34,13 @@ public class CandidateSanitizerBoundsTest {
 
         // Instead of asserting positional ordering (which may change if upstream code evolves),
         // assert presence/counts of the clamped similarity values.
+        // Group by quantized similarity (rounded to 1e-6) to avoid fragile exact-double equality
         var similarityCounts = res.candidates().stream()
-                .collect(Collectors.groupingBy(CandidateEvidence::similarity, Collectors.counting()));
+                .collect(Collectors.groupingBy(c -> Math.round(c.similarity() * 1_000_000d), Collectors.counting()));
 
-        assertEquals(1L, similarityCounts.getOrDefault(0.2d, 0L));
-        assertEquals(1L, similarityCounts.getOrDefault(0.5d, 0L));
-        assertEquals(1L, similarityCounts.getOrDefault(0.9d, 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.2d * 1_000_000d), 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.5d * 1_000_000d), 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.9d * 1_000_000d), 0L));
 
         // idSet should contain the three remaining ids (order-preservation is an implementation detail and not asserted here)
         var ids = res.idSet();
