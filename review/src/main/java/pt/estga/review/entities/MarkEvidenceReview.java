@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.mark.entities.Mark;
+import pt.estga.review.converters.ReviewDecisionConverter;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.user.entities.User;
 
@@ -28,6 +29,8 @@ public class MarkEvidenceReview {
     @ManyToOne
     private Mark selectedMark;
 
+    @Convert(converter = ReviewDecisionConverter.class)
+    @Column(name = "decision", nullable = false, columnDefinition = "integer")
     private ReviewDecision decision;
 
     private Instant reviewedAt;

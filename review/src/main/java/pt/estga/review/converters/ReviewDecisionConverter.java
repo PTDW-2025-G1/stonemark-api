@@ -1,4 +1,4 @@
-package pt.estga.review.entities;
+package pt.estga.review.converters;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
