@@ -213,8 +213,17 @@ public class SimilarityService {
                             .confidence(confidence)
                             .build();
                 })
-                .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
-                .limit(5)
+                .sorted((a, b) -> {
+                    int cmp = Double.compare(b.getConfidence(), a.getConfidence());
+                    if (cmp != 0) return cmp;
+                    Long aId = a.getMark() == null ? null : a.getMark().getId();
+                    Long bId = b.getMark() == null ? null : b.getMark().getId();
+                    if (aId == null && bId == null) return 0;
+                    if (aId == null) return 1;
+                    if (bId == null) return -1;
+                    return aId.compareTo(bId);
+                })
+                .limit(k)
                 .toList();
             }
         }

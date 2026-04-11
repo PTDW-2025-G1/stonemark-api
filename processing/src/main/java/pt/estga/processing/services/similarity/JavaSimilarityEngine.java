@@ -42,10 +42,11 @@ public class JavaSimilarityEngine {
         // Validate k
         if (k <= 0) return List.of();
 
-        // Normalize processing embedding once to ensure consistent cosine computation
+        // Compute cosine similarity using the raw embeddings (no additional normalization).
+        // This mirrors the DB pgvector '<#>' operator semantics (distance -> 1 - distance == cosine similarity)
+        // and avoids mixing a runtime normalization step here that would diverge from DB-side behavior.
         float[] procEmb = processing.getEmbedding();
-        double[] procNorm = VectorUtils.normalize(procEmb);
-        if (procNorm == null || procNorm.length == 0) return List.of();
+        if (procEmb == null || procEmb.length == 0) return List.of();
 
         // Stream evidence in pages and maintain a bounded min-heap to keep top-k evidence by similarity.
         PriorityQueue<Map.Entry<MarkEvidence, Double>> heap = new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
@@ -69,9 +70,13 @@ public class JavaSimilarityEngine {
 
                 considered++;
 
-                double[] evNorm = VectorUtils.normalize(ev.getEmbedding());
-                Double sim = VectorUtils.cosineSimilarity(procNorm, evNorm);
-                if (sim == null) continue;
+                // Compute cosine similarity directly from float[] vectors to mirror DB semantics.
+                Double sim = VectorUtils.cosineSimilarity(procEmb, ev.getEmbedding());
+                if (sim == null) {
+                    // Track invalid/zero-norm embeddings so operators can detect dirty data.
+                    try { meterRegistry.counter("processing.suggestions.invalid.embedding.count", "engine", "java").increment(); } catch (Exception ignored) {}
+                    continue;
+                }
 
                 Map.Entry<MarkEvidence, Double> entry = Map.entry(ev, sim);
                 if (heap.size() < k) {
@@ -92,7 +97,17 @@ public class JavaSimilarityEngine {
 
         // Build sorted list of top-k candidates (descending by similarity)
         List<Map.Entry<MarkEvidence, Double>> filteredScored = new ArrayList<>(heap);
-        filteredScored.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+        // Sort descending by similarity, break ties deterministically by evidence UUID string
+        filteredScored.sort((a, b) -> {
+            int cmp = Double.compare(b.getValue(), a.getValue());
+            if (cmp != 0) return cmp;
+            java.util.UUID aId = a.getKey() == null ? null : a.getKey().getId();
+            java.util.UUID bId = b.getKey() == null ? null : b.getKey().getId();
+            if (aId == null && bId == null) return 0;
+            if (aId == null) return 1;
+            if (bId == null) return -1;
+            return aId.toString().compareTo(bId.toString());
+        });
 
         Map<Long, Double> scores = new HashMap<>();
         Map<Long, Double> weightSums = new HashMap<>();
