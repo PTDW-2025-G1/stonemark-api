@@ -130,8 +130,17 @@ public class SimilarityService {
             }
         }
 
+        // Compute how many candidate evidence ids lacked mark mappings (silent drops)
+        Set<UUID> mappedIds = new HashSet<>();
+        for (EvidenceMarkProjection r : rows) {
+            if (r == null) continue;
+            UUID id = r.getId();
+            if (id != null) mappedIds.add(id);
+        }
+        int missingMarkMappings = Math.max(0, sanitized.idSet().size() - mappedIds.size());
+
         // Aggregate contributions (core business logic)
-        AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId, k);
+        AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId, k, missingMarkMappings);
 
         // Emit aggregated metrics collected during sanitization/aggregation
         try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(sanitized.invalidSimilarityCount()); } catch (Exception ignored) {}

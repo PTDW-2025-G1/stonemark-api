@@ -1,20 +1,19 @@
 package pt.estga.processing.services.similarity.helpers.aggregation;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.processing.config.policies.ScoringPolicy;
+import pt.estga.processing.models.AggregationState;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.EvidenceKey;
 
 import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 public class ScoreCalculator {
 
     private final ScoringPolicy scoringPolicy;
-
-    public ScoreCalculator(ScoringPolicy scoringPolicy) {
-        this.scoringPolicy = scoringPolicy;
-    }
 
     public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark) {
         Map<Long, Double> scores = new TreeMap<>();
@@ -84,15 +83,5 @@ public class ScoreCalculator {
         w = wt;
         weightSums.put(markId, w);
         weightComps.put(markId, wc);
-    }
-
-    public record AggregationState(
-            Map<Long, Double> scores,
-            Map<Long, Double> weightSums,
-            Map<Long, Double> confidences,
-            int duplicates,
-            int perMarkContributions,
-            int perMarkDecayApplied
-    ) {
     }
 }

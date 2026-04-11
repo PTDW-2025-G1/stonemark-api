@@ -1,6 +1,7 @@
 package pt.estga.processing.models;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * AggregationResult now contains a final ranked list of MarkScore and counters
@@ -11,7 +12,8 @@ public record AggregationResult(
         int duplicates,
         int perMarkContributions,
         int perMarkDecayApplied,
-        java.util.Map<Long, Double> rawScores,
-        java.util.Map<Long, Double> weightSums
+        Map<Long, Double> rawScores,
+        Map<Long, Double> weightSums,
+        int missingMarkMappings
 ) {
 }

@@ -2,6 +2,7 @@ package pt.estga.processing.services.similarity.helpers.aggregation;
 
 import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.Mark;
+import pt.estga.processing.models.AggregationState;
 import pt.estga.processing.models.MarkScore;
 import pt.estga.processing.models.AggregationResult;
 
@@ -10,7 +11,7 @@ import java.util.*;
 @Component
 public class AggregationResultBuilder {
 
-    public AggregationResult build(ScoreCalculator.AggregationState state, Map<Long, Mark> marksById, int k) {
+    public AggregationResult build(AggregationState state, Map<Long, Mark> marksById, int k, int missingMarkMappings) {
         List<MarkScore> topScores = new ArrayList<>();
         // Use confidences computed by ScoreCalculator as the single source of truth
         // for per-mark confidence values.
@@ -40,6 +41,6 @@ public class AggregationResultBuilder {
         Map<Long, Double> rawScoresCopy = Collections.unmodifiableMap(new TreeMap<>(state.scores()));
         Map<Long, Double> weightSumsCopy = Collections.unmodifiableMap(new TreeMap<>(state.weightSums()));
 
-        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), rawScoresCopy, weightSumsCopy);
+        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), rawScoresCopy, weightSumsCopy, missingMarkMappings);
     }
 }
