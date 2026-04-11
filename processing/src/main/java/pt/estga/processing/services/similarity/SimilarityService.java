@@ -15,6 +15,7 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import java.util.stream.Collectors;
@@ -63,6 +64,8 @@ public class SimilarityService {
     private double parityTolerance;
     @Value("${processing.similarity.parity-check.sample-size:3}")
     private int paritySampleSize;
+    @Value("${processing.similarity.parity-check.async:true}")
+    private boolean parityCheckAsync;
     @Value("${processing.similarity.max-k:200}")
     private int maxK;
     @Value("${processing.similarity.per-mark-decay:0.5}")
@@ -71,6 +74,19 @@ public class SimilarityService {
     @PostConstruct
     void maybeRunParityCheck() {
         if (!parityCheckEnabled) return;
+        if (parityCheckAsync) {
+            // Run parity check asynchronously so startup isn't blocked by this validation.
+            CompletableFuture.runAsync(() -> {
+                try {
+                    runParityCheck();
+                } catch (Exception e) {
+                    log.error("Similarity parity check failed (async): {}", e.getMessage());
+                }
+            });
+            return;
+        }
+
+        // Synchronous (fail-fast) behavior when async is disabled.
         try {
             runParityCheck();
         } catch (Exception e) {
@@ -260,7 +276,10 @@ public class SimilarityService {
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
-            contributionsByMark.computeIfAbsent(markId, mk -> new ArrayList<>()).add(e);
+            if (!contributionsByMark.containsKey(markId)) {
+                contributionsByMark.put(markId, new ArrayList<>());
+            }
+            contributionsByMark.get(markId).add(e);
         }
 
         Set<String> seenPairs = new HashSet<>();
@@ -316,9 +335,13 @@ public class SimilarityService {
                 }
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-                // Use rankScore local to this mark's ordering if rank weighting is enabled
+                // Ranking signal: combine similarity and (optionally) rank.
+                // Use a multiplicative hybrid so that similarity remains the primary
+                // signal while rank provides a small positional bias when enabled.
+                // - If useRankWeighting == false: signal = simClamped
+                // - If useRankWeighting == true : signal = simClamped * rankScore
                 double rankScore = 1.0 / (1.0 + (double) i);
-                double signal = useRankWeighting ? rankScore : simClamped;
+                double signal = simClamped * (useRankWeighting ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
                 // Kahan add for scores: reduce floating-point error and improve cross-run stability
