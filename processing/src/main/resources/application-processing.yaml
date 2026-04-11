@@ -1,0 +1,25 @@
+# Processing-specific application properties
+# Keep defaults aligned with SimilarityService implementation.
+processing:
+  similarity:
+    # Minimum similarity (confidence) required for suggestions. Range: 0.0 - 1.0
+    min-score: 0.6
+
+    # When true, weight contributions by similarity (more weight to higher similarity).
+    use-rank-weighting: true
+
+    # Optional parity check on startup (sample-based validation between DB similarity and Java cosine).
+    parity-check:
+      enabled: false
+      # Difference tolerance between DB similarity and Java cosine similarity (absolute)
+      tolerance: 0.001
+      # How many sample rows to check at startup when parity-check.enabled=true
+      sample-size: 3
+
+    # Safety limits
+    # Maximum k accepted by the service (requests higher than this are clamped).
+    max-k: 200
+
+    # Per-mark cap: maximum number of evidence contributions allowed per mark to avoid
+    # domination by marks with many associated evidences.
+    per-mark-cap: 5

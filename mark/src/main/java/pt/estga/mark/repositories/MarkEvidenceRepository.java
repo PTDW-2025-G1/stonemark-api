@@ -17,15 +17,28 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	SELECT
 		me.id,
 		me.occurrence_id,
-		(me.embedding <#> CAST(:vector AS vector)) AS distance
+		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity
 	FROM mark_evidence me
-	ORDER BY distance ASC
+	WHERE (me.embedding <#> CAST(:vector AS vector)) <= :maxDistance
+	ORDER BY similarity DESC
 	LIMIT :k
 	""", nativeQuery = true)
 	List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(
 			@Param("vector") String vector,
-			@Param("k") int k
+			@Param("k") int k,
+			@Param("maxDistance") double maxDistance
 	);
+
+	@Query(value = """
+	SELECT
+		me.id,
+		me.occurrence_id,
+		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity
+	FROM mark_evidence me
+	ORDER BY similarity DESC
+	LIMIT :k
+	""", nativeQuery = true)
+    List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(@Param("vector") String vector, @Param("k") int k);
 
 	@Query("""
 	SELECT e.id as id, m as mark FROM MarkEvidence e
@@ -35,8 +48,5 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	""")
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 
-	List<MarkEvidence> findAllByEmbeddingIsNotNull();
-
-	// Streaming / paginated access for Java-mode similarity to avoid loading entire table into memory.
 	Page<MarkEvidence> findAllByEmbeddingIsNotNull(org.springframework.data.domain.Pageable pageable);
 }

@@ -61,15 +61,15 @@ public class SimilarityServiceTest {
         MarkEvidenceDistanceProjection p1 = new MarkEvidenceDistanceProjection() {
             public UUID getId() { return id1; }
             public Long getOccurrenceId() { return 1L; }
-            public Double getDistance() { return 0.01; }
+            public Double getSimilarity() { return 0.99; }
         };
         MarkEvidenceDistanceProjection p2 = new MarkEvidenceDistanceProjection() {
             public UUID getId() { return id2; }
             public Long getOccurrenceId() { return 2L; }
-            public Double getDistance() { return 0.8; }
+            public Double getSimilarity() { return 0.2; }
         };
 
-        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5))).thenReturn(List.of(p1, p2));
+        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5), anyDouble())).thenReturn(List.of(p1, p2));
 
         Mark m1 = new Mark(); m1.setId(11L);
         Mark m2 = new Mark(); m2.setId(22L);
@@ -88,9 +88,9 @@ public class SimilarityServiceTest {
         MarkEvidenceDistanceProjection p1 = new MarkEvidenceDistanceProjection() {
             public UUID getId() { return id1; }
             public Long getOccurrenceId() { return 1L; }
-            public Double getDistance() { return 0.9; } // similarity = 0.1
+            public Double getSimilarity() { return 0.1; }
         };
-        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5))).thenReturn(List.of(p1));
+        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5), anyDouble())).thenReturn(List.of(p1));
         when(evidenceRepository.findMarksByEvidenceIds(anyList())).thenReturn(List.of());
 
         var suggestions = similarityService.findSimilar(processing, 5);
@@ -106,15 +106,15 @@ public class SimilarityServiceTest {
         MarkEvidenceDistanceProjection p1 = new MarkEvidenceDistanceProjection() {
             public UUID getId() { return id1; }
             public Long getOccurrenceId() { return 1L; }
-            public Double getDistance() { return 0.2; } // similarity = 0.8
+            public Double getSimilarity() { return 0.8; }
         };
         MarkEvidenceDistanceProjection p2 = new MarkEvidenceDistanceProjection() {
             public UUID getId() { return id2; }
             public Long getOccurrenceId() { return 2L; }
-            public Double getDistance() { return 0.4; } // similarity = 0.6
+            public Double getSimilarity() { return 0.6; }
         };
 
-        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5))).thenReturn(List.of(p1, p2));
+        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5), anyDouble())).thenReturn(List.of(p1, p2));
 
         Mark sameMark = new Mark(); sameMark.setId(11L);
         EvidenceMarkProjection r1 = new EvidenceMarkProjection() { public UUID getId(){return id1;} public Mark getMark(){return sameMark;} };

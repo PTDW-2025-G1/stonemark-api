@@ -11,5 +11,10 @@ public interface MarkEvidenceDistanceProjection {
 
     Long getOccurrenceId();
 
-    Double getDistance();
+    /**
+     * Similarity score returned by the DB (higher is better). This replaces the previous
+     * 'distance' field to make the DB contract explicit: SQL should compute similarity
+     * (for example 1 - cosine_distance) and return it here.
+     */
+    Double getSimilarity();
 }

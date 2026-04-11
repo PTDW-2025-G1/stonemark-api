@@ -13,15 +13,10 @@ import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.Set;
-import java.util.Objects;
-import java.util.HashSet;
 import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 
@@ -50,6 +45,8 @@ public class SimilarityService {
     private int paritySampleSize;
     @Value("${processing.similarity.max-k:200}")
     private int maxK;
+    @Value("${processing.similarity.per-mark-cap:5}")
+    private int perMarkCap;
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -76,9 +73,8 @@ public class SimilarityService {
             if (hits == null || hits.isEmpty()) continue;
             for (var p : hits) {
                 if (p.getId().equals(ev.getId())) continue; // skip self
-                Double distance = p.getDistance();
-                if (distance == null) continue;
-                double dbSim = 1.0 - distance;
+                Double dbSim = p.getSimilarity();
+                if (dbSim == null) continue;
                 // fetch the target evidence embedding
                 var opt = evidenceRepository.findById(p.getId());
                 if (opt.isEmpty()) continue;
@@ -113,12 +109,19 @@ public class SimilarityService {
         // and maintain a single source of truth for similarity ranking.
         // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
         int safeK = Math.max(1, Math.min(k, maxK));
-        // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
-        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, safeK);
+        if (k > maxK) {
+            try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
+            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, maxK, safeK);
+        }
+        // Query returns id + occurrence id + distance. Push the minSimilarity threshold into SQL
+        // to avoid pulling unnecessary rows. DB distance is converted to similarity by 1 - distance,
+        // so SQL filter is distance <= (1 - minSimilarity).
+        double maxDistance = 1.0 - minSimilarity;
+        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, safeK, maxDistance);
 
         if (log.isDebugEnabled()) {
-            log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()
-                    .map(MarkEvidenceDistanceProjection::getDistance)
+            log.debug("Top {} similarities (first 5): {}", hits.size(), hits.stream()
+                    .map(MarkEvidenceDistanceProjection::getSimilarity)
                     .limit(5)
                     .toList());
         }
@@ -141,29 +144,18 @@ public class SimilarityService {
         // possible to avoid this fragile conversion.
         List<MarkEvidenceDistanceProjection> nonNullHits = hits.stream().filter(Objects::nonNull).toList();
         var scored = nonNullHits.stream()
-                .map(p -> {
-                    Double distance = p.getDistance();
-                    double sim = distance == null ? Double.NaN : 1.0 - distance;
-                    // clamp to [-1,1] to avoid numeric drift
-                    if (Double.isFinite(sim)) {
-                        if (sim > 1.0) sim = 1.0;
-                        if (sim < -1.0) sim = -1.0;
-                    }
-                    return new java.util.AbstractMap.SimpleEntry<>(p, sim);
-                })
+                .map(p -> new AbstractMap.SimpleEntry<>(p, p.getSimilarity()))
                 .filter(e -> e.getValue() != null && !Double.isNaN(e.getValue()))
-                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .toList();
 
         // Collect unique evidence ids from the (re-ranked) top candidates
-        Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(java.util.LinkedHashSet::new));
-        // Record how many evidence rows were considered by the DB query (pre-dedupe).
-        try {
-            meterRegistry.counter("processing.suggestions.considered.count", "engine", "db").increment(hits.size());
-        } catch (Exception ignored) {}
+        Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
+        // Record DB-side candidate count and valid candidate count after filtering
+        try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(scored.size()); } catch (Exception ignored) {}
         Map<UUID, Mark> markByEvidenceId = Map.of();
         // build a marksById lookup here to avoid an extra pass later
-        Map<Long, Mark> marksById = new java.util.HashMap<>();
+        Map<Long, Mark> marksById = new HashMap<>();
         if (!idSet.isEmpty()) {
             List<EvidenceMarkProjection> rows = evidenceRepository.findMarksByEvidenceIds(List.copyOf(idSet));
             // Use a safe merge function to tolerate duplicate keys in case of bad data or join issues.
@@ -185,13 +177,13 @@ public class SimilarityService {
                     marksById.putIfAbsent(m.getId(), m);
                 }
             }
+            try { meterRegistry.counter("processing.suggestions.db_mapped_hits.count", "engine", "db").increment(marksById.size()); } catch (Exception ignored) {}
         }
 
         Set<UUID> seen = new HashSet<>();
-        int seenCount = 0;
-        int passing = 0;
         // Iterate over the re-ranked scored list; use similarity itself as a stable weight
         // if useRankWeighting is enabled. This removes dependence on DB ordering.
+        Map<Long, Integer> perMarkCounts = new HashMap<>();
         for (int idx = 0; idx < scored.size(); idx++) {
             MarkEvidenceDistanceProjection p = scored.get(idx).getKey();
             double similarity = scored.get(idx).getValue();
@@ -201,14 +193,21 @@ public class SimilarityService {
                 try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 continue; // dedupe
             }
-            seenCount++;
+
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
 
             if (Double.isNaN(similarity) || similarity < minSimilarity) continue;
-            passing++;
+
+            // per-mark cap: avoid letting marks with many evidences dominate the aggregated score.
+            int used = perMarkCounts.getOrDefault(markId, 0);
+            if (used >= perMarkCap) {
+                try { meterRegistry.counter("processing.suggestions.per_mark_skipped.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                continue;
+            }
+            perMarkCounts.put(markId, used + 1);
 
             // Use similarity as weight when weighting is enabled. This produces a stable,
             // meaningful contribution proportional to match quality instead of relying
@@ -220,8 +219,7 @@ public class SimilarityService {
             weightSums.merge(markId, weight, Double::sum);
         }
 
-        long filteredLocal = Math.max(0, seenCount - passing);
-        try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "db").increment(filteredLocal); } catch (Exception ignored) {}
+        // Record final suggestions count
 
             if (scores.isEmpty()) {
                 result = List.of();
@@ -279,6 +277,8 @@ public class SimilarityService {
         } catch (Exception e) {
             log.debug("Failed to record suggestions metric for processing {}: {}", processing.getId(), e.getMessage());
         }
+
+        try { meterRegistry.counter("processing.suggestions.final_suggestions.count", "engine", "db").increment(result.size()); } catch (Exception ignored) {}
 
         if (log.isDebugEnabled()) {
             Double topConfidence = result.stream().findFirst().map(MarkSuggestion::getConfidence).orElse(null);
