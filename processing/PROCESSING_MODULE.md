@@ -106,7 +106,9 @@ Within a single mark group:
 
 Formula:
 
+```text
 decayFactor = perMarkDecay ^ positionIndex
+```
 
 
 This reduces impact of repeated lower-ranked signals.
@@ -115,11 +117,12 @@ This reduces impact of repeated lower-ranked signals.
 
 ### Confidence Score
 
+
 Final mark score:
 
-
+```text
 confidence = totalScore / weightSum
-
+```
 
 Properties:
 - normalized to [0, 1]
