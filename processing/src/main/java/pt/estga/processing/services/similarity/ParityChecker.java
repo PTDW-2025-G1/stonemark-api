@@ -63,7 +63,7 @@ public class ParityChecker {
             String vec = VectorUtils.toVectorLiteral(emb);
             List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vec, 5);
             if (hits == null || hits.isEmpty()) continue;
-            List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceProjection::getId).filter(id -> !id.equals(ev.getId())).distinct().toList();
+            List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceProjection::id).filter(id -> !id.equals(ev.getId())).distinct().toList();
             if (hitIds.isEmpty()) continue;
             List<EvidenceEmbeddingProjection> fetched = evidenceRepository.findAllByIdIn(hitIds);
             Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
@@ -71,10 +71,10 @@ public class ParityChecker {
                     EvidenceEmbeddingProjection::getEmbedding
             ));
             for (var p : hits) {
-                if (p.getId().equals(ev.getId())) continue;
+                if (p.id().equals(ev.getId())) continue;
                 Double dbSim = p.getSimilarity();
                 if (dbSim == null) continue;
-                float[] otherEmb = fetchedById.get(p.getId());
+                float[] otherEmb = fetchedById.get(p.id());
                 if (otherEmb == null) continue;
                 Double javaCos = VectorUtils.cosineSimilarity(emb, otherEmb);
                 if (javaCos == null) continue;

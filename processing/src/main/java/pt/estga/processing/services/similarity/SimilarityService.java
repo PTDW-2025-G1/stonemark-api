@@ -102,31 +102,16 @@ public class SimilarityService {
 
         // Fetch mark mappings for the candidate evidence ids via DB boundary
         List<EvidenceMarkProjection> rows = candidateFetcher.fetchMarksByEvidenceIds(new ArrayList<>(sanitized.idSet()));
-        // Build deterministic mapping from evidence id -> mark. Multiple projections
-        // for the same evidence id may exist; choose the mark deterministically to
-        // avoid downstream flakiness. We pick the mark with the smallest numeric
-        // id when duplicates are encountered.
-        Map<UUID, Mark> markByEvidenceId = new LinkedHashMap<>();
+        // Build deterministic mapping from evidence id -> list of marks. Multiple projections
+        // for the same evidence id are preserved as a list so that aggregation can
+        // explicitly expand contributions to all associated marks (avoids silent data loss).
+        Map<UUID, List<Mark>> markByEvidenceId = new LinkedHashMap<>();
         for (EvidenceMarkProjection r : rows) {
             if (r == null) continue;
             UUID id = r.getId();
             Mark m = r.getMark();
             if (id == null || m == null) continue;
-            Mark existing = markByEvidenceId.get(id);
-            if (existing == null) {
-                markByEvidenceId.put(id, m);
-            } else if (!Objects.equals(existing.getId(), m.getId())) {
-                // Deterministic tie-break: choose the smaller mark id to ensure stable
-                // behavior regardless of the order of `rows` returned by the DB.
-                Long existingId = existing.getId();
-                Long candidateId = m.getId();
-                if (existingId == null || (candidateId != null && candidateId < existingId)) {
-                    markByEvidenceId.put(id, m);
-                    log.warn("Duplicate mark mapping for evidence id {}: selected mark id {} over {}", id, candidateId, existingId);
-                } else {
-                    log.warn("Duplicate mark mapping for evidence id {}: keeping mark id {} over {}", id, existingId, candidateId);
-                }
-            }
+            markByEvidenceId.computeIfAbsent(id, _ -> new ArrayList<>()).add(m);
         }
 
         // Compute how many candidate evidence ids lacked mark mappings (silent drops)

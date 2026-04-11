@@ -7,7 +7,7 @@ import java.util.UUID;
  */
 public interface MarkEvidenceDistanceProjection {
 
-    UUID getId();
+    UUID id();
 
     Long getOccurrenceId();
 

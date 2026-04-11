@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.models.AggregationState;
 import pt.estga.processing.models.CandidateEvidence;
-import pt.estga.processing.models.EvidenceKey;
+import pt.estga.processing.models.CandidateKey;
 
 import java.util.*;
 
@@ -21,7 +21,7 @@ public class ScoreCalculator {
         Map<Long, Double> scoreComps = new TreeMap<>();
         Map<Long, Double> weightComps = new TreeMap<>();
 
-        Set<EvidenceKey> seenPairs = new HashSet<>();
+        Set<CandidateKey> seenPairs = new HashSet<>();
         int duplicates = 0;
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
@@ -40,7 +40,7 @@ public class ScoreCalculator {
                 UUID evidenceId = ce.evidenceId();
                 double similarity = ce.similarity();
 
-                EvidenceKey key = EvidenceKey.of(evidenceId, markId, ce.occurrenceId());
+                CandidateKey key = CandidateKey.of(evidenceId, ce.occurrenceId(), markId);
                 if (!seenPairs.add(key)) { duplicates++; continue; }
 
                 if (Double.isNaN(similarity)) continue;

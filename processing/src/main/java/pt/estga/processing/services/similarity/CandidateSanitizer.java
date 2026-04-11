@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Trust boundary: converts DB projections into domain-shaped CandidateEvidence
- * instances and returns counts useful for orchestration.
+ * instances and returns counts and sets useful for orchestration.
  */
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class CandidateSanitizer {
             double sim = raw;
             if (!Double.isFinite(sim)) { invalid++; continue; }
             if (sim > policy.getMaxSimilarity() || sim < policy.getMinSimilarity()) { outOfRange++; sim = Math.max(policy.getMinSimilarity(), Math.min(policy.getMaxSimilarity(), sim)); }
-            UUID eid = p.getId();
+            UUID eid = p.id();
             Long occ;
             try { occ = p.getOccurrenceId(); } catch (Throwable t) { occ = null; }
             candidates.add(new CandidateEvidence(eid, occ, sim));
