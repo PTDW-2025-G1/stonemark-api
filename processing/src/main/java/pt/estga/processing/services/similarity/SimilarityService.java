@@ -32,7 +32,7 @@ public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
-    private final JavaSimilarityEngine javaSimilarityEngine;
+    // Java similarity engine removed from runtime usage. Keep parity checks using VectorUtils where needed.
     @Setter
     @Value("${processing.similarity.mode:db}")
     private String similarityMode;
@@ -50,10 +50,61 @@ public class SimilarityService {
     @PostConstruct
     void validateMode() {
         String m = similarityMode == null ? "" : similarityMode.trim().toLowerCase();
-        if (!m.equals("db") && !m.equals("java")) {
-            log.error("Invalid processing.similarity.mode='{}'. Allowed values: db, java. Failing startup.", similarityMode);
+        if (!m.equals("db")) {
+            log.error("Invalid processing.similarity.mode='{}'. Only 'db' is supported; Java in-process engine has been removed.", similarityMode);
             throw new IllegalStateException("Invalid processing.similarity.mode: " + similarityMode);
         }
+    }
+
+    @Value("${processing.similarity.parity-check.enabled:false}")
+    private boolean parityCheckEnabled;
+    @Value("${processing.similarity.parity-check.tolerance:0.001}")
+    private double parityTolerance;
+    @Value("${processing.similarity.parity-check.sample-size:3}")
+    private int paritySampleSize;
+
+    @PostConstruct
+    void maybeRunParityCheck() {
+        if (!parityCheckEnabled) return;
+        try {
+            runParityCheck();
+        } catch (Exception e) {
+            log.error("Similarity parity check failed: {}", e.getMessage());
+            throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void runParityCheck() {
+        // Sample a few processing rows and compare DB distance->similarity with Java cosine similarity.
+        var page = org.springframework.data.domain.PageRequest.of(0, Math.max(1, paritySampleSize));
+        var pageRes = evidenceRepository.findAllByEmbeddingIsNotNull(page);
+        if (pageRes == null || pageRes.isEmpty()) return;
+        for (var ev : pageRes.getContent()) {
+            float[] emb = ev.getEmbedding();
+            if (emb == null || emb.length == 0) continue;
+            String vec = VectorUtils.toVectorLiteral(emb);
+            // ask DB for the top match for this vector
+            List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vec, 5);
+            if (hits == null || hits.isEmpty()) continue;
+            for (var p : hits) {
+                if (p.getId().equals(ev.getId())) continue; // skip self
+                Double distance = p.getDistance();
+                if (distance == null) continue;
+                double dbSim = 1.0 - distance;
+                // fetch the target evidence embedding
+                var opt = evidenceRepository.findById(p.getId());
+                if (opt.isEmpty()) continue;
+                var other = opt.get();
+                Double javaCos = VectorUtils.cosineSimilarity(emb, other.getEmbedding());
+                if (javaCos == null) continue;
+                double diff = Math.abs(dbSim - javaCos);
+                if (diff > parityTolerance) {
+                    throw new IllegalStateException(String.format("DB/Java similarity mismatch: db=%.6f java=%.6f diff=%.6f (tolerance=%.6f).\nThis likely indicates inconsistent embedding normalization between DB and Java. Consider normalizing embeddings at ingestion or disabling parity check.", dbSim, javaCos, diff, parityTolerance));
+                }
+                break; // only check first non-self hit per sample
+            }
+        }
+        log.info("Similarity parity check passed for {} samples", paritySampleSize);
     }
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
@@ -67,16 +118,13 @@ public class SimilarityService {
 
         String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
 
-        boolean useJava = "java".equalsIgnoreCase(similarityMode);
-
         long start = System.nanoTime();
         List<MarkSuggestion> result;
 
-        if (useJava) {
-            result = javaSimilarityEngine.computeSuggestions(processing, k, minSimilarity, useRankWeighting);
-        } else {
-            // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
-            List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
+        // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
+        // and maintain a single source of truth for similarity ranking.
+        // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
+        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
 
         if (log.isDebugEnabled()) {
             log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()
@@ -226,7 +274,7 @@ public class SimilarityService {
                 .limit(k)
                 .toList();
             }
-        }
+
 
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
 

@@ -2,7 +2,6 @@ package pt.estga.processing.services.similarity;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
@@ -17,9 +16,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Value;
 
-@Component
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public class JavaSimilarityEngine {
 
     private final MarkEvidenceRepository evidenceRepository;
@@ -27,6 +26,10 @@ public class JavaSimilarityEngine {
 
     @Value("${processing.similarity.java.page-size:1000}")
     private int pageSize;
+    @Value("${processing.similarity.java.candidate-multiplier:3}")
+    private int candidateMultiplier;
+    @Value("${processing.similarity.java.max-candidates:10000}")
+    private int maxCandidates;
 
     /**
      * Compute suggestions in-JVM for the given processing. This method loads evidence
@@ -48,7 +51,8 @@ public class JavaSimilarityEngine {
         float[] procEmb = processing.getEmbedding();
         if (procEmb == null || procEmb.length == 0) return List.of();
 
-        // Stream evidence in pages and maintain a bounded min-heap to keep top-k evidence by similarity.
+        // Stream evidence in pages and maintain a bounded min-heap to keep top-candidates evidence by similarity.
+        int candidateLimit = Math.min(Math.max(k * candidateMultiplier, k), maxCandidates);
         PriorityQueue<Map.Entry<MarkEvidence, Double>> heap = new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
         long considered = 0L;
 
@@ -79,7 +83,7 @@ public class JavaSimilarityEngine {
                 }
 
                 Map.Entry<MarkEvidence, Double> entry = Map.entry(ev, sim);
-                if (heap.size() < k) {
+                if (heap.size() < candidateLimit) {
                     heap.offer(entry);
                 } else {
                     Map.Entry<MarkEvidence, Double> smallest = heap.peek();
