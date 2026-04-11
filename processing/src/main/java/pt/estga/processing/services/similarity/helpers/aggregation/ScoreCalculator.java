@@ -61,17 +61,28 @@ public class ScoreCalculator {
         }
 
         // Compute confidences (truth of confidence = score / weight) here to centralize
-        // the scoring definition in a single place and avoid divergence.
+        // the scoring definition in a single place and avoid divergence. Guard against
+        // extremely small or missing weights to prevent division anomalies.
+        final double MIN_WEIGHT = 1e-12;
         Map<Long, Double> confidences = new TreeMap<>();
+        int weightAnomalies = 0;
         for (Map.Entry<Long, Double> e : scores.entrySet()) {
             Long markId = e.getKey();
             double totalScore = e.getValue();
             Double weight = weightSums.get(markId);
-            if (weight == null || weight == 0.0) continue;
-            confidences.put(markId, totalScore / weight);
+            if (weight == null || weight <= MIN_WEIGHT) {
+                // Record anomaly: no safe normalization possible; set confidence to 0.0
+                weightAnomalies++;
+                confidences.put(markId, 0.0);
+                continue;
+            }
+            double conf = totalScore / weight;
+            // Clamp confidence into [0,1] to avoid surprises from numeric instability
+            conf = Math.max(0.0, Math.min(1.0, conf));
+            confidences.put(markId, conf);
         }
 
-        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, perMarkDecayApplied);
+        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, perMarkDecayApplied, weightAnomalies);
     }
 
     private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {

@@ -14,6 +14,7 @@ public record AggregationResult(
         int perMarkDecayApplied,
         Map<Long, Double> rawScores,
         Map<Long, Double> weightSums,
-        int missingMarkMappings
+        int missingMarkMappings,
+        int weightAnomalies
 ) {
 }

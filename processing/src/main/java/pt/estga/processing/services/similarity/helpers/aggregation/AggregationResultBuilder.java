@@ -41,6 +41,6 @@ public class AggregationResultBuilder {
         Map<Long, Double> rawScoresCopy = Collections.unmodifiableMap(new TreeMap<>(state.scores()));
         Map<Long, Double> weightSumsCopy = Collections.unmodifiableMap(new TreeMap<>(state.weightSums()));
 
-        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), rawScoresCopy, weightSumsCopy, missingMarkMappings);
+        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), rawScoresCopy, weightSumsCopy, missingMarkMappings, state.weightAnomalies());
     }
 }

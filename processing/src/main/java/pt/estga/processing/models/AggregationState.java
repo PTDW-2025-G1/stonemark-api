@@ -8,6 +8,7 @@ public record AggregationState(
         Map<Long, Double> confidences,
         int duplicates,
         int perMarkContributions,
-        int perMarkDecayApplied
+        int perMarkDecayApplied,
+        int weightAnomalies
 ) {
 }
