@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.user.entities.User;
 
@@ -23,12 +22,12 @@ public class MarkEvidenceReview {
     private Long id;
 
     @OneToOne
+    @JoinColumn(unique = true)
     private MarkEvidenceSubmission submission;
 
     @ManyToOne
     private Mark selectedMark;
 
-    @Enumerated(EnumType.ORDINAL)
     private ReviewDecision decision;
 
     private Instant reviewedAt;
