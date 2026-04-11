@@ -11,6 +11,10 @@ import pt.estga.shared.utils.VectorUtils;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Value;
 
 @Component
 @RequiredArgsConstructor
@@ -19,6 +23,9 @@ public class JavaSimilarityEngine {
 
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
+
+    @Value("${processing.similarity.java.page-size:1000}")
+    private int pageSize;
 
     /**
      * Compute suggestions in-JVM for the given processing. This method loads evidence
@@ -32,27 +39,46 @@ public class JavaSimilarityEngine {
             boolean useRankWeighting
     ) {
 
-        List<MarkEvidence> rows = evidenceRepository.findAllByEmbeddingIsNotNull();
-        if (rows == null || rows.isEmpty()) {
-            try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(0); } catch (Exception ignored) {}
-            return List.of();
+        // Stream evidence in pages and maintain a bounded min-heap to keep top-k evidence by similarity.
+        PriorityQueue<Map.Entry<MarkEvidence, Double>> heap = new PriorityQueue<>(Comparator.comparingDouble(Map.Entry::getValue));
+        long considered = 0L;
+        long passing = 0L;
+
+        int page = 0;
+        while (true) {
+            Pageable pageable = PageRequest.of(page, Math.max(1, pageSize));
+            Page<MarkEvidence> p = evidenceRepository.findAllByEmbeddingIsNotNull(pageable);
+            if (p == null || p.isEmpty()) break;
+
+            for (MarkEvidence ev : p.getContent()) {
+                if (ev == null) continue;
+                if (ev.getEmbedding() == null || ev.getEmbedding().length == 0) continue;
+                if (ev.getOccurrence() == null || ev.getOccurrence().getMark() == null || ev.getOccurrence().getMark().getId() == null) continue;
+                considered++;
+                Double sim = VectorUtils.cosineSimilarity(processing.getEmbedding(), ev.getEmbedding());
+                if (sim == null) continue;
+                if (sim < minSimilarity) continue;
+                passing++;
+
+                Map.Entry<MarkEvidence, Double> entry = Map.entry(ev, sim);
+                if (heap.size() < k) {
+                    heap.offer(entry);
+                } else if (heap.peek().getValue() < sim) {
+                    heap.poll();
+                    heap.offer(entry);
+                }
+            }
+
+            if (!p.hasNext()) break;
+            page++;
         }
 
-        long considered = rows.stream().filter(r -> r.getEmbedding() != null && r.getEmbedding().length > 0 && r.getOccurrence() != null && r.getOccurrence().getMark() != null && r.getOccurrence().getMark().getId() != null).count();
-        List<Map.Entry<MarkEvidence, Double>> scored = rows.stream()
-                .filter(r -> r.getEmbedding() != null && r.getEmbedding().length > 0 && r.getOccurrence() != null && r.getOccurrence().getMark() != null && r.getOccurrence().getMark().getId() != null)
-                .map(r -> Map.entry(r, VectorUtils.cosineSimilarity(processing.getEmbedding(), r.getEmbedding())))
-                .toList();
-
-        long passing = scored.stream().filter(e -> e.getValue() != null && e.getValue() >= minSimilarity).count();
         long filtered = Math.max(0L, considered - passing);
         try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(filtered); } catch (Exception ignored) {}
 
-        List<Map.Entry<MarkEvidence, Double>> filteredScored = scored.stream()
-                .filter(e -> e.getValue() != null && e.getValue() >= minSimilarity)
-                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
-                .limit(k)
-                .toList();
+        List<Map.Entry<MarkEvidence, Double>> filteredScored = new ArrayList<>(heap);
+        // Sort descending
+        filteredScored.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
 
         Map<Long, Double> scores = new HashMap<>();
         Map<Long, Double> weightSums = new HashMap<>();

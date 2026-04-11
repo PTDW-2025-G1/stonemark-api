@@ -1,5 +1,6 @@
 package pt.estga.mark.repositories;
 
+import org.springframework.data.domain.Page;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
@@ -35,4 +36,7 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 
 	List<MarkEvidence> findAllByEmbeddingIsNotNull();
+
+	// Streaming / paginated access for Java-mode similarity to avoid loading entire table into memory.
+	Page<MarkEvidence> findAllByEmbeddingIsNotNull(org.springframework.data.domain.Pageable pageable);
 }
