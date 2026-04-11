@@ -17,7 +17,8 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import java.util.stream.Collectors;
@@ -75,12 +76,22 @@ public class SimilarityService {
     @Value("${processing.similarity.per-mark-decay:0.5}")
     private double perMarkDecayFactor;
 
+    // Dedicated single-thread daemon executor used for the optional parity check so
+    // it doesn't run on the ForkJoin common pool and has predictable threading.
+    private static final ExecutorService parityExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "similarity-parity-check");
+        t.setDaemon(true);
+        return t;
+    });
+
     @PostConstruct
     void maybeRunParityCheck() {
         if (!parityCheckEnabled) return;
         if (parityCheckAsync) {
-            // Run parity check asynchronously so startup isn't blocked by this validation.
-            CompletableFuture.runAsync(() -> {
+            // Run parity check asynchronously on a dedicated single-thread daemon
+            // executor (avoid ForkJoinPool.commonPool) so startup work isn't blocked
+            // and the check runs with predictable threading semantics.
+            parityExecutor.submit(() -> {
                 try {
                     runParityCheck();
                 } catch (Exception e) {
@@ -303,17 +314,22 @@ public class SimilarityService {
         for (Long markId : markIds) {
             List<Map.Entry<MarkEvidenceDistanceProjection, Double>> list = contributionsByMark.get(markId);
             if (list == null || list.isEmpty()) continue;
-            // Sort contributions for this mark deterministically: similarity desc, occurrenceId, evidenceId
+            // Sort contributions for this mark deterministically: similarity desc, occurrenceId (nullable), evidenceId
             list.sort((a, b) -> {
                 int cmp = Double.compare(b.getValue(), a.getValue());
                 if (cmp != 0) return cmp;
-                // Tie-breaker: occurrence id then evidence id
-                String occA;
-                String occB;
-                try { var oa = a.getKey().getOccurrenceId(); occA = oa == null ? "" : oa.toString(); } catch (Throwable t) { occA = ""; }
-                try { var ob = b.getKey().getOccurrenceId(); occB = ob == null ? "" : ob.toString(); } catch (Throwable t) { occB = ""; }
-                cmp = occA.compareTo(occB);
-                if (cmp != 0) return cmp;
+                // Tie-breaker: occurrence id then evidence id. occurrenceId is nullable; keep
+                // deterministic ordering using nullsFirst (null < any non-null).
+                Long occA;
+                Long occB;
+                try { occA = a.getKey().getOccurrenceId(); } catch (Throwable t) { occA = null; }
+                try { occB = b.getKey().getOccurrenceId(); } catch (Throwable t) { occB = null; }
+                if (occA == null && occB != null) return -1;
+                if (occA != null && occB == null) return 1;
+                if (occA != null) {
+                    int cmpOcc = occA.compareTo(occB);
+                    if (cmpOcc != 0) return cmpOcc;
+                }
                 return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
             });
 
@@ -326,16 +342,16 @@ public class SimilarityService {
                 double similarity = entry.getValue();
                 UUID id = p.getId();
 
-                // Dedupe using a typed record key. Use occurrence id when available,
-                // otherwise fall back to the evidence id string to avoid accidental merging.
-                String occurrenceToken;
+                // Dedupe using a typed record key. Use occurrence id when available (nullable Long).
+                // Do NOT convert occurrence id to string — keep its numeric type to avoid accidental collisions
+                // and to preserve deterministic ordering semantics.
+                Long occurrenceId;
                 try {
-                    Long occ = p.getOccurrenceId();
-                    occurrenceToken = occ == null ? id.toString() : occ.toString();
+                    occurrenceId = p.getOccurrenceId();
                 } catch (Throwable t) {
-                    occurrenceToken = id.toString();
+                    occurrenceId = null;
                 }
-                EvidenceKey key = new EvidenceKey(id, markId, occurrenceToken);
+                EvidenceKey key = new EvidenceKey(id, markId, occurrenceId);
                 if (!seenPairs.add(key)) {
                     try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
                     continue;
@@ -414,11 +430,14 @@ public class SimilarityService {
 
                 // Normalize by the total weight to produce a weighted average confidence.
                 double confidence = totalScore / weightSum;
+                // Quantize confidence to 1e-6 to improve determinism across runs and reduce
+                // floating-point jitter when ranking / comparing results.
+                double quantized = Math.round(confidence * 1_000_000d) / 1_000_000d;
 
                 return MarkSuggestion.builder()
                         .processing(processing)
                         .mark(marksById.get(markId))
-                        .confidence(confidence)
+                        .confidence(quantized)
                         .build();
             })
             .sorted((a, b) -> {
