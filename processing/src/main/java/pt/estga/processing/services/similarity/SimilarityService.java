@@ -45,8 +45,8 @@ public class SimilarityService {
     private int paritySampleSize;
     @Value("${processing.similarity.max-k:200}")
     private int maxK;
-    @Value("${processing.similarity.per-mark-cap:5}")
-    private int perMarkCap;
+    @Value("${processing.similarity.per-mark-decay:0.5}")
+    private double perMarkDecayFactor;
     @Value("${processing.similarity.rank-factor:0.10}")
     private double rankFactor;
 
@@ -207,7 +207,9 @@ public class SimilarityService {
             try { meterRegistry.counter("processing.suggestions.db_mapped_hits.count", "engine", "db").increment(marksById.size()); } catch (Exception ignored) {}
         }
 
-        Set<UUID> seen = new HashSet<>();
+        // Track seen evidence+mark pairs to dedupe identical contributions while allowing
+        // the same evidence id to contribute to multiple different marks if data changes upstream.
+        Set<String> seenPairs = new HashSet<>();
         // Iterate over the re-ranked scored list; use similarity itself as a stable weight
         // if useRankWeighting is enabled. This removes dependence on DB ordering.
         Map<Long, Integer> perMarkCounts = new HashMap<>();
@@ -215,24 +217,33 @@ public class SimilarityService {
             MarkEvidenceDistanceProjection p = scored.get(idx).getKey();
             double similarity = scored.get(idx).getValue();
             UUID id = p.getId();
-            if (!seen.add(id)) {
-                // Duplicate evidence id returned by the distance query — record and skip.
-                try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
-                continue; // dedupe
-            }
 
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
 
+            // Deduplicate by evidence id + mark id pair. This is more robust than deduping
+            // by evidence id alone because joins or upstream data issues might map the same
+            // evidence to different occurrences/marks; we want to treat each distinct
+            // evidence->mark contribution separately.
+            String pairKey = id.toString() + ":" + markId.toString();
+            if (!seenPairs.add(pairKey)) {
+                try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                continue;
+            }
+
             if (Double.isNaN(similarity) || similarity < minSimilarity) continue;
 
-            // per-mark cap: avoid letting marks with many evidences dominate the aggregated score.
+            // Apply diminishing returns per mark instead of a hard cap.
+            // This reduces dominance by high-volume marks while still allowing multiple
+            // high-quality evidences to contribute. multiplier = decay^used where used
+            // is the number of prior contributions for this mark.
             int used = perMarkCounts.getOrDefault(markId, 0);
-            if (used >= perMarkCap) {
-                try { meterRegistry.counter("processing.suggestions.per_mark_skipped.count", "engine", "db").increment(); } catch (Exception ignored) {}
-                continue;
+            double decay = Math.max(0.0, Math.min(1.0, perMarkDecayFactor));
+            double perMarkMultiplier = used == 0 ? 1.0 : Math.pow(decay, used);
+            if (used > 0) {
+                try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
             }
             perMarkCounts.put(markId, used + 1);
 
@@ -246,7 +257,7 @@ public class SimilarityService {
             double weight = useRankWeighting
                     ? ((1.0 - effectiveRankFactor) * simClamped + effectiveRankFactor * rankScore)
                     : 1.0;
-            double weighted = simClamped * weight;
+            double weighted = simClamped * weight * perMarkMultiplier;
 
             scores.merge(markId, weighted, Double::sum);
             weightSums.merge(markId, weight, Double::sum);
