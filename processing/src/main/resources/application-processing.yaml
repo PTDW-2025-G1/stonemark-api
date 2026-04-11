@@ -23,3 +23,6 @@ processing:
     # Per-mark cap: maximum number of evidence contributions allowed per mark to avoid
     # domination by marks with many associated evidences.
     per-mark-cap: 5
+    # Rank blending factor: 0.0 = use similarity only, 1.0 = use DB rank only. Small values (0.05-0.2)
+    # preserve ordering information while keeping similarity as the main signal.
+    rank-factor: 0.10

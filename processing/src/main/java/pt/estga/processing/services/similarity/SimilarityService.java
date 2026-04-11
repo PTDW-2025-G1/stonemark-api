@@ -47,6 +47,8 @@ public class SimilarityService {
     private int maxK;
     @Value("${processing.similarity.per-mark-cap:5}")
     private int perMarkCap;
+    @Value("${processing.similarity.rank-factor:0.10}")
+    private double rankFactor;
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -151,14 +153,31 @@ public class SimilarityService {
         // cosine-distance semantics. Prefer returning similarity directly from SQL when
         // possible to avoid this fragile conversion.
         List<MarkEvidenceDistanceProjection> nonNullHits = hits.stream().filter(Objects::nonNull).toList();
-        var scored = nonNullHits.stream()
-                .map(p -> new AbstractMap.SimpleEntry<>(p, p.getSimilarity()))
-                .filter(e -> e.getValue() != null && !Double.isNaN(e.getValue()))
-                .toList();
+        // Sanitize similarity values returned from DB: reject null/NaN, clamp out-of-range values and
+        // record metrics for invalid or out-of-range similarities. Preserve DB ordering.
+        List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored = new ArrayList<>();
+        for (MarkEvidenceDistanceProjection p : nonNullHits) {
+            Double rawSim = p.getSimilarity();
+            if (rawSim == null || rawSim.isNaN()) {
+                try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                continue;
+            }
+            double sim = rawSim;
+            if (!Double.isFinite(sim)) {
+                try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                continue;
+            }
+            if (sim > 1.0 || sim < -1.0) {
+                try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                // clamp to valid cosine range
+                sim = Math.max(-1.0, Math.min(1.0, sim));
+            }
+            scored.add(new AbstractMap.SimpleEntry<>(p, sim));
+        }
 
         // Collect unique evidence ids from the (re-ranked) top candidates
         Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
-        // Record DB-side candidate count and valid candidate count after filtering
+        // Record DB-side candidate count and valid candidate count after sanitization
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(scored.size()); } catch (Exception ignored) {}
         Map<UUID, Mark> markByEvidenceId = Map.of();
@@ -217,11 +236,17 @@ public class SimilarityService {
             }
             perMarkCounts.put(markId, used + 1);
 
-            // Use similarity as weight when weighting is enabled. This produces a stable,
-            // meaningful contribution proportional to match quality instead of relying
-            // on DB-provided rank ordering which can be unstable.
-            double weight = useRankWeighting ? similarity : 1.0;
-            double weighted = similarity * weight;
+            // Blend similarity with DB-provided rank signal to retain ordering information
+            // while keeping similarity the primary signal. rankFactor in [0,1] controls
+            // the contribution of rank (small values favor similarity, larger values
+            // give more weight to DB rank). We compute a simple rankScore = 1/(1+idx).
+            double simClamped = Math.max(0.0, Math.min(1.0, similarity));
+            double rankScore = 1.0 / (1.0 + (double) idx);
+            double effectiveRankFactor = Math.max(0.0, Math.min(1.0, rankFactor));
+            double weight = useRankWeighting
+                    ? ((1.0 - effectiveRankFactor) * simClamped + effectiveRankFactor * rankScore)
+                    : 1.0;
+            double weighted = simClamped * weight;
 
             scores.merge(markId, weighted, Double::sum);
             weightSums.merge(markId, weight, Double::sum);
