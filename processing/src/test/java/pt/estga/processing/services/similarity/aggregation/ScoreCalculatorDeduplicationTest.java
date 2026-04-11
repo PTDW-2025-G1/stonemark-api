@@ -38,11 +38,12 @@ public class ScoreCalculatorDeduplicationTest {
         assertNotNull(raw);
         assertNotNull(weight);
 
-        // expected raw = 0.7 + 0.5 = 1.2
-        assertEquals(1.2d, raw, 1e-6);
+        // expected raw = max(0.2,0.7) + 0.5 = 1.2
+        double expectedRaw = Math.max(a.similarity(), b.similarity()) + c.similarity();
+        assertEquals(expectedRaw, raw, 1e-6);
         // expected weight sums: two contributions used -> 2.0 (perMarkMultiplier=1.0 each)
         assertEquals(2.0d, weight, 1e-9);
-        // ensure highest similarity (0.7) was chosen instead of 0.2 for the duplicate evidence
-        assertEquals(0.7d, raw - 0.5d, 1e-9);
+        // ensure duplicates counter incremented
+        assertTrue(state.duplicates() >= 1);
     }
 }

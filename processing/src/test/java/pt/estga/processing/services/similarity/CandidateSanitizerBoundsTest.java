@@ -2,6 +2,7 @@ package pt.estga.processing.services.similarity;
 
 import org.junit.jupiter.api.Test;
 import pt.estga.processing.config.policies.SanitizationPolicy;
+import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.SanitizationResult;
 import pt.estga.processing.testutils.TestMarkEvidenceDistanceProjection;
 import pt.estga.processing.testutils.TestBuilders;
@@ -34,7 +35,7 @@ public class CandidateSanitizerBoundsTest {
         // Instead of asserting positional ordering (which may change if upstream code evolves),
         // assert presence/counts of the clamped similarity values.
         var similarityCounts = res.candidates().stream()
-                .collect(Collectors.groupingBy(c -> c.similarity(), Collectors.counting()));
+                .collect(Collectors.groupingBy(CandidateEvidence::similarity, Collectors.counting()));
 
         assertEquals(1L, similarityCounts.getOrDefault(0.2d, 0L));
         assertEquals(1L, similarityCounts.getOrDefault(0.5d, 0L));
