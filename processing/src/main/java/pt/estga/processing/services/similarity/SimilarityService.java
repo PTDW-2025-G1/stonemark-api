@@ -91,15 +91,36 @@ public class SimilarityService {
             // ask DB for the top match for this vector
             List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vec, 5);
             if (hits == null || hits.isEmpty()) continue;
+            // Collect hit ids (exclude self) and fetch target rows in a single batch to avoid N+1 lookups.
+            List<UUID> hitIds = hits.stream()
+                    .map(MarkEvidenceDistanceProjection::getId)
+                    .filter(id -> !id.equals(ev.getId()))
+                    .distinct()
+                    .toList();
+            if (hitIds.isEmpty()) continue;
+            var fetched = evidenceRepository.findAllById(hitIds);
+            // Map fetched entities by id for quick lookup. Avoid per-hit DB calls which cause N+1.
+            Map<UUID, Object> fetchedById = fetched.stream().collect(Collectors.toMap(
+                    e -> e.getId(),
+                    e -> e
+            ));
             for (var p : hits) {
                 if (p.getId().equals(ev.getId())) continue; // skip self
                 Double dbSim = p.getSimilarity();
                 if (dbSim == null) continue;
-                // fetch the target evidence embedding
-                var opt = evidenceRepository.findById(p.getId());
-                if (opt.isEmpty()) continue;
-                var other = opt.get();
-                Double javaCos = VectorUtils.cosineSimilarity(emb, other.getEmbedding());
+                var other = fetchedById.get(p.getId());
+                if (other == null) continue;
+                // Use reflection-free accessor via VectorUtils; the fetched object is expected to have getEmbedding()
+                // We rely on the repository returning the same entity type as in the sample page.
+                float[] otherEmb;
+                try {
+                    otherEmb = (float[]) other.getClass().getMethod("getEmbedding").invoke(other);
+                } catch (Exception ex) {
+                    // If reflection fails, skip this parity comparison but don't abort the whole check.
+                    log.debug("Unable to access embedding for parity check entity {}: {}", p.getId(), ex.getMessage());
+                    continue;
+                }
+                Double javaCos = VectorUtils.cosineSimilarity(emb, otherEmb);
                 if (javaCos == null) continue;
                 double diff = Math.abs(dbSim - javaCos);
                 if (diff > parityTolerance) {
@@ -255,7 +276,18 @@ public class SimilarityService {
             // by evidence id alone because joins or upstream data issues might map the same
             // evidence to different occurrences/marks; we want to treat each distinct
             // evidence->mark contribution separately.
-            String pairKey = id + ":" + markId;
+            // Include occurrence id in the dedupe key to avoid collapsing contributions that
+            // differ only by occurrence/occurrence-level metadata. Projection includes
+            // an occurrence id which is more precise than evidence id + mark id alone.
+            String occurrencePart;
+            try {
+                var occ = p.getOccurrenceId();
+                occurrencePart = occ == null ? "null" : occ.toString();
+            } catch (Throwable t) {
+                // If occurrence id is not available on the projection, fall back to empty marker.
+                occurrencePart = "-";
+            }
+            String pairKey = id + ":" + markId + ":" + occurrencePart;
             if (!seenPairs.add(pairKey)) {
                 try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 continue;
@@ -268,8 +300,13 @@ public class SimilarityService {
             // high-quality evidences to contribute. multiplier = decay^used where used
             // is the number of prior contributions for this mark.
             int used = perMarkCounts.getOrDefault(markId, 0);
-            double decay = Math.max(0.0, Math.min(1.0, perMarkDecayFactor));
-            double perMarkMultiplier = used == 0 ? 1.0 : Math.pow(decay, used);
+            // perMarkDecayFactor semantics: multiplier = perMarkDecayFactor^used
+            // - If perMarkDecayFactor in (0,1): diminishing returns (default behaviour).
+            // - If perMarkDecayFactor == 1: neutral (no effect).
+            // - If perMarkDecayFactor > 1: later contributions are amplified (domain-specific).
+            // Clamp to non-negative to avoid sign flips; allow >1 to let domain choose amplification
+            double decay = Math.max(0.0, perMarkDecayFactor);
+            double perMarkMultiplier = Math.pow(decay, used);
             if (used > 0) {
                 try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
             }
