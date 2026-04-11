@@ -41,7 +41,7 @@ public class ScoreCalculator {
                 UUID evidenceId = ce.evidenceId();
                 double similarity = ce.similarity();
 
-                EvidenceKey key = new EvidenceKey(evidenceId, markId, ce.occurrenceId());
+                EvidenceKey key = EvidenceKey.of(evidenceId, markId, ce.occurrenceId());
                 if (!seenPairs.add(key)) { duplicates++; continue; }
 
                 if (Double.isNaN(similarity)) continue;

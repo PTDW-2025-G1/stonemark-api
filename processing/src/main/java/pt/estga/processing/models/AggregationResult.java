@@ -10,6 +10,8 @@ public record AggregationResult(
         List<MarkScore> topScores,
         int duplicates,
         int perMarkContributions,
-        int perMarkDecayApplied
+        int perMarkDecayApplied,
+        java.util.Map<Long, Double> rawScores,
+        java.util.Map<Long, Double> weightSums
 ) {
 }

@@ -40,6 +40,9 @@ public class CandidateSanitizer {
         }
 
         Set<UUID> idSet = candidates.stream().map(CandidateEvidence::evidenceId).collect(Collectors.toCollection(LinkedHashSet::new));
-        return new SanitizationResult(Collections.unmodifiableList(candidates), Collections.unmodifiableSet(idSet), hits.size(), invalid, outOfRange);
+        java.util.Set<pt.estga.processing.models.CandidateKey> candidateKeys = candidates.stream()
+                .map(c -> pt.estga.processing.models.CandidateKey.of(c.evidenceId(), c.occurrenceId()))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return new SanitizationResult(Collections.unmodifiableList(candidates), Collections.unmodifiableSet(idSet), Collections.unmodifiableSet(candidateKeys), hits.size(), invalid, outOfRange);
     }
 }

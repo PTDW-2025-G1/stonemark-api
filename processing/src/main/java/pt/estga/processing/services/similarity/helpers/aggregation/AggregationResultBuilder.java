@@ -41,6 +41,10 @@ public class AggregationResultBuilder {
 
         List<MarkScore> limited = (k > 0 && topScores.size() > k) ? topScores.subList(0, k) : topScores;
 
-        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied());
+        // Provide raw score maps for debugging; expose as unmodifiable copies to callers
+        Map<Long, Double> rawScoresCopy = Collections.unmodifiableMap(new TreeMap<>(state.scores()));
+        Map<Long, Double> weightSumsCopy = Collections.unmodifiableMap(new TreeMap<>(state.weightSums()));
+
+        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), rawScoresCopy, weightSumsCopy);
     }
 }
