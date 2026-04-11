@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
@@ -63,18 +64,27 @@ public class JavaSimilarityEngine {
                 Map.Entry<MarkEvidence, Double> entry = Map.entry(ev, sim);
                 if (heap.size() < k) {
                     heap.offer(entry);
-                } else if (heap.peek().getValue() < sim) {
-                    heap.poll();
-                    heap.offer(entry);
+                } else {
+                    Map.Entry<MarkEvidence, Double> smallest = heap.peek();
+                    double smallestValue = smallest == null ? Double.NEGATIVE_INFINITY : smallest.getValue();
+                    if (smallestValue < sim) {
+                        heap.poll();
+                        heap.offer(entry);
+                    }
                 }
             }
 
             if (!p.hasNext()) break;
             page++;
         }
-
         long filtered = Math.max(0L, considered - passing);
-        try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(filtered); } catch (Exception ignored) {}
+        try {
+            meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(filtered);
+        } catch (Exception ignored) {}
+        // Record total considered rows (pre-filtering)
+        try {
+            meterRegistry.counter("processing.suggestions.considered.count", "engine", "java").increment(considered);
+        } catch (Exception ignored) {}
 
         List<Map.Entry<MarkEvidence, Double>> filteredScored = new ArrayList<>(heap);
         // Sort descending
@@ -82,7 +92,7 @@ public class JavaSimilarityEngine {
 
         Map<Long, Double> scores = new HashMap<>();
         Map<Long, Double> weightSums = new HashMap<>();
-        Map<Long, pt.estga.mark.entities.Mark> marksById = new HashMap<>();
+        Map<Long, Mark> marksById = new HashMap<>();
 
         Set<UUID> seen = new HashSet<>();
         for (int idx = 0; idx < filteredScored.size(); idx++) {

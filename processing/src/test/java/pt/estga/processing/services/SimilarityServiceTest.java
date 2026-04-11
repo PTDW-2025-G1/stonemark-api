@@ -1,6 +1,6 @@
 package pt.estga.processing.services;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +27,6 @@ public class SimilarityServiceTest {
 
     @Mock
     MarkEvidenceRepository evidenceRepository;
-
-    @Mock
-    MeterRegistry meterRegistry;
 
     @Mock
     JavaSimilarityEngine javaSimilarityEngine;
@@ -59,6 +56,14 @@ public class SimilarityServiceTest {
             Field wf = SimilarityService.class.getDeclaredField("useRankWeighting");
             wf.setAccessible(true);
             wf.setBoolean(similarityService, true);
+        } catch (Exception ignored) {
+        }
+        // Install a SimpleMeterRegistry so metric calls are safe in the service under test
+        try {
+            SimpleMeterRegistry simple = new SimpleMeterRegistry();
+            Field mf = SimilarityService.class.getDeclaredField("meterRegistry");
+            mf.setAccessible(true);
+            mf.set(similarityService, simple);
         } catch (Exception ignored) {
         }
     }

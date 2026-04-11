@@ -97,6 +97,10 @@ public class SimilarityService {
         // and fetch only the lightweight (id, mark) mapping for aggregation.
         // Collect unique evidence ids to fetch lightweight mark mapping once.
         Set<UUID> idSet = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toSet());
+        // Record how many evidence rows were considered by the DB query (pre-dedupe).
+        try {
+            meterRegistry.counter("processing.suggestions.considered.count", "engine", "db").increment(hits.size());
+        } catch (Exception ignored) {}
         Map<UUID, Mark> markByEvidenceId = Map.of();
         // build a marksById lookup here to avoid an extra pass later
         Map<Long, Mark> marksById = new java.util.HashMap<>();
