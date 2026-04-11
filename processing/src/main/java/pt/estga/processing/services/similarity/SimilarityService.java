@@ -85,14 +85,22 @@ public class SimilarityService {
     });
 
     /**
-     * Small data holder for sanitized DB candidates.
+     * Domain-shaped candidate evidence after sanitization: decouples downstream
+     * aggregation from DB projection types.
      */
-    private record SanitizedCandidates(List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored, Set<UUID> idSet, int rawHitCount) {}
+    private record CandidateEvidence(UUID evidenceId, Long occurrenceId, double similarity) {}
 
     /**
-     * Aggregation result containing per-mark scores, weight sums and the mark lookup.
+     * Sanitized candidate batch with some metrics counters computed and the id set
+     * for subsequent mark mapping.
      */
-    private record AggregationResult(Map<Long, Double> scores, Map<Long, Double> weightSums, Map<Long, Mark> marksById) {}
+    private record SanitizedCandidates(List<CandidateEvidence> candidates, Set<UUID> idSet, int rawHitCount, int invalidSimilarityCount, int outOfRangeCount) {}
+
+    /**
+     * Aggregation result containing per-mark scores, weight sums, the mark lookup
+     * and counters useful for emitting metrics at the orchestration level.
+     */
+    private record AggregationResult(Map<Long, Double> scores, Map<Long, Double> weightSums, Map<Long, Mark> marksById, int duplicates, int perMarkContributions, int perMarkDecayApplied) {}
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -212,37 +220,45 @@ public class SimilarityService {
     }
 
     private SanitizedCandidates sanitizeCandidates(List<MarkEvidenceDistanceProjection> hits) {
-        if (hits == null || hits.isEmpty()) return new SanitizedCandidates(List.of(), Collections.emptySet(), 0);
+        if (hits == null || hits.isEmpty()) return new SanitizedCandidates(List.of(), Collections.emptySet(), 0, 0, 0);
 
         List<MarkEvidenceDistanceProjection> nonNullHits = hits.stream().filter(Objects::nonNull).toList();
-        List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored = new ArrayList<>();
+        List<CandidateEvidence> candidates = new ArrayList<>();
+        int invalidSim = 0;
+        int outOfRange = 0;
         for (MarkEvidenceDistanceProjection p : nonNullHits) {
             Double rawSim = p.getSimilarity();
             if (rawSim == null || rawSim.isNaN()) {
-                try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                invalidSim++;
                 continue;
             }
             double sim = rawSim;
             if (!Double.isFinite(sim)) {
-                try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                invalidSim++;
                 continue;
             }
             if (sim > 1.0 || sim < 0.0) {
-                try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                outOfRange++;
                 sim = Math.max(0.0, Math.min(1.0, sim));
             }
-            scored.add(new AbstractMap.SimpleEntry<>(p, sim));
+            UUID evidenceId = p.getId();
+            Long occurrenceId;
+            try { occurrenceId = p.getOccurrenceId(); } catch (Throwable t) { occurrenceId = null; }
+            candidates.add(new CandidateEvidence(evidenceId, occurrenceId, sim));
         }
 
-        Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<UUID> idSet = candidates.stream().map(CandidateEvidence::evidenceId).collect(Collectors.toCollection(LinkedHashSet::new));
+        // Emit aggregated counters (preserve existing metrics but as batch increments)
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
-        try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(scored.size()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(candidates.size()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(invalidSim); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(outOfRange); } catch (Exception ignored) {}
 
-        return new SanitizedCandidates(scored, idSet, hits.size());
+        return new SanitizedCandidates(candidates, idSet, hits.size(), invalidSim, outOfRange);
     }
 
     private AggregationResult aggregatePerMark(SanitizedCandidates sanitized) {
-        List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored = sanitized.scored();
+        List<CandidateEvidence> candidates = sanitized.candidates();
         Set<UUID> idSet = sanitized.idSet();
 
         Map<Long, Double> scores = new TreeMap<>();
@@ -250,8 +266,8 @@ public class SimilarityService {
         Map<Long, Double> scoreComps = new TreeMap<>();
         Map<Long, Double> weightComps = new TreeMap<>();
 
-        if (scored.isEmpty()) {
-            return new AggregationResult(scores, weightSums, Collections.emptyMap());
+        if (candidates.isEmpty()) {
+            return new AggregationResult(scores, weightSums, Collections.emptyMap(), 0, 0, 0);
         }
 
         Map<UUID, Mark> markByEvidenceId = Collections.emptyMap();
@@ -274,55 +290,57 @@ public class SimilarityService {
                     marksById.putIfAbsent(m.getId(), m);
                 }
             }
+            // Emit mapping metric (batch)
             try { meterRegistry.counter("processing.suggestions.db_mapped_hits.count", "engine", "db").increment(marksById.size()); } catch (Exception ignored) {}
         }
 
-        Map<Long, List<Map.Entry<MarkEvidenceDistanceProjection, Double>>> contributionsByMark = new HashMap<>();
-        for (Map.Entry<MarkEvidenceDistanceProjection, Double> e : scored) {
-            MarkEvidenceDistanceProjection p = e.getKey();
-            UUID id = p.getId();
-            Mark mark = markByEvidenceId.get(id);
+        // Group domain candidates by mark id using the markByEvidenceId lookup
+        Map<Long, List<CandidateEvidence>> contributionsByMark = new HashMap<>();
+        for (CandidateEvidence c : candidates) {
+            Mark mark = markByEvidenceId.get(c.evidenceId());
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
-            contributionsByMark.computeIfAbsent(markId, __ -> new ArrayList<>()).add(e);
+            if (!contributionsByMark.containsKey(markId)) contributionsByMark.put(markId, new ArrayList<>());
+            contributionsByMark.get(markId).add(c);
         }
 
         Set<EvidenceKey> seenPairs = new HashSet<>();
         List<Long> markIds = new ArrayList<>(contributionsByMark.keySet());
         Collections.sort(markIds);
+        int duplicates = 0;
+        int perMarkContributions = 0;
+        int perMarkDecayApplied = 0;
         for (Long markId : markIds) {
-            List<Map.Entry<MarkEvidenceDistanceProjection, Double>> list = contributionsByMark.get(markId);
+            List<CandidateEvidence> list = contributionsByMark.get(markId);
             if (list == null || list.isEmpty()) continue;
+            // sort: similarity desc, occurrenceId (nullable) asc (nulls first), evidenceId asc
             list.sort((a, b) -> {
-                int cmp = Double.compare(b.getValue(), a.getValue());
+                int cmp = Double.compare(b.similarity(), a.similarity());
                 if (cmp != 0) return cmp;
                 Long occA;
                 Long occB;
-                try { occA = a.getKey().getOccurrenceId(); } catch (Throwable t) { occA = null; }
-                try { occB = b.getKey().getOccurrenceId(); } catch (Throwable t) { occB = null; }
+                try { occA = a.occurrenceId(); } catch (Throwable t) { occA = null; }
+                try { occB = b.occurrenceId(); } catch (Throwable t) { occB = null; }
                 if (occA == null && occB != null) return -1;
                 if (occA != null && occB == null) return 1;
                 if (occA != null) {
                     int cmpOcc = occA.compareTo(occB);
                     if (cmpOcc != 0) return cmpOcc;
                 }
-                return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
+                return a.evidenceId().toString().compareTo(b.evidenceId().toString());
             });
 
             int used = 0;
             double decay = Math.max(0.0, perMarkDecayFactor);
             for (int i = 0; i < list.size(); i++) {
-                var entry = list.get(i);
-                MarkEvidenceDistanceProjection p = entry.getKey();
-                double similarity = entry.getValue();
-                UUID id = p.getId();
+                CandidateEvidence entry = list.get(i);
+                UUID id = entry.evidenceId();
+                double similarity = entry.similarity();
 
-                Long occurrenceId;
-                try { occurrenceId = p.getOccurrenceId(); } catch (Throwable t) { occurrenceId = null; }
-                EvidenceKey key = new EvidenceKey(id, markId, occurrenceId);
+                EvidenceKey key = new EvidenceKey(id, markId, entry.occurrenceId());
                 if (!seenPairs.add(key)) {
-                    try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                    duplicates++;
                     continue;
                 }
 
@@ -330,10 +348,10 @@ public class SimilarityService {
 
                 double perMarkMultiplier = Math.pow(decay, used);
                 if (used > 0) {
-                    try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                    perMarkDecayApplied++;
                 }
 
-                try { meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                perMarkContributions++;
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
                 double rankScore = 1.0 / (1.0 + (double) i);
@@ -361,8 +379,7 @@ public class SimilarityService {
                 used++;
             }
         }
-
-        return new AggregationResult(scores, weightSums, marksById);
+        return new AggregationResult(scores, weightSums, marksById, duplicates, perMarkContributions, perMarkDecayApplied);
     }
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
@@ -387,12 +404,20 @@ public class SimilarityService {
         // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
         // Fetch DB candidates (keeps k-clamping and maxDistance logic)
         List<MarkEvidenceDistanceProjection> hits = fetchCandidates(vector, k);
-        // Sanitize DB results and collect evidence ids
+        // Sanitize DB results and collect evidence ids (domain-shaped)
         SanitizedCandidates sanitized = sanitizeCandidates(hits);
-        if (sanitized.scored().isEmpty()) return List.of();
+        if (sanitized.candidates().isEmpty()) return List.of();
 
-        // Aggregate per-mark contributions (includes mapping evidence -> mark)
+        // Map evidence -> marks, group and aggregate contributions
         AggregationResult aggregation = aggregatePerMark(sanitized);
+
+        // Emit metrics collected during sanitization/aggregation in a controlled
+        // place (orchestration) rather than scattering counters through logic.
+        try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(sanitized.invalidSimilarityCount()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(sanitized.outOfRangeCount()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(aggregation.duplicates()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment(aggregation.perMarkContributions()); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(aggregation.perMarkDecayApplied()); } catch (Exception ignored) {}
 
         // Record final suggestions count (build from aggregation result)
         Map<Long, Double> scores = aggregation.scores();
