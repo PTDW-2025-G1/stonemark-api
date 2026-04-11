@@ -3,7 +3,7 @@ package pt.estga.processing.services.similarity.helpers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
-import pt.estga.processing.config.SanitizationPolicy;
+import pt.estga.processing.config.policies.SanitizationPolicy;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.SanitizationResult;
 

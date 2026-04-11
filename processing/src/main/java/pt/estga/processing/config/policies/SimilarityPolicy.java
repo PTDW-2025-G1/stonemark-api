@@ -1,4 +1,4 @@
-package pt.estga.processing.config;
+package pt.estga.processing.config.policies;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,7 +15,8 @@ public class SimilarityPolicy {
     public SimilarityPolicy(
             @Value("${processing.similarity.parity-check.enabled:false}") boolean parityEnabled,
             @Value("${processing.similarity.max-k:200}") int maxK,
-            @Value("${processing.similarity.min-score:0.6}") double minScore) {
+            @Value("${processing.similarity.min-score:0.6}") double minScore
+    ) {
         this.parityEnabled = parityEnabled;
         this.maxK = maxK;
         this.minScore = minScore;

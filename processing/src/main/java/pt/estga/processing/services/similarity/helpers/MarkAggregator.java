@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
-import pt.estga.processing.config.ScoringPolicy;
+import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.EvidenceKey;

@@ -1,4 +1,4 @@
-package pt.estga.processing.config;
+package pt.estga.processing.config.policies;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +14,10 @@ public class SanitizationPolicy {
     private final double minSimilarity;
     private final double maxSimilarity;
 
-    public SanitizationPolicy(@Value("${processing.similarity.min-similarity:0.0}") double minSimilarity,
-                              @Value("${processing.similarity.max-similarity:1.0}") double maxSimilarity) {
+    public SanitizationPolicy(
+            @Value("${processing.similarity.min-similarity:0.0}") double minSimilarity,
+            @Value("${processing.similarity.max-similarity:1.0}") double maxSimilarity
+    ) {
         this.minSimilarity = minSimilarity;
         this.maxSimilarity = maxSimilarity;
     }

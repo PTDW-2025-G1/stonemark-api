@@ -1,4 +1,4 @@
-package pt.estga.processing.config;
+package pt.estga.processing.config.policies;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +14,9 @@ public class EmbeddingPolicy {
 
     private final int dimension;
 
-    public EmbeddingPolicy(@Value("${processing.embedding.dimension:0}") int dimension) {
+    public EmbeddingPolicy(
+            @Value("${processing.embedding.dimension:0}") int dimension
+    ) {
         this.dimension = dimension;
     }
 }

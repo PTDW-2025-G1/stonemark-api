@@ -1,4 +1,4 @@
-package pt.estga.processing.config;
+package pt.estga.processing.config.policies;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,7 +18,8 @@ public class ScoringPolicy {
 
     public ScoringPolicy(
             @Value("${processing.similarity.use-rank-weighting:true}") boolean useRankWeighting,
-            @Value("${processing.similarity.per-mark-decay:0.5}") double perMarkDecay) {
+            @Value("${processing.similarity.per-mark-decay:0.5}") double perMarkDecay
+    ) {
         this.useRankWeighting = useRankWeighting;
         this.perMarkDecay = perMarkDecay;
     }

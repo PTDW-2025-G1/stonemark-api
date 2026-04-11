@@ -1,4 +1,4 @@
-package pt.estga.processing.config;
+package pt.estga.processing.config.policies;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;

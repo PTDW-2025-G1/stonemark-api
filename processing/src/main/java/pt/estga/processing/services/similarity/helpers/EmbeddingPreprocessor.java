@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
-import pt.estga.processing.config.EmbeddingPolicy;
+import pt.estga.processing.config.policies.EmbeddingPolicy;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.shared.utils.VectorUtils;
 

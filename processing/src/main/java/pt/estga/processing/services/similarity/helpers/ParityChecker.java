@@ -7,7 +7,7 @@ import jakarta.annotation.PostConstruct;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
-import pt.estga.processing.config.ParityPolicy;
+import pt.estga.processing.config.policies.ParityPolicy;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.List;

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
-import pt.estga.processing.config.SimilarityPolicy;
+import pt.estga.processing.config.policies.SimilarityPolicy;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
