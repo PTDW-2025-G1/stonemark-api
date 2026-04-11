@@ -217,21 +217,7 @@ public class SimilarityService {
             scored.add(new AbstractMap.SimpleEntry<>(p, sim));
         }
 
-        // Deterministically sort the global scored list to ensure stable ordering across runs.
-        // Sorting tie-breakers: similarity desc, occurrence id asc, evidence id asc.
-        scored.sort((a, b) -> {
-            int cmp = Double.compare(b.getValue(), a.getValue());
-            if (cmp != 0) return cmp;
-            String occA;
-            String occB;
-            try { var oa = a.getKey().getOccurrenceId(); occA = oa == null ? "" : oa.toString(); } catch (Throwable t) { occA = ""; }
-            try { var ob = b.getKey().getOccurrenceId(); occB = ob == null ? "" : ob.toString(); } catch (Throwable t) { occB = ""; }
-            cmp = occA.compareTo(occB);
-            if (cmp != 0) return cmp;
-            return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
-        });
-
-        // Collect unique evidence ids from the (re-ranked) top candidates preserving deterministic order
+        // Collect unique evidence ids from the top candidates
         Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
         // Record DB-side candidate count and valid candidate count after sanitization
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
@@ -307,13 +293,14 @@ public class SimilarityService {
                 double similarity = entry.getValue();
                 UUID id = p.getId();
 
-                // Dedupe including occurrence id
+                // Dedupe including occurrence id. If occurrence id is missing, fall back to evidence id
+                // to avoid accidental merging of unrelated rows that lack occurrence metadata.
                 String occurrencePart;
                 try {
-                    var occ = p.getOccurrenceId();
-                    occurrencePart = occ == null ? "null" : occ.toString();
+                    Long occ = p.getOccurrenceId();
+                    occurrencePart = occ == null ? id.toString() : occ.toString();
                 } catch (Throwable t) {
-                    occurrencePart = "-";
+                    occurrencePart = id.toString();
                 }
                 String pairKey = id + ":" + markId + ":" + occurrencePart;
                 if (!seenPairs.add(pairKey)) {

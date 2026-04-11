@@ -20,8 +20,8 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 		me.occurrence_id,
 		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity
 	FROM mark_evidence me
-	WHERE (me.embedding <#> CAST(:vector AS vector)) <= :maxDistance
-	ORDER BY similarity DESC
+ 	WHERE (me.embedding <#> CAST(:vector AS vector)) <= :maxDistance
+ 	ORDER BY similarity DESC, me.id ASC, me.occurrence_id ASC
 	LIMIT :k
 	""", nativeQuery = true)
 	List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(
