@@ -12,6 +12,7 @@ import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
+import pt.estga.mark.entities.MarkEvidence;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,9 @@ public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
+    private final JavaSimilarityEngine javaSimilarityEngine;
+    @Value("${processing.similarity.mode:db}")
+    private String similarityMode;
     @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
     /**
@@ -49,8 +53,20 @@ public class SimilarityService {
 
         String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
 
-        // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
-        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
+        boolean useJava = "java".equalsIgnoreCase(similarityMode);
+
+        List<MarkSuggestion> result;
+
+        if (useJava) {
+            List<MarkEvidence> rows = evidenceRepository.findAllByEmbeddingIsNotNull();
+            if (rows == null || rows.isEmpty()) {
+                result = List.of();
+            } else {
+                result = javaSimilarityEngine.computeSuggestions(processing, rows, k, minSimilarity, useRankWeighting);
+            }
+        } else {
+            // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
+            List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
 
         if (log.isDebugEnabled()) {
             log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()
@@ -86,8 +102,7 @@ public class SimilarityService {
                     EvidenceMarkProjection::getMark,
                     (a, b) -> {
                         // If duplicates happen, keep the first but log so data issues can be investigated.
-                        // Defensive null checks in case projections unexpectedly contain nulls.
-                        if (a != null && b != null && !Objects.equals(a.getId(), b.getId())) {
+                        if (!Objects.equals(a.getId(), b.getId())) {
                             log.warn("Duplicate mark mapping encountered for same evidence id: keeping mark id {} over {}", a.getId(), b.getId());
                         }
                         return a;
@@ -132,11 +147,10 @@ public class SimilarityService {
             weightSums.merge(markId, weight, Double::sum);
         }
 
-        if (scores.isEmpty()) {
-            return List.of();
-        }
-
-        List<MarkSuggestion> result = scores.entrySet().stream()
+            if (scores.isEmpty()) {
+                result = List.of();
+            } else {
+                result = scores.entrySet().stream()
                 // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
                 .filter(entry -> {
                     Long markId = entry.getKey();
@@ -169,6 +183,9 @@ public class SimilarityService {
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
+
+            }
+        }
 
         // Metrics & logs for observability.
         // Record number of suggestions for this processing (submission) as a distribution summary.

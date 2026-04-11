@@ -22,6 +22,8 @@ import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -57,8 +59,8 @@ public class ReviewService {
 		// Ensure processing exists and is completed
 		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (!processing.isReadyForReview()) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
+		if (!processing.isReviewable()) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is reviewable");
 		}
 
 		// Prevent reviewing when there are no suggestions unless explicitly allowed
@@ -111,7 +113,7 @@ public class ReviewService {
 		// If approved, record average confidence for accepted suggestion (if available)
 		if (saved.getDecision() == ReviewDecision.APPROVED && saved.getSelectedMark() != null) {
 			try {
-				java.util.UUID processingId = processing.getId();
+				UUID processingId = processing.getId();
 				suggestionRepository.findByProcessingIdAndMarkId(processingId, saved.getSelectedMark().getId())
 					.ifPresent(s -> meterRegistry.summary("review.accepted.suggestion.confidence", "submission", submissionId.toString())
 						.record(s.getConfidence()));
@@ -140,8 +142,8 @@ public class ReviewService {
 		// Ensure processing exists and is completed
 		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (!processing.isReadyForReview()) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
+		if (!processing.isReviewable()) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is reviewable");
 		}
 
 		// Prevent reviewing when there are no suggestions unless explicitly allowed

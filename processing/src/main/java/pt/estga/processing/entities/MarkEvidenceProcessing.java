@@ -44,10 +44,11 @@ public class MarkEvidenceProcessing {
     List<MarkSuggestion> suggestions;
 
     /**
-     * True when processing is ready for manual review (COMPLETED or REVIEW_PENDING).
+     * True when processing is reviewable (COMPLETED or REVIEW_PENDING).
+     * This name conveys domain intent more explicitly than "isReadyForReview".
      * Centralizes readiness logic to reduce coupling to enum changes.
      */
-    public boolean isReadyForReview() {
+    public boolean isReviewable() {
         return status != null && (status == ProcessingStatus.COMPLETED || status == ProcessingStatus.REVIEW_PENDING);
     }
 

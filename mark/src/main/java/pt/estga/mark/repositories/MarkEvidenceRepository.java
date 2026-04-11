@@ -33,4 +33,6 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	WHERE e.id IN :ids
 	""")
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
+
+	List<MarkEvidence> findAllByEmbeddingIsNotNull();
 }
