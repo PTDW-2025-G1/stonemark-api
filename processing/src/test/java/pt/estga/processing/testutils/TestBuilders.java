@@ -3,6 +3,7 @@ package pt.estga.processing.testutils;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.models.CandidateEvidence;
 
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 public final class TestBuilders {
@@ -27,14 +28,10 @@ public final class TestBuilders {
             return UUID.fromString(literal);
         }
         String hex = literal.trim();
-        if (hex.length() == 16) {
-            long lsb = Long.parseUnsignedLong(hex, 16);
-            return new UUID(0L, lsb);
-        }
-        if (hex.length() == 32) {
-            long msb = Long.parseUnsignedLong(hex.substring(0, 16), 16);
-            long lsb = Long.parseUnsignedLong(hex.substring(16), 16);
-            return new UUID(msb, lsb);
+        // For compact literals use a deterministic name-based UUID to avoid
+        // producing low-entropy / MSB-zero UUIDs that can collide in tests.
+        if (hex.length() == 16 || hex.length() == 32) {
+            return UUID.nameUUIDFromBytes(("evidence-" + hex).getBytes(StandardCharsets.UTF_8));
         }
         // Fallback to the strict parser to keep existing behavior/error messages for unexpected input.
         return UUID.fromString(literal);

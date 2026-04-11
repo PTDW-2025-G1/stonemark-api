@@ -3,7 +3,9 @@ package pt.estga.processing.services.similarity.aggregation;
 import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.enums.FanOutStrategy;
 import pt.estga.processing.models.CandidateEvidence;
+import pt.estga.processing.models.KahanState;
 import pt.estga.processing.models.ScoringResult;
+import pt.estga.processing.utils.KahanAccumulator;
 
 import java.util.*;
 
@@ -16,10 +18,8 @@ public class MarkScoringStage {
     }
 
     public ScoringResult score(Map<Long, List<CandidateEvidence>> dedupedByMark, Map<java.util.UUID, Integer> fanOutCounts) {
-        Map<Long, Double> scores = new TreeMap<>();
-        Map<Long, Double> weightSums = new TreeMap<>();
-        Map<Long, Double> scoreComps = new TreeMap<>();
-        Map<Long, Double> weightComps = new TreeMap<>();
+        Map<Long, KahanState> scoreStates = new TreeMap<>();
+        Map<Long, KahanState> weightStates = new TreeMap<>();
 
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
@@ -58,16 +58,16 @@ public class MarkScoringStage {
                 double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / Math.max(1, fanOut) : 1.0;
                 if (fanOut > 1) fanOutContributionCount++;
 
-                KahanAccumulator.kahanScoresSum(scores, scoreComps, markId, contribution * scale);
-                KahanAccumulator.kahanScoresSum(weightSums, weightComps, markId, perMarkMultiplier * scale);
+                KahanAccumulator.accumulate(scoreStates, markId, contribution * scale);
+                KahanAccumulator.accumulate(weightStates, markId, perMarkMultiplier * scale);
 
                 used++;
             }
         }
 
-        // Combine running sums with their compensation term to produce corrected totals
-        Map<Long, Double> correctedScores = combineCompensatedTotals(scores, scoreComps);
-        Map<Long, Double> correctedWeightSums = combineCompensatedTotals(weightSums, weightComps);
+        // Produce corrected totals from per-key states
+        Map<Long, Double> correctedScores = KahanAccumulator.toCorrectedMap(scoreStates);
+        Map<Long, Double> correctedWeightSums = KahanAccumulator.toCorrectedMap(weightStates);
 
         int weightAnomalies = 0;
         final double MIN_WEIGHT = 1e-12;
@@ -77,22 +77,5 @@ public class MarkScoringStage {
         }
 
         return new ScoringResult(correctedScores, correctedWeightSums, perMarkContributions, perMarkDecayApplied, fanOutContributionCount, weightAnomalies);
-    }
-
-    /**
-     * Combine a running sum map with its compensation map to produce corrected totals.
-     * Keys present only in the compensation map are also preserved.
-     */
-    private static Map<Long, Double> combineCompensatedTotals(Map<Long, Double> sums, Map<Long, Double> comps) {
-        Map<Long, Double> corrected = new TreeMap<>();
-        for (Long k : sums.keySet()) {
-            double s = sums.getOrDefault(k, 0.0);
-            double c = comps.getOrDefault(k, 0.0);
-            corrected.put(k, s + c);
-        }
-        for (Long k : comps.keySet()) {
-            corrected.putIfAbsent(k, comps.getOrDefault(k, 0.0));
-        }
-        return corrected;
     }
 }
