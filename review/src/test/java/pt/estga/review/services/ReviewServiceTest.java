@@ -114,7 +114,7 @@ public class ReviewServiceTest {
             ready.countDown();
             try { start.await(); } catch (InterruptedException e) { throw new RuntimeException(e); }
             try {
-                MarkEvidenceReview r = reviewService.acceptSuggestion(submissionId, markId);
+                MarkEvidenceReview r = reviewService.acceptSuggestion(submissionId, markId, null);
                 assertNotNull(r);
             } catch (IllegalStateException ex) {
                 // expected for one thread
@@ -142,7 +142,7 @@ public class ReviewServiceTest {
         processing.setStatus(ProcessingStatus.PROCESSING);
         when(processingRepository.findBySubmissionId(submissionId)).thenReturn(Optional.of(processing));
 
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId, null));
         assertTrue(ex.getMessage().contains("ready for review"));
     }
 
@@ -162,11 +162,11 @@ public class ReviewServiceTest {
         // first call should create a review — mock save to return review
         when(reviewRepository.save(any(MarkEvidenceReview.class))).thenAnswer(i -> { MarkEvidenceReview r = i.getArgument(0); r.setId(200L); return r; });
 
-        MarkEvidenceReview saved = reviewService.rejectAll(submissionId);
+        MarkEvidenceReview saved = reviewService.rejectAll(submissionId, null);
         assertNotNull(saved);
 
         // second attempt should fail due to existsBySubmissionId returning true
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId));
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId, null));
         assertTrue(ex.getMessage().contains("already been reviewed"));
     }
 }

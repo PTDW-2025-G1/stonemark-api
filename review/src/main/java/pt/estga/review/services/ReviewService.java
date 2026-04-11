@@ -132,14 +132,6 @@ public class ReviewService {
 	}
 
 	/**
-	 * Backwards-compatible overload for existing callers that do not pass a comment.
-	 */
-	@Transactional
-	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId) {
-		return acceptSuggestion(submissionId, markId, null);
-	}
-
-	/**
 	 * Reject all suggestions for a submission. Creates a review with REJECTED decision.
 	 * Enforces: processing must be COMPLETED; review must not already exist.
 	 */
@@ -187,14 +179,6 @@ public class ReviewService {
 		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.REJECTED, null, reviewerId));
 
 		return saved;
-	}
-
-	/**
-	 * Backwards-compatible overload for existing callers that do not pass a comment.
-	 */
-	@Transactional
-	public MarkEvidenceReview rejectAll(Long submissionId) {
-		return rejectAll(submissionId, null);
 	}
 
 	/**
