@@ -32,10 +32,6 @@ public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
-    // Java similarity engine removed from runtime usage. Keep parity checks using VectorUtils where needed.
-    @Setter
-    @Value("${processing.similarity.mode:db}")
-    private String similarityMode;
     @Setter
     @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
@@ -46,16 +42,6 @@ public class SimilarityService {
     @Setter
     @Value("${processing.similarity.use-rank-weighting:true}")
     private boolean useRankWeighting;
-
-    @PostConstruct
-    void validateMode() {
-        String m = similarityMode == null ? "" : similarityMode.trim().toLowerCase();
-        if (!m.equals("db")) {
-            log.error("Invalid processing.similarity.mode='{}'. Only 'db' is supported; Java in-process engine has been removed.", similarityMode);
-            throw new IllegalStateException("Invalid processing.similarity.mode: " + similarityMode);
-        }
-    }
-
     @Value("${processing.similarity.parity-check.enabled:false}")
     private boolean parityCheckEnabled;
     @Value("${processing.similarity.parity-check.tolerance:0.001}")
@@ -279,7 +265,7 @@ public class SimilarityService {
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
 
         try {
-            meterRegistry.summary("processing.suggestions.count", "engine", similarityMode, "result", result.isEmpty() ? "empty" : "has")
+            meterRegistry.summary("processing.suggestions.count", "engine", "db", "result", result.isEmpty() ? "empty" : "has")
                     .record(result.size());
         } catch (Exception e) {
             log.debug("Failed to record suggestions metric for processing {}: {}", processing.getId(), e.getMessage());
@@ -297,7 +283,7 @@ public class SimilarityService {
         // Record similarity computation time
         try {
             long elapsedNanos = System.nanoTime() - start;
-            meterRegistry.timer("processing.similarity.time", "engine", similarityMode, "result", result.isEmpty() ? "empty" : "has")
+            meterRegistry.timer("processing.similarity.time", "engine", "db", "result", result.isEmpty() ? "empty" : "has")
                     .record(elapsedNanos, TimeUnit.NANOSECONDS);
         } catch (Exception e) {
             log.debug("Failed to record similarity timer for processing {}: {}", processing.getId(), e.getMessage());

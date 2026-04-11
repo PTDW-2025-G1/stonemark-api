@@ -12,7 +12,6 @@ import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
-import pt.estga.processing.services.similarity.JavaSimilarityEngine;
 import pt.estga.processing.services.similarity.SimilarityService;
 
 import java.lang.reflect.Field;
@@ -28,9 +27,6 @@ public class SimilarityServiceTest {
     @Mock
     MarkEvidenceRepository evidenceRepository;
 
-    @Mock
-    JavaSimilarityEngine javaSimilarityEngine;
-
     @InjectMocks
     SimilarityService similarityService;
 
@@ -44,20 +40,8 @@ public class SimilarityServiceTest {
         processing.setStatus(null);
         // Ensure embedding exists so similarity is exercised in tests
         processing.setEmbedding(new float[] {1.0f, 0.0f, 0.0f});
-        // Ensure service runs in DB mode for deterministic tests
-        try {
-            Field f = SimilarityService.class.getDeclaredField("similarityMode");
-            f.setAccessible(true);
-            f.set(similarityService, "db");
-        } catch (Exception ignored) {
-        }
         // Ensure rank-weighting is enabled for tests that assert weighted aggregation
-        try {
-            Field wf = SimilarityService.class.getDeclaredField("useRankWeighting");
-            wf.setAccessible(true);
-            wf.setBoolean(similarityService, true);
-        } catch (Exception ignored) {
-        }
+        similarityService.setUseRankWeighting(true);
         // Install a SimpleMeterRegistry so metric calls are safe in the service under test
         try {
             SimpleMeterRegistry simple = new SimpleMeterRegistry();

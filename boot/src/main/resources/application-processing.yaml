@@ -1,7 +1,5 @@
 processing:
   similarity:
-    # Processing similarity configuration: choose between DB (pgvector) or java implementations.
-    mode: db
     # Maximum pgvector distance to accept a match. Tune this per embedding model/dimension.
     max-distance: 0.8
     min-score: 0.6
