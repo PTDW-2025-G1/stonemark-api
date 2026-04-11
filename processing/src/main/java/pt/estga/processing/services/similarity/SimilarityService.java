@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
@@ -16,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
+import pt.estga.processing.models.AggregationResult;
+import pt.estga.processing.models.SanitizationResult;
 import pt.estga.processing.services.similarity.helpers.*;
 
 @Service
@@ -49,30 +52,16 @@ public class SimilarityService {
     private final CandidateSanitizer candidateSanitizer;
     private final MarkAggregator markAggregator;
     private final ParityChecker parityChecker;
-    @Setter
-    @Value("${processing.similarity.min-score:0.6}")
-    private double minSimilarity;
-    /**
-     * If true, apply a small rank-based weight to evidence contributions. When false, all
-     * evidence contributions are treated equally (pure similarity aggregation).
-     */
-    @Value("${processing.similarity.parity-check.enabled:false}")
-    private boolean parityCheckEnabled;
-    @Value("${processing.similarity.parity-check.async:true}")
-    private boolean parityCheckAsync;
-    @Value("${processing.similarity.max-k:200}")
-    private int maxK;
-
-    // helpers and domain records are moved into dedicated classes (CandidateEvidence, CandidateSanitizer, MarkAggregator)
+    private final ProcessingProperties properties;
 
     @PostConstruct
     void maybeRunParityCheck() {
-        if (!parityCheckEnabled) return;
+        if (!properties.getSimilarity().getParityCheck().isEnabled()) return;
         try {
             parityChecker.maybeRun();
         } catch (Exception e) {
             log.error("Similarity parity check failed: {}", e.getMessage());
-            if (!parityCheckAsync) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
+            if (!properties.getSimilarity().getParityCheck().isAsync()) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
         }
     }
 
@@ -98,17 +87,17 @@ public class SimilarityService {
         // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
         // and maintain a single source of truth for similarity ranking.
         // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
-        int safeK = Math.max(1, Math.min(k, maxK));
-        if (k > maxK) {
+        int safeK = Math.max(1, Math.min(k, properties.getSimilarity().getMaxK()));
+        if (k > properties.getSimilarity().getMaxK()) {
             try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
-            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, maxK, safeK);
+            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, properties.getSimilarity().getMaxK(), safeK);
         }
-        double maxDistance = Math.max(0.0, 1.0 - minSimilarity);
+        double maxDistance = Math.max(0.0, 1.0 - properties.getSimilarity().getMinScore());
 
         // Fetch DB candidates (DB boundary)
         List<MarkEvidenceDistanceProjection> hits = candidateFetcher.fetchCandidates(vector, safeK, maxDistance);
         // Sanitize DB results (trust boundary)
-        CandidateSanitizer.SanitizationResult sanitized = candidateSanitizer.sanitize(hits);
+        SanitizationResult sanitized = candidateSanitizer.sanitize(hits);
         if (sanitized.candidates().isEmpty()) return List.of();
 
         // Fetch mark mappings for the candidate evidence ids via DB boundary
@@ -120,7 +109,7 @@ public class SimilarityService {
         ));
 
         // Aggregate contributions (core business logic)
-        MarkAggregator.AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId);
+        AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId);
 
         // Emit metrics collected during sanitization/aggregation in a controlled
         // place (orchestration) rather than scattering counters through logic.

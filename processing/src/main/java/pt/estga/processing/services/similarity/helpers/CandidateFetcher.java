@@ -17,7 +17,6 @@ public class CandidateFetcher {
 
     private final MarkEvidenceRepository evidenceRepository;
 
-
     public List<MarkEvidenceDistanceProjection> fetchCandidates(String vector, int safeK, double maxDistance) {
         return evidenceRepository.findTopKSimilarEvidence(vector, safeK, maxDistance);
     }

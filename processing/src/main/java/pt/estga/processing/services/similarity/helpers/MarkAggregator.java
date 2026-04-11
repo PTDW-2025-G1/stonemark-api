@@ -1,8 +1,10 @@
 package pt.estga.processing.services.similarity.helpers;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
+import pt.estga.processing.config.ProcessingProperties;
+import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.EvidenceKey;
 
@@ -14,16 +16,10 @@ import java.util.stream.Collectors;
  * This class does not perform DB access or emit metrics.
  */
 @Service
+@RequiredArgsConstructor
 public class MarkAggregator {
 
-    @Value("${processing.similarity.per-mark-decay:0.5}")
-    private double perMarkDecayFactor;
-
-    @Value("${processing.similarity.use-rank-weighting:true}")
-    private boolean useRankWeighting;
-
-    public record AggregationResult(Map<Long, Double> scores, Map<Long, Double> weightSums, Map<Long, Mark> marksById, int duplicates, int perMarkContributions, int perMarkDecayApplied) {}
-
+    private final ProcessingProperties properties;
 
     public AggregationResult aggregate(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId) {
         Map<Long, Double> scores = new TreeMap<>();
@@ -42,7 +38,11 @@ public class MarkAggregator {
             Mark mark = markByEvidenceId.get(c.evidenceId());
             if (mark == null || mark.getId() == null) continue;
             Long markId = mark.getId();
-            contributionsByMark.computeIfAbsent(markId, __ -> new ArrayList<>()).add(c);
+            // Avoid unused-lambda warnings by using explicit put/get
+            if (!contributionsByMark.containsKey(markId)) {
+                contributionsByMark.put(markId, new ArrayList<>());
+            }
+            contributionsByMark.get(markId).add(c);
         }
 
         Set<EvidenceKey> seenPairs = new HashSet<>();
@@ -70,7 +70,7 @@ public class MarkAggregator {
             });
 
             int used = 0;
-            double decay = Math.max(0.0, perMarkDecayFactor);
+            double decay = Math.max(0.0, properties.getSimilarity().getPerMarkDecay());
             for (int i = 0; i < list.size(); i++) {
                 CandidateEvidence ce = list.get(i);
                 UUID evidenceId = ce.evidenceId();
@@ -86,7 +86,7 @@ public class MarkAggregator {
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
                 double rankScore = 1.0 / (1.0 + (double)i);
-                double signal = simClamped * (useRankWeighting ? rankScore : 1.0);
+                double signal = simClamped * (properties.getSimilarity().isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
                 // Kahan sum for scores

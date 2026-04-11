@@ -2,15 +2,18 @@ package pt.estga.processing.services.similarity.helpers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 /**
@@ -23,24 +26,17 @@ import java.util.stream.Collectors;
 public class ParityChecker {
 
     private final MarkEvidenceRepository evidenceRepository;
+    private final ProcessingProperties properties;
 
-    @Value("${processing.similarity.parity-check.async:true}")
-    private boolean parityCheckAsync;
-
-    @Value("${processing.similarity.parity-check.tolerance:0.001}")
-    private double parityTolerance;
-
-    @Value("${processing.similarity.parity-check.sample-size:3}")
-    private int paritySampleSize;
-
-    private static final java.util.concurrent.ExecutorService parityExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+    private static final ExecutorService parityExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "similarity-parity-check");
         t.setDaemon(true);
         return t;
     });
 
     public void maybeRun() {
-        if (parityCheckAsync) {
+        var parity = properties.getSimilarity().getParityCheck();
+        if (parity.isAsync()) {
             parityExecutor.submit(() -> { try { run(); } catch (Exception e) { /* log at caller */ } });
         } else {
             run();
@@ -48,7 +44,7 @@ public class ParityChecker {
     }
 
     public void run() {
-        var page = org.springframework.data.domain.PageRequest.of(0, Math.max(1, paritySampleSize));
+        var page = PageRequest.of(0, Math.max(1, properties.getSimilarity().getParityCheck().getSampleSize()));
         var pageRes = evidenceRepository.findAllByEmbeddingIsNotNull(page);
         if (pageRes == null || pageRes.isEmpty()) return;
         for (var ev : pageRes.getContent()) {
@@ -73,6 +69,7 @@ public class ParityChecker {
                 Double javaCos = VectorUtils.cosineSimilarity(emb, otherEmb);
                 if (javaCos == null) continue;
                 double diff = Math.abs(dbSim - javaCos);
+                double parityTolerance = properties.getSimilarity().getParityCheck().getTolerance();
                 if (diff > parityTolerance) {
                     throw new IllegalStateException(String.format("DB/Java similarity mismatch: db=%.6f java=%.6f diff=%.6f (tolerance=%.6f).", dbSim, javaCos, diff, parityTolerance));
                 }

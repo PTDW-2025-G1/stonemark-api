@@ -1,7 +1,9 @@
 package pt.estga.processing.services.similarity.helpers;
 
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.shared.utils.VectorUtils;
 
@@ -12,10 +14,11 @@ import java.util.Optional;
  * This class is intentionally free of scoring/DB logic and does not emit metrics.
  */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class EmbeddingPreprocessor {
 
-    @Value("${processing.embedding.dimension:0}")
-    private int expectedEmbeddingDimension;
+    private final ProcessingProperties properties;
 
     /**
      * Normalize embedding and return a DB vector literal if valid. Returns empty when
@@ -26,11 +29,12 @@ public class EmbeddingPreprocessor {
         float[] raw = processing.getEmbedding();
         float[] norm = VectorUtils.normalize(raw);
         if (norm == null || norm.length == 0) return Optional.empty();
+        int expectedEmbeddingDimension = properties.getEmbedding().getDimension();
         if (expectedEmbeddingDimension > 0 && norm.length != expectedEmbeddingDimension) return Optional.empty();
-        // defensive norm check (logically useful, but preprocessor avoids metrics)
+        // defensive norm check: log a warning when normalization is imperfect
         double n = pt.estga.shared.utils.VectorUtils.l2Norm(norm);
         if (Double.isNaN(n) || Math.abs(n - 1.0) > 1e-3) {
-            // still acceptable — caller will proceed with returned vector
+            log.warn("Processing embedding not normalized after normalization attempt (norm={}) — continuing with normalized vector", n);
         }
         return Optional.of(VectorUtils.toVectorLiteral(norm));
     }

@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity.helpers;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.processing.models.CandidateEvidence;
+import pt.estga.processing.models.SanitizationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,8 +14,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CandidateSanitizer {
-
-    public record SanitizationResult(List<CandidateEvidence> candidates, Set<UUID> idSet, int rawHitCount, int invalidSimilarityCount, int outOfRangeCount) {}
 
     public SanitizationResult sanitize(List<MarkEvidenceDistanceProjection> hits) {
         if (hits == null || hits.isEmpty()) return new SanitizationResult(List.of(), Collections.emptySet(), 0, 0, 0);
