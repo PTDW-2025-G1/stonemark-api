@@ -40,6 +40,7 @@ public class SimilarityService {
     private final MarkAggregator markAggregator;
     private final ParityChecker parityChecker;
     private final ProcessingProperties properties;
+    private final SuggestionBuilder suggestionBuilder;
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -51,8 +52,6 @@ public class SimilarityService {
             if (!properties.getSimilarity().getParityCheck().isAsync()) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
         }
     }
-
-    // Parity check delegated to ParityChecker
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
@@ -89,77 +88,27 @@ public class SimilarityService {
 
         // Fetch mark mappings for the candidate evidence ids via DB boundary
         List<EvidenceMarkProjection> rows = candidateFetcher.fetchMarksByEvidenceIds(new ArrayList<>(sanitized.idSet()));
-        Map<UUID, Mark> markByEvidenceId = rows.stream().collect(Collectors.toMap(
-                EvidenceMarkProjection::getId,
-                EvidenceMarkProjection::getMark,
-                (a, b) -> a
-        ));
+        Map<UUID, Mark> markByEvidenceId = new LinkedHashMap<>();
+        for (EvidenceMarkProjection r : rows) {
+            if (r == null) continue;
+            UUID id = r.getId();
+            Mark m = r.getMark();
+            if (id == null || m == null) continue;
+            markByEvidenceId.putIfAbsent(id, m);
+        }
 
         // Aggregate contributions (core business logic)
         AggregationResult aggregation = markAggregator.aggregate(sanitized.candidates(), markByEvidenceId);
 
-        // Emit metrics collected during sanitization/aggregation in a controlled
-        // place (orchestration) rather than scattering counters through logic.
+        // Emit aggregated metrics collected during sanitization/aggregation
         try { meterRegistry.counter("processing.suggestions.invalid.similarity.count", "engine", "db").increment(sanitized.invalidSimilarityCount()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(sanitized.outOfRangeCount()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(aggregation.duplicates()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment(aggregation.perMarkContributions()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(aggregation.perMarkDecayApplied()); } catch (Exception ignored) {}
 
-        // Record final suggestions count (build from aggregation result)
-        Map<Long, Double> scores = aggregation.scores();
-        Map<Long, Double> weightSums = aggregation.weightSums();
-        Map<Long, Mark> marksById = aggregation.marksById();
-
-        if (scores.isEmpty()) {
-            result = List.of();
-        } else {
-            result = scores.entrySet().stream()
-            // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
-            .filter(entry -> {
-                Long markId = entry.getKey();
-                Double weightSum = weightSums.get(markId);
-                if (weightSum == null || weightSum == 0.0) {
-                    log.warn("Invariant violation: weightSum missing for mark id {}", markId);
-                    return false;
-                }
-                // ensure we have the actual Mark entity for the id
-                if (!marksById.containsKey(markId)) {
-                    log.warn("Missing Mark entity for id {} while aggregating scores", markId);
-                    return false;
-                }
-                return true;
-            })
-            .map(entry -> {
-                Long markId = entry.getKey();
-                double totalScore = entry.getValue();
-                double weightSum = weightSums.get(markId);
-
-                // Normalize by the total weight to produce a weighted average confidence.
-                double confidence = totalScore / weightSum;
-                // Quantize confidence to 1e-6 to improve determinism across runs and reduce
-                // floating-point jitter when ranking / comparing results.
-                double quantized = Math.round(confidence * 1_000_000d) / 1_000_000d;
-
-                return MarkSuggestion.builder()
-                        .processing(processing)
-                        .mark(marksById.get(markId))
-                        .confidence(quantized)
-                        .build();
-            })
-            .sorted((a, b) -> {
-                int cmp = Double.compare(b.getConfidence(), a.getConfidence());
-                if (cmp != 0) return cmp;
-                Long aId = a.getMark() == null ? null : a.getMark().getId();
-                Long bId = b.getMark() == null ? null : b.getMark().getId();
-                if (aId == null && bId == null) return 0;
-                if (aId == null) return 1;
-                if (bId == null) return -1;
-                return aId.compareTo(bId);
-            })
-            .limit(k)
-            .toList();
-        }
+        // Build final suggestions from aggregation results (pure transformation)
+        result = suggestionBuilder.buildSuggestions(aggregation.scores(), aggregation.weightSums(), aggregation.marksById(), processing, k);
 
 
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
