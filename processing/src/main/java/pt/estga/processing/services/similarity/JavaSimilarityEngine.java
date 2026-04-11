@@ -90,7 +90,11 @@ public class JavaSimilarityEngine {
             MarkEvidence ev = entry.getKey();
             double similarity = entry.getValue();
             UUID id = ev.getId();
-            if (!seen.add(id)) continue;
+            if (!seen.add(id)) {
+                // Duplicate evidence deduped by engine — record metric so we can detect DB join issues.
+                try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "java").increment(); } catch (Exception ignored) {}
+                continue;
+            }
             pt.estga.mark.entities.Mark mark = ev.getOccurrence().getMark();
             if (mark == null || mark.getId() == null) continue;
             Long markId = mark.getId();

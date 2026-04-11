@@ -129,7 +129,11 @@ public class SimilarityService {
         for (int idx = 0; idx < hits.size(); idx++) {
             MarkEvidenceDistanceProjection p = hits.get(idx);
             UUID id = p.getId();
-            if (!seen.add(id)) continue; // dedupe
+            if (!seen.add(id)) {
+                // Duplicate evidence id returned by the distance query — record and skip.
+                try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                continue; // dedupe
+            }
             seenCount++;
 
             Mark mark = markByEvidenceId.get(id);
@@ -140,9 +144,17 @@ public class SimilarityService {
             Double distance = p.getDistance();
             if (distance == null) continue;
 
-            // Convert distance (cosine-distance) to similarity. For pgvector '<#>' operator,
-            // distance ~= 1 - cosine_similarity for normalized vectors. Use similarity threshold
-            // as the primary filter.
+            // Convert distance (cosine-distance) to similarity.
+            // WARNING: this conversion relies on specific assumptions:
+            //  - The DB uses the pgvector '<#>' operator which returns a cosine-based distance
+            //  - Evidence embeddings are normalized (unit length)
+            // Under these assumptions: similarity ~= 1.0 - distance.
+            // If the operator, distance definition or normalization changes, this formula
+            // will be incorrect and historical behavior may silently break. Keep this
+            // in sync with the DB query implementation.
+            // Note: minSimilarity threshold comparisons in DB and Java paths may differ
+            // slightly due to floating-point and operator semantics; tests should cover
+            // both code paths to ensure parity.
             double similarity = 1.0 - distance;
             if (similarity < minSimilarity) continue;
             passing++;
