@@ -65,13 +65,34 @@ public class MarkScoringStage {
             }
         }
 
+        // Combine running sums with their compensation term to produce corrected totals
+        Map<Long, Double> correctedScores = combineCompensatedTotals(scores, scoreComps);
+        Map<Long, Double> correctedWeightSums = combineCompensatedTotals(weightSums, weightComps);
+
         int weightAnomalies = 0;
         final double MIN_WEIGHT = 1e-12;
-        for (Map.Entry<Long, Double> e : weightSums.entrySet()) {
+        for (Map.Entry<Long, Double> e : correctedWeightSums.entrySet()) {
             Double w = e.getValue();
             if (w == null || w <= MIN_WEIGHT) weightAnomalies++;
         }
 
-        return new ScoringResult(scores, weightSums, perMarkContributions, perMarkDecayApplied, fanOutContributionCount, weightAnomalies);
+        return new ScoringResult(correctedScores, correctedWeightSums, perMarkContributions, perMarkDecayApplied, fanOutContributionCount, weightAnomalies);
+    }
+
+    /**
+     * Combine a running sum map with its compensation map to produce corrected totals.
+     * Keys present only in the compensation map are also preserved.
+     */
+    private static Map<Long, Double> combineCompensatedTotals(Map<Long, Double> sums, Map<Long, Double> comps) {
+        Map<Long, Double> corrected = new TreeMap<>();
+        for (Long k : sums.keySet()) {
+            double s = sums.getOrDefault(k, 0.0);
+            double c = comps.getOrDefault(k, 0.0);
+            corrected.put(k, s + c);
+        }
+        for (Long k : comps.keySet()) {
+            corrected.putIfAbsent(k, comps.getOrDefault(k, 0.0));
+        }
+        return corrected;
     }
 }
