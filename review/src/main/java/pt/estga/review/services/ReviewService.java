@@ -18,8 +18,12 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
+import pt.estga.shared.utils.SecurityUtils;
+import pt.estga.user.repositories.UserRepository;
+import pt.estga.processing.enums.ProcessingStatus;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +36,10 @@ public class ReviewService {
 	private final MarkSuggestionRepository suggestionRepository;
 	private final MarkRepository markRepository;
 	private final MarkEvidenceReviewRepository reviewRepository;
+	private final UserRepository userRepository;
+
+	@Value("${review.allow-non-suggested:false}")
+	private boolean allowNonSuggested;
 
 	/**
 	 * Accept a suggested mark for the given submission.
@@ -62,21 +70,30 @@ public class ReviewService {
 		boolean suggested = suggestions.stream().anyMatch(s -> s.getMark() != null && markId.equals(s.getMark().getId()));
 		if (!suggested) {
 			log.warn("Accepted mark {} was not present in suggestions for submission {}", markId, submissionId);
-			// we allow acceptance of non-suggested marks but log a warning. Alternatively, throw if you want stricter behavior.
+			if (!allowNonSuggested) {
+				throw new IllegalStateException("Accepted mark was not present in suggestions and non-suggested acceptance is disabled");
+			}
 		}
 
 		MarkEvidenceReview review = MarkEvidenceReview.builder()
 				.submission(submission)
 				.selectedMark(mark)
-				.decision(ReviewDecision.APPROVED)
 				.reviewedAt(Instant.now())
 				.build();
+
+		review.setDecision(ReviewDecision.APPROVED);
+		// set reviewer if available
+		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
 
 		MarkEvidenceReview saved = reviewRepository.save(review);
 
 		// If accepted, mark submission as PROCESSED (considered resolved)
 		submission.setStatus(pt.estga.intake.enums.SubmissionStatus.PROCESSED);
 		submissionCommandService.update(submission);
+
+		// Transition processing to REVIEWED
+		processing.setStatus(ProcessingStatus.REVIEWED);
+		processingRepository.save(processing);
 
 		return saved;
 	}
@@ -105,11 +122,23 @@ public class ReviewService {
 		MarkEvidenceReview review = MarkEvidenceReview.builder()
 				.submission(submission)
 				.selectedMark(null)
-				.decision(ReviewDecision.REJECTED)
 				.reviewedAt(Instant.now())
 				.build();
 
-		return reviewRepository.save(review);
+		review.setDecision(ReviewDecision.REJECTED);
+		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
+
+		MarkEvidenceReview saved = reviewRepository.save(review);
+
+		// Mark submission as PROCESSED as well to keep lifecycle consistent
+		submission.setStatus(pt.estga.intake.enums.SubmissionStatus.PROCESSED);
+		submissionCommandService.update(submission);
+
+		// Transition processing to REVIEWED
+		processing.setStatus(ProcessingStatus.REVIEWED);
+		processingRepository.save(processing);
+
+		return saved;
 	}
 
 	/**

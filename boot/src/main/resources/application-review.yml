@@ -1,0 +1,4 @@
+# Review module configuration
+# Controls whether non-suggested marks can be accepted during review.
+review:
+  allow-non-suggested: false
