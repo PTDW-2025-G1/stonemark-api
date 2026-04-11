@@ -116,8 +116,14 @@ public class ReviewService {
 			try {
 				UUID processingId = processing.getId();
 				suggestionRepository.findByProcessingIdAndMarkId(processingId, saved.getSelectedMark().getId())
-					.ifPresent(s -> meterRegistry.summary("review.accepted.suggestion.confidence", "submission", submissionId.toString())
-						.record(s.getConfidence()));
+						.ifPresent(s -> {
+							try {
+								meterRegistry.summary("review.accepted.suggestion.confidence", "decision", saved.getDecision().name())
+										.record(s.getConfidence());
+							} catch (Exception ex) {
+								log.debug("Failed to record accepted suggestion confidence for submission {}: {}", submissionId, ex.getMessage());
+							}
+						});
 			} catch (Exception e) {
 				log.debug("Failed to record accepted suggestion confidence for submission {}: {}", submissionId, e.getMessage());
 			}

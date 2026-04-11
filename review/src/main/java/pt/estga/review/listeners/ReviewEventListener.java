@@ -57,7 +57,11 @@ public class ReviewEventListener {
                 // Metrics: count processed/rejected reviews (record only when applied)
                 try {
                     if (updated) {
-                        meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name(), "submission", submissionId.toString()).increment();
+                        try {
+                            meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name()).increment();
+                        } catch (Exception ex) {
+                            log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
+                        }
                     }
                 } catch (Exception ex) {
                     log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());

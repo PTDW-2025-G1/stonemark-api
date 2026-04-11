@@ -158,7 +158,7 @@ public class SimilarityService {
         }
 
         long filteredLocal = Math.max(0, seenCount - passing);
-        try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(filteredLocal); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "db").increment(filteredLocal); } catch (Exception ignored) {}
 
             if (scores.isEmpty()) {
                 result = List.of();
@@ -202,7 +202,7 @@ public class SimilarityService {
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
 
         try {
-            meterRegistry.summary("processing.suggestions.count", "submission", processing.getSubmission().getId().toString())
+            meterRegistry.summary("processing.suggestions.count", "engine", similarityMode, "result", result.isEmpty() ? "empty" : "has")
                     .record(result.size());
         } catch (Exception e) {
             log.debug("Failed to record suggestions metric for processing {}: {}", processing.getId(), e.getMessage());
@@ -220,7 +220,7 @@ public class SimilarityService {
         // Record similarity computation time
         try {
             long elapsedNanos = System.nanoTime() - start;
-            meterRegistry.timer("processing.similarity.time", "submission", processing.getSubmission().getId().toString())
+            meterRegistry.timer("processing.similarity.time", "engine", similarityMode, "result", result.isEmpty() ? "empty" : "has")
                     .record(elapsedNanos, TimeUnit.NANOSECONDS);
         } catch (Exception e) {
             log.debug("Failed to record similarity timer for processing {}: {}", processing.getId(), e.getMessage());

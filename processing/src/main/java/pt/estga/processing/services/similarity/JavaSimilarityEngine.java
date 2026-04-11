@@ -34,7 +34,7 @@ public class JavaSimilarityEngine {
 
         List<MarkEvidence> rows = evidenceRepository.findAllByEmbeddingIsNotNull();
         if (rows == null || rows.isEmpty()) {
-            try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(0); } catch (Exception ignored) {}
+            try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(0); } catch (Exception ignored) {}
             return List.of();
         }
 
@@ -46,7 +46,7 @@ public class JavaSimilarityEngine {
 
         long passing = scored.stream().filter(e -> e.getValue() != null && e.getValue() >= minSimilarity).count();
         long filtered = Math.max(0L, considered - passing);
-        try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(filtered); } catch (Exception ignored) {}
+        try { meterRegistry.counter("processing.suggestions.filtered.count", "engine", "java").increment(filtered); } catch (Exception ignored) {}
 
         List<Map.Entry<MarkEvidence, Double>> filteredScored = scored.stream()
                 .filter(e -> e.getValue() != null && e.getValue() >= minSimilarity)
