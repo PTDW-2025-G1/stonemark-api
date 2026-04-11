@@ -16,6 +16,18 @@ public class ScoreCalculator {
 
     private final ScoringPolicy scoringPolicy;
 
+    /**
+     * Computes per-mark scores and weight sums from grouped candidate contributions.
+     *
+     * <p>Key behavior:
+     * <ul>
+     *   <li>Deduplicates contributions by (evidenceId, occurrenceId, markId), keeping the
+     *       highest-similarity entry per group.</li>
+     *   <li>Decay slots are consumed only by valid, non-duplicate contributions.</li>
+     *   <li>Fan-out is computed from grouped contributions (evidence → distinct marks),
+     *       so upstream filtering affects scaling.</li>
+     * </ul>
+     */
     public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark) {
         Map<Long, Double> scores = new TreeMap<>();
         Map<Long, Double> weightSums = new TreeMap<>();

@@ -36,14 +36,7 @@ public class AggregationResultBuilder {
         }
 
         // Sort deterministically: confidence desc, markId asc
-        topScores.sort((a, b) -> {
-            int cmp = Double.compare(b.confidence(), a.confidence());
-            if (cmp != 0) return cmp;
-            if (a.markId() == null && b.markId() == null) return 0;
-            if (a.markId() == null) return 1;
-            if (b.markId() == null) return -1;
-            return a.markId().compareTo(b.markId());
-        });
+        sortDeterministically(topScores);
 
         List<MarkScore> limited = (k > 0 && topScores.size() > k) ? topScores.subList(0, k) : topScores;
 
@@ -61,6 +54,25 @@ public class AggregationResultBuilder {
             }
         }
 
+        // Warn if all weights are effectively zero — this likely indicates a systemic
+        // problem (for example, all contributions were filtered or weights underflowed).
+        final double WARN_MIN_WEIGHT = 1e-12;
+        boolean anyWeight = weightSumsCopy.values().stream().anyMatch(w -> Double.isFinite(w) && w > WARN_MIN_WEIGHT);
+        if (!anyWeight && !rawScoresCopy.isEmpty()) {
+            log.warn("All aggregated weights are below {} ({} marks) — final confidences will be 0. This may indicate upstream filtering or numeric underflow.", WARN_MIN_WEIGHT, rawScoresCopy.size());
+        }
+
         return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), state.fanOutContributionCount(), rawScoresCopy, weightSumsCopy, missingMarkMappings, state.weightAnomalies());
+    }
+
+    public static void sortDeterministically(List<MarkScore> topScores) {
+        topScores.sort((a, b) -> {
+            int cmp = Double.compare(b.confidence(), a.confidence());
+            if (cmp != 0) return cmp;
+            if (a.markId() == null && b.markId() == null) return 0;
+            if (a.markId() == null) return 1;
+            if (b.markId() == null) return -1;
+            return a.markId().compareTo(b.markId());
+        });
     }
 }

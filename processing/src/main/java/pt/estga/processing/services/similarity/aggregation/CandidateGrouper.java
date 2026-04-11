@@ -25,6 +25,8 @@ public class CandidateGrouper {
         // ensuring deterministic behavior across runs regardless of input ordering.
         Map<Long, List<CandidateEvidence>> contributionsByMark = new TreeMap<>();
         if (candidates == null || candidates.isEmpty()) return contributionsByMark;
+        // Defensive: caller may pass null when no mark mappings are available.
+        if (markByEvidenceId == null) return contributionsByMark;
 
         for (CandidateEvidence c : candidates) {
             List<Mark> marks = markByEvidenceId.get(c.evidenceId());

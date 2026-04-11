@@ -4,10 +4,17 @@ import pt.estga.mark.entities.Mark;
 import java.util.Objects;
 
 /**
- * Final per-mark score produced by aggregation: mark id, mark entity and confidence.
- * <p>
- * We validate consistency between the provided markId and the mark.getId() when
- * a full Mark entity is present to fail-fast on mapping inconsistencies.
+ * Aggregated score for a mark.
+ *
+ * <p>Contains the mark id, optional Mark entity, and a normalized score
+ * (named {@code confidence}).
+ *
+ * <p><b>Confidence:</b> a normalized, weighted/decayed score computed as
+ * {@code totalScore / weightSum}. It is a relative ranking metric, not a
+ * probability.
+ *
+ * <p>When a full {@code Mark} is present, {@code markId} must match
+ * {@code mark.getId()} or validation fails.
  */
 public record MarkScore(Long markId, Mark mark, double confidence) {
 
