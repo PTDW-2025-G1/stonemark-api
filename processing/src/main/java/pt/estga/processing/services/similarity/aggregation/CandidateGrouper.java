@@ -47,10 +47,14 @@ public class CandidateGrouper {
     }
 
     static void sortGroupsEvidencesDeterministically(List<CandidateEvidence> list) {
-        // Remove any unexpected null entries to make sorting robust for dirty inputs/tests.
-        list.removeIf(Objects::isNull);
+        // Do not mutate the input list structure. Use a comparator that tolerates nulls
+        // and places them last. This preserves caller-owned collections while remaining
+        // robust against dirty inputs.
+        list.sort((a, b) -> {
+            if (a == null && b == null) return 0;
+            if (a == null) return 1; // nulls last
+            if (b == null) return -1;
 
-        list.sort((a,b) -> {
             int cmp = Double.compare(b.similarity(), a.similarity());
             if (cmp != 0) return cmp;
             Long oa = a.occurrenceId();
@@ -61,6 +65,7 @@ public class CandidateGrouper {
                 int c = oa.compareTo(ob);
                 if (c != 0) return c;
             }
+            // Deterministic fallback ordering by UUID string ensures stable results
             return a.evidenceId().toString().compareTo(b.evidenceId().toString());
         });
     }

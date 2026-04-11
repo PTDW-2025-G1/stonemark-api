@@ -42,6 +42,9 @@ public class ScoreCalculator {
         double decay = Math.max(0.0, scoringPolicy.getPerMarkDecay());
 
         // Compute evidence -> distinct mark set for fan-out scaling
+        // Note: `fanOutContributionCount` counts processed (deduplicated) contributions
+        // for which the evidence had fanOut > 1. This is a post-dedup, pre-scaling
+        // metric used for diagnostics and must be interpreted as such by tests.
         Map<UUID, Set<Long>> evidenceToMarks = new HashMap<>();
         for (Map.Entry<Long, List<CandidateEvidence>> e : contributionsByMark.entrySet()) {
             Long markId = e.getKey();
