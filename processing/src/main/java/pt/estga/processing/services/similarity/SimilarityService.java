@@ -48,6 +48,8 @@ public class SimilarityService {
     private double parityTolerance;
     @Value("${processing.similarity.parity-check.sample-size:3}")
     private int paritySampleSize;
+    @Value("${processing.similarity.max-k:200}")
+    private int maxK;
 
     @PostConstruct
     void maybeRunParityCheck() {
@@ -109,8 +111,10 @@ public class SimilarityService {
 
         // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
         // and maintain a single source of truth for similarity ranking.
+        // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
+        int safeK = Math.max(1, Math.min(k, maxK));
         // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
-        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
+        List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, safeK);
 
         if (log.isDebugEnabled()) {
             log.debug("Top {} distances (first 5): {}", hits.size(), hits.stream()
@@ -128,13 +132,31 @@ public class SimilarityService {
             return List.of();
         }
 
-        // Preserve ordering from the distance query by iterating over projections.
+        // The DB projection contains distance values. We convert to similarity here and
+        // explicitly re-rank by similarity in Java before aggregation. Rationale:
+        //  - DB ordering may not be stable across planners/operators for tied distances
+        //  - re-ranking ensures deterministic weighting and reproducible confidence
+        // Note: the conversion similarity = 1.0 - distance assumes the DB operator uses
+        // cosine-distance semantics. Prefer returning similarity directly from SQL when
+        // possible to avoid this fragile conversion.
+        List<MarkEvidenceDistanceProjection> nonNullHits = hits.stream().filter(Objects::nonNull).toList();
+        var scored = nonNullHits.stream()
+                .map(p -> {
+                    Double distance = p.getDistance();
+                    double sim = distance == null ? Double.NaN : 1.0 - distance;
+                    // clamp to [-1,1] to avoid numeric drift
+                    if (Double.isFinite(sim)) {
+                        if (sim > 1.0) sim = 1.0;
+                        if (sim < -1.0) sim = -1.0;
+                    }
+                    return new java.util.AbstractMap.SimpleEntry<>(p, sim);
+                })
+                .filter(e -> e.getValue() != null && !Double.isNaN(e.getValue()))
+                .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                .toList();
 
-        // We rely on DB to compute cosine distance (pgvector). The projection returned by
-        // findTopKSimilarEvidence contains the distance value. Convert distance -> similarity
-        // and fetch only the lightweight (id, mark) mapping for aggregation.
-        // Collect unique evidence ids to fetch lightweight mark mapping once.
-        Set<UUID> idSet = hits.stream().map(MarkEvidenceDistanceProjection::getId).collect(Collectors.toSet());
+        // Collect unique evidence ids from the (re-ranked) top candidates
+        Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(java.util.LinkedHashSet::new));
         // Record how many evidence rows were considered by the DB query (pre-dedupe).
         try {
             meterRegistry.counter("processing.suggestions.considered.count", "engine", "db").increment(hits.size());
@@ -168,8 +190,11 @@ public class SimilarityService {
         Set<UUID> seen = new HashSet<>();
         int seenCount = 0;
         int passing = 0;
-        for (int idx = 0; idx < hits.size(); idx++) {
-            MarkEvidenceDistanceProjection p = hits.get(idx);
+        // Iterate over the re-ranked scored list; use similarity itself as a stable weight
+        // if useRankWeighting is enabled. This removes dependence on DB ordering.
+        for (int idx = 0; idx < scored.size(); idx++) {
+            MarkEvidenceDistanceProjection p = scored.get(idx).getKey();
+            double similarity = scored.get(idx).getValue();
             UUID id = p.getId();
             if (!seen.add(id)) {
                 // Duplicate evidence id returned by the distance query — record and skip.
@@ -177,34 +202,18 @@ public class SimilarityService {
                 continue; // dedupe
             }
             seenCount++;
-
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
 
-            Double distance = p.getDistance();
-            if (distance == null) continue;
-
-            // Convert distance (cosine-distance) to similarity.
-            // WARNING: this conversion relies on specific assumptions:
-            //  - The DB uses the pgvector '<#>' operator which returns a cosine-based distance
-            //  - Evidence embeddings are normalized (unit length)
-            // Under these assumptions: similarity ~= 1.0 - distance.
-            // If the operator, distance definition or normalization changes, this formula
-            // will be incorrect and historical behavior may silently break. Keep this
-            // in sync with the DB query implementation.
-            // Note: minSimilarity threshold comparisons in DB and Java paths may differ
-            // slightly due to floating-point and operator semantics; tests should cover
-            // both code paths to ensure parity.
-            double similarity = 1.0 - distance;
-            if (similarity < minSimilarity) continue;
+            if (Double.isNaN(similarity) || similarity < minSimilarity) continue;
             passing++;
 
-            // Weight contribution by rank (DB order) if enabled. Otherwise treat all hits equally.
-            // NOTE: this ranking depends on DB ordering being stable for identical distances;
-            // changes to the vector operator or planner may alter ordering and thus affect weights.
-            double weight = useRankWeighting ? 1.0 / (1 + idx) : 1.0;
+            // Use similarity as weight when weighting is enabled. This produces a stable,
+            // meaningful contribution proportional to match quality instead of relying
+            // on DB-provided rank ordering which can be unstable.
+            double weight = useRankWeighting ? similarity : 1.0;
             double weighted = similarity * weight;
 
             scores.merge(markId, weighted, Double::sum);
