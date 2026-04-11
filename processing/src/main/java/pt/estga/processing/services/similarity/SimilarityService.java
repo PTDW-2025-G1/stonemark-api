@@ -14,6 +14,7 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
 
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -104,6 +105,12 @@ public class SimilarityService {
                     e -> e.getId(),
                     e -> e
             ));
+            Method getEmbeddingMethod = null;
+            try {
+                getEmbeddingMethod = ev.getClass().getMethod("getEmbedding");
+            } catch (NoSuchMethodException ignored) {
+                log.debug("Parity check: fetched entity does not expose getEmbedding(), skipping embedding comparison");
+            }
             for (var p : hits) {
                 if (p.getId().equals(ev.getId())) continue; // skip self
                 Double dbSim = p.getSimilarity();
@@ -114,7 +121,11 @@ public class SimilarityService {
                 // We rely on the repository returning the same entity type as in the sample page.
                 float[] otherEmb;
                 try {
-                    otherEmb = (float[]) other.getClass().getMethod("getEmbedding").invoke(other);
+                    if (getEmbeddingMethod == null) {
+                        // method not available, skip
+                        continue;
+                    }
+                    otherEmb = (float[]) getEmbeddingMethod.invoke(other);
                 } catch (Exception ex) {
                     // If reflection fails, skip this parity comparison but don't abort the whole check.
                     log.debug("Unable to access embedding for parity check entity {}: {}", p.getId(), ex.getMessage());
@@ -256,78 +267,82 @@ public class SimilarityService {
             try { meterRegistry.counter("processing.suggestions.db_mapped_hits.count", "engine", "db").increment(marksById.size()); } catch (Exception ignored) {}
         }
 
-        // Track seen evidence+mark pairs to dedupe identical contributions while allowing
-        // the same evidence id to contribute to multiple different marks if data changes upstream.
-        Set<String> seenPairs = new HashSet<>();
-        // Iterate over the re-ranked scored list; use similarity itself as a stable weight
-        // if useRankWeighting is enabled. This removes dependence on DB ordering.
-        Map<Long, Integer> perMarkCounts = new HashMap<>();
-        for (int idx = 0; idx < scored.size(); idx++) {
-            MarkEvidenceDistanceProjection p = scored.get(idx).getKey();
-            double similarity = scored.get(idx).getValue();
+        // Deterministic aggregation: group contributions by mark and process each
+        // mark's contributions in a stable, locally-sorted order. This eliminates
+        // global ordering dependence and makes per-mark decay deterministic.
+        Map<Long, List<Map.Entry<MarkEvidenceDistanceProjection, Double>>> contributionsByMark = new HashMap<>();
+        for (Map.Entry<MarkEvidenceDistanceProjection, Double> e : scored) {
+            MarkEvidenceDistanceProjection p = e.getKey();
             UUID id = p.getId();
-
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
+            contributionsByMark.computeIfAbsent(markId, mk -> new ArrayList<>()).add(e);
+        }
 
-            // Deduplicate by evidence id + mark id pair. This is more robust than deduping
-            // by evidence id alone because joins or upstream data issues might map the same
-            // evidence to different occurrences/marks; we want to treat each distinct
-            // evidence->mark contribution separately.
-            // Include occurrence id in the dedupe key to avoid collapsing contributions that
-            // differ only by occurrence/occurrence-level metadata. Projection includes
-            // an occurrence id which is more precise than evidence id + mark id alone.
-            String occurrencePart;
-            try {
-                var occ = p.getOccurrenceId();
-                occurrencePart = occ == null ? "null" : occ.toString();
-            } catch (Throwable t) {
-                // If occurrence id is not available on the projection, fall back to empty marker.
-                occurrencePart = "-";
-            }
-            String pairKey = id + ":" + markId + ":" + occurrencePart;
-            if (!seenPairs.add(pairKey)) {
-                try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
-                continue;
-            }
+        Set<String> seenPairs = new HashSet<>();
+        // Process marks in deterministic order (mark id ascending)
+        List<Long> markIds = new ArrayList<>(contributionsByMark.keySet());
+        Collections.sort(markIds);
+        for (Long markId : markIds) {
+            List<Map.Entry<MarkEvidenceDistanceProjection, Double>> list = contributionsByMark.get(markId);
+            if (list == null || list.isEmpty()) continue;
+            // Sort contributions for this mark deterministically: similarity desc, occurrenceId, evidenceId
+            list.sort((a, b) -> {
+                int cmp = Double.compare(b.getValue(), a.getValue());
+                if (cmp != 0) return cmp;
+                // Tie-breaker: occurrence id then evidence id
+                String occA;
+                String occB;
+                try { var oa = a.getKey().getOccurrenceId(); occA = oa == null ? "" : oa.toString(); } catch (Throwable t) { occA = ""; }
+                try { var ob = b.getKey().getOccurrenceId(); occB = ob == null ? "" : ob.toString(); } catch (Throwable t) { occB = ""; }
+                cmp = occA.compareTo(occB);
+                if (cmp != 0) return cmp;
+                return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
+            });
 
-            if (Double.isNaN(similarity) || similarity < minSimilarity) continue;
-
-            // Apply diminishing returns per mark instead of a hard cap.
-            // This reduces dominance by high-volume marks while still allowing multiple
-            // high-quality evidences to contribute. multiplier = decay^used where used
-            // is the number of prior contributions for this mark.
-            int used = perMarkCounts.getOrDefault(markId, 0);
-            // perMarkDecayFactor semantics: multiplier = perMarkDecayFactor^used
-            // - If perMarkDecayFactor in (0,1): diminishing returns (default behaviour).
-            // - If perMarkDecayFactor == 1: neutral (no effect).
-            // - If perMarkDecayFactor > 1: later contributions are amplified (domain-specific).
-            // Clamp to non-negative to avoid sign flips; allow >1 to let domain choose amplification
+            // Per-mark deterministic accumulation
+            int used = 0;
             double decay = Math.max(0.0, perMarkDecayFactor);
-            double perMarkMultiplier = Math.pow(decay, used);
-            if (used > 0) {
-                try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
+            for (int i = 0; i < list.size(); i++) {
+                var entry = list.get(i);
+                MarkEvidenceDistanceProjection p = entry.getKey();
+                double similarity = entry.getValue();
+                UUID id = p.getId();
+
+                // Dedupe including occurrence id
+                String occurrencePart;
+                try {
+                    var occ = p.getOccurrenceId();
+                    occurrencePart = occ == null ? "null" : occ.toString();
+                } catch (Throwable t) {
+                    occurrencePart = "-";
+                }
+                String pairKey = id + ":" + markId + ":" + occurrencePart;
+                if (!seenPairs.add(pairKey)) {
+                    try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                    continue;
+                }
+
+                if (Double.isNaN(similarity) || similarity < minSimilarity) continue;
+
+                double perMarkMultiplier = Math.pow(decay, used);
+                if (used > 0) {
+                    try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
+                }
+
+                double simClamped = Math.max(0.0, Math.min(1.0, similarity));
+                // Use rankScore local to this mark's ordering if rank weighting is enabled
+                double rankScore = 1.0 / (1.0 + (double) i);
+                double signal = useRankWeighting ? rankScore : simClamped;
+                double contribution = signal * perMarkMultiplier;
+
+                scores.merge(markId, contribution, Double::sum);
+                weightSums.merge(markId, perMarkMultiplier, Double::sum);
+
+                used++;
             }
-            perMarkCounts.put(markId, used + 1);
-
-            // Scoring model: choose a single primary signal and apply the
-            // per-mark diminishing multiplier as a weight. Mixing similarity and
-            // rank bias multiplicatively makes the model sensitive to DB
-            // ordering noise; instead we use one of two modes controlled by
-            // `useRankWeighting`:
-            //  - false (default): similarity-driven scoring -> contribution = similarity * perMarkMultiplier
-            //  - true : rank-driven scoring        -> contribution = rankScore  * perMarkMultiplier
-            // In both modes we accumulate `weightSums` as the sum of perMarkMultiplier
-            // so the final confidence is a weighted average of the chosen signal.
-            double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-            double rankScore = 1.0 / (1.0 + (double) idx);
-            double signal = useRankWeighting ? rankScore : simClamped;
-            double contribution = signal * perMarkMultiplier;
-
-            scores.merge(markId, contribution, Double::sum);
-            weightSums.merge(markId, perMarkMultiplier, Double::sum);
         }
 
         // Record final suggestions count
