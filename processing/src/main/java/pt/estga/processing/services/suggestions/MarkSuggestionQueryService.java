@@ -8,7 +8,6 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.sharedweb.filtering.QueryProcessor;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +19,6 @@ import java.util.UUID;
 public class MarkSuggestionQueryService {
 
     private final MarkSuggestionRepository markSuggestionRepository;
-    private final QueryProcessor<MarkSuggestion> queryProcessor;
     private final MarkSuggestionMapper mapper;
     private final MarkEvidenceProcessingRepository processingRepository;
 

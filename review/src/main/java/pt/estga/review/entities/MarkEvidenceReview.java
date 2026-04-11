@@ -5,6 +5,8 @@ import lombok.*;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkOccurrence;
+import pt.estga.review.enums.ReviewDecision;
+import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
@@ -14,7 +16,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @Builder
-public class MarkReviewDecision {
+public class MarkEvidenceReview {
 
     @Id
     @GeneratedValue
@@ -26,12 +28,13 @@ public class MarkReviewDecision {
     @ManyToOne
     private Mark selectedMark;
 
+    @Enumerated(EnumType.ORDINAL)
+    private ReviewDecision decision;
+
+    private Instant reviewedAt;
+
     @ManyToOne
-    private MarkOccurrence selectedOccurrence;
+    private User reviewedBy;
 
-    private boolean createNewMark;
-
-    private boolean approved;
-
-    private Instant decidedAt;
+    String comment;
 }
