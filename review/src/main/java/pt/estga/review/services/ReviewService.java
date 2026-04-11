@@ -52,7 +52,7 @@ public class ReviewService {
 	 * Enforces: processing must be COMPLETED; review must not already exist; if accepted, mark submission as PROCESSED.
 	 */
 	@Transactional
-	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId) {
+	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission with id " + submissionId + " not found"));
 
@@ -89,6 +89,7 @@ public class ReviewService {
 				.submission(submission)
 				.selectedMark(mark)
 				.reviewedAt(Instant.now())
+				.comment(comment)
 				.build();
 
 		review.setDecision(ReviewDecision.APPROVED);
@@ -131,11 +132,19 @@ public class ReviewService {
 	}
 
 	/**
+	 * Backwards-compatible overload for existing callers that do not pass a comment.
+	 */
+	@Transactional
+	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId) {
+		return acceptSuggestion(submissionId, markId, null);
+	}
+
+	/**
 	 * Reject all suggestions for a submission. Creates a review with REJECTED decision.
 	 * Enforces: processing must be COMPLETED; review must not already exist.
 	 */
 	@Transactional
-	public MarkEvidenceReview rejectAll(Long submissionId) {
+	public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission with id " + submissionId + " not found"));
 
@@ -160,6 +169,7 @@ public class ReviewService {
 				.submission(submission)
 				.selectedMark(null)
 				.reviewedAt(Instant.now())
+				.comment(comment)
 				.build();
 
 		review.setDecision(ReviewDecision.REJECTED);
@@ -177,6 +187,14 @@ public class ReviewService {
 		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.REJECTED, null, reviewerId));
 
 		return saved;
+	}
+
+	/**
+	 * Backwards-compatible overload for existing callers that do not pass a comment.
+	 */
+	@Transactional
+	public MarkEvidenceReview rejectAll(Long submissionId) {
+		return rejectAll(submissionId, null);
 	}
 
 	/**

@@ -17,4 +17,5 @@ public class ReviewResultDto {
     private ReviewDecision decision;
     private Long selectedMarkId;
     private Instant reviewedAt;
+    private String comment;
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.mappers.ReviewMapper;
+import pt.estga.review.dtos.ReviewRequestDto;
 import pt.estga.review.services.ReviewService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
@@ -26,9 +27,10 @@ public class ReviewController {
      * Accept a suggestion for the submission. Expects markId as a request parameter.
      */
     @PostMapping("/{submissionId}/accept")
-    public ResponseEntity<?> acceptSuggestion(@PathVariable Long submissionId, @RequestParam Long markId) {
+    public ResponseEntity<?> acceptSuggestion(@PathVariable Long submissionId, @RequestParam Long markId, @RequestBody(required = false) ReviewRequestDto body) {
         try {
-            MarkEvidenceReview review = reviewService.acceptSuggestion(submissionId, markId);
+            String comment = body == null ? null : body.getComment();
+            MarkEvidenceReview review = reviewService.acceptSuggestion(submissionId, markId, comment);
             return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(review));
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.notFound().build();
@@ -43,9 +45,10 @@ public class ReviewController {
      * Reject all suggestions for the submission.
      */
     @PostMapping("/{submissionId}/reject")
-    public ResponseEntity<?> rejectAll(@PathVariable Long submissionId) {
+    public ResponseEntity<?> rejectAll(@PathVariable Long submissionId, @RequestBody(required = false) ReviewRequestDto body) {
         try {
-            MarkEvidenceReview review = reviewService.rejectAll(submissionId);
+            String comment = body == null ? null : body.getComment();
+            MarkEvidenceReview review = reviewService.rejectAll(submissionId, comment);
             return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(review));
         } catch (ResourceNotFoundException rnfe) {
             return ResponseEntity.notFound().build();
