@@ -17,6 +17,7 @@ import jakarta.annotation.PostConstruct;
 import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.SanitizationResult;
 import pt.estga.processing.services.similarity.aggregation.MarkAggregator;
+import pt.estga.processing.services.similarity.suggestionbuilder.SuggestionBuilder;
 
 @Service
 @RequiredArgsConstructor
