@@ -1,5 +1,6 @@
 package pt.estga.processing.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,8 @@ import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
+import pt.estga.processing.services.similarity.JavaSimilarityEngine;
+import pt.estga.processing.services.similarity.SimilarityService;
 
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +26,12 @@ public class SimilarityServiceTest {
 
     @Mock
     MarkEvidenceRepository evidenceRepository;
+
+    @Mock
+    MeterRegistry meterRegistry;
+
+    @Mock
+    JavaSimilarityEngine javaSimilarityEngine;
 
     @InjectMocks
     SimilarityService similarityService;
@@ -37,6 +46,13 @@ public class SimilarityServiceTest {
         processing.setStatus(null);
         // Ensure embedding exists so similarity is exercised in tests
         processing.setEmbedding(new float[] {1.0f, 0.0f, 0.0f});
+        // Ensure service runs in DB mode for deterministic tests
+        try {
+            java.lang.reflect.Field f = SimilarityService.class.getDeclaredField("similarityMode");
+            f.setAccessible(true);
+            f.set(similarityService, "db");
+        } catch (Exception ignored) {
+        }
     }
 
     @Test

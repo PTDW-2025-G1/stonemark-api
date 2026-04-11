@@ -1,37 +1,54 @@
-package pt.estga.processing.services;
+package pt.estga.processing.services.similarity;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.MarkEvidence;
-import pt.estga.mark.entities.Mark;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
+import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.*;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class JavaSimilarityEngine {
 
+    private final MarkEvidenceRepository evidenceRepository;
+    private final MeterRegistry meterRegistry;
+
     /**
-     * Compute suggestions in-JVM given preloaded evidence rows.
-     * Returns an ordered, limited list of MarkSuggestion instances.
+     * Compute suggestions in-JVM for the given processing. This method loads evidence
+     * embeddings, computes cosine similarity, records filtered metrics and returns
+     * the ordered list of suggestions.
      */
     public List<MarkSuggestion> computeSuggestions(
             MarkEvidenceProcessing processing,
-            List<MarkEvidence> rows,
             int k,
             double minSimilarity,
             boolean useRankWeighting
     ) {
 
-        if (rows == null || rows.isEmpty()) return List.of();
+        List<MarkEvidence> rows = evidenceRepository.findAllByEmbeddingIsNotNull();
+        if (rows == null || rows.isEmpty()) {
+            try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(0); } catch (Exception ignored) {}
+            return List.of();
+        }
 
-        // Score each evidence by cosine similarity and keep top-k
+        long considered = rows.stream().filter(r -> r.getEmbedding() != null && r.getEmbedding().length > 0 && r.getOccurrence() != null && r.getOccurrence().getMark() != null && r.getOccurrence().getMark().getId() != null).count();
         List<Map.Entry<MarkEvidence, Double>> scored = rows.stream()
-                .filter(r -> r.getEmbedding() != null && r.getEmbedding().length > 0 && r.getOccurrence() != null)
+                .filter(r -> r.getEmbedding() != null && r.getEmbedding().length > 0 && r.getOccurrence() != null && r.getOccurrence().getMark() != null && r.getOccurrence().getMark().getId() != null)
                 .map(r -> Map.entry(r, VectorUtils.cosineSimilarity(processing.getEmbedding(), r.getEmbedding())))
+                .toList();
+
+        long passing = scored.stream().filter(e -> e.getValue() != null && e.getValue() >= minSimilarity).count();
+        long filtered = Math.max(0L, considered - passing);
+        try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(filtered); } catch (Exception ignored) {}
+
+        List<Map.Entry<MarkEvidence, Double>> filteredScored = scored.stream()
                 .filter(e -> e.getValue() != null && e.getValue() >= minSimilarity)
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .limit(k)
@@ -39,16 +56,16 @@ public class JavaSimilarityEngine {
 
         Map<Long, Double> scores = new HashMap<>();
         Map<Long, Double> weightSums = new HashMap<>();
-        Map<Long, Mark> marksById = new HashMap<>();
+        Map<Long, pt.estga.mark.entities.Mark> marksById = new HashMap<>();
 
         Set<UUID> seen = new HashSet<>();
-        for (int idx = 0; idx < scored.size(); idx++) {
-            var entry = scored.get(idx);
+        for (int idx = 0; idx < filteredScored.size(); idx++) {
+            var entry = filteredScored.get(idx);
             MarkEvidence ev = entry.getKey();
             double similarity = entry.getValue();
             UUID id = ev.getId();
             if (!seen.add(id)) continue;
-            Mark mark = ev.getOccurrence().getMark();
+            pt.estga.mark.entities.Mark mark = ev.getOccurrence().getMark();
             if (mark == null || mark.getId() == null) continue;
             Long markId = mark.getId();
 

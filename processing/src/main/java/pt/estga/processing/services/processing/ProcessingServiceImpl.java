@@ -14,7 +14,7 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.SimilarityService;
+import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.services.suggestions.MarkSuggestionCommandService;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.services.MediaContentService;

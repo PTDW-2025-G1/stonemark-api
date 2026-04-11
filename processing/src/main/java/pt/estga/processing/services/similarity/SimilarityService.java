@@ -1,4 +1,4 @@
-package pt.estga.processing.services;
+package pt.estga.processing.services.similarity;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
-import pt.estga.mark.entities.MarkEvidence;
+import java.util.concurrent.TimeUnit;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.Objects;
 import java.util.HashSet;
 import java.util.stream.Collectors;
+import jakarta.annotation.PostConstruct;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +43,15 @@ public class SimilarityService {
     @Value("${processing.similarity.use-rank-weighting:true}")
     private boolean useRankWeighting;
 
+    @PostConstruct
+    void validateMode() {
+        String m = similarityMode == null ? "" : similarityMode.trim().toLowerCase();
+        if (!m.equals("db") && !m.equals("java")) {
+            log.error("Invalid processing.similarity.mode='{}'. Allowed values: db, java. Failing startup.", similarityMode);
+            throw new IllegalStateException("Invalid processing.similarity.mode: " + similarityMode);
+        }
+    }
+
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
         if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
@@ -55,15 +65,11 @@ public class SimilarityService {
 
         boolean useJava = "java".equalsIgnoreCase(similarityMode);
 
+        long start = System.nanoTime();
         List<MarkSuggestion> result;
 
         if (useJava) {
-            List<MarkEvidence> rows = evidenceRepository.findAllByEmbeddingIsNotNull();
-            if (rows == null || rows.isEmpty()) {
-                result = List.of();
-            } else {
-                result = javaSimilarityEngine.computeSuggestions(processing, rows, k, minSimilarity, useRankWeighting);
-            }
+            result = javaSimilarityEngine.computeSuggestions(processing, k, minSimilarity, useRankWeighting);
         } else {
             // Query returns id + occurrence id + distance. We then batch-load full entities to avoid N+1.
             List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, k);
@@ -118,10 +124,13 @@ public class SimilarityService {
         }
 
         Set<UUID> seen = new HashSet<>();
+        int seenCount = 0;
+        int passing = 0;
         for (int idx = 0; idx < hits.size(); idx++) {
             MarkEvidenceDistanceProjection p = hits.get(idx);
             UUID id = p.getId();
             if (!seen.add(id)) continue; // dedupe
+            seenCount++;
 
             Mark mark = markByEvidenceId.get(id);
             if (mark == null) continue;
@@ -136,6 +145,7 @@ public class SimilarityService {
             // as the primary filter.
             double similarity = 1.0 - distance;
             if (similarity < minSimilarity) continue;
+            passing++;
 
             // Weight contribution by rank (DB order) if enabled. Otherwise treat all hits equally.
             // NOTE: this ranking depends on DB ordering being stable for identical distances;
@@ -146,6 +156,9 @@ public class SimilarityService {
             scores.merge(markId, weighted, Double::sum);
             weightSums.merge(markId, weight, Double::sum);
         }
+
+        long filteredLocal = Math.max(0, seenCount - passing);
+        try { meterRegistry.counter("processing.suggestions.filtered.count", "submission", processing.getSubmission().getId().toString()).increment(filteredLocal); } catch (Exception ignored) {}
 
             if (scores.isEmpty()) {
                 result = List.of();
@@ -183,12 +196,11 @@ public class SimilarityService {
                 .sorted((a, b) -> Double.compare(b.getConfidence(), a.getConfidence()))
                 .limit(5)
                 .toList();
-
             }
         }
 
-        // Metrics & logs for observability.
-        // Record number of suggestions for this processing (submission) as a distribution summary.
+        // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
+
         try {
             meterRegistry.summary("processing.suggestions.count", "submission", processing.getSubmission().getId().toString())
                     .record(result.size());
@@ -203,6 +215,15 @@ public class SimilarityService {
                     processing.getSubmission() == null ? "null" : processing.getSubmission().getId(),
                     result.size(),
                     topConfidence);
+        }
+
+        // Record similarity computation time
+        try {
+            long elapsedNanos = System.nanoTime() - start;
+            meterRegistry.timer("processing.similarity.time", "submission", processing.getSubmission().getId().toString())
+                    .record(elapsedNanos, TimeUnit.NANOSECONDS);
+        } catch (Exception e) {
+            log.debug("Failed to record similarity timer for processing {}: {}", processing.getId(), e.getMessage());
         }
 
         return result;
