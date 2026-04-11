@@ -1,5 +1,6 @@
 package pt.estga.processing.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 public class SimilarityService {
 
     private final MarkEvidenceRepository evidenceRepository;
+    private final MeterRegistry meterRegistry;
     @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
     /**
@@ -39,7 +41,9 @@ public class SimilarityService {
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
 
         if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
-            log.warn("Processing {} has no embedding, skipping similarity", processing == null ? "null" : processing.getId());
+            log.warn("Processing {} (submission={}) has no embedding, skipping similarity",
+                    processing == null ? "null" : processing.getId(),
+                    processing == null || processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
             return List.of();
         }
 
@@ -166,11 +170,20 @@ public class SimilarityService {
                 .limit(5)
                 .toList();
 
-        // Log summary for observability.
+        // Metrics & logs for observability.
+        // Record number of suggestions for this processing (submission) as a distribution summary.
+        try {
+            meterRegistry.summary("processing.suggestions.count", "submission", processing.getSubmission().getId().toString())
+                    .record(result.size());
+        } catch (Exception e) {
+            log.debug("Failed to record suggestions metric for processing {}: {}", processing.getId(), e.getMessage());
+        }
+
         if (log.isDebugEnabled()) {
             Double topConfidence = result.stream().findFirst().map(MarkSuggestion::getConfidence).orElse(null);
-            log.debug("Processing {} → {} suggestions (top confidence={})",
+            log.debug("Processing {} (submission={}) → {} suggestions (top confidence={})",
                     processing.getId(),
+                    processing.getSubmission() == null ? "null" : processing.getSubmission().getId(),
                     result.size(),
                     topConfidence);
         }

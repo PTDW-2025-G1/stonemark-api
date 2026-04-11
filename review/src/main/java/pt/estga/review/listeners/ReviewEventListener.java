@@ -1,5 +1,6 @@
 package pt.estga.review.listeners;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -20,6 +21,7 @@ public class ReviewEventListener {
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final MarkEvidenceSubmissionCommandService submissionCommandService;
     private final MarkEvidenceProcessingRepository processingRepository;
+    private final MeterRegistry meterRegistry;
 
     @EventListener
     @Transactional
@@ -37,12 +39,19 @@ public class ReviewEventListener {
                     s.setStatus(SubmissionStatus.PROCESSED);
                 }
                 submissionCommandService.update(s);
+                // Metrics: count processed/rejected reviews
+                try {
+                    meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name(), "submission", submissionId.toString()).increment();
+                } catch (Exception ex) {
+                    log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
+                }
             });
 
             // Transition processing to REVIEWED if present
             processingRepository.findBySubmissionId(submissionId).ifPresent(p -> {
                 p.markReviewed();
                 processingRepository.save(p);
+                log.info("Processing {} marked REVIEWED for submission {}", p.getId(), submissionId);
             });
         } catch (Exception e) {
             // Listeners should not throw - log and continue

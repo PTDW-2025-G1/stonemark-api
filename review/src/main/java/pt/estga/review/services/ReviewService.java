@@ -20,6 +20,7 @@ import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.repositories.UserRepository;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -36,6 +37,7 @@ public class ReviewService {
 	private final MarkEvidenceReviewRepository reviewRepository;
 	private final UserRepository userRepository;
 	private final AfterCommitEventPublisher eventPublisher;
+    private final MeterRegistry meterRegistry;
 
 	@Value("${review.allow-non-suggested:false}")
 	private boolean allowNonSuggested;
@@ -97,6 +99,25 @@ public class ReviewService {
 		} catch (DataIntegrityViolationException dive) {
 			log.warn("Concurrent review attempted for submission {}: {}", submissionId, dive.getMessage());
 			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
+		}
+
+		// Metrics: decision counts
+		try {
+			meterRegistry.counter("review.decisions.count", "decision", saved.getDecision().name()).increment();
+		} catch (Exception e) {
+			log.debug("Failed to increment review decision metric for submission {}: {}", submissionId, e.getMessage());
+		}
+
+		// If approved, record average confidence for accepted suggestion (if available)
+		if (saved.getDecision() == ReviewDecision.APPROVED && saved.getSelectedMark() != null) {
+			try {
+				java.util.UUID processingId = processing.getId();
+				suggestionRepository.findByProcessingIdAndMarkId(processingId, saved.getSelectedMark().getId())
+					.ifPresent(s -> meterRegistry.summary("review.accepted.suggestion.confidence", "submission", submissionId.toString())
+						.record(s.getConfidence()));
+			} catch (Exception e) {
+				log.debug("Failed to record accepted suggestion confidence for submission {}: {}", submissionId, e.getMessage());
+			}
 		}
 
 		// Publish domain event after commit to move state transitions out of the write path.
