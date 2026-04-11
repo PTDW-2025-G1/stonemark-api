@@ -25,6 +25,7 @@ import pt.estga.review.events.ReviewCompletedEvent;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Service
 @RequiredArgsConstructor
@@ -87,7 +88,13 @@ public class ReviewService {
 		// set reviewer if available
 		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
 
-		MarkEvidenceReview saved = reviewRepository.save(review);
+		MarkEvidenceReview saved;
+		try {
+			saved = reviewRepository.save(review);
+		} catch (DataIntegrityViolationException dive) {
+			log.warn("Concurrent review attempted for submission {}: {}", submissionId, dive.getMessage());
+			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
+		}
 
 		// Publish domain event after commit to move state transitions out of the write path.
 		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
@@ -127,7 +134,13 @@ public class ReviewService {
 		review.setDecision(ReviewDecision.REJECTED);
 		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
 
-		MarkEvidenceReview saved = reviewRepository.save(review);
+		MarkEvidenceReview saved;
+		try {
+			saved = reviewRepository.save(review);
+		} catch (DataIntegrityViolationException dive) {
+			log.warn("Concurrent review attempted for submission {}: {}", submissionId, dive.getMessage());
+			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
+		}
 
 		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
 		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.REJECTED, null, reviewerId));
