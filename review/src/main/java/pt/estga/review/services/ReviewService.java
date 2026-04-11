@@ -53,8 +53,8 @@ public class ReviewService {
 		// Ensure processing exists and is completed
 		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (processing.getStatus() != pt.estga.processing.enums.ProcessingStatus.COMPLETED) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is COMPLETED");
+		if (!processing.isReadyForReview()) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
 		}
 
 		// Idempotency: don't allow a second review
@@ -110,8 +110,8 @@ public class ReviewService {
 		// Ensure processing exists and is completed
 		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (processing.getStatus() != pt.estga.processing.enums.ProcessingStatus.COMPLETED) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is COMPLETED");
+		if (!processing.isReadyForReview()) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
 		}
 
 		// Idempotency
