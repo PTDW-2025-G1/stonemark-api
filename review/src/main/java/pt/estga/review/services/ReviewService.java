@@ -20,7 +20,8 @@ import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.repositories.UserRepository;
-import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.shared.events.AfterCommitEventPublisher;
+import pt.estga.review.events.ReviewCompletedEvent;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ public class ReviewService {
 	private final MarkRepository markRepository;
 	private final MarkEvidenceReviewRepository reviewRepository;
 	private final UserRepository userRepository;
+	private final AfterCommitEventPublisher eventPublisher;
 
 	@Value("${review.allow-non-suggested:false}")
 	private boolean allowNonSuggested;
@@ -87,13 +89,10 @@ public class ReviewService {
 
 		MarkEvidenceReview saved = reviewRepository.save(review);
 
-		// If accepted, mark submission as PROCESSED (considered resolved)
-		submission.setStatus(pt.estga.intake.enums.SubmissionStatus.PROCESSED);
-		submissionCommandService.update(submission);
-
-		// Transition processing to REVIEWED
-		processing.setStatus(ProcessingStatus.REVIEWED);
-		processingRepository.save(processing);
+		// Publish domain event after commit to move state transitions out of the write path.
+		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
+		Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
+		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.APPROVED, selectedMarkId, reviewerId));
 
 		return saved;
 	}
@@ -130,13 +129,8 @@ public class ReviewService {
 
 		MarkEvidenceReview saved = reviewRepository.save(review);
 
-		// Mark submission as PROCESSED as well to keep lifecycle consistent
-		submission.setStatus(pt.estga.intake.enums.SubmissionStatus.PROCESSED);
-		submissionCommandService.update(submission);
-
-		// Transition processing to REVIEWED
-		processing.setStatus(ProcessingStatus.REVIEWED);
-		processingRepository.save(processing);
+		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
+		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.REJECTED, null, reviewerId));
 
 		return saved;
 	}
