@@ -39,23 +39,26 @@ public class CandidateGrouper {
             }
         }
 
-        // Sort each group's evidences deterministically
         for (List<CandidateEvidence> list : contributionsByMark.values()) {
-            list.sort((a,b) -> {
-                int cmp = Double.compare(b.similarity(), a.similarity());
-                if (cmp != 0) return cmp;
-                Long oa = a.occurrenceId();
-                Long ob = b.occurrenceId();
-                if (oa == null && ob != null) return -1;
-                if (oa != null && ob == null) return 1;
-                if (oa != null) {
-                    int c = oa.compareTo(ob);
-                    if (c != 0) return c;
-                }
-                return a.evidenceId().toString().compareTo(b.evidenceId().toString());
-            });
+            sortGroupsEvidencesDeterministically(list);
         }
 
         return contributionsByMark;
+    }
+
+    static void sortGroupsEvidencesDeterministically(List<CandidateEvidence> list) {
+        list.sort((a,b) -> {
+            int cmp = Double.compare(b.similarity(), a.similarity());
+            if (cmp != 0) return cmp;
+            Long oa = a.occurrenceId();
+            Long ob = b.occurrenceId();
+            if (oa == null && ob != null) return -1;
+            if (oa != null && ob == null) return 1;
+            if (oa != null) {
+                int c = oa.compareTo(ob);
+                if (c != 0) return c;
+            }
+            return a.evidenceId().toString().compareTo(b.evidenceId().toString());
+        });
     }
 }

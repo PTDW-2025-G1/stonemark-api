@@ -34,7 +34,6 @@ public class ScoreCalculator {
         Map<Long, Double> scoreComps = new TreeMap<>();
         Map<Long, Double> weightComps = new TreeMap<>();
 
-        Set<AggregationKey> seenPairs = new HashSet<>();
         int duplicates = 0;
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
@@ -61,14 +60,32 @@ public class ScoreCalculator {
             List<CandidateEvidence> list = contributionsByMark.get(markId);
             if (list == null || list.isEmpty()) continue;
 
+            // Deduplicate by AggregationKey keeping the highest-similarity entry per key.
+            Map<AggregationKey, CandidateEvidence> bestPerKey = new LinkedHashMap<>();
+            for (CandidateEvidence ce : list) {
+                AggregationKey key = AggregationKey.of(ce.evidenceId(), ce.occurrenceId(), markId);
+                CandidateEvidence prev = bestPerKey.get(key);
+                if (prev == null) {
+                    bestPerKey.put(key, ce);
+                } else {
+                    // If a later entry has higher similarity, replace and count as duplicate.
+                    if (Double.compare(ce.similarity(), prev.similarity()) > 0) {
+                        bestPerKey.put(key, ce);
+                    }
+                    duplicates++;
+                }
+            }
+
+            // Now process the deduplicated contributions in deterministic order.
+            List<CandidateEvidence> deduped = new ArrayList<>(bestPerKey.values());
+            // Sort to maintain the same within-group ordering expected by the algorithm
+            CandidateGrouper.sortGroupsEvidencesDeterministically(deduped);
+
             int used = 0;
-            for (int i = 0; i < list.size(); i++) {
-                CandidateEvidence ce = list.get(i);
+            for (int i = 0; i < deduped.size(); i++) {
+                CandidateEvidence ce = deduped.get(i);
                 UUID evidenceId = ce.evidenceId();
                 double similarity = ce.similarity();
-
-                AggregationKey key = AggregationKey.of(evidenceId, ce.occurrenceId(), markId);
-                if (!seenPairs.add(key)) { duplicates++; continue; }
 
                 if (!Double.isFinite(similarity)) continue;
                 double perMarkMultiplier = Math.pow(decay, used);

@@ -34,16 +34,29 @@ public class DeterminismFullPipelineTest {
         markByEvidenceId.put(e1, List.of(TestBuilders.mark(10L)));
         markByEvidenceId.put(e2, List.of(TestBuilders.mark(20L)));
 
-        AggregationResult r1 = aggregator.aggregate(candidates, markByEvidenceId, 10, 0);
-        AggregationResult r2 = aggregator.aggregate(candidates, markByEvidenceId, 10, 0);
+        AggregationResult reference = aggregator.aggregate(candidates, markByEvidenceId, 10, 0);
 
-        assertEquals(r1.topScores().size(), r2.topScores().size());
-
-        for (int i = 0; i < r1.topScores().size(); i++) {
-            var s1 = r1.topScores().get(i);
-            var s2 = r2.topScores().get(i);
-            assertEquals(s1.markId(), s2.markId());
-            assertEquals(s1.confidence(), s2.confidence(), 1e-6);
+        // Shuffle inputs and vary insertion order in markByEvidenceId to stress determinism
+        Random rnd = new Random(12345);
+        for (int iter = 0; iter < 10; iter++) {
+            List<CandidateEvidence> shuffled = new ArrayList<>(candidates);
+            Collections.shuffle(shuffled, rnd);
+            Map<UUID, List<Mark>> variedMap = new LinkedHashMap<>();
+            if ((iter & 1) == 0) {
+                variedMap.put(e1, List.of(TestBuilders.mark(10L)));
+                variedMap.put(e2, List.of(TestBuilders.mark(20L)));
+            } else {
+                variedMap.put(e2, List.of(TestBuilders.mark(20L)));
+                variedMap.put(e1, List.of(TestBuilders.mark(10L)));
+            }
+            var r = aggregator.aggregate(shuffled, variedMap, 10, 0);
+            assertEquals(reference.topScores().size(), r.topScores().size());
+            for (int i = 0; i < reference.topScores().size(); i++) {
+                var sRef = reference.topScores().get(i);
+                var s = r.topScores().get(i);
+                assertEquals(sRef.markId(), s.markId());
+                assertEquals(sRef.confidence(), s.confidence(), 1e-6);
+            }
         }
     }
 }
