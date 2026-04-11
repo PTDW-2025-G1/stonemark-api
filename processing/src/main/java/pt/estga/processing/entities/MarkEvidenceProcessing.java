@@ -50,4 +50,12 @@ public class MarkEvidenceProcessing {
     public boolean isReadyForReview() {
         return status != null && (status == ProcessingStatus.COMPLETED || status == ProcessingStatus.REVIEW_PENDING);
     }
+
+    /**
+     * Domain method to mark this processing as reviewed.
+     * Encapsulates state transition so callers don't manipulate the enum directly.
+     */
+    public void markReviewed() {
+        this.status = ProcessingStatus.REVIEWED;
+    }
 }

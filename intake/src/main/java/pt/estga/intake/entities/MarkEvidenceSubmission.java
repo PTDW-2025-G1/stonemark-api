@@ -46,4 +46,18 @@ public class MarkEvidenceSubmission {
     @CreatedDate
     private Instant submittedAt;
 
+    /**
+     * Domain method: mark submission as processed by a human reviewer.
+     */
+    public void markProcessed() {
+        this.status = SubmissionStatus.PROCESSED;
+    }
+
+    /**
+     * Domain method: mark submission as rejected by a human reviewer.
+     */
+    public void markRejected() {
+        this.status = SubmissionStatus.REJECTED;
+    }
+
 }

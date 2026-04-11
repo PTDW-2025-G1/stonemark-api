@@ -69,8 +69,7 @@ public class ReviewService {
 		Mark mark = markRepository.findById(markId)
 				.orElseThrow(() -> new ResourceNotFoundException("Mark with id " + markId + " not found"));
 
-		List<MarkSuggestion> suggestions = suggestionRepository.findByProcessingId(processing.getId());
-		boolean suggested = suggestions.stream().anyMatch(s -> s.getMark() != null && markId.equals(s.getMark().getId()));
+		boolean suggested = suggestionRepository.existsByProcessingIdAndMarkId(processing.getId(), markId);
 		if (!suggested) {
 			log.warn("Accepted mark {} was not present in suggestions for submission {}", markId, submissionId);
 			if (!allowNonSuggested) {

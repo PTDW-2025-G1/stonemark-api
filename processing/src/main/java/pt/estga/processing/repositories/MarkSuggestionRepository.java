@@ -14,4 +14,6 @@ public interface MarkSuggestionRepository extends JpaRepository<MarkSuggestion, 
 	void deleteByProcessingId(UUID processingId);
 
 	List<MarkSuggestion> findByProcessingId(UUID processingId);
+
+	boolean existsByProcessingIdAndMarkId(UUID processingId, Long markId);
 }

@@ -42,7 +42,7 @@ public class ReviewEventListener {
 
             // Transition processing to REVIEWED if present
             processingRepository.findBySubmissionId(submissionId).ifPresent(p -> {
-                p.setStatus(ProcessingStatus.REVIEWED);
+                p.markReviewed();
                 processingRepository.save(p);
             });
         } catch (Exception e) {

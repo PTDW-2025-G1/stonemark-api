@@ -2,7 +2,7 @@ package pt.estga.review.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import pt.estga.review.dto.ReviewResultDto;
+import pt.estga.review.dtos.ReviewResultDto;
 import pt.estga.review.entities.MarkEvidenceReview;
 
 @Mapper(componentModel = "spring")

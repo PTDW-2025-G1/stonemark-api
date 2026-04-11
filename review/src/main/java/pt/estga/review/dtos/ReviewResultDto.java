@@ -1,4 +1,4 @@
-package pt.estga.review.dto;
+package pt.estga.review.dtos;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
