@@ -15,6 +15,7 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.services.similarity.JavaSimilarityEngine;
 import pt.estga.processing.services.similarity.SimilarityService;
 
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,9 +49,16 @@ public class SimilarityServiceTest {
         processing.setEmbedding(new float[] {1.0f, 0.0f, 0.0f});
         // Ensure service runs in DB mode for deterministic tests
         try {
-            java.lang.reflect.Field f = SimilarityService.class.getDeclaredField("similarityMode");
+            Field f = SimilarityService.class.getDeclaredField("similarityMode");
             f.setAccessible(true);
             f.set(similarityService, "db");
+        } catch (Exception ignored) {
+        }
+        // Ensure rank-weighting is enabled for tests that assert weighted aggregation
+        try {
+            Field wf = SimilarityService.class.getDeclaredField("useRankWeighting");
+            wf.setAccessible(true);
+            wf.setBoolean(similarityService, true);
         } catch (Exception ignored) {
         }
     }
@@ -98,5 +106,38 @@ public class SimilarityServiceTest {
 
         var suggestions = similarityService.findSimilar(processing, 5);
         assertTrue(suggestions.isEmpty());
+    }
+
+    @Test
+    public void multipleEvidences_sameMark_confidenceAggregatesWithWeighting() {
+        UUID id1 = UUID.randomUUID();
+        UUID id2 = UUID.randomUUID();
+
+        // two evidence rows that both map to the same Mark id (11)
+        MarkEvidenceDistanceProjection p1 = new MarkEvidenceDistanceProjection() {
+            public UUID getId() { return id1; }
+            public Long getOccurrenceId() { return 1L; }
+            public Double getDistance() { return 0.2; } // similarity = 0.8
+        };
+        MarkEvidenceDistanceProjection p2 = new MarkEvidenceDistanceProjection() {
+            public UUID getId() { return id2; }
+            public Long getOccurrenceId() { return 2L; }
+            public Double getDistance() { return 0.4; } // similarity = 0.6
+        };
+
+        when(evidenceRepository.findTopKSimilarEvidence(anyString(), eq(5))).thenReturn(List.of(p1, p2));
+
+        Mark sameMark = new Mark(); sameMark.setId(11L);
+        EvidenceMarkProjection r1 = new EvidenceMarkProjection() { public UUID getId(){return id1;} public Mark getMark(){return sameMark;} };
+        EvidenceMarkProjection r2 = new EvidenceMarkProjection() { public UUID getId(){return id2;} public Mark getMark(){return sameMark;} };
+        when(evidenceRepository.findMarksByEvidenceIds(anyList())).thenReturn(List.of(r1, r2));
+
+        var suggestions = similarityService.findSimilar(processing, 5);
+        assertNotNull(suggestions);
+        // Both evidences map to same mark so we should have a single aggregated suggestion
+        assertEquals(1, suggestions.size());
+        double confidence = suggestions.getFirst().getConfidence();
+        // expected weighted confidence = (0.8*1 + 0.6*0.5) / (1 + 0.5) = 1.1 / 1.5 = 0.73333...
+        assertEquals(1.1/1.5, confidence, 1e-6);
     }
 }
