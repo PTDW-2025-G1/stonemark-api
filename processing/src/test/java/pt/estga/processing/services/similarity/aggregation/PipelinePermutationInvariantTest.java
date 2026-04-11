@@ -2,6 +2,7 @@ package pt.estga.processing.services.similarity.aggregation;
 
 import org.junit.jupiter.api.Test;
 import pt.estga.processing.config.policies.ScoringPolicy;
+import pt.estga.processing.models.MarkScore;
 import pt.estga.processing.testutils.TestBuilders;
 
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ public class PipelinePermutationInvariantTest {
         List<pt.estga.processing.models.CandidateEvidence> base = new ArrayList<>();
         Map<UUID, List<pt.estga.mark.entities.Mark>> markByEvidence = new LinkedHashMap<>();
         for (int i = 0; i < 20; i++) {
-            UUID eid = TestBuilders.uuid(String.format("%08x%08x", i, i));
+            UUID eid = TestBuilders.uuidFromHex(String.format("%08x%08x", i, i));
             base.add(new pt.estga.processing.models.CandidateEvidence(eid, (long) i, rnd.nextDouble()));
             markByEvidence.put(eid, List.of(TestBuilders.mark((long) (1 + rnd.nextInt(5)))));
         }
@@ -48,8 +49,14 @@ public class PipelinePermutationInvariantTest {
 
             var r = aggregator.aggregate(shuffled, varied, 10, 0);
             assertEquals(reference.topScores().size(), r.topScores().size());
+
+            // Assert identical mark ordering
+            List<Long> expectedIds = reference.topScores().stream().map(MarkScore::markId).toList();
+            List<Long> actualIds = r.topScores().stream().map(MarkScore::markId).toList();
+            assertEquals(expectedIds, actualIds, "Top score mark ordering must be invariant to input permutation");
+
+            // Assert confidences match within tolerance
             for (int i = 0; i < reference.topScores().size(); i++) {
-                assertEquals(reference.topScores().get(i).markId(), r.topScores().get(i).markId());
                 assertEquals(reference.topScores().get(i).confidence(), r.topScores().get(i).confidence(), 1e-6);
             }
         }

@@ -28,8 +28,9 @@ public class KahanSummationStabilityTest {
         KahanAccumulator.accumulate(wStates, markId, small);
         KahanAccumulator.accumulate(wStates, markId, -large);
 
-        // The corrected value is obtained from the state
-        double kahan = wStates.getOrDefault(markId, new KahanState()).value();
+        // The corrected value is obtained from the state; ensure the state exists to avoid masking failures
+        assertTrue(wStates.containsKey(markId), "Expected accumulation state for markId to exist");
+        double kahan = wStates.get(markId).value();
 
         // The naive sum will typically be 0.0 due to cancellation/rounding.
         double tol = 1e-9;
