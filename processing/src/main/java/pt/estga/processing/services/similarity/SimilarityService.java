@@ -7,7 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import pt.estga.mark.entities.Mark;
+import pt.estga.processing.models.EvidenceKey;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
+import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
@@ -66,6 +68,8 @@ public class SimilarityService {
     private int paritySampleSize;
     @Value("${processing.similarity.parity-check.async:true}")
     private boolean parityCheckAsync;
+    @Value("${processing.embedding.dimension:0}")
+    private int expectedEmbeddingDimension;
     @Value("${processing.similarity.max-k:200}")
     private int maxK;
     @Value("${processing.similarity.per-mark-decay:0.5}")
@@ -115,10 +119,10 @@ public class SimilarityService {
                     .toList();
             if (hitIds.isEmpty()) continue;
             // Fetch embeddings via projection (no entity hydration) to avoid reflection and N+1 queries.
-            List<pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection> fetched = evidenceRepository.findAllByIdIn(hitIds);
+            List<EvidenceEmbeddingProjection> fetched = evidenceRepository.findAllByIdIn(hitIds);
             Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
-                    pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection::getId,
-                    pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection::getEmbedding
+                    EvidenceEmbeddingProjection::getId,
+                    EvidenceEmbeddingProjection::getEmbedding
             ));
             for (var p : hits) {
                 if (p.getId().equals(ev.getId())) continue; // skip self
@@ -159,6 +163,14 @@ public class SimilarityService {
                     processing.getId(), pt.estga.shared.utils.VectorUtils.l2Norm(rawQueryEmb));
             return List.of();
         }
+        // Optional dimension guard: if expectedEmbeddingDimension is configured (>0) and
+        // the query embedding length does not match, record a metric and skip similarity.
+        if (expectedEmbeddingDimension > 0 && queryEmb.length != expectedEmbeddingDimension) {
+            try { meterRegistry.counter("processing.suggestions.embedding_dimension_mismatch.count", "engine", "db").increment(); } catch (Exception ignored) {}
+            log.warn("Processing {} embedding dimension {} does not match expected {} — skipping similarity",
+                    processing.getId(), queryEmb.length, expectedEmbeddingDimension);
+            return List.of();
+        }
         // Defensive check (should be very close to 1.0 after normalization)
         double norm = pt.estga.shared.utils.VectorUtils.l2Norm(queryEmb);
         if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
@@ -182,6 +194,8 @@ public class SimilarityService {
         // to avoid pulling unnecessary rows. DB distance is converted to similarity by 1 - distance,
         // so SQL filter is distance <= (1 - minSimilarity).
         double maxDistance = 1.0 - minSimilarity;
+        // Defensive clamp: negative maxDistance makes no sense (minSimilarity>1.0 configured incorrectly)
+        maxDistance = Math.max(0.0, maxDistance);
         List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, safeK, maxDistance);
 
         if (log.isDebugEnabled()) {
@@ -238,7 +252,7 @@ public class SimilarityService {
         // Record DB-side candidate count and valid candidate count after sanitization
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(scored.size()); } catch (Exception ignored) {}
-        Map<UUID, Mark> markByEvidenceId = Map.of();
+        Map<UUID, Mark> markByEvidenceId = Collections.emptyMap();
         // build a marksById lookup here to avoid an extra pass later
         Map<Long, Mark> marksById = new HashMap<>();
         if (!idSet.isEmpty()) {
@@ -282,7 +296,7 @@ public class SimilarityService {
             contributionsByMark.get(markId).add(e);
         }
 
-        Set<String> seenPairs = new HashSet<>();
+        Set<EvidenceKey> seenPairs = new HashSet<>();
         // Process marks in deterministic order (mark id ascending)
         List<Long> markIds = new ArrayList<>(contributionsByMark.keySet());
         Collections.sort(markIds);
@@ -312,17 +326,17 @@ public class SimilarityService {
                 double similarity = entry.getValue();
                 UUID id = p.getId();
 
-                // Dedupe including occurrence id. If occurrence id is missing, fall back to evidence id
-                // to avoid accidental merging of unrelated rows that lack occurrence metadata.
-                String occurrencePart;
+                // Dedupe using a typed record key. Use occurrence id when available,
+                // otherwise fall back to the evidence id string to avoid accidental merging.
+                String occurrenceToken;
                 try {
                     Long occ = p.getOccurrenceId();
-                    occurrencePart = occ == null ? id.toString() : occ.toString();
+                    occurrenceToken = occ == null ? id.toString() : occ.toString();
                 } catch (Throwable t) {
-                    occurrencePart = id.toString();
+                    occurrenceToken = id.toString();
                 }
-                String pairKey = id + ":" + markId + ":" + occurrencePart;
-                if (!seenPairs.add(pairKey)) {
+                EvidenceKey key = new EvidenceKey(id, markId, occurrenceToken);
+                if (!seenPairs.add(key)) {
                     try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
                     continue;
                 }
@@ -333,6 +347,11 @@ public class SimilarityService {
                 if (used > 0) {
                     try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 }
+
+                // Track per-mark contribution count for observability and tuning.
+                try {
+                    meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment();
+                } catch (Exception ignored) {}
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
                 // Ranking signal: combine similarity and (optionally) rank.
