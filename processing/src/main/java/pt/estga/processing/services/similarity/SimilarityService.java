@@ -100,7 +100,15 @@ public class SimilarityService {
             return List.of();
         }
 
-        String vector = VectorUtils.toVectorLiteral(processing.getEmbedding());
+        // Ensure the query vector is normalized before issuing DB query. We persist normalized
+        // vectors at ingestion, and we normalize the query to match DB semantics.
+        float[] queryEmb = VectorUtils.normalize(processing.getEmbedding());
+        if (queryEmb == null || queryEmb.length == 0) {
+            log.warn("Processing {} (submission={}) has invalid embedding after normalization, skipping similarity",
+                    processing.getId(), processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
+            return List.of();
+        }
+        String vector = VectorUtils.toVectorLiteral(queryEmb);
 
         long start = System.nanoTime();
         List<MarkSuggestion> result;

@@ -45,4 +45,19 @@ public final class VectorUtils {
         if (na == 0.0 || nb == 0.0) return null;
         return dot / (Math.sqrt(na) * Math.sqrt(nb));
     }
+
+    /**
+     * Normalize a float[] vector in-place and return a new float[] normalized to unit length.
+     * Returns null when input is null/empty or has zero norm.
+     */
+    public static float[] normalize(float[] v) {
+        if (v == null || v.length == 0) return null;
+        double sumSq = 0.0;
+        for (float x : v) sumSq += (double) x * x;
+        if (sumSq == 0.0) return null;
+        double norm = Math.sqrt(sumSq);
+        float[] out = new float[v.length];
+        for (int i = 0; i < v.length; i++) out[i] = (float) (v[i] / norm);
+        return out;
+    }
 }

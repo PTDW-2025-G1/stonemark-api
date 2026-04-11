@@ -122,8 +122,16 @@ public class ProcessingServiceImpl implements ProcessingService {
                         return;
                     }
 
-                    // Attach embedding to the in-memory processing object for similarity search
-                    processing.setEmbedding(embedding);
+                    // Normalize embedding before use and persistence. Store unit-length vectors in DB
+                    // to make DB-side similarity semantics explicit and robust.
+                    float[] normalized = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+                    if (normalized == null) {
+                        setProcessingFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
+                        return;
+                    }
+
+                    // Attach normalized embedding to the in-memory processing object for similarity search
+                    processing.setEmbedding(normalized);
                 } finally {
                     if (acquired) {
                         visionSemaphore.release();
@@ -244,11 +252,19 @@ public class ProcessingServiceImpl implements ProcessingService {
             p.setProcessedAt(Instant.now());
             // remove previous suggestions to avoid duplicates on reprocessing
             suggestionCommandService.deleteByProcessingId(p.getId());
-            if (suggestions != null && !suggestions.isEmpty()) {
+                if (suggestions != null && !suggestions.isEmpty()) {
                 // Ensure each suggestion references the managed processing entity
                 suggestions.forEach(s -> s.setProcessing(p));
                 // Persist suggestions in batch
                 suggestionCommandService.createAll(suggestions);
+            }
+            // Persist normalized embedding (embedding parameter was normalized earlier in the flow)
+            float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+            if (normalizedToSave != null) {
+                p.setEmbedding(normalizedToSave);
+            } else {
+                // fallback: save raw embedding if normalization somehow failed
+                p.setEmbedding(embedding);
             }
             processingRepository.save(p);
 
