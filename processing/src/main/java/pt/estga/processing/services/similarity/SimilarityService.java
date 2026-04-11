@@ -2,6 +2,7 @@ package pt.estga.processing.services.similarity;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,14 +33,17 @@ public class SimilarityService {
     private final MarkEvidenceRepository evidenceRepository;
     private final MeterRegistry meterRegistry;
     private final JavaSimilarityEngine javaSimilarityEngine;
+    @Setter
     @Value("${processing.similarity.mode:db}")
     private String similarityMode;
+    @Setter
     @Value("${processing.similarity.min-score:0.6}")
     private double minSimilarity;
     /**
      * If true, apply a small rank-based weight to evidence contributions. When false, all
      * evidence contributions are treated equally (pure similarity aggregation).
      */
+    @Setter
     @Value("${processing.similarity.use-rank-weighting:true}")
     private boolean useRankWeighting;
 
