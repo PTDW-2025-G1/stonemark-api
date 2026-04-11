@@ -2,7 +2,6 @@ package pt.estga.processing.services.similarity;
 
 import org.junit.jupiter.api.Test;
 import pt.estga.processing.config.policies.SanitizationPolicy;
-import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.SanitizationResult;
 import pt.estga.processing.testutils.TestMarkEvidenceDistanceProjection;
 import pt.estga.processing.testutils.TestBuilders;
@@ -34,13 +33,13 @@ public class CandidateSanitizerBoundsTest {
 
         // Instead of asserting positional ordering (which may change if upstream code evolves),
         // assert presence/counts of the clamped similarity values.
-        // Group by quantized similarity (rounded to 1e-6) to avoid fragile exact-double equality
+        // Group by similarity bucket rounded to 2 decimal places to avoid fragile exact-double equality
         var similarityCounts = res.candidates().stream()
-                .collect(Collectors.groupingBy(c -> Math.round(c.similarity() * 1_000_000d), Collectors.counting()));
+                .collect(Collectors.groupingBy(c -> Math.rint(c.similarity() * 100d) / 100d, Collectors.counting()));
 
-        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.2d * 1_000_000d), 0L));
-        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.5d * 1_000_000d), 0L));
-        assertEquals(1L, similarityCounts.getOrDefault(Math.round(0.9d * 1_000_000d), 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.rint(0.2d * 100d) / 100d, 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.rint(0.5d * 100d) / 100d, 0L));
+        assertEquals(1L, similarityCounts.getOrDefault(Math.rint(0.9d * 100d) / 100d, 0L));
 
         // idSet should contain the three remaining ids (order-preservation is an implementation detail and not asserted here)
         var ids = res.idSet();

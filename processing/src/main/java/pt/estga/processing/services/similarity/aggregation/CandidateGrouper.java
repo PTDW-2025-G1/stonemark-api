@@ -47,6 +47,9 @@ public class CandidateGrouper {
     }
 
     static void sortGroupsEvidencesDeterministically(List<CandidateEvidence> list) {
+        // Remove any unexpected null entries to make sorting robust for dirty inputs/tests.
+        list.removeIf(Objects::isNull);
+
         list.sort((a,b) -> {
             int cmp = Double.compare(b.similarity(), a.similarity());
             if (cmp != 0) return cmp;

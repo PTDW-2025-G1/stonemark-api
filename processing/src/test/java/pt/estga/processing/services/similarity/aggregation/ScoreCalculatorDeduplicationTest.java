@@ -38,10 +38,11 @@ public class ScoreCalculatorDeduplicationTest {
         assertNotNull(raw);
         assertNotNull(weight);
 
+        // Exact expected behaviour: duplicate removed, highest similarity chosen, totals as below
         assertEquals(1, state.duplicates());
-        assertEquals(1, state.scores().size());
-        assertTrue(state.scores().get(42L) >= 0.7d - 1e-12);
-        // weight sum should be positive
-        assertTrue(state.weightSums().get(42L) > 0.0);
+        // expected raw = 0.7 (best for e1) + 0.5 (e2) = 1.2
+        assertEquals(1.2d, state.scores().get(42L), 1e-9);
+        // expected weight = 1.0 + 1.0 = 2.0
+        assertEquals(2.0d, state.weightSums().get(42L), 1e-9);
     }
 }

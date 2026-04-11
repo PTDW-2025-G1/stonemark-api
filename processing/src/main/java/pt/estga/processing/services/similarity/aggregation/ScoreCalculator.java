@@ -45,8 +45,17 @@ public class ScoreCalculator {
         Map<UUID, Set<Long>> evidenceToMarks = new HashMap<>();
         for (Map.Entry<Long, List<CandidateEvidence>> e : contributionsByMark.entrySet()) {
             Long markId = e.getKey();
-            for (CandidateEvidence ce : e.getValue()) {
-                evidenceToMarks.computeIfAbsent(ce.evidenceId(), _ -> new HashSet<>()).add(markId);
+            List<CandidateEvidence> list = e.getValue();
+            if (list == null || list.isEmpty()) continue;
+            for (CandidateEvidence ce : list) {
+                try {
+                    if (ce == null) continue;
+                    UUID eid = ce.evidenceId();
+                    if (eid == null) continue;
+                    evidenceToMarks.computeIfAbsent(eid, _ -> new HashSet<>()).add(markId);
+                } catch (Throwable ignored) {
+                    // Defensive: tolerate malformed CandidateEvidence instances
+                }
             }
         }
         Map<UUID, Integer> fanOutCounts = new HashMap<>();

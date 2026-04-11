@@ -55,8 +55,10 @@ public class DeterminismFullPipelineTest {
                 var sRef = reference.topScores().get(i);
                 var s = r.topScores().get(i);
                 assertEquals(sRef.markId(), s.markId());
-                // Allow a slightly relaxed numeric tolerance for floating differences across runs
-                assertEquals(sRef.confidence(), s.confidence(), 1e-4);
+                // Compare quantized confidences (AggregationResultBuilder quantizes to 1e-6)
+                double qRef = Math.round(sRef.confidence() * 1_000_000d) / 1_000_000d;
+                double q = Math.round(s.confidence() * 1_000_000d) / 1_000_000d;
+                assertEquals(qRef, q, 0.0);
             }
         }
     }
