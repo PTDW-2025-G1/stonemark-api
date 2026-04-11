@@ -91,6 +91,11 @@
             <artifactId>processing</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>review</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
         <!-- Source: https://mvnrepository.com/artifact/me.paulschwarz/spring-dotenv -->
         <dependency>
             <groupId>me.paulschwarz</groupId>

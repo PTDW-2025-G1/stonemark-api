@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.AsyncProcessingService;
+import pt.estga.processing.services.processing.AsyncProcessingService;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.List;

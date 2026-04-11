@@ -1,4 +1,4 @@
-package pt.estga.processing.services;
+package pt.estga.processing.services.processing;
 
 import jakarta.persistence.LockTimeoutException;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -14,7 +14,8 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.services.similarity.SimilarityService;
+import pt.estga.processing.services.suggestions.MarkSuggestionCommandService;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.services.MediaContentService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,7 +36,7 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     private final MarkEvidenceSubmissionQueryService submissionQueryService;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final MarkSuggestionRepository suggestionRepository;
+    private final MarkSuggestionCommandService suggestionCommandService;
     private final VisionClient visionClient;
     private final MediaContentService mediaContentService;
     private final SimilarityService similarityService;
@@ -121,8 +122,16 @@ public class ProcessingServiceImpl implements ProcessingService {
                         return;
                     }
 
-                    // Attach embedding to the in-memory processing object for similarity search
-                    processing.setEmbedding(embedding);
+                    // Normalize embedding before use and persistence. Store unit-length vectors in DB
+                    // to make DB-side similarity semantics explicit and robust.
+                    float[] normalized = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+                    if (normalized == null) {
+                        setProcessingFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
+                        return;
+                    }
+
+                    // Attach normalized embedding to the in-memory processing object for similarity search
+                    processing.setEmbedding(normalized);
                 } finally {
                     if (acquired) {
                         visionSemaphore.release();
@@ -242,9 +251,20 @@ public class ProcessingServiceImpl implements ProcessingService {
             p.setStatus(ProcessingStatus.COMPLETED);
             p.setProcessedAt(Instant.now());
             // remove previous suggestions to avoid duplicates on reprocessing
-            suggestionRepository.deleteByProcessingId(p.getId());
-            if (suggestions != null && !suggestions.isEmpty()) {
-                suggestionRepository.saveAll(suggestions);
+            suggestionCommandService.deleteByProcessingId(p.getId());
+                if (suggestions != null && !suggestions.isEmpty()) {
+                // Ensure each suggestion references the managed processing entity
+                suggestions.forEach(s -> s.setProcessing(p));
+                // Persist suggestions in batch
+                suggestionCommandService.createAll(suggestions);
+            }
+            // Persist normalized embedding (embedding parameter was normalized earlier in the flow)
+            float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+            if (normalizedToSave != null) {
+                p.setEmbedding(normalizedToSave);
+            } else {
+                // fallback: save raw embedding if normalization somehow failed
+                p.setEmbedding(embedding);
             }
             processingRepository.save(p);
 

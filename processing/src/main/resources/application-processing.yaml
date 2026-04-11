@@ -1,0 +1,36 @@
+# Processing-specific application properties
+# Keep defaults aligned with SimilarityService implementation.
+processing:
+  similarity:
+    # Minimum similarity (confidence) required for suggestions. Range: 0.0 - 1.0
+    min-score: 0.6
+    # Bounds used during candidate sanitization: values outside this range are clamped.
+    # These are rarely changed; defaults correspond to valid similarity domain [0.0, 1.0].
+    min-similarity: 0.0
+    max-similarity: 1.0
+
+    # When true, weight contributions by similarity (more weight to higher similarity).
+    use-rank-weighting: true
+
+    # Optional parity check on startup (sample-based validation between DB similarity and Java cosine).
+    parity-check:
+      enabled: false
+      # Run parity check asynchronously on a background thread when enabled.
+      async: true
+      # Difference tolerance between DB similarity and Java cosine similarity (absolute)
+      tolerance: 0.001
+      # How many sample rows to check at startup when parity-check.enabled=true
+      sample-size: 3
+
+    # Safety limits
+    # Maximum k accepted by the service (requests higher than this are clamped).
+    max-k: 200
+
+    # Per-mark decay factor (0.0-1.0). When >0, additional evidences for the same mark
+    # contribute with diminishing returns: multiplier = decay^(rank-1). Use 1.0 for no decay.
+    per-mark-decay: 0.5
+
+  # Embedding configuration
+  embedding:
+    # Expected embedding vector dimension. Set to 0 to disable dimension checks.
+    dimension: 0

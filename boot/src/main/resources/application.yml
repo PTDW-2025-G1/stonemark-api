@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    include: chatbot, notification, file, security, processing
+    include: chatbot, notification, file, security, processing, review
   servlet:
     multipart:
       max-file-size: 50MB
