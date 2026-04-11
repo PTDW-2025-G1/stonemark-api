@@ -84,6 +84,16 @@ public class SimilarityService {
         return t;
     });
 
+    /**
+     * Small data holder for sanitized DB candidates.
+     */
+    private record SanitizedCandidates(List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored, Set<UUID> idSet, int rawHitCount) {}
+
+    /**
+     * Aggregation result containing per-mark scores, weight sums and the mark lookup.
+     */
+    private record AggregationResult(Map<Long, Double> scores, Map<Long, Double> weightSums, Map<Long, Mark> marksById) {}
+
     @PostConstruct
     void maybeRunParityCheck() {
         if (!parityCheckEnabled) return;
@@ -153,91 +163,58 @@ public class SimilarityService {
         log.info("Similarity parity check passed for {} samples", paritySampleSize);
     }
 
-    public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
+    // --- Helper methods extracted from findSimilar for clarity and testability ---
 
-        if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
-            log.warn("Processing {} (submission={}) has no embedding, skipping similarity",
-                    processing == null ? "null" : processing.getId(),
-                    processing == null || processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
-            return List.of();
-        }
-
-        // Use the embedding produced at ingestion but enforce normalization at
-        // query time as a defensive measure. Distributed ingestion may drift or
-        // misbehave; normalizing here guarantees parity between DB and JVM
-        // computations and prevents intermittent ranking instability.
+    private Optional<String> validateAndNormalizeEmbedding(MarkEvidenceProcessing processing) {
+        // Defensive normalization and dimension validation
         float[] rawQueryEmb = processing.getEmbedding();
         float[] queryEmb = VectorUtils.normalize(rawQueryEmb);
         if (queryEmb == null || queryEmb.length == 0) {
             try { meterRegistry.counter("processing.suggestions.unnormalized_embedding.count", "engine", "db").increment(); } catch (Exception ignored) {}
             log.warn("Processing {} embedding could not be normalized, skipping similarity (raw_norm={})",
                     processing.getId(), pt.estga.shared.utils.VectorUtils.l2Norm(rawQueryEmb));
-            return List.of();
+            return Optional.empty();
         }
-        // Optional dimension guard: if expectedEmbeddingDimension is configured (>0) and
-        // the query embedding length does not match, record a metric and skip similarity.
+
         if (expectedEmbeddingDimension > 0 && queryEmb.length != expectedEmbeddingDimension) {
             try { meterRegistry.counter("processing.suggestions.embedding_dimension_mismatch.count", "engine", "db").increment(); } catch (Exception ignored) {}
             log.warn("Processing {} embedding dimension {} does not match expected {} — skipping similarity",
                     processing.getId(), queryEmb.length, expectedEmbeddingDimension);
-            return List.of();
+            return Optional.empty();
         }
-        // Defensive check (should be very close to 1.0 after normalization)
+
         double norm = pt.estga.shared.utils.VectorUtils.l2Norm(queryEmb);
         if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
             try { meterRegistry.counter("processing.suggestions.unnormalized_embedding.count", "engine", "db").increment(); } catch (Exception ignored) {}
             log.warn("Processing {} embedding not normalized after normalization attempt (norm={}) — continuing with normalized vector", processing.getId(), norm);
         }
-        String vector = VectorUtils.toVectorLiteral(queryEmb);
 
-        long start = System.nanoTime();
-        List<MarkSuggestion> result;
+        return Optional.of(VectorUtils.toVectorLiteral(queryEmb));
+    }
 
-        // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
-        // and maintain a single source of truth for similarity ranking.
-        // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
+    private List<MarkEvidenceDistanceProjection> fetchCandidates(String vector, int k) {
         int safeK = Math.max(1, Math.min(k, maxK));
         if (k > maxK) {
             try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
             log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, maxK, safeK);
         }
-        // Query returns id + occurrence id + distance. Push the minSimilarity threshold into SQL
-        // to avoid pulling unnecessary rows. DB distance is converted to similarity by 1 - distance,
-        // so SQL filter is distance <= (1 - minSimilarity).
         double maxDistance = 1.0 - minSimilarity;
-        // Defensive clamp: negative maxDistance makes no sense (minSimilarity>1.0 configured incorrectly)
         maxDistance = Math.max(0.0, maxDistance);
         List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vector, safeK, maxDistance);
-
+        if (hits == null) return List.of();
         if (log.isDebugEnabled()) {
             log.debug("Top {} similarities (first 5): {}", hits.size(), hits.stream()
                     .map(MarkEvidenceDistanceProjection::getSimilarity)
                     .limit(5)
                     .toList());
         }
+        return hits;
+    }
 
-        // Use mark id (Long) as key. Use TreeMap to ensure deterministic key iteration order.
-        Map<Long, Double> scores = new TreeMap<>();
-        // Sum of weights per mark id — used to normalize weighted scores into a confidence value.
-        Map<Long, Double> weightSums = new TreeMap<>();
-        // Compensations for Kahan summation to reduce floating-point non-determinism
-        Map<Long, Double> scoreComps = new TreeMap<>();
-        Map<Long, Double> weightComps = new TreeMap<>();
+    private SanitizedCandidates sanitizeCandidates(List<MarkEvidenceDistanceProjection> hits) {
+        if (hits == null || hits.isEmpty()) return new SanitizedCandidates(List.of(), Collections.emptySet(), 0);
 
-        if (hits.isEmpty()) {
-            return List.of();
-        }
-
-        // The DB projection contains distance values. We convert to similarity here and
-        // explicitly re-rank by similarity in Java before aggregation. Rationale:
-        //  - DB ordering may not be stable across planners/operators for tied distances
-        //  - re-ranking ensures deterministic weighting and reproducible confidence
-        // Note: the conversion similarity = 1.0 - distance assumes the DB operator uses
-        // cosine-distance semantics. Prefer returning similarity directly from SQL when
-        // possible to avoid this fragile conversion.
         List<MarkEvidenceDistanceProjection> nonNullHits = hits.stream().filter(Objects::nonNull).toList();
-        // Sanitize similarity values returned from DB: reject null/NaN, clamp out-of-range values and
-        // record metrics for invalid or out-of-range similarities. Preserve DB ordering.
         List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored = new ArrayList<>();
         for (MarkEvidenceDistanceProjection p : nonNullHits) {
             Double rawSim = p.getSimilarity();
@@ -252,35 +229,45 @@ public class SimilarityService {
             }
             if (sim > 1.0 || sim < 0.0) {
                 try { meterRegistry.counter("processing.suggestions.similarity.out_of_range.count", "engine", "db").increment(); } catch (Exception ignored) {}
-                // clamp to [0,1] defensive range — we treat negative similarities as non-matching
                 sim = Math.max(0.0, Math.min(1.0, sim));
             }
             scored.add(new AbstractMap.SimpleEntry<>(p, sim));
         }
 
-        // Collect unique evidence ids from the top candidates
         Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
-        // Record DB-side candidate count and valid candidate count after sanitization
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
         try { meterRegistry.counter("processing.suggestions.db_valid_candidates.count", "engine", "db").increment(scored.size()); } catch (Exception ignored) {}
+
+        return new SanitizedCandidates(scored, idSet, hits.size());
+    }
+
+    private AggregationResult aggregatePerMark(SanitizedCandidates sanitized) {
+        List<Map.Entry<MarkEvidenceDistanceProjection, Double>> scored = sanitized.scored();
+        Set<UUID> idSet = sanitized.idSet();
+
+        Map<Long, Double> scores = new TreeMap<>();
+        Map<Long, Double> weightSums = new TreeMap<>();
+        Map<Long, Double> scoreComps = new TreeMap<>();
+        Map<Long, Double> weightComps = new TreeMap<>();
+
+        if (scored.isEmpty()) {
+            return new AggregationResult(scores, weightSums, Collections.emptyMap());
+        }
+
         Map<UUID, Mark> markByEvidenceId = Collections.emptyMap();
-        // build a marksById lookup here to avoid an extra pass later
         Map<Long, Mark> marksById = new HashMap<>();
         if (!idSet.isEmpty()) {
             List<EvidenceMarkProjection> rows = evidenceRepository.findMarksByEvidenceIds(List.copyOf(idSet));
-            // Use a safe merge function to tolerate duplicate keys in case of bad data or join issues.
             markByEvidenceId = rows.stream().collect(Collectors.toMap(
                     EvidenceMarkProjection::getId,
                     EvidenceMarkProjection::getMark,
                     (a, b) -> {
-                        // If duplicates happen, keep the first but log so data issues can be investigated.
                         if (!Objects.equals(a.getId(), b.getId())) {
                             log.warn("Duplicate mark mapping encountered for same evidence id: keeping mark id {} over {}", a.getId(), b.getId());
                         }
                         return a;
                     }
             ));
-            // Populate marksById from the rows in a single pass (avoid extra stream operations).
             for (EvidenceMarkProjection row : rows) {
                 Mark m = row.getMark();
                 if (m != null && m.getId() != null) {
@@ -290,9 +277,6 @@ public class SimilarityService {
             try { meterRegistry.counter("processing.suggestions.db_mapped_hits.count", "engine", "db").increment(marksById.size()); } catch (Exception ignored) {}
         }
 
-        // Deterministic aggregation: group contributions by mark and process each
-        // mark's contributions in a stable, locally-sorted order. This eliminates
-        // global ordering dependence and makes per-mark decay deterministic.
         Map<Long, List<Map.Entry<MarkEvidenceDistanceProjection, Double>>> contributionsByMark = new HashMap<>();
         for (Map.Entry<MarkEvidenceDistanceProjection, Double> e : scored) {
             MarkEvidenceDistanceProjection p = e.getKey();
@@ -301,25 +285,18 @@ public class SimilarityService {
             if (mark == null) continue;
             Long markId = mark.getId();
             if (markId == null) continue;
-            if (!contributionsByMark.containsKey(markId)) {
-                contributionsByMark.put(markId, new ArrayList<>());
-            }
-            contributionsByMark.get(markId).add(e);
+            contributionsByMark.computeIfAbsent(markId, __ -> new ArrayList<>()).add(e);
         }
 
         Set<EvidenceKey> seenPairs = new HashSet<>();
-        // Process marks in deterministic order (mark id ascending)
         List<Long> markIds = new ArrayList<>(contributionsByMark.keySet());
         Collections.sort(markIds);
         for (Long markId : markIds) {
             List<Map.Entry<MarkEvidenceDistanceProjection, Double>> list = contributionsByMark.get(markId);
             if (list == null || list.isEmpty()) continue;
-            // Sort contributions for this mark deterministically: similarity desc, occurrenceId (nullable), evidenceId
             list.sort((a, b) -> {
                 int cmp = Double.compare(b.getValue(), a.getValue());
                 if (cmp != 0) return cmp;
-                // Tie-breaker: occurrence id then evidence id. occurrenceId is nullable; keep
-                // deterministic ordering using nullsFirst (null < any non-null).
                 Long occA;
                 Long occB;
                 try { occA = a.getKey().getOccurrenceId(); } catch (Throwable t) { occA = null; }
@@ -333,7 +310,6 @@ public class SimilarityService {
                 return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
             });
 
-            // Per-mark deterministic accumulation
             int used = 0;
             double decay = Math.max(0.0, perMarkDecayFactor);
             for (int i = 0; i < list.size(); i++) {
@@ -342,15 +318,8 @@ public class SimilarityService {
                 double similarity = entry.getValue();
                 UUID id = p.getId();
 
-                // Dedupe using a typed record key. Use occurrence id when available (nullable Long).
-                // Do NOT convert occurrence id to string — keep its numeric type to avoid accidental collisions
-                // and to preserve deterministic ordering semantics.
                 Long occurrenceId;
-                try {
-                    occurrenceId = p.getOccurrenceId();
-                } catch (Throwable t) {
-                    occurrenceId = null;
-                }
+                try { occurrenceId = p.getOccurrenceId(); } catch (Throwable t) { occurrenceId = null; }
                 EvidenceKey key = new EvidenceKey(id, markId, occurrenceId);
                 if (!seenPairs.add(key)) {
                     try { meterRegistry.counter("processing.suggestions.duplicates.count", "engine", "db").increment(); } catch (Exception ignored) {}
@@ -364,22 +333,13 @@ public class SimilarityService {
                     try { meterRegistry.counter("processing.suggestions.per_mark_decay_applied.count", "engine", "db").increment(); } catch (Exception ignored) {}
                 }
 
-                // Track per-mark contribution count for observability and tuning.
-                try {
-                    meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment();
-                } catch (Exception ignored) {}
+                try { meterRegistry.counter("processing.suggestions.per_mark_contributions.count", "engine", "db").increment(); } catch (Exception ignored) {}
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-                // Ranking signal: combine similarity and (optionally) rank.
-                // Use a multiplicative hybrid so that similarity remains the primary
-                // signal while rank provides a small positional bias when enabled.
-                // - If useRankWeighting == false: signal = simClamped
-                // - If useRankWeighting == true : signal = simClamped * rankScore
                 double rankScore = 1.0 / (1.0 + (double) i);
                 double signal = simClamped * (useRankWeighting ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
-                // Kahan add for scores: reduce floating-point error and improve cross-run stability
                 double s = scores.getOrDefault(markId, 0.0);
                 double sc = scoreComps.getOrDefault(markId, 0.0);
                 double y = contribution - sc;
@@ -389,7 +349,6 @@ public class SimilarityService {
                 scores.put(markId, s);
                 scoreComps.put(markId, sc);
 
-                // Kahan add for weight sums
                 double w = weightSums.getOrDefault(markId, 0.0);
                 double wc = weightComps.getOrDefault(markId, 0.0);
                 double wy = perMarkMultiplier - wc;
@@ -403,7 +362,43 @@ public class SimilarityService {
             }
         }
 
-        // Record final suggestions count
+        return new AggregationResult(scores, weightSums, marksById);
+    }
+
+    public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
+
+        if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
+            log.warn("Processing {} (submission={}) has no embedding, skipping similarity",
+                    processing == null ? "null" : processing.getId(),
+                    processing == null || processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
+            return List.of();
+        }
+
+        // Validate and normalize embedding (returns vector literal) — extracted for clarity
+        Optional<String> maybeVector = validateAndNormalizeEmbedding(processing);
+        if (maybeVector.isEmpty()) return List.of();
+        String vector = maybeVector.get();
+
+        long start = System.nanoTime();
+        List<MarkSuggestion> result;
+
+        // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
+        // and maintain a single source of truth for similarity ranking.
+        // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
+        // Fetch DB candidates (keeps k-clamping and maxDistance logic)
+        List<MarkEvidenceDistanceProjection> hits = fetchCandidates(vector, k);
+        // Sanitize DB results and collect evidence ids
+        SanitizedCandidates sanitized = sanitizeCandidates(hits);
+        if (sanitized.scored().isEmpty()) return List.of();
+
+        // Aggregate per-mark contributions (includes mapping evidence -> mark)
+        AggregationResult aggregation = aggregatePerMark(sanitized);
+
+        // Record final suggestions count (build from aggregation result)
+        Map<Long, Double> scores = aggregation.scores();
+        Map<Long, Double> weightSums = aggregation.weightSums();
+        Map<Long, Mark> marksById = aggregation.marksById();
+
         if (scores.isEmpty()) {
             result = List.of();
         } else {
