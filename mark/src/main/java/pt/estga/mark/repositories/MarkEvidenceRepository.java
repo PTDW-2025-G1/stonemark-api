@@ -2,6 +2,7 @@ package pt.estga.mark.repositories;
 
 import org.springframework.data.domain.Page;
 import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.shared.repositories.BaseRepository;
@@ -33,9 +34,10 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	SELECT
 		me.id,
 		me.occurrence_id,
-		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity
+		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity,
+		(me.embedding <#> CAST(:vector AS vector)) AS distance
 	FROM mark_evidence me
-	ORDER BY similarity DESC
+	ORDER BY distance ASC, me.id ASC, me.occurrence_id ASC
 	LIMIT :k
 	""", nativeQuery = true)
     List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(@Param("vector") String vector, @Param("k") int k);
@@ -49,4 +51,7 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 
 	Page<MarkEvidence> findAllByEmbeddingIsNotNull(org.springframework.data.domain.Pageable pageable);
+
+	// Projection-based batch fetch to return embeddings without hydrating full entities.
+	List<EvidenceEmbeddingProjection> findAllByIdIn(List<UUID> ids);
 }

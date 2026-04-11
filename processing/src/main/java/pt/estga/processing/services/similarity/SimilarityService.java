@@ -14,7 +14,6 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.shared.utils.VectorUtils;
 
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -99,38 +98,18 @@ public class SimilarityService {
                     .distinct()
                     .toList();
             if (hitIds.isEmpty()) continue;
-            var fetched = evidenceRepository.findAllById(hitIds);
-            // Map fetched entities by id for quick lookup. Avoid per-hit DB calls which cause N+1.
-            Map<UUID, Object> fetchedById = fetched.stream().collect(Collectors.toMap(
-                    e -> e.getId(),
-                    e -> e
+            // Fetch embeddings via projection (no entity hydration) to avoid reflection and N+1 queries.
+            List<pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection> fetched = evidenceRepository.findAllByIdIn(hitIds);
+            Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
+                    pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection::getId,
+                    pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection::getEmbedding
             ));
-            Method getEmbeddingMethod = null;
-            try {
-                getEmbeddingMethod = ev.getClass().getMethod("getEmbedding");
-            } catch (NoSuchMethodException ignored) {
-                log.debug("Parity check: fetched entity does not expose getEmbedding(), skipping embedding comparison");
-            }
             for (var p : hits) {
                 if (p.getId().equals(ev.getId())) continue; // skip self
                 Double dbSim = p.getSimilarity();
                 if (dbSim == null) continue;
-                var other = fetchedById.get(p.getId());
-                if (other == null) continue;
-                // Use reflection-free accessor via VectorUtils; the fetched object is expected to have getEmbedding()
-                // We rely on the repository returning the same entity type as in the sample page.
-                float[] otherEmb;
-                try {
-                    if (getEmbeddingMethod == null) {
-                        // method not available, skip
-                        continue;
-                    }
-                    otherEmb = (float[]) getEmbeddingMethod.invoke(other);
-                } catch (Exception ex) {
-                    // If reflection fails, skip this parity comparison but don't abort the whole check.
-                    log.debug("Unable to access embedding for parity check entity {}: {}", p.getId(), ex.getMessage());
-                    continue;
-                }
+                float[] otherEmb = fetchedById.get(p.getId());
+                if (otherEmb == null) continue;
                 Double javaCos = VectorUtils.cosineSimilarity(emb, otherEmb);
                 if (javaCos == null) continue;
                 double diff = Math.abs(dbSim - javaCos);
@@ -196,10 +175,13 @@ public class SimilarityService {
                     .toList());
         }
 
-        // Use mark id (Long) as key to avoid relying on entity equals()/hashCode().
-        Map<Long, Double> scores = new HashMap<>();
+        // Use mark id (Long) as key. Use TreeMap to ensure deterministic key iteration order.
+        Map<Long, Double> scores = new TreeMap<>();
         // Sum of weights per mark id — used to normalize weighted scores into a confidence value.
-        Map<Long, Double> weightSums = new HashMap<>();
+        Map<Long, Double> weightSums = new TreeMap<>();
+        // Compensations for Kahan summation to reduce floating-point non-determinism
+        Map<Long, Double> scoreComps = new TreeMap<>();
+        Map<Long, Double> weightComps = new TreeMap<>();
 
         if (hits.isEmpty()) {
             return List.of();
@@ -235,7 +217,21 @@ public class SimilarityService {
             scored.add(new AbstractMap.SimpleEntry<>(p, sim));
         }
 
-        // Collect unique evidence ids from the (re-ranked) top candidates
+        // Deterministically sort the global scored list to ensure stable ordering across runs.
+        // Sorting tie-breakers: similarity desc, occurrence id asc, evidence id asc.
+        scored.sort((a, b) -> {
+            int cmp = Double.compare(b.getValue(), a.getValue());
+            if (cmp != 0) return cmp;
+            String occA;
+            String occB;
+            try { var oa = a.getKey().getOccurrenceId(); occA = oa == null ? "" : oa.toString(); } catch (Throwable t) { occA = ""; }
+            try { var ob = b.getKey().getOccurrenceId(); occB = ob == null ? "" : ob.toString(); } catch (Throwable t) { occB = ""; }
+            cmp = occA.compareTo(occB);
+            if (cmp != 0) return cmp;
+            return a.getKey().getId().toString().compareTo(b.getKey().getId().toString());
+        });
+
+        // Collect unique evidence ids from the (re-ranked) top candidates preserving deterministic order
         Set<UUID> idSet = scored.stream().map(e -> e.getKey().getId()).collect(Collectors.toCollection(LinkedHashSet::new));
         // Record DB-side candidate count and valid candidate count after sanitization
         try { meterRegistry.counter("processing.suggestions.db_candidates.count", "engine", "db").increment(hits.size()); } catch (Exception ignored) {}
@@ -338,8 +334,25 @@ public class SimilarityService {
                 double signal = useRankWeighting ? rankScore : simClamped;
                 double contribution = signal * perMarkMultiplier;
 
-                scores.merge(markId, contribution, Double::sum);
-                weightSums.merge(markId, perMarkMultiplier, Double::sum);
+                // Kahan add for scores: reduce floating-point error and improve cross-run stability
+                double s = scores.getOrDefault(markId, 0.0);
+                double sc = scoreComps.getOrDefault(markId, 0.0);
+                double y = contribution - sc;
+                double t = s + y;
+                sc = (t - s) - y;
+                s = t;
+                scores.put(markId, s);
+                scoreComps.put(markId, sc);
+
+                // Kahan add for weight sums
+                double w = weightSums.getOrDefault(markId, 0.0);
+                double wc = weightComps.getOrDefault(markId, 0.0);
+                double wy = perMarkMultiplier - wc;
+                double wt = w + wy;
+                wc = (wt - w) - wy;
+                w = wt;
+                weightSums.put(markId, w);
+                weightComps.put(markId, wc);
 
                 used++;
             }
