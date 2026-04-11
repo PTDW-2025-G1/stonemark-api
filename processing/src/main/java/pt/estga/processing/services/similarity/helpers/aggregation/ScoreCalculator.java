@@ -61,7 +61,18 @@ public class ScoreCalculator {
             }
         }
 
-        return new AggregationState(scores, weightSums, duplicates, perMarkContributions, perMarkDecayApplied);
+        // Compute confidences (truth of confidence = score / weight) here to centralize
+        // the scoring definition in a single place and avoid divergence.
+        Map<Long, Double> confidences = new TreeMap<>();
+        for (Map.Entry<Long, Double> e : scores.entrySet()) {
+            Long markId = e.getKey();
+            double totalScore = e.getValue();
+            Double weight = weightSums.get(markId);
+            if (weight == null || weight == 0.0) continue;
+            confidences.put(markId, totalScore / weight);
+        }
+
+        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, perMarkDecayApplied);
     }
 
     private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {
@@ -78,6 +89,7 @@ public class ScoreCalculator {
     public record AggregationState(
             Map<Long, Double> scores,
             Map<Long, Double> weightSums,
+            Map<Long, Double> confidences,
             int duplicates,
             int perMarkContributions,
             int perMarkDecayApplied

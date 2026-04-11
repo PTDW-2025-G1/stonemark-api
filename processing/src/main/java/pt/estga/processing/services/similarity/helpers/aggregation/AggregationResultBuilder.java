@@ -12,20 +12,15 @@ public class AggregationResultBuilder {
 
     public AggregationResult build(ScoreCalculator.AggregationState state, Map<Long, Mark> marksById, int k) {
         List<MarkScore> topScores = new ArrayList<>();
-        for (Map.Entry<Long, Double> entry : state.scores().entrySet()) {
+        // Use confidences computed by ScoreCalculator as the single source of truth
+        // for per-mark confidence values.
+        for (Map.Entry<Long, Double> entry : state.confidences().entrySet()) {
             Long markId = entry.getKey();
-            double totalScore = entry.getValue();
-            Double weight = state.weightSums().get(markId);
-            if (weight == null || weight == 0.0) {
-                // data issue: missing weight for markId
-                continue;
-            }
+            Double confidenceRaw = entry.getValue();
+            if (confidenceRaw == null) continue;
             Mark m = marksById.get(markId);
-            if (m == null) {
-                continue;
-            }
-            double confidence = totalScore / weight;
-            double quantized = Math.round(confidence * 1_000_000d) / 1_000_000d;
+            if (m == null) continue;
+            double quantized = Math.round(confidenceRaw * 1_000_000d) / 1_000_000d;
             topScores.add(new MarkScore(markId, m, quantized));
         }
 
