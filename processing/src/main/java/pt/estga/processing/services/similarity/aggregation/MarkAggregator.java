@@ -41,27 +41,14 @@ public class MarkAggregator {
                 for (Mark m : list) {
                     if (m == null || m.getId() == null) continue;
                     Long id = m.getId();
-                    marksById.merge(id, m, (existing, candidate) -> {
-                        String es = Objects.toString(existing, "");
-                        String cs = Objects.toString(candidate, "");
-                        return cs.compareTo(es) < 0 ? candidate : existing;
-                    });
+                    // Deterministic rule: keep first-seen Mark for the id (putIfAbsent)
+                    marksById.putIfAbsent(id, m);
                 }
             }
         }
 
         var contributionsByMark = grouper.groupAndSort(candidates, markByEvidenceId);
-        // Build fan-out counts (evidenceId -> number of associated marks) for
-        // correct scaling decisions in the ScoreCalculator.
-        Map<UUID, Integer> fanOutCounts = new LinkedHashMap<>();
-        if (markByEvidenceId != null) {
-            for (Map.Entry<UUID, List<Mark>> e : markByEvidenceId.entrySet()) {
-                List<Mark> list = e.getValue();
-                fanOutCounts.put(e.getKey(), list == null ? 0 : list.size());
-            }
-        }
-
-        var state = calculator.compute(contributionsByMark, fanOutCounts);
+        var state = calculator.compute(contributionsByMark);
         return resultBuilder.build(state, marksById, k, missingMarkMappings);
     }
 }

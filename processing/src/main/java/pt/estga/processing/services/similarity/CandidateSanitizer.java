@@ -5,31 +5,23 @@ import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.processing.config.policies.SanitizationPolicy;
 import pt.estga.processing.models.CandidateEvidence;
+import pt.estga.processing.models.SanitizationKey;
 import pt.estga.processing.models.SanitizationResult;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Trust boundary: converts DB projections into domain-shaped CandidateEvidence
- * instances and returns counts and sets useful for orchestration.
- *
- * Contract guarantees:
- * - The returned {@code candidates} list preserves the input (DB) ordering after
- *   removing null rows and invalid similarity values. Candidates are not deduplicated
- *   in this list; duplicates may appear if the DB returned duplicated projections.
- * - The returned {@code idSet} is a LinkedHashSet preserving the first-seen order of
- *   evidence ids and contains one entry per distinct evidence id.
- * - The returned {@code candidateKeys} is a LinkedHashSet of deduplicated
- *   (evidenceId, occurrenceId) pairs in the order they were first seen; it is useful
- *   for detecting duplicate occurrence-level contributions without mutating the
- *   primary candidates list.
- * - Similarity values outside configured bounds are clamped (not dropped) and
- *   counted in {@code outOfRangeCount}.
- * - The sanitizer does NOT enforce aggregation-time deduplication by mark.
- *   It is the aggregator's responsibility to enforce uniqueness of
- *   (evidenceId, occurrenceId, markId) contributions; sanitizer only provides
- *   occurrence-level keys for higher-level orchestration and diagnostics.
+ * Trust boundary: convert DB projections into domain-shaped
+ * {@link pt.estga.processing.models.CandidateEvidence} and produce sanitized
+ * outputs for aggregation.
+ * <p>
+ * Notes:
+ * - Preserves DB ordering after removing null/invalid rows.
+ * - Clamps out-of-range similarity values and counts anomalies.
+ * - Produces occurrence-level keys for diagnostics; aggregation-time
+ *   deduplication by (evidence, occurrence, mark) is performed by the
+ *   aggregator.
  */
 @Service
 @RequiredArgsConstructor
@@ -59,8 +51,8 @@ public class CandidateSanitizer {
         }
 
         Set<UUID> idSet = candidates.stream().map(CandidateEvidence::evidenceId).collect(Collectors.toCollection(LinkedHashSet::new));
-        java.util.Set<pt.estga.processing.models.CandidateKey> candidateKeys = candidates.stream()
-                .map(c -> pt.estga.processing.models.CandidateKey.of(c.evidenceId(), c.occurrenceId()))
+        java.util.Set<SanitizationKey> candidateKeys = candidates.stream()
+                .map(c -> SanitizationKey.of(c.evidenceId(), c.occurrenceId()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
         return new SanitizationResult(Collections.unmodifiableList(candidates), Collections.unmodifiableSet(idSet), Collections.unmodifiableSet(candidateKeys), hits.size(), invalid, outOfRange);
     }

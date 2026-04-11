@@ -6,7 +6,7 @@ import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.enums.FanOutStrategy;
 import pt.estga.processing.models.AggregationState;
 import pt.estga.processing.models.CandidateEvidence;
-import pt.estga.processing.models.CandidateKey;
+import pt.estga.processing.models.AggregationKey;
 
 import java.util.*;
 
@@ -16,19 +16,32 @@ public class ScoreCalculator {
 
     private final ScoringPolicy scoringPolicy;
 
-    public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark, Map<UUID, Integer> fanOutCounts) {
+    public AggregationState compute(Map<Long, List<CandidateEvidence>> contributionsByMark) {
         Map<Long, Double> scores = new TreeMap<>();
         Map<Long, Double> weightSums = new TreeMap<>();
         Map<Long, Double> scoreComps = new TreeMap<>();
         Map<Long, Double> weightComps = new TreeMap<>();
 
-        Set<CandidateKey> seenPairs = new HashSet<>();
+        Set<AggregationKey> seenPairs = new HashSet<>();
         int duplicates = 0;
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
         int fanOutExpandedContributions = 0;
 
         double decay = Math.max(0.0, scoringPolicy.getPerMarkDecay());
+
+        // Compute evidence -> distinct mark set for fan-out scaling
+        Map<UUID, Set<Long>> evidenceToMarks = new HashMap<>();
+        for (Map.Entry<Long, List<CandidateEvidence>> e : contributionsByMark.entrySet()) {
+            Long markId = e.getKey();
+            for (CandidateEvidence ce : e.getValue()) {
+                evidenceToMarks.computeIfAbsent(ce.evidenceId(), _ -> new HashSet<>()).add(markId);
+            }
+        }
+        Map<UUID, Integer> fanOutCounts = new HashMap<>();
+        for (Map.Entry<UUID, Set<Long>> e : evidenceToMarks.entrySet()) {
+            fanOutCounts.put(e.getKey(), e.getValue().size());
+        }
 
         List<Long> markIds = new ArrayList<>(contributionsByMark.keySet());
         Collections.sort(markIds);
@@ -42,7 +55,7 @@ public class ScoreCalculator {
                 UUID evidenceId = ce.evidenceId();
                 double similarity = ce.similarity();
 
-                CandidateKey key = CandidateKey.of(evidenceId, ce.occurrenceId(), markId);
+                AggregationKey key = AggregationKey.of(evidenceId, ce.occurrenceId(), markId);
                 if (!seenPairs.add(key)) { duplicates++; continue; }
 
                 if (Double.isNaN(similarity)) continue;
@@ -55,11 +68,7 @@ public class ScoreCalculator {
                 double signal = simClamped * (scoringPolicy.isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
-                // Apply fan-out scaling: if an evidence mapped to multiple marks and the
-                // policy requests SPLIT, divide contribution and weight among marks to
-                // avoid inflating aggregate scores. If FULL, duplicate full contribution.
-                int fanOut = 1;
-                try { fanOut = fanOutCounts.getOrDefault(evidenceId, 1); } catch (Exception ignored) {}
+                int fanOut = fanOutCounts.getOrDefault(evidenceId, 1);
                 double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / Math.max(1, fanOut) : 1.0;
                 if (fanOut > 1) fanOutExpandedContributions++;
 
@@ -70,29 +79,14 @@ public class ScoreCalculator {
             }
         }
 
-        // Compute confidences (truth of confidence = score / weight) here to centralize
-        // the scoring definition in a single place and avoid divergence. Guard against
-        // extremely small or missing weights to prevent division anomalies.
-        final double MIN_WEIGHT = 1e-12;
-        Map<Long, Double> confidences = new TreeMap<>();
         int weightAnomalies = 0;
-        for (Map.Entry<Long, Double> e : scores.entrySet()) {
-            Long markId = e.getKey();
-            double totalScore = e.getValue();
-            Double weight = weightSums.get(markId);
-            if (weight == null || weight <= MIN_WEIGHT) {
-                // Record anomaly: no safe normalization possible; set confidence to 0.0
-                weightAnomalies++;
-                confidences.put(markId, 0.0);
-                continue;
-            }
-            double conf = totalScore / weight;
-            // Clamp confidence into [0,1] to avoid surprises from numeric instability
-            conf = Math.max(0.0, Math.min(1.0, conf));
-            confidences.put(markId, conf);
+        final double MIN_WEIGHT = 1e-12;
+        for (Map.Entry<Long, Double> e : weightSums.entrySet()) {
+            Double w = e.getValue();
+            if (w == null || w <= MIN_WEIGHT) weightAnomalies++;
         }
 
-        return new AggregationState(scores, weightSums, confidences, duplicates, perMarkContributions, fanOutExpandedContributions, perMarkDecayApplied, weightAnomalies);
+        return new AggregationState(scores, weightSums, duplicates, perMarkContributions, perMarkDecayApplied, fanOutExpandedContributions, weightAnomalies);
     }
 
     private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {
