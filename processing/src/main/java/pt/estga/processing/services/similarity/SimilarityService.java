@@ -120,14 +120,23 @@ public class SimilarityService {
             return List.of();
         }
 
-        // Use the embedding produced at ingestion. Ingestion layer is responsible
-        // for normalizing embeddings to unit length. Here we validate that the
-        // embedding is unit-length (within tolerance) and emit a metric if not.
-        float[] queryEmb = processing.getEmbedding();
+        // Use the embedding produced at ingestion but enforce normalization at
+        // query time as a defensive measure. Distributed ingestion may drift or
+        // misbehave; normalizing here guarantees parity between DB and JVM
+        // computations and prevents intermittent ranking instability.
+        float[] rawQueryEmb = processing.getEmbedding();
+        float[] queryEmb = VectorUtils.normalize(rawQueryEmb);
+        if (queryEmb == null || queryEmb.length == 0) {
+            try { meterRegistry.counter("processing.suggestions.unnormalized_embedding.count", "engine", "db").increment(); } catch (Exception ignored) {}
+            log.warn("Processing {} embedding could not be normalized, skipping similarity (raw_norm={})",
+                    processing.getId(), pt.estga.shared.utils.VectorUtils.l2Norm(rawQueryEmb));
+            return List.of();
+        }
+        // Defensive check (should be very close to 1.0 after normalization)
         double norm = pt.estga.shared.utils.VectorUtils.l2Norm(queryEmb);
         if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
             try { meterRegistry.counter("processing.suggestions.unnormalized_embedding.count", "engine", "db").increment(); } catch (Exception ignored) {}
-            log.warn("Processing {} embedding not normalized (norm={}) — ingestion should normalize embeddings", processing.getId(), norm);
+            log.warn("Processing {} embedding not normalized after normalization attempt (norm={}) — continuing with normalized vector", processing.getId(), norm);
         }
         String vector = VectorUtils.toVectorLiteral(queryEmb);
 
@@ -266,69 +275,71 @@ public class SimilarityService {
             }
             perMarkCounts.put(markId, used + 1);
 
-            // Scoring model: multiplicative fusion of signals. We compute a rank decay
-            // (higher-ranked candidates get slightly more influence) and multiply it
-            // with the per-mark diminishing multiplier. The contribution is
-            // contribution = similarity * rankDecay * perMarkMultiplier.
-            // We aggregate contributions per mark and normalize by the sum of
-            // (rankDecay * perMarkMultiplier) to produce a weighted average confidence.
+            // Scoring model: choose a single primary signal and apply the
+            // per-mark diminishing multiplier as a weight. Mixing similarity and
+            // rank bias multiplicatively makes the model sensitive to DB
+            // ordering noise; instead we use one of two modes controlled by
+            // `useRankWeighting`:
+            //  - false (default): similarity-driven scoring -> contribution = similarity * perMarkMultiplier
+            //  - true : rank-driven scoring        -> contribution = rankScore  * perMarkMultiplier
+            // In both modes we accumulate `weightSums` as the sum of perMarkMultiplier
+            // so the final confidence is a weighted average of the chosen signal.
             double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-            double rankDecay = useRankWeighting ? 1.0 / (1.0 + (double) idx) : 1.0;
-            double weight = rankDecay * perMarkMultiplier;
-            double contribution = simClamped * weight;
+            double rankScore = 1.0 / (1.0 + (double) idx);
+            double signal = useRankWeighting ? rankScore : simClamped;
+            double contribution = signal * perMarkMultiplier;
 
             scores.merge(markId, contribution, Double::sum);
-            weightSums.merge(markId, weight, Double::sum);
+            weightSums.merge(markId, perMarkMultiplier, Double::sum);
         }
 
         // Record final suggestions count
+        if (scores.isEmpty()) {
+            result = List.of();
+        } else {
+            result = scores.entrySet().stream()
+            // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
+            .filter(entry -> {
+                Long markId = entry.getKey();
+                Double weightSum = weightSums.get(markId);
+                if (weightSum == null || weightSum == 0.0) {
+                    log.warn("Invariant violation: weightSum missing for mark id {}", markId);
+                    return false;
+                }
+                // ensure we have the actual Mark entity for the id
+                if (!marksById.containsKey(markId)) {
+                    log.warn("Missing Mark entity for id {} while aggregating scores", markId);
+                    return false;
+                }
+                return true;
+            })
+            .map(entry -> {
+                Long markId = entry.getKey();
+                double totalScore = entry.getValue();
+                double weightSum = weightSums.get(markId);
 
-            if (scores.isEmpty()) {
-                result = List.of();
-            } else {
-                result = scores.entrySet().stream()
-                // pre-filter entries with valid weight sums to avoid nulls in the mapping stage
-                .filter(entry -> {
-                    Long markId = entry.getKey();
-                    Double weightSum = weightSums.get(markId);
-                    if (weightSum == null || weightSum == 0.0) {
-                        log.warn("Invariant violation: weightSum missing for mark id {}", markId);
-                        return false;
-                    }
-                    // ensure we have the actual Mark entity for the id
-                    if (!marksById.containsKey(markId)) {
-                        log.warn("Missing Mark entity for id {} while aggregating scores", markId);
-                        return false;
-                    }
-                    return true;
-                })
-                .map(entry -> {
-                    Long markId = entry.getKey();
-                    double totalScore = entry.getValue();
-                    double weightSum = weightSums.get(markId);
+                // Normalize by the total weight to produce a weighted average confidence.
+                double confidence = totalScore / weightSum;
 
-                    // Normalize by the total weight to produce a weighted average confidence.
-                    double confidence = totalScore / weightSum;
-
-                    return MarkSuggestion.builder()
-                            .processing(processing)
-                            .mark(marksById.get(markId))
-                            .confidence(confidence)
-                            .build();
-                })
-                .sorted((a, b) -> {
-                    int cmp = Double.compare(b.getConfidence(), a.getConfidence());
-                    if (cmp != 0) return cmp;
-                    Long aId = a.getMark() == null ? null : a.getMark().getId();
-                    Long bId = b.getMark() == null ? null : b.getMark().getId();
-                    if (aId == null && bId == null) return 0;
-                    if (aId == null) return 1;
-                    if (bId == null) return -1;
-                    return aId.compareTo(bId);
-                })
-                .limit(k)
-                .toList();
-            }
+                return MarkSuggestion.builder()
+                        .processing(processing)
+                        .mark(marksById.get(markId))
+                        .confidence(confidence)
+                        .build();
+            })
+            .sorted((a, b) -> {
+                int cmp = Double.compare(b.getConfidence(), a.getConfidence());
+                if (cmp != 0) return cmp;
+                Long aId = a.getMark() == null ? null : a.getMark().getId();
+                Long bId = b.getMark() == null ? null : b.getMark().getId();
+                if (aId == null && bId == null) return 0;
+                if (aId == null) return 1;
+                if (bId == null) return -1;
+                return aId.compareTo(bId);
+            })
+            .limit(k)
+            .toList();
+        }
 
 
         // filtered metric for DB branch was already recorded as filteredLocal inside the branch when applicable
