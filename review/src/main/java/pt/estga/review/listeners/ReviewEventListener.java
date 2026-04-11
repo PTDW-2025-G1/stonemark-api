@@ -3,7 +3,8 @@ package pt.estga.review.listeners;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.enums.SubmissionStatus;
@@ -23,25 +24,41 @@ public class ReviewEventListener {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
 
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.getSubmissionId();
         try {
             // Set submission status according to review decision. Use explicit domain statuses
+            // and make the operation idempotent: only change when a transition is necessary.
             submissionQueryService.findById(submissionId).ifPresent(s -> {
+                SubmissionStatus current = s.getStatus();
+                boolean updated = false;
                 if (event.getDecision() == ReviewDecision.APPROVED) {
-                    s.setStatus(SubmissionStatus.PROCESSED);
+                    if (current != SubmissionStatus.PROCESSED) {
+                        s.markProcessed();
+                        updated = true;
+                    }
                 } else if (event.getDecision() == ReviewDecision.REJECTED) {
-                    s.setStatus(SubmissionStatus.REJECTED);
+                    if (current != SubmissionStatus.REJECTED) {
+                        s.markRejected();
+                        updated = true;
+                    }
                 } else {
-                    // For NO_MATCH / FLAGGED keep as PROCESSED to indicate manual review completed
-                    s.setStatus(SubmissionStatus.PROCESSED);
+                    // For NO_MATCH / FLAGGED treat as processed (manual review completed)
+                    if (current != SubmissionStatus.PROCESSED && current != SubmissionStatus.REJECTED) {
+                        s.markProcessed();
+                        updated = true;
+                    }
                 }
-                submissionCommandService.update(s);
-                // Metrics: count processed/rejected reviews
+                if (updated) {
+                    submissionCommandService.update(s);
+                }
+                // Metrics: count processed/rejected reviews (record only when applied)
                 try {
-                    meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name(), "submission", submissionId.toString()).increment();
+                    if (updated) {
+                        meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name(), "submission", submissionId.toString()).increment();
+                    }
                 } catch (Exception ex) {
                     log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
                 }
