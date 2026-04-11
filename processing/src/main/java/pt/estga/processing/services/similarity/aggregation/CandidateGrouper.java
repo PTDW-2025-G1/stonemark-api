@@ -1,4 +1,4 @@
-package pt.estga.processing.services.similarity.helpers.aggregation;
+package pt.estga.processing.services.similarity.aggregation;
 
 import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.Mark;

@@ -1,4 +1,4 @@
-package pt.estga.processing.services.similarity.helpers;
+package pt.estga.processing.services.similarity;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

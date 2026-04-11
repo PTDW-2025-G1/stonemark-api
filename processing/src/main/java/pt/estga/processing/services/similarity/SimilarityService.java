@@ -16,8 +16,7 @@ import java.util.concurrent.TimeUnit;
 import jakarta.annotation.PostConstruct;
 import pt.estga.processing.models.AggregationResult;
 import pt.estga.processing.models.SanitizationResult;
-import pt.estga.processing.services.similarity.helpers.*;
-import pt.estga.processing.services.similarity.helpers.aggregation.MarkAggregator;
+import pt.estga.processing.services.similarity.aggregation.MarkAggregator;
 
 @Service
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package pt.estga.processing.services.similarity.helpers.aggregation;
+package pt.estga.processing.services.similarity.aggregation;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

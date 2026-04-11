@@ -1,4 +1,4 @@
-package pt.estga.processing.services.similarity.helpers;
+package pt.estga.processing.services.similarity;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
