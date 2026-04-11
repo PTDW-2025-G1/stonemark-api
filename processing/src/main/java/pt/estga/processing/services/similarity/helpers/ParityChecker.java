@@ -7,7 +7,7 @@ import jakarta.annotation.PostConstruct;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
-import pt.estga.processing.config.ProcessingProperties;
+import pt.estga.processing.config.ParityPolicy;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.List;
@@ -26,17 +26,17 @@ import java.util.stream.Collectors;
 public class ParityChecker {
 
     private final MarkEvidenceRepository evidenceRepository;
-    private final ProcessingProperties properties;
-    //  Configuration values
+    private final ParityPolicy parityPolicy;
+    // Cached configuration values
     private boolean parityAsyncLocal;
     private int paritySampleSizeLocal;
     private double parityToleranceLocal;
 
     @PostConstruct
     void initLocalProperties() {
-        this.parityAsyncLocal = properties.isParityAsync();
-        this.paritySampleSizeLocal = Math.max(1, properties.getParitySampleSize());
-        this.parityToleranceLocal = properties.getParityTolerance();
+        this.parityAsyncLocal = parityPolicy.isAsync();
+        this.paritySampleSizeLocal = Math.max(1, parityPolicy.getSampleSize());
+        this.parityToleranceLocal = parityPolicy.getTolerance();
     }
 
     private static final ExecutorService parityExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {

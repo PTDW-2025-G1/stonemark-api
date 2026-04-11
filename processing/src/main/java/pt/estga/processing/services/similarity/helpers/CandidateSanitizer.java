@@ -1,7 +1,9 @@
 package pt.estga.processing.services.similarity.helpers;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
+import pt.estga.processing.config.SanitizationPolicy;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.SanitizationResult;
 
@@ -13,7 +15,10 @@ import java.util.stream.Collectors;
  * instances and returns counts useful for orchestration.
  */
 @Service
+@RequiredArgsConstructor
 public class CandidateSanitizer {
+
+    private final SanitizationPolicy policy;
 
     public SanitizationResult sanitize(List<MarkEvidenceDistanceProjection> hits) {
         if (hits == null || hits.isEmpty()) return new SanitizationResult(List.of(), Collections.emptySet(), 0, 0, 0);
@@ -27,7 +32,7 @@ public class CandidateSanitizer {
             if (raw == null || raw.isNaN()) { invalid++; continue; }
             double sim = raw;
             if (!Double.isFinite(sim)) { invalid++; continue; }
-            if (sim > 1.0 || sim < 0.0) { outOfRange++; sim = Math.max(0.0, Math.min(1.0, sim)); }
+            if (sim > policy.getMaxSimilarity() || sim < policy.getMinSimilarity()) { outOfRange++; sim = Math.max(policy.getMinSimilarity(), Math.min(policy.getMaxSimilarity(), sim)); }
             UUID eid = p.getId();
             Long occ;
             try { occ = p.getOccurrenceId(); } catch (Throwable t) { occ = null; }

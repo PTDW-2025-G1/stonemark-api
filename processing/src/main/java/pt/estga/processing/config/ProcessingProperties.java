@@ -12,6 +12,13 @@ import org.springframework.stereotype.Component;
  * supported via nested placeholders so both kebab-case and camelCase keys
  * resolve correctly. Defaults mirror the previous hard-coded values.
  */
+/**
+ * Deprecated configuration holder.
+ *
+ * Policies now read configuration directly via constructor @Value injection.
+ * This class remains for backward compatibility but will be removed in future.
+ */
+@Deprecated
 @Getter
 @Component
 public class ProcessingProperties {
@@ -27,6 +34,12 @@ public class ProcessingProperties {
 
     @Value("${processing.similarity.per-mark-decay:0.5}")
     private double perMarkDecay;
+
+    @Value("${processing.similarity.min-similarity:0.0}")
+    private double minSimilarity;
+
+    @Value("${processing.similarity.max-similarity:1.0}")
+    private double maxSimilarity;
 
     @Value("${processing.similarity.parity-check.enabled:false}")
     private boolean parityEnabled;

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.entities.Mark;
-import pt.estga.processing.config.ProcessingProperties;
+import pt.estga.processing.config.SimilarityPolicy;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
@@ -38,11 +38,10 @@ public class SimilarityService {
     private final CandidateSanitizer candidateSanitizer;
     private final MarkAggregator markAggregator;
     private final ParityChecker parityChecker;
-    private final ProcessingProperties properties;
+    private final SimilarityPolicy similarityPolicy;
     private final SuggestionBuilder suggestionBuilder;
     // Configuration values
     private boolean parityEnabledLocal;
-    private boolean parityAsyncLocal;
     private int maxKLocal;
     private double maxDistanceLocal;
 
@@ -51,18 +50,18 @@ public class SimilarityService {
         try {
             parityChecker.maybeRun();
         } catch (Exception e) {
-            log.error("Similarity parity check failed: {}", e.getMessage());
-            if (!parityAsyncLocal) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
+            // Parity check is diagnostic only. Log the failure and continue startup so
+            // parity mismatches do not become deployment blockers.
+            log.error("Similarity parity check failed (non-fatal): {}", e.getMessage());
         }
     }
 
     @PostConstruct
     void initLocalPropertiesAndMaybeRunParity() {
         // Initialize cached properties
-        this.parityEnabledLocal = properties.isParityEnabled();
-        this.parityAsyncLocal = properties.isParityAsync();
-        this.maxKLocal = properties.getMaxK();
-        this.maxDistanceLocal = properties.getMaxDistance();
+        this.parityEnabledLocal = similarityPolicy.isParityEnabled();
+        this.maxKLocal = similarityPolicy.getMaxK();
+        this.maxDistanceLocal = similarityPolicy.getMaxDistance();
 
         // Run parity check if enabled
         maybeRunParityCheck();

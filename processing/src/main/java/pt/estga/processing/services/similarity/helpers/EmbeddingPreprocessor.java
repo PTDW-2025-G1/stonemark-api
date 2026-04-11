@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
-import pt.estga.processing.config.ProcessingProperties;
+import pt.estga.processing.config.EmbeddingPolicy;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.shared.utils.VectorUtils;
 
@@ -19,13 +19,13 @@ import java.util.Optional;
 @Slf4j
 public class EmbeddingPreprocessor {
 
-    private final ProcessingProperties properties;
+    private final EmbeddingPolicy embeddingPolicy;
     // Configuration values
     private int expectedEmbeddingDimensionLocal;
 
     @PostConstruct
     void initLocalProperties() {
-        this.expectedEmbeddingDimensionLocal = properties.getEmbeddingDimension();
+        this.expectedEmbeddingDimensionLocal = embeddingPolicy.getDimension();
     }
 
     /**
