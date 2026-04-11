@@ -7,8 +7,9 @@ import java.util.*;
 public class FanOutResolver {
 
     public Map<java.util.UUID, Integer> computeFanOut(Map<Long, List<CandidateEvidence>> dedupedByMark) {
+        if (dedupedByMark == null) throw new IllegalArgumentException("dedupedByMark must not be null");
         Map<java.util.UUID, Set<Long>> evidenceToMarks = new HashMap<>();
-        if (dedupedByMark == null || dedupedByMark.isEmpty()) return Collections.emptyMap();
+        if (dedupedByMark.isEmpty()) return Collections.emptyMap();
 
         for (Map.Entry<Long, List<CandidateEvidence>> e : dedupedByMark.entrySet()) {
             Long markId = e.getKey();
@@ -18,7 +19,7 @@ public class FanOutResolver {
                 if (ce == null) continue;
                 java.util.UUID id = ce.evidenceId();
                 if (id == null) continue;
-                evidenceToMarks.computeIfAbsent(id, _k -> new HashSet<>()).add(markId);
+                evidenceToMarks.computeIfAbsent(id, k -> new HashSet<>()).add(markId);
             }
         }
 

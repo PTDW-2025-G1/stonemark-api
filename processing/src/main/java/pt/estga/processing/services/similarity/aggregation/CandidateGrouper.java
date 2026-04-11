@@ -39,10 +39,6 @@ public class CandidateGrouper {
             }
         }
 
-        for (List<CandidateEvidence> list : contributionsByMark.values()) {
-            sortGroupsEvidencesDeterministically(list);
-        }
-
         return contributionsByMark;
     }
 
