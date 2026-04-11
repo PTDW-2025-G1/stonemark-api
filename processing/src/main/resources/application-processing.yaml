@@ -11,6 +11,8 @@ processing:
     # Optional parity check on startup (sample-based validation between DB similarity and Java cosine).
     parity-check:
       enabled: false
+      # Run parity check asynchronously on a background thread when enabled.
+      async: true
       # Difference tolerance between DB similarity and Java cosine similarity (absolute)
       tolerance: 0.001
       # How many sample rows to check at startup when parity-check.enabled=true
@@ -27,3 +29,8 @@ processing:
     # Rank blending factor: 0.0 = use similarity only, 1.0 = use DB rank only. Small values (0.05-0.2)
     # preserve ordering information while keeping similarity as the main signal.
     rank-factor: 0.10
+
+  # Embedding configuration
+  embedding:
+    # Expected embedding vector dimension. Set to 0 to disable dimension checks.
+    dimension: 0

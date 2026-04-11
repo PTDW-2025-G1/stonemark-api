@@ -1,7 +1,6 @@
 package pt.estga.processing.services.similarity.helpers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
@@ -35,8 +34,7 @@ public class ParityChecker {
     });
 
     public void maybeRun() {
-        var parity = properties.getSimilarity().getParityCheck();
-        if (parity.isAsync()) {
+        if (properties.isParityAsync()) {
             parityExecutor.submit(() -> { try { run(); } catch (Exception e) { /* log at caller */ } });
         } else {
             run();
@@ -44,7 +42,7 @@ public class ParityChecker {
     }
 
     public void run() {
-        var page = PageRequest.of(0, Math.max(1, properties.getSimilarity().getParityCheck().getSampleSize()));
+        var page = PageRequest.of(0, Math.max(1, properties.getParitySampleSize()));
         var pageRes = evidenceRepository.findAllByEmbeddingIsNotNull(page);
         if (pageRes == null || pageRes.isEmpty()) return;
         for (var ev : pageRes.getContent()) {
@@ -69,7 +67,7 @@ public class ParityChecker {
                 Double javaCos = VectorUtils.cosineSimilarity(emb, otherEmb);
                 if (javaCos == null) continue;
                 double diff = Math.abs(dbSim - javaCos);
-                double parityTolerance = properties.getSimilarity().getParityCheck().getTolerance();
+                double parityTolerance = properties.getParityTolerance();
                 if (diff > parityTolerance) {
                     throw new IllegalStateException(String.format("DB/Java similarity mismatch: db=%.6f java=%.6f diff=%.6f (tolerance=%.6f).", dbSim, javaCos, diff, parityTolerance));
                 }

@@ -1,70 +1,52 @@
 package pt.estga.processing.config;
 
 import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Objects;
-
 /**
- * Application configuration holder for processing-related properties.
- * Maps to properties under the "processing" prefix.
+ * Flattened processing configuration.
+ *
+ * Values are injected via {@code @Value} from properties on the classpath.
+ * Nested keys used previously (e.g. processing.similarity.min-score) are
+ * supported via nested placeholders so both kebab-case and camelCase keys
+ * resolve correctly. Defaults mirror the previous hard-coded values.
  */
 @Getter
 @Component
-@ConfigurationProperties(prefix = "processing")
 public class ProcessingProperties {
 
-    private Similarity similarity = new Similarity();
-    private Embedding embedding = new Embedding();
+    @Value("${processing.similarity.min-score:0.6}")
+    private double minScore;
 
-    public void setSimilarity(Similarity similarity) {
-        this.similarity = Objects.requireNonNullElseGet(similarity, Similarity::new);
-    }
+    @Value("${processing.similarity.use-rank-weighting:true}")
+    private boolean useRankWeighting;
 
-    public void setEmbedding(Embedding embedding) {
-        this.embedding = Objects.requireNonNullElseGet(embedding, Embedding::new);
-    }
+    @Value("${processing.similarity.max-k:200}")
+    private int maxK;
 
-    @Getter
-    public static class Similarity {
-        @Setter
-        private double minScore = 0.6;
-        @Setter
-        private boolean useRankWeighting = true;
-        private ParityCheck parityCheck = new ParityCheck();
-        @Setter
-        private int maxK = 200;
-        @Setter
-        private double perMarkDecay = 0.5;
+    @Value("${processing.similarity.per-mark-decay:0.5}")
+    private double perMarkDecay;
 
-        /**
-         * Return the maximum DB distance corresponding to the configured minScore.
-         * Encapsulating this conversion keeps domain rules in configuration.
-         */
-        public double getMaxDistance() {
-            return Math.max(0.0, 1.0 - minScore);
-        }
+    @Value("${processing.similarity.parity-check.enabled:false}")
+    private boolean parityEnabled;
 
-        public void setParityCheck(ParityCheck parityCheck) {
-            this.parityCheck = Objects.requireNonNullElseGet(parityCheck, ParityCheck::new);
-        }
+    @Value("${processing.similarity.parity-check.async:true}")
+    private boolean parityAsync;
 
-        @Setter
-        @Getter
-        public static class ParityCheck {
-            private boolean enabled = false;
-            private boolean async = true;
-            private double tolerance = 0.001;
-            private int sampleSize = 3;
-        }
-    }
+    @Value("${processing.similarity.parity-check.tolerance:0.001}")
+    private double parityTolerance;
 
-    @Setter
-    @Getter
-    public static class Embedding {
-        private int dimension = 0;
+    @Value("${processing.similarity.parity-check.sample-size:3}")
+    private int paritySampleSize;
 
+    @Value("${processing.embedding.dimension:0}")
+    private int embeddingDimension;
+
+    /**
+     * Return the maximum DB distance corresponding to the configured minScore.
+     */
+    public double getMaxDistance() {
+        return Math.max(0.0, 1.0 - minScore);
     }
 }

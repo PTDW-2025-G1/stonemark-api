@@ -74,7 +74,7 @@ public class MarkAggregator {
             });
 
             int used = 0;
-            double decay = Math.max(0.0, properties.getSimilarity().getPerMarkDecay());
+            double decay = Math.max(0.0, properties.getPerMarkDecay());
             for (int i = 0; i < list.size(); i++) {
                 CandidateEvidence ce = list.get(i);
                 UUID evidenceId = ce.evidenceId();
@@ -90,7 +90,7 @@ public class MarkAggregator {
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
                 double rankScore = 1.0 / (1.0 + (double)i);
-                double signal = simClamped * (properties.getSimilarity().isUseRankWeighting() ? rankScore : 1.0);
+                double signal = simClamped * (properties.isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
                 // Kahan sum for scores

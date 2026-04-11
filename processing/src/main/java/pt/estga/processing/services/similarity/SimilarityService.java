@@ -43,12 +43,12 @@ public class SimilarityService {
 
     @PostConstruct
     void maybeRunParityCheck() {
-        if (!properties.getSimilarity().getParityCheck().isEnabled()) return;
+        if (!properties.isParityEnabled()) return;
         try {
             parityChecker.maybeRun();
         } catch (Exception e) {
             log.error("Similarity parity check failed: {}", e.getMessage());
-            if (!properties.getSimilarity().getParityCheck().isAsync()) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
+            if (!properties.isParityAsync()) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
         }
     }
 
@@ -72,12 +72,12 @@ public class SimilarityService {
         // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
         // and maintain a single source of truth for similarity ranking.
         // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
-        int safeK = Math.max(1, Math.min(k, properties.getSimilarity().getMaxK()));
-        if (k > properties.getSimilarity().getMaxK()) {
+        int safeK = Math.max(1, Math.min(k, properties.getMaxK()));
+        if (k > properties.getMaxK()) {
             try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
-            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, properties.getSimilarity().getMaxK(), safeK);
+            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, properties.getMaxK(), safeK);
         }
-        double maxDistance = properties.getSimilarity().getMaxDistance();
+        double maxDistance = properties.getMaxDistance();
 
         // Fetch DB candidates (DB boundary)
         List<MarkEvidenceDistanceProjection> hits = candidateFetcher.fetchCandidates(vector, safeK, maxDistance);

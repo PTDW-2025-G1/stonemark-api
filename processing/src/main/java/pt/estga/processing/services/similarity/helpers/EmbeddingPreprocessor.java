@@ -29,7 +29,7 @@ public class EmbeddingPreprocessor {
         float[] raw = processing.getEmbedding();
         float[] norm = VectorUtils.normalize(raw);
         if (norm == null || norm.length == 0) return Optional.empty();
-        int expectedEmbeddingDimension = properties.getEmbedding().getDimension();
+        int expectedEmbeddingDimension = properties.getEmbeddingDimension();
         if (expectedEmbeddingDimension > 0 && norm.length != expectedEmbeddingDimension) return Optional.empty();
         // defensive norm check: log a warning when normalization is imperfect
         double n = pt.estga.shared.utils.VectorUtils.l2Norm(norm);
