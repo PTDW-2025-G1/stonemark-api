@@ -28,8 +28,10 @@ public class AggregationPipeline {
     public AggregationState execute(Map<Long, List<CandidateEvidence>> contributionsByMark) {
         Map<Long, List<CandidateEvidence>> normalized = normalizationStage.normalize(contributionsByMark);
 
-        // Compute fan-out based on normalized data (pre-dedup) to capture original mark distribution
-        var fanOutCounts = fanOutResolver.computeFanOut(normalized);
+        // Compute fan-out based on the original input distribution (pre-normalization)
+        // Fan-out must reflect how many marks an evidence originally appeared in
+        // to avoid SPLIT scaling errors caused by later filtering.
+        var fanOutCounts = fanOutResolver.computeFanOut(contributionsByMark);
 
         var dedupResult = deduplicationStage.deduplicate(normalized);
         var deduped = dedupResult.deduped();
