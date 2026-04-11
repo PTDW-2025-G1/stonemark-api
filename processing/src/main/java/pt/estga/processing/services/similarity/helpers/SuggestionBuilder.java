@@ -49,7 +49,7 @@ public class SuggestionBuilder {
     }
 
     private static @NonNull Map<Long, MarkScore> getLongMarkScoreMap(List<MarkScore> scores) {
-        Map<Long, MarkScore> bestByMark = new LinkedHashMap<>();
+        Map<Long, MarkScore> bestByMark = new TreeMap<>();
         for (MarkScore ms : scores) {
             if (ms == null) continue;
             Long markId = ms.mark() == null ? null : ms.mark().getId();

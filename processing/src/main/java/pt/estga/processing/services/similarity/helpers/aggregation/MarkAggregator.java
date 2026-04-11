@@ -27,7 +27,6 @@ public class MarkAggregator {
     private final AggregationResultBuilder resultBuilder;
 
     public AggregationResult aggregate(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId, int k) {
-        // Build marksById map deterministically and tolerate duplicates
         Map<Long, Mark> marksById = new java.util.TreeMap<>();
         for (Mark m : markByEvidenceId.values()) {
             if (m == null || m.getId() == null) continue;
