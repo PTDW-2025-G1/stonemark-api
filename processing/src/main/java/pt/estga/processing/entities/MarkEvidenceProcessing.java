@@ -56,6 +56,9 @@ public class MarkEvidenceProcessing {
      * Encapsulates state transition so callers don't manipulate the enum directly.
      */
     public void markReviewed() {
-        this.status = ProcessingStatus.REVIEWED;
+        // Idempotent: only change status when necessary.
+        if (this.status != ProcessingStatus.REVIEWED) {
+            this.status = ProcessingStatus.REVIEWED;
+        }
     }
 }

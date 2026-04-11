@@ -5,14 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
@@ -23,7 +21,6 @@ import pt.estga.user.repositories.UserRepository;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import java.time.Instant;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -33,7 +30,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 public class ReviewService {
 
 	private final MarkEvidenceSubmissionQueryService submissionQueryService;
-	private final MarkEvidenceSubmissionCommandService submissionCommandService;
 	private final MarkEvidenceProcessingRepository processingRepository;
 	private final MarkSuggestionRepository suggestionRepository;
 	private final MarkRepository markRepository;
@@ -43,6 +39,9 @@ public class ReviewService {
 
 	@Value("${review.allow-non-suggested:false}")
 	private boolean allowNonSuggested;
+
+	@Value("${review.allow-empty-review:false}")
+	private boolean allowEmptyReview;
 
 	/**
 	 * Accept a suggested mark for the given submission.
@@ -58,6 +57,11 @@ public class ReviewService {
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
 		if (!processing.isReadyForReview()) {
 			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
+		}
+
+		// Prevent reviewing when there are no suggestions unless explicitly allowed
+		if (!allowEmptyReview && (processing.getSuggestions() == null || processing.getSuggestions().isEmpty())) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " because there are no suggestions available");
 		}
 
 		// Idempotency: don't allow a second review
@@ -117,6 +121,11 @@ public class ReviewService {
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
 		if (!processing.isReadyForReview()) {
 			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is ready for review");
+		}
+
+		// Prevent reviewing when there are no suggestions unless explicitly allowed
+		if (!allowEmptyReview && (processing.getSuggestions() == null || processing.getSuggestions().isEmpty())) {
+			throw new IllegalStateException("Cannot review submission " + submissionId + " because there are no suggestions available");
 		}
 
 		// Idempotency
