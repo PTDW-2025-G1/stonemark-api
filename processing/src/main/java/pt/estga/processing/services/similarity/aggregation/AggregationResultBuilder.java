@@ -1,5 +1,6 @@
 package pt.estga.processing.services.similarity.aggregation;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.models.AggregationState;
@@ -9,6 +10,7 @@ import pt.estga.processing.models.AggregationResult;
 import java.util.*;
 
 @Component
+@Slf4j
 public class AggregationResultBuilder {
 
     public AggregationResult build(AggregationState state, Map<Long, Mark> marksById, int k, int missingMarkMappings) {
@@ -45,10 +47,20 @@ public class AggregationResultBuilder {
 
         List<MarkScore> limited = (k > 0 && topScores.size() > k) ? topScores.subList(0, k) : topScores;
 
-        // Provide raw score maps for debugging; expose as unmodifiable copies to callers
+        // Provide raw score maps for debugging; expose as unmodifiable copies to callers.
+        // NOTE: rawScores and weightSums are diagnostics only — they should not be
+        // used as authoritative inputs for business logic outside of testing/inspection.
         Map<Long, Double> rawScoresCopy = Collections.unmodifiableMap(new TreeMap<>(state.scores()));
         Map<Long, Double> weightSumsCopy = Collections.unmodifiableMap(new TreeMap<>(state.weightSums()));
 
-        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), state.fanOutExpandedContributions(), rawScoresCopy, weightSumsCopy, missingMarkMappings, state.weightAnomalies());
+        // Emit debug logs to aid diagnosis of anomalies
+        if (log.isDebugEnabled()) {
+            if (state.weightAnomalies() > 0 || state.fanOutContributionCount() > 0) {
+                log.debug("Aggregation diagnostics - duplicates={}, perMarkContrib={}, perMarkDecayApplied={}, fanOutContribCount={}, weightAnomalies={}",
+                        state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), state.fanOutContributionCount(), state.weightAnomalies());
+            }
+        }
+
+        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied(), state.fanOutContributionCount(), rawScoresCopy, weightSumsCopy, missingMarkMappings, state.weightAnomalies());
     }
 }

@@ -12,7 +12,7 @@ public record AggregationResult(
         int duplicates,
         int perMarkContributions,
         int perMarkDecayApplied,
-        int fanOutExpandedContributions,
+        int fanOutContributionCount,
         Map<Long, Double> rawScores,
         Map<Long, Double> weightSums,
         int missingMarkMappings,

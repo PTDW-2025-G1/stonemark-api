@@ -26,7 +26,7 @@ public class ScoreCalculator {
         int duplicates = 0;
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
-        int fanOutExpandedContributions = 0;
+        int fanOutContributionCount = 0;
 
         double decay = Math.max(0.0, scoringPolicy.getPerMarkDecay());
 
@@ -58,7 +58,7 @@ public class ScoreCalculator {
                 AggregationKey key = AggregationKey.of(evidenceId, ce.occurrenceId(), markId);
                 if (!seenPairs.add(key)) { duplicates++; continue; }
 
-                if (Double.isNaN(similarity)) continue;
+                if (!Double.isFinite(similarity)) continue;
                 double perMarkMultiplier = Math.pow(decay, used);
                 if (used > 0) perMarkDecayApplied++;
                 perMarkContributions++;
@@ -70,7 +70,7 @@ public class ScoreCalculator {
 
                 int fanOut = fanOutCounts.getOrDefault(evidenceId, 1);
                 double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / Math.max(1, fanOut) : 1.0;
-                if (fanOut > 1) fanOutExpandedContributions++;
+                if (fanOut > 1) fanOutContributionCount++;
 
                 kahanScoresSum(scores, scoreComps, markId, contribution * scale);
                 kahanScoresSum(weightSums, weightComps, markId, perMarkMultiplier * scale);
@@ -86,7 +86,7 @@ public class ScoreCalculator {
             if (w == null || w <= MIN_WEIGHT) weightAnomalies++;
         }
 
-        return new AggregationState(scores, weightSums, duplicates, perMarkContributions, perMarkDecayApplied, fanOutExpandedContributions, weightAnomalies);
+        return new AggregationState(scores, weightSums, duplicates, perMarkContributions, perMarkDecayApplied, fanOutContributionCount, weightAnomalies);
     }
 
     private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {

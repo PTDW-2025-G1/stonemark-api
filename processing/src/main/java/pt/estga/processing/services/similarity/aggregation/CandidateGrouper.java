@@ -9,6 +9,13 @@ import java.util.*;
 /**
  * Groups CandidateEvidence by mark id and sorts each group's evidences by
  * similarity and occurrence to produce a deterministic ordering for aggregation.
+ * <p>
+ * Note on fan-out: this component expands one evidence into contributions for
+ * each associated mark (one evidence -> N contributions). The ScoreCalculator
+ * must apply the chosen fan-out scaling (for example SPLIT 1/N) to avoid
+ * accidental score inflation. This invariant is deliberate; do not change the
+ * expansion behavior here without coordinating a corresponding change in the
+ * scoring logic.
  */
 @Component
 public class CandidateGrouper {
