@@ -50,12 +50,12 @@ public class MarkScoringStage {
                 perMarkContributions++;
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
-                double rankScore = 1.0 / (1.0 + (double)i);
+                double rankScore = computeRankScore(i);
                 double signal = simClamped * (scoringPolicy.isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
-                int fanOut = fanOutCounts.getOrDefault(evidenceId, 1);
-                double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / Math.max(1, fanOut) : 1.0;
+                int fanOut = FanOutResolver.resolveFanOut(fanOutCounts, evidenceId);
+                double scale = scoringPolicy.getFanOutStrategy() == FanOutStrategy.SPLIT ? 1.0 / (double) fanOut : 1.0;
                 if (fanOut > 1) fanOutContributionCount++;
 
                 KahanAccumulator.accumulate(scoreStates, markId, contribution * scale);
@@ -70,12 +70,20 @@ public class MarkScoringStage {
         Map<Long, Double> correctedWeightSums = KahanAccumulator.toCorrectedMap(weightStates);
 
         int weightAnomalies = 0;
-        final double MIN_WEIGHT = 1e-12;
+        final double MIN_ABS = 1e-12;
+        final double REL_EPS = 1e-12;
+        double maxWeight = 0.0;
+        for (Double w : correctedWeightSums.values()) if (w != null && Double.isFinite(w)) maxWeight = Math.max(maxWeight, Math.abs(w));
+        double threshold = Math.max(MIN_ABS, maxWeight * REL_EPS);
         for (Map.Entry<Long, Double> e : correctedWeightSums.entrySet()) {
             Double w = e.getValue();
-            if (w == null || w <= MIN_WEIGHT) weightAnomalies++;
+            if (w == null || !Double.isFinite(w) || Math.abs(w) <= threshold) weightAnomalies++;
         }
 
         return new ScoringResult(correctedScores, correctedWeightSums, perMarkContributions, perMarkDecayApplied, fanOutContributionCount, weightAnomalies);
+    }
+
+    private static double computeRankScore(int i) {
+        return 1.0 / (1.0 + (double) i);
     }
 }
