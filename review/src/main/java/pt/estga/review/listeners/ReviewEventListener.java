@@ -5,10 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 
 @Component
@@ -25,9 +27,16 @@ public class ReviewEventListener {
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.getSubmissionId();
         try {
-            // Mark submission as PROCESSED for both accepted and rejected to keep lifecycle consistent
+            // Set submission status according to review decision. Use explicit domain statuses
             submissionQueryService.findById(submissionId).ifPresent(s -> {
-                s.setStatus(pt.estga.intake.enums.SubmissionStatus.PROCESSED);
+                if (event.getDecision() == ReviewDecision.APPROVED) {
+                    s.setStatus(SubmissionStatus.PROCESSED);
+                } else if (event.getDecision() == ReviewDecision.REJECTED) {
+                    s.setStatus(SubmissionStatus.REJECTED);
+                } else {
+                    // For NO_MATCH / FLAGGED keep as PROCESSED to indicate manual review completed
+                    s.setStatus(SubmissionStatus.PROCESSED);
+                }
                 submissionCommandService.update(s);
             });
 
