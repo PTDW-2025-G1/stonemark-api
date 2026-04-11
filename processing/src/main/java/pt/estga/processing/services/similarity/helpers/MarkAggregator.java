@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity.helpers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.models.AggregationResult;
@@ -22,6 +23,15 @@ import java.util.*;
 public class MarkAggregator {
 
     private final ProcessingProperties properties;
+    // Configuration values
+    private double perMarkDecayLocal;
+    private boolean useRankWeightingLocal;
+
+    @PostConstruct
+    void initLocalProperties() {
+        this.perMarkDecayLocal = properties.getPerMarkDecay();
+        this.useRankWeightingLocal = properties.isUseRankWeighting();
+    }
 
     public AggregationResult aggregate(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId, int k) {
         Map<Long, Double> scores = new TreeMap<>();
@@ -74,7 +84,7 @@ public class MarkAggregator {
             });
 
             int used = 0;
-            double decay = Math.max(0.0, properties.getPerMarkDecay());
+            double decay = Math.max(0.0, perMarkDecayLocal);
             for (int i = 0; i < list.size(); i++) {
                 CandidateEvidence ce = list.get(i);
                 UUID evidenceId = ce.evidenceId();
@@ -90,7 +100,7 @@ public class MarkAggregator {
 
                 double simClamped = Math.max(0.0, Math.min(1.0, similarity));
                 double rankScore = 1.0 / (1.0 + (double)i);
-                double signal = simClamped * (properties.isUseRankWeighting() ? rankScore : 1.0);
+                double signal = simClamped * (useRankWeightingLocal ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
                 // Kahan sum for scores

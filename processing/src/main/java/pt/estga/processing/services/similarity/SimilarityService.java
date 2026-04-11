@@ -40,16 +40,32 @@ public class SimilarityService {
     private final ParityChecker parityChecker;
     private final ProcessingProperties properties;
     private final SuggestionBuilder suggestionBuilder;
+    // Configuration values
+    private boolean parityEnabledLocal;
+    private boolean parityAsyncLocal;
+    private int maxKLocal;
+    private double maxDistanceLocal;
 
-    @PostConstruct
     void maybeRunParityCheck() {
-        if (!properties.isParityEnabled()) return;
+        if (!parityEnabledLocal) return;
         try {
             parityChecker.maybeRun();
         } catch (Exception e) {
             log.error("Similarity parity check failed: {}", e.getMessage());
-            if (!properties.isParityAsync()) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
+            if (!parityAsyncLocal) throw new IllegalStateException("Similarity parity check failed: " + e.getMessage(), e);
         }
+    }
+
+    @PostConstruct
+    void initLocalPropertiesAndMaybeRunParity() {
+        // Initialize cached properties
+        this.parityEnabledLocal = properties.isParityEnabled();
+        this.parityAsyncLocal = properties.isParityAsync();
+        this.maxKLocal = properties.getMaxK();
+        this.maxDistanceLocal = properties.getMaxDistance();
+
+        // Run parity check if enabled
+        maybeRunParityCheck();
     }
 
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
@@ -72,12 +88,12 @@ public class SimilarityService {
         // Always use DB-backed similarity. Java in-process engine has been removed to avoid divergence
         // and maintain a single source of truth for similarity ranking.
         // Clamp k to a safe maximum to avoid extremely large IN(...) queries and planner issues.
-        int safeK = Math.max(1, Math.min(k, properties.getMaxK()));
-        if (k > properties.getMaxK()) {
+        int safeK = Math.max(1, Math.min(k, maxKLocal));
+        if (k > maxKLocal) {
             try { meterRegistry.counter("processing.suggestions.k_clamped.count", "engine", "db").increment(); } catch (Exception ignored) {}
-            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, properties.getMaxK(), safeK);
+            log.warn("Requested k={} exceeds maxK={}, clamping to {}", k, maxKLocal, safeK);
         }
-        double maxDistance = properties.getMaxDistance();
+        double maxDistance = maxDistanceLocal;
 
         // Fetch DB candidates (DB boundary)
         List<MarkEvidenceDistanceProjection> hits = candidateFetcher.fetchCandidates(vector, safeK, maxDistance);

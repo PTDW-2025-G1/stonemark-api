@@ -3,6 +3,7 @@ package pt.estga.processing.services.similarity.helpers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.shared.utils.VectorUtils;
@@ -19,6 +20,13 @@ import java.util.Optional;
 public class EmbeddingPreprocessor {
 
     private final ProcessingProperties properties;
+    // Configuration values
+    private int expectedEmbeddingDimensionLocal;
+
+    @PostConstruct
+    void initLocalProperties() {
+        this.expectedEmbeddingDimensionLocal = properties.getEmbeddingDimension();
+    }
 
     /**
      * Normalize embedding and return a DB vector literal if valid. Returns empty when
@@ -29,7 +37,7 @@ public class EmbeddingPreprocessor {
         float[] raw = processing.getEmbedding();
         float[] norm = VectorUtils.normalize(raw);
         if (norm == null || norm.length == 0) return Optional.empty();
-        int expectedEmbeddingDimension = properties.getEmbeddingDimension();
+        int expectedEmbeddingDimension = expectedEmbeddingDimensionLocal;
         if (expectedEmbeddingDimension > 0 && norm.length != expectedEmbeddingDimension) return Optional.empty();
         // defensive norm check: log a warning when normalization is imperfect
         double n = pt.estga.shared.utils.VectorUtils.l2Norm(norm);
