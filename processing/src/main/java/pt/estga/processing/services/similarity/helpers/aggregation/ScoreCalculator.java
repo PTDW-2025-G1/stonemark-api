@@ -54,25 +54,8 @@ public class ScoreCalculator {
                 double signal = simClamped * (scoringPolicy.isUseRankWeighting() ? rankScore : 1.0);
                 double contribution = signal * perMarkMultiplier;
 
-                // Kahan sum for scores
-                double s = scores.getOrDefault(markId, 0.0);
-                double sc = scoreComps.getOrDefault(markId, 0.0);
-                double y = contribution - sc;
-                double t = s + y;
-                sc = (t - s) - y;
-                s = t;
-                scores.put(markId, s);
-                scoreComps.put(markId, sc);
-
-                // Kahan sum for weights
-                double w = weightSums.getOrDefault(markId, 0.0);
-                double wc = weightComps.getOrDefault(markId, 0.0);
-                double wy = perMarkMultiplier - wc;
-                double wt = w + wy;
-                wc = (wt - w) - wy;
-                w = wt;
-                weightSums.put(markId, w);
-                weightComps.put(markId, wc);
+                kahanScoresSum(scores, scoreComps, markId, contribution);
+                kahanScoresSum(weightSums, weightComps, markId, perMarkMultiplier);
 
                 used++;
             }
@@ -81,19 +64,23 @@ public class ScoreCalculator {
         return new AggregationState(scores, weightSums, duplicates, perMarkContributions, perMarkDecayApplied);
     }
 
-    public static class AggregationState {
-        public final Map<Long, Double> scores;
-        public final Map<Long, Double> weightSums;
-        public final int duplicates;
-        public final int perMarkContributions;
-        public final int perMarkDecayApplied;
+    private void kahanScoresSum(Map<Long, Double> weightSums, Map<Long, Double> weightComps, Long markId, double perMarkMultiplier) {
+        double w = weightSums.getOrDefault(markId, 0.0);
+        double wc = weightComps.getOrDefault(markId, 0.0);
+        double wy = perMarkMultiplier - wc;
+        double wt = w + wy;
+        wc = (wt - w) - wy;
+        w = wt;
+        weightSums.put(markId, w);
+        weightComps.put(markId, wc);
+    }
 
-        public AggregationState(Map<Long, Double> scores, Map<Long, Double> weightSums, int duplicates, int perMarkContributions, int perMarkDecayApplied) {
-            this.scores = scores;
-            this.weightSums = weightSums;
-            this.duplicates = duplicates;
-            this.perMarkContributions = perMarkContributions;
-            this.perMarkDecayApplied = perMarkDecayApplied;
-        }
+    public record AggregationState(
+            Map<Long, Double> scores,
+            Map<Long, Double> weightSums,
+            int duplicates,
+            int perMarkContributions,
+            int perMarkDecayApplied
+    ) {
     }
 }

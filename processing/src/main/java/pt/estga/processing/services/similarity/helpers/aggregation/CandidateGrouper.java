@@ -14,7 +14,9 @@ import java.util.*;
 public class CandidateGrouper {
 
     public Map<Long, List<CandidateEvidence>> groupAndSort(List<CandidateEvidence> candidates, Map<UUID, Mark> markByEvidenceId) {
-        Map<Long, List<CandidateEvidence>> contributionsByMark = new HashMap<>();
+        // Use a TreeMap so the grouping keys (mark ids) are iterated in sorted order,
+        // ensuring deterministic behavior across runs regardless of input ordering.
+        Map<Long, List<CandidateEvidence>> contributionsByMark = new TreeMap<>();
         if (candidates == null || candidates.isEmpty()) return contributionsByMark;
 
         for (CandidateEvidence c : candidates) {

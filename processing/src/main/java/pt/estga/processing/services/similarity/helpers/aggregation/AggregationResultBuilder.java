@@ -12,10 +12,10 @@ public class AggregationResultBuilder {
 
     public AggregationResult build(ScoreCalculator.AggregationState state, Map<Long, Mark> marksById, int k) {
         List<MarkScore> topScores = new ArrayList<>();
-        for (Map.Entry<Long, Double> entry : state.scores.entrySet()) {
+        for (Map.Entry<Long, Double> entry : state.scores().entrySet()) {
             Long markId = entry.getKey();
             double totalScore = entry.getValue();
-            Double weight = state.weightSums.get(markId);
+            Double weight = state.weightSums().get(markId);
             if (weight == null || weight == 0.0) {
                 // data issue: missing weight for markId
                 continue;
@@ -41,6 +41,6 @@ public class AggregationResultBuilder {
 
         List<MarkScore> limited = (k > 0 && topScores.size() > k) ? topScores.subList(0, k) : topScores;
 
-        return new AggregationResult(limited, state.duplicates, state.perMarkContributions, state.perMarkDecayApplied);
+        return new AggregationResult(limited, state.duplicates(), state.perMarkContributions(), state.perMarkDecayApplied());
     }
 }

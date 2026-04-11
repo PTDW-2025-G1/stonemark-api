@@ -40,7 +40,7 @@ public class EmbeddingPreprocessor {
         int expectedEmbeddingDimension = expectedEmbeddingDimensionLocal;
         if (expectedEmbeddingDimension > 0 && norm.length != expectedEmbeddingDimension) return Optional.empty();
         // defensive norm check: log a warning when normalization is imperfect
-        double n = pt.estga.shared.utils.VectorUtils.l2Norm(norm);
+        double n = VectorUtils.l2Norm(norm);
         if (Double.isNaN(n) || Math.abs(n - 1.0) > 1e-3) {
             log.warn("Processing embedding not normalized after normalization attempt (norm={}) — continuing with normalized vector", n);
         }
