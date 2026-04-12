@@ -9,7 +9,7 @@ public class VectorConverter implements AttributeConverter<float[], PGvector> {
 
     @Override
     public PGvector convertToDatabaseColumn(float[] attribute) {
-        if (attribute == null) return null;
+        if (attribute == null || attribute.length == 0) return null;
         return new PGvector(attribute);
     }
 
