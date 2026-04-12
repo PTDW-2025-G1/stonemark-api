@@ -3,9 +3,10 @@ package pt.estga.monument;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
+import pt.estga.monument.converters.MonumentValidationStateConverter;
 import pt.estga.shared.entities.BaseEntity;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.monument.enums.MonumentStatus;
+import pt.estga.monument.enums.MonumentValidationState;
 
 @Entity
 @NoArgsConstructor
@@ -36,6 +37,9 @@ public class Monument extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision division;
 
-    private MonumentStatus validationState;
+    @Builder.Default
+    @Convert(converter = MonumentValidationStateConverter.class)
+    @Column(nullable = false)
+    private MonumentValidationState validationState = MonumentValidationState.VERIFIED;
 
 }

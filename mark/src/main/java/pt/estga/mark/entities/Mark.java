@@ -8,7 +8,7 @@ import pt.estga.shared.entities.BaseEntity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import pt.estga.mark.enums.ValidationState;
+import pt.estga.mark.enums.MarkValidationState;
 
 @Entity
 @NoArgsConstructor
@@ -40,6 +40,6 @@ public class Mark extends BaseEntity {
     @Builder.Default
     @Convert(converter = ValidationStateConverter.class)
     @Column(nullable = false)
-    private ValidationState validationState = ValidationState.PROVISIONAL;
+    private MarkValidationState validationState = MarkValidationState.PROVISIONAL;
 
 }

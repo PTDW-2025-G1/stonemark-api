@@ -8,7 +8,7 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.monument.enums.MonumentStatus;
+import pt.estga.monument.enums.MonumentValidationState;
 import org.locationtech.jts.geom.Point;
 
 @Service
@@ -71,7 +71,7 @@ public class MonumentCommandService {
         Monument m = Monument.builder()
                 .name(title)
                 .location(coordinates)
-                .validationState(MonumentStatus.PHANTOM)
+                .validationState(MonumentValidationState.PHANTOM)
                 .build();
 
         return repository.save(m);
