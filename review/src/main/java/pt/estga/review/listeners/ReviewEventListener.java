@@ -10,7 +10,11 @@ import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.mark.services.occurrence.MarkOccurrenceCommandService;
+import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
+
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -21,6 +25,7 @@ public class ReviewEventListener {
     private final MarkEvidenceSubmissionCommandService submissionCommandService;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
+    private final MarkOccurrenceCommandService occurrenceCommandService;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleReviewCompleted(ReviewCompletedEvent event) {
@@ -65,6 +70,21 @@ public class ReviewEventListener {
                 processingRepository.save(p);
                 log.info("Processing {} marked REVIEWED for submission {}", p.getId(), submissionId);
             });
+
+            // Link review to occurrence and attach evidence (if applicable)
+            try {
+                final UUID[] fileHolder = new UUID[1];
+                submissionQueryService.findById(submissionId).ifPresent(sub -> {
+                    if (sub.getOriginalMediaFile() != null) {
+                        fileHolder[0] = sub.getOriginalMediaFile().getId();
+                    }
+                });
+
+                boolean approved = event.decision() == ReviewDecision.APPROVED;
+                occurrenceCommandService.linkReviewToOccurrence(fileHolder[0], event.markId(), event.monumentId(), approved);
+            } catch (Exception ex) {
+                log.error("Failed to link review {} to occurrence: {}", event.reviewId(), ex.getMessage(), ex);
+            }
         } catch (Exception e) {
             // Listeners should not throw - log and continue
             log.error("Failed to apply post-review state transitions for submission {}: {}", submissionId, e.getMessage(), e);
