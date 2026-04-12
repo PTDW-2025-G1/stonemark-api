@@ -2,8 +2,8 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.mark.converters.ValidationStateConverter;
-import pt.estga.mark.enums.MarkValidationState;
+import pt.estga.shared.converters.ValidationStateConverter;
+import pt.estga.shared.enums.ValidationState;
 import pt.estga.monument.Monument;
 import pt.estga.shared.entities.BaseEntity;
 
@@ -36,6 +36,6 @@ public class MarkOccurrence extends BaseEntity {
     @Builder.Default
     @Convert(converter = ValidationStateConverter.class)
     @Column(nullable = false)
-    private MarkValidationState validationState = MarkValidationState.PROVISIONAL;
+    private ValidationState validationState = ValidationState.PROVISIONAL;
 
 }
