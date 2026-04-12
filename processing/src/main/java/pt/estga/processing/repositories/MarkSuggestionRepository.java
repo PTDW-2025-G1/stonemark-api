@@ -1,6 +1,8 @@
 package pt.estga.processing.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.processing.entities.MarkSuggestion;
 
@@ -20,4 +22,7 @@ public interface MarkSuggestionRepository extends JpaRepository<MarkSuggestion, 
 	boolean existsByProcessingIdAndMarkId(UUID processingId, Long markId);
 
     long countByProcessingId(UUID processingId);
+
+	@Query("SELECT MAX(s.confidence) FROM MarkSuggestion s WHERE s.processing.id = :processingId")
+	Double findMaxConfidenceByProcessingId(@Param("processingId") UUID processingId);
 }
