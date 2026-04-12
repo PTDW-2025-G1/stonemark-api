@@ -8,6 +8,8 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.monument.enums.MonumentStatus;
+import org.locationtech.jts.geom.Point;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +60,20 @@ public class MonumentCommandService {
                         "Monument with id " + id + " not found"));
 
         repository.softDelete(existing);
+    }
+
+    /**
+     * Create a phantom monument for provisional discovery flows. Coordinates are accepted as
+     * a JTS Point and stored in the entity's location field.
+     */
+    @Transactional
+    public Monument createPhantom(String title, Point coordinates) {
+        Monument m = Monument.builder()
+                .name(title)
+                .location(coordinates)
+                .validationState(MonumentStatus.PHANTOM)
+                .build();
+
+        return repository.save(m);
     }
 }

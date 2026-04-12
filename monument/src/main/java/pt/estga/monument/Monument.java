@@ -5,6 +5,7 @@ import lombok.*;
 import org.locationtech.jts.geom.Point;
 import pt.estga.shared.entities.BaseEntity;
 import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.monument.enums.MonumentStatus;
 
 @Entity
 @NoArgsConstructor
@@ -34,5 +35,7 @@ public class Monument extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision division;
+
+    private MonumentStatus validationState;
 
 }
