@@ -1,86 +1,75 @@
 package pt.estga.review.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.review.dtos.AcceptNewMarkRequest;
+import pt.estga.review.dtos.ReviewResponseDto;
+import pt.estga.review.dtos.SimpleReviewRequest;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.mappers.ReviewMapper;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
-import pt.estga.review.dtos.ReviewRequestDto;
 import pt.estga.review.services.ReviewService;
-import pt.estga.review.entities.MarkEvidenceReview;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/review")
+@RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
-@Tag(name = "Review", description = "Review submissions and accept/reject suggestions")
-@Slf4j
+@Tag(name = "Review", description = "Review submissions and manage mark suggestions")
 public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewMapper mapper;
     private final MarkSuggestionQueryService suggestionQueryService;
 
-    /**
-     * Accept a suggestion for the submission. Expects markId as a request parameter.
-     */
     @PostMapping("/{submissionId}/accept")
-    public ResponseEntity<?> acceptSuggestion(@PathVariable Long submissionId, @RequestParam Long markId, @RequestBody(required = false) ReviewRequestDto body) {
-        try {
-            String comment = body == null ? null : body.getComment();
-            MarkEvidenceReview review = reviewService.acceptSuggestion(submissionId, markId, comment);
-            return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(review));
-        } catch (ResourceNotFoundException rnfe) {
-            return ResponseEntity.notFound().build();
-        } catch (IllegalStateException ise) {
-            // e.g. not processed yet or already reviewed
-            log.warn("Conflict while accepting suggestion for submission {}: {}", submissionId, ise.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ise.getMessage());
-        }
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Accept an existing mark suggestion")
+    public ReviewResponseDto acceptSuggestion(
+            @PathVariable Long submissionId,
+            @RequestParam Long markId,
+            @RequestBody(required = false) SimpleReviewRequest request) {
+
+        var comment = request != null ? request.comment() : null;
+        return mapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment));
     }
 
-    /**
-     * Reject all suggestions for the submission.
-     */
+    @PostMapping("/{submissionId}/accept-as-new")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create a new mark and accept the submission")
+    public ReviewResponseDto acceptAsNew(
+            @PathVariable Long submissionId,
+            @Valid @RequestBody AcceptNewMarkRequest request) {
+
+        return mapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment()));
+    }
+
     @PostMapping("/{submissionId}/reject")
-    public ResponseEntity<?> rejectAll(@PathVariable Long submissionId, @RequestBody(required = false) ReviewRequestDto body) {
-        try {
-            String comment = body == null ? null : body.getComment();
-            MarkEvidenceReview review = reviewService.rejectAll(submissionId, comment);
-            return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(review));
-        } catch (ResourceNotFoundException rnfe) {
-            return ResponseEntity.notFound().build();
-        } catch (IllegalStateException ise) {
-            log.warn("Conflict while rejecting suggestions for submission {}: {}", submissionId, ise.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ise.getMessage());
-        }
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Reject all suggestions for this submission")
+    public ReviewResponseDto rejectAll(
+            @PathVariable Long submissionId,
+            @RequestBody(required = false) SimpleReviewRequest request) {
+
+        var comment = request != null ? request.comment() : null;
+        return mapper.toDto(reviewService.rejectAll(submissionId, comment));
     }
 
-    /**
-     * Get current review decision for a submission.
-     */
     @GetMapping("/{submissionId}")
-    public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
-        try {
-            ReviewDecision decision = reviewService.getReviewStatus(submissionId);
-            if (decision == null) return ResponseEntity.notFound().build();
-            return ResponseEntity.ok(decision);
-        } catch (ResourceNotFoundException rnfe) {
-            return ResponseEntity.notFound().build();
-        }
+    public ReviewDecision getReviewStatus(@PathVariable Long submissionId) {
+        ReviewDecision status = reviewService.getReviewStatus(submissionId);
+        if (status == null) throw new pt.estga.sharedweb.exceptions.ResourceNotFoundException("Review not found");
+        return status;
     }
 
-    /**
-     * Return suggestions (with confidence) for the given submission to be shown in the review UI.
-     */
     @GetMapping("/{submissionId}/suggestions")
-    public ResponseEntity<?> getSuggestions(@PathVariable Long submissionId) {
+    public List<?> getSuggestions(@PathVariable Long submissionId) {
+        // Assuming findBySubmissionId returns an Optional<List> or similar
         return suggestionQueryService.findBySubmissionId(submissionId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new pt.estga.sharedweb.exceptions.ResourceNotFoundException("Suggestions not found"));
     }
 }

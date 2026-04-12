@@ -3,3 +3,5 @@
 review:
   allow-non-suggested: false
   allow-empty-review: false
+  new-mark:
+    max-suggestion-confidence: 0.5

@@ -12,12 +12,16 @@ import java.util.UUID;
 import java.util.Optional;
 import java.util.List;
 import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
 
 public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvidenceProcessing, UUID> {
 
 	boolean existsBySubmissionId(Long submissionId);
 
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
+
+	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submission.id = :submissionId")
+	Optional<ProcessingOverviewProjection> findOverviewBySubmissionId(@Param("submissionId") Long submissionId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.submission.id = :submissionId")
