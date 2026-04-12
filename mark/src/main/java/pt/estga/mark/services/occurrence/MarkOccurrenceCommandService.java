@@ -7,6 +7,10 @@ import pt.estga.mark.dtos.MarkOccurrenceRequestDto;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.mappers.MarkOccurrenceMapper;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
+import pt.estga.mark.services.mark.MarkQueryService;
+import pt.estga.monument.Monument;
+import pt.estga.monument.MonumentRepository;
+import pt.estga.mark.entities.Mark;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 @Service
@@ -15,6 +19,8 @@ public class MarkOccurrenceCommandService {
 
     private final MarkOccurrenceRepository repository;
     private final MarkOccurrenceMapper mapper;
+    private final MarkQueryService markQueryService;
+    private final MonumentRepository monumentRepository;
 
     @Transactional
     public MarkOccurrence create(MarkOccurrence occurrence) {
@@ -57,5 +63,29 @@ public class MarkOccurrenceCommandService {
                         "MarkOccurrence with id " + id + " not found"));
 
         repository.softDelete(existing);
+    }
+
+    /**
+     * Ensure an occurrence exists linking mark and monument. If it does not exist, create it.
+     * The evidenceId parameter is currently ignored by this placeholder implementation;
+     * production code should attach the evidence to the occurrence.
+     */
+    @Transactional
+    public void ensureExists(Long markId, Long monumentId, Long evidenceId) {
+        repository.findByMarkIdAndMonumentId(markId, monumentId).ifPresent(o -> {
+            // already exists
+        });
+
+        if (repository.findByMarkIdAndMonumentId(markId, monumentId).isPresent()) return;
+
+        Mark mark = markQueryService.findById(markId).orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+        Monument monument = monumentRepository.findById(monumentId).orElseThrow(() -> new IllegalArgumentException("Monument not found"));
+
+        MarkOccurrence occ = MarkOccurrence.builder()
+                .mark(mark)
+                .monument(monument)
+                .build();
+
+        create(occ);
     }
 }

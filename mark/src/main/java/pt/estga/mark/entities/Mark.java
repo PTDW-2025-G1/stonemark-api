@@ -7,6 +7,7 @@ import pt.estga.shared.entities.BaseEntity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import pt.estga.mark.enums.ValidationState;
 
 @Entity
 @NoArgsConstructor
@@ -34,5 +35,8 @@ public class Mark extends BaseEntity {
 
     @OneToMany(mappedBy = "mark")
     private List<MarkOccurrence> occurrences;
+
+    @Builder.Default
+    private ValidationState validationState = ValidationState.PROVISIONAL;
 
 }

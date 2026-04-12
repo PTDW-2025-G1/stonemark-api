@@ -7,11 +7,15 @@ import org.springframework.stereotype.Repository;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.shared.repositories.BaseRepository;
 
+import java.util.Optional;
+
 @Repository
 public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence, Long> {
 
     @Override
     @EntityGraph(attributePaths = {"monument", "mark", "author"})
     Page<MarkOccurrence> findAll(Pageable pageable);
+
+    Optional<MarkOccurrence> findByMarkIdAndMonumentId(Long markId, Long monumentId);
 
 }
