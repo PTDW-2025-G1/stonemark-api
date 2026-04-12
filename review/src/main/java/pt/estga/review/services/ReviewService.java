@@ -9,7 +9,7 @@ import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
@@ -33,8 +33,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 @Slf4j
 public class ReviewService {
 
-	private final MarkEvidenceSubmissionQueryService submissionQueryService;
-	private final MarkEvidenceProcessingRepository processingRepository;
+ 	private final MarkEvidenceSubmissionQueryService submissionQueryService;
+ 	private final MarkEvidenceProcessingQueryService processingQueryService;
 	private final MarkSuggestionRepository suggestionRepository;
 	private final MarkRepository markRepository;
 	private final MarkEvidenceReviewRepository reviewRepository;
@@ -58,7 +58,7 @@ public class ReviewService {
 	@Transactional
 	public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarTitle, String comment) {
 		// 1. Fetch overview to check confidence
-		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
+		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
 
 		// Guard: Don't allow "New Mark" if the AI found a very strong match
@@ -123,7 +123,7 @@ public class ReviewService {
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
+		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
 		// Pass isDiscovery to allow bypassing "No suggestions available" check
