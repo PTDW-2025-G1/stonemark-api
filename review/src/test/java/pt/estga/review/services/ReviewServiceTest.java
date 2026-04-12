@@ -21,8 +21,8 @@ import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.events.AfterCommitEventPublisher;
-import pt.estga.user.repositories.UserRepository;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import pt.estga.user.services.UserQueryService;
 
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +56,7 @@ public class ReviewServiceTest {
     MarkEvidenceReviewRepository reviewRepository;
 
     @Mock
-    UserRepository userRepository;
+    UserQueryService userQueryService;
 
     @Mock
     AfterCommitEventPublisher eventPublisher;
@@ -69,7 +69,7 @@ public class ReviewServiceTest {
     @BeforeEach
     public void beforeEach() {
         // Inject meter registry manually
-        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, reviewRepository, userRepository, eventPublisher, meterRegistry);
+        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, reviewRepository, userQueryService, eventPublisher, meterRegistry);
         // In unit tests we construct the service directly so @Value fields are not injected.
         // Permit empty-review for tests to avoid flakiness; production behavior remains governed by properties.
         try {

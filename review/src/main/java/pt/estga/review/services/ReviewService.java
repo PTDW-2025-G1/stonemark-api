@@ -18,7 +18,7 @@ import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import pt.estga.shared.utils.SecurityUtils;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.services.UserQueryService;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -40,7 +40,7 @@ public class ReviewService {
  	private final MarkCommandService markCommandService;
  	private final MarkQueryService markQueryService;
 	private final MarkEvidenceReviewRepository reviewRepository;
-	private final UserRepository userRepository;
+	private final UserQueryService userQueryService;
 	private final AfterCommitEventPublisher eventPublisher;
     private final MeterRegistry meterRegistry;
 
@@ -141,7 +141,7 @@ public class ReviewService {
 				.comment(comment)
 				.build();
 
-		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
+		SecurityUtils.getCurrentUserId().flatMap(userQueryService::findById).ifPresent(review::setReviewedBy);
 
 		try {
 			MarkEvidenceReview saved = reviewRepository.save(review);
