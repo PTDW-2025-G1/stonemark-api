@@ -60,9 +60,6 @@ public class User extends BaseEntity implements Serializable {
     @Builder.Default
     private boolean enabled = false;
 
-    @CreationTimestamp
-    private Instant createdAt;
-
     private Instant lastLoginAt;
 
     @Override
