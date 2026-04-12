@@ -22,7 +22,7 @@ public class ReviewEventListener {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.submissionId();
         try {

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
@@ -21,7 +22,6 @@ import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
 import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
-import pt.estga.shared.events.AfterCommitEventPublisher;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import pt.estga.user.services.UserQueryService;
 
@@ -63,7 +63,7 @@ public class ReviewServiceTest {
     UserQueryService userQueryService;
 
     @Mock
-    AfterCommitEventPublisher eventPublisher;
+    ApplicationEventPublisher applicationEventPublisher;
 
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
@@ -73,7 +73,7 @@ public class ReviewServiceTest {
     @BeforeEach
     public void beforeEach() {
         // Inject meter registry manually
-        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, markEvidenceReviewCommandService, markEvidenceReviewQueryService, userQueryService, eventPublisher, meterRegistry);
+        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, markEvidenceReviewCommandService, markEvidenceReviewQueryService, userQueryService, applicationEventPublisher, meterRegistry);
         // In unit tests we construct the service directly so @Value fields are not injected.
         // Permit empty-review for tests to avoid flakiness; production behavior remains governed by properties.
         try {

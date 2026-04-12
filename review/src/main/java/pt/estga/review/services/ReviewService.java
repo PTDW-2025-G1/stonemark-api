@@ -22,7 +22,7 @@ import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.services.UserQueryService;
-import pt.estga.shared.events.AfterCommitEventPublisher;
+import org.springframework.context.ApplicationEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
@@ -46,7 +46,7 @@ public class ReviewService {
  	private final MarkEvidenceReviewCommandService markEvidenceReviewCommandService;
  	private final MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
  	private final UserQueryService userQueryService;
-	private final AfterCommitEventPublisher eventPublisher;
+	private final ApplicationEventPublisher applicationEventPublisher;
     private final MeterRegistry meterRegistry;
 
 	@Value("${review.allow-non-suggested:false}")
@@ -168,7 +168,7 @@ public class ReviewService {
 				resultingStatus = SubmissionStatus.PROCESSED;
 			}
 
-			eventPublisher.publish(ReviewCompletedEvent.builder()
+			applicationEventPublisher.publishEvent(ReviewCompletedEvent.builder()
 					.submissionId(submissionId)
 					.decision(decision)
 					.reviewId(saved.getId())
