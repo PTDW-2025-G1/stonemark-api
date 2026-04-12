@@ -9,4 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ReviewRequestDto {
     private String comment;
+    private String newMarkTitle;
 }

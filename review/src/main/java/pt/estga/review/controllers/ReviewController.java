@@ -15,7 +15,7 @@ import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 @RestController
-@RequestMapping("/api/v1/review")
+@RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
 @Tag(name = "Review", description = "Review submissions and accept/reject suggestions")
 @Slf4j
@@ -39,6 +39,27 @@ public class ReviewController {
         } catch (IllegalStateException ise) {
             // e.g. not processed yet or already reviewed
             log.warn("Conflict while accepting suggestion for submission {}: {}", submissionId, ise.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ise.getMessage());
+        }
+    }
+
+    /**
+     * Accept submission by creating a new Mark (not from suggestions).
+     */
+    @PostMapping("/{submissionId}/accept-as-new")
+    public ResponseEntity<?> acceptAsNew(@PathVariable Long submissionId, @RequestBody(required = false) ReviewRequestDto body) {
+        try {
+            String comment = body == null ? null : body.getComment();
+            String newMarkTitle = body == null ? null : body.getNewMarkTitle();
+            if (newMarkTitle == null || newMarkTitle.isBlank()) {
+                return ResponseEntity.badRequest().body("newMarkTitle is required");
+            }
+            MarkEvidenceReview review = reviewService.acceptAsNew(submissionId, newMarkTitle, comment);
+            return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(review));
+        } catch (ResourceNotFoundException rnfe) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException ise) {
+            log.warn("Conflict while accepting as new for submission {}: {}", submissionId, ise.getMessage());
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ise.getMessage());
         }
     }

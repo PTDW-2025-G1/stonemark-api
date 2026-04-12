@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/review/processing")
+@RequestMapping("/api/v1/admin/processing/submission")
 @RequiredArgsConstructor
 @Tag(name = "Processing Suggestions", description = "Suggestions for a processing submission.")
 public class ProcessingSuggestionsController {
