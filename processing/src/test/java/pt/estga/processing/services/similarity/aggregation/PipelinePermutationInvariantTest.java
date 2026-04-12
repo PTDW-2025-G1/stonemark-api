@@ -19,11 +19,23 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PipelinePermutationInvariantTest {
+    private static final int DATASET_SIZE = 20;
+    private static final int TOP_K = 10;
+    private static final double PERTURBATION_EPS = 1e-6;
+    private static final double BASE_SIMILARITY = 0.5;
+    private static final int PERMUTATION_ITERATIONS = 20;
+    private static final int PERTURBATION_SEEDS = 10;
+    private static final int PERTURBATION_ITERATIONS = 5;
+    private static final int TIE_ITERATIONS = 10;
+    // Scoring policy constants
+    private static final boolean RANK_WEIGHTING_ENABLED = true;
+    private static final double DECAY = 0.5;
+    private static final String FANOUT_STRATEGY = "SPLIT";
 
     @Test
     void pipeline_produces_same_result_for_shuffled_inputs() {
         CandidateGrouper grouper = new CandidateGrouper();
-        ScoringPolicy scoringPolicy = new ScoringPolicy(true, 0.5, "SPLIT");
+        ScoringPolicy scoringPolicy = new ScoringPolicy(RANK_WEIGHTING_ENABLED, DECAY, FANOUT_STRATEGY);
         ScoreCalculator calc = new ScoreCalculator(scoringPolicy);
         AggregationResultBuilder builder = new AggregationResultBuilder();
         MarkAggregator aggregator = new MarkAggregator(grouper, calc, builder);
@@ -33,16 +45,16 @@ public class PipelinePermutationInvariantTest {
         // Build a modest dataset
         List<CandidateEvidence> base = new ArrayList<>();
         Map<UUID, List<Mark>> markByEvidence = new LinkedHashMap<>();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < DATASET_SIZE; i++) {
             UUID eid = TestUuidUtil.uuidFromHex(String.format("%08x%08x", i, i));
             base.add(new CandidateEvidence(eid, (long) i, rnd.nextDouble()));
             markByEvidence.put(eid, List.of(TestBuilders.mark((long) (1 + rnd.nextInt(5)))));
         }
 
-        var reference = aggregator.aggregate(base, markByEvidence, 10, 0);
+        var reference = aggregator.aggregate(base, markByEvidence, TOP_K, 0);
 
         // Run multiple random permutations of candidate list and insertion order of marks
-        for (int iter = 0; iter < 20; iter++) {
+        for (int iter = 0; iter < PERMUTATION_ITERATIONS; iter++) {
             List<CandidateEvidence> shuffled = new ArrayList<>(base);
             Collections.shuffle(shuffled, new Random(iter));
             Map<UUID, List<Mark>> varied = new LinkedHashMap<>();
@@ -50,7 +62,7 @@ public class PipelinePermutationInvariantTest {
             Collections.shuffle(keys, new Random(iter));
             for (UUID k : keys) varied.put(k, markByEvidence.get(k));
 
-            var r = aggregator.aggregate(shuffled, varied, 10, 0);
+            var r = aggregator.aggregate(shuffled, varied, TOP_K, 0);
             assertEquals(reference.topScores().size(), r.topScores().size());
 
             // Assert identical mark ordering
@@ -66,27 +78,28 @@ public class PipelinePermutationInvariantTest {
 
         // Additional stress: small random perturbations to similarities to detect
         // subtle nondeterministic ranking under near-equal scores.
-        for (int seed = 0; seed < 10; seed++) {
+        for (int seed = 0; seed < PERTURBATION_SEEDS; seed++) {
             Random rnd2 = new Random(20000 + seed);
-            double eps = 1e-6;
+            double eps = PERTURBATION_EPS;
             List<CandidateEvidence> perturbed = new ArrayList<>();
             Map<UUID, List<Mark>> perturbedMarkByEvidence = new LinkedHashMap<>();
-            for (int i = 0; i < 20; i++) {
+            for (int i = 0; i < DATASET_SIZE; i++) {
                 UUID eid = TestUuidUtil.uuidFromHex(String.format("%08x%08x", i, i));
-                double baseSim = 0.5;
+                double baseSim = BASE_SIMILARITY;
                 double sim = Math.max(0.0, Math.min(1.0, baseSim + (rnd2.nextDouble() - 0.5) * eps));
                 perturbed.add(new CandidateEvidence(eid, (long) i, sim));
-                perturbedMarkByEvidence.put(eid, List.of(TestBuilders.mark((long) (1 + rnd.nextInt(5)))));
+                // Use the same RNG (rnd2) for marks so the perturbed dataset is fully deterministic
+                perturbedMarkByEvidence.put(eid, List.of(TestBuilders.mark((long) (1 + rnd2.nextInt(5)))));
             }
-            var refP = aggregator.aggregate(perturbed, perturbedMarkByEvidence, 10, 0);
-            for (int iter = 0; iter < 5; iter++) {
+            var refP = aggregator.aggregate(perturbed, perturbedMarkByEvidence, TOP_K, 0);
+            for (int iter = 0; iter < PERTURBATION_ITERATIONS; iter++) {
                 List<CandidateEvidence> shuffled = new ArrayList<>(perturbed);
                 Collections.shuffle(shuffled, new Random(iter + seed));
                 Map<UUID, List<Mark>> varied = new LinkedHashMap<>();
                 List<UUID> keys = new ArrayList<>(perturbedMarkByEvidence.keySet());
                 Collections.shuffle(keys, new Random(iter + seed));
                 for (UUID k : keys) varied.put(k, perturbedMarkByEvidence.get(k));
-                var r = aggregator.aggregate(shuffled, varied, 10, 0);
+                var r = aggregator.aggregate(shuffled, varied, TOP_K, 0);
                 List<Long> expectedIds = refP.topScores().stream().map(MarkScore::markId).toList();
                 List<Long> actualIds = r.topScores().stream().map(MarkScore::markId).toList();
                 assertEquals(expectedIds, actualIds, "Perturbed dataset ordering must be invariant");
@@ -96,20 +109,20 @@ public class PipelinePermutationInvariantTest {
         // Tie-heavy dataset: all similarities equal to exercise tie-break stability
         List<CandidateEvidence> tieBase = new ArrayList<>();
         Map<UUID, List<Mark>> tieMarkByEvidence = new LinkedHashMap<>();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < DATASET_SIZE; i++) {
             UUID eid = TestUuidUtil.uuidFromHex(String.format("%08x%08x", i, i));
-            tieBase.add(new CandidateEvidence(eid, (long) i, 0.5));
+            tieBase.add(new CandidateEvidence(eid, (long) i, BASE_SIMILARITY));
             tieMarkByEvidence.put(eid, List.of(TestBuilders.mark((long) (1 + rnd.nextInt(5)))));
         }
-        var refTie = aggregator.aggregate(tieBase, tieMarkByEvidence, 10, 0);
-        for (int iter = 0; iter < 10; iter++) {
+        var refTie = aggregator.aggregate(tieBase, tieMarkByEvidence, TOP_K, 0);
+        for (int iter = 0; iter < TIE_ITERATIONS; iter++) {
             List<CandidateEvidence> shuffled = new ArrayList<>(tieBase);
             Collections.shuffle(shuffled, new Random(iter));
             Map<UUID, List<Mark>> varied = new LinkedHashMap<>();
             List<UUID> keys = new ArrayList<>(tieMarkByEvidence.keySet());
             Collections.shuffle(keys, new Random(iter));
             for (UUID k : keys) varied.put(k, tieMarkByEvidence.get(k));
-            var r = aggregator.aggregate(shuffled, varied, 10, 0);
+            var r = aggregator.aggregate(shuffled, varied, TOP_K, 0);
             List<Long> expectedIds = refTie.topScores().stream().map(MarkScore::markId).toList();
             List<Long> actualIds = r.topScores().stream().map(MarkScore::markId).toList();
             assertEquals(expectedIds, actualIds, "Tie-heavy dataset ordering must be invariant");
