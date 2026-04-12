@@ -90,6 +90,7 @@ public class MarkOccurrenceCommandService {
         MarkOccurrence occ = MarkOccurrence.builder()
                 .mark(mark)
                 .monument(monument)
+                .validationState(ValidationState.PROVISIONAL)
                 .build();
 
         create(occ);
@@ -121,6 +122,11 @@ public class MarkOccurrenceCommandService {
         if (mediaFileId == null) return;
 
         try {
+            /*
+              NOTE: currently it links only the primary media file. If submissions in future
+              can contain multiple files, change this to iterate all media files associated
+              with the submission and link each one.
+             */
             evidenceRepository.findByFileId(mediaFileId).ifPresent(ev -> {
                 ev.setOccurrence(occurrence);
                 evidenceCommandService.update(ev);
