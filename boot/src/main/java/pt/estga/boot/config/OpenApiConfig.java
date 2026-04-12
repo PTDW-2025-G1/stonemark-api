@@ -42,14 +42,6 @@ public class OpenApiConfig {
     }
 
     @Bean
-    public GroupedOpenApi reviewRoutes() {
-        return GroupedOpenApi.builder()
-                .group("Review routes")
-                .pathsToMatch("/api/v1/review/**")
-                .build();
-    }
-
-    @Bean
     public OpenAPI securedOpenAPI() {
         return new OpenAPI()
                 .addServersItem(new Server().url(baseUrl))

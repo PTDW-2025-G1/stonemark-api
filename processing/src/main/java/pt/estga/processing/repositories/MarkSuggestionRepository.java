@@ -18,4 +18,6 @@ public interface MarkSuggestionRepository extends JpaRepository<MarkSuggestion, 
 	Optional<MarkSuggestion> findByProcessingIdAndMarkId(UUID processingId, Long markId);
 
 	boolean existsByProcessingIdAndMarkId(UUID processingId, Long markId);
+
+    long countByProcessingId(UUID processingId);
 }
