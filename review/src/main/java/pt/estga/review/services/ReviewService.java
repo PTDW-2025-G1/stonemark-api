@@ -22,7 +22,7 @@ import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
-import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -48,93 +48,42 @@ public class ReviewService {
 	private boolean allowEmptyReview;
 
 	/**
+	 * Accept the submission with a new mark (not from suggestions). Creates a review with APPROVED decision.
+	 * Enforces: processing must be COMPLETED; review must not already exist; if accepted, mark submission as PROCESSED.
+	 */
+	@Transactional
+	public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarTitle, String comment) {
+		// 1. We have to check the suggestions FIRST because once we enter
+		// processReview, we want to be sure we are allowed to create this mark.
+		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
+				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
+
+		if (processing.getSuggestions() != null && !processing.getSuggestions().isEmpty()) {
+			throw new IllegalStateException("Cannot create a new mark when suggestions exist.");
+		}
+
+		// 2. Now that we know it's safe, we create the mark
+		Mark newMark = markRepository.save(Mark.builder().title(newMarTitle).build());
+
+		// 3. And pass it into the template
+		return processReview(submissionId, ReviewDecision.APPROVED, newMark, comment, null);
+	}
+
+	/**
 	 * Accept a suggested mark for the given submission.
 	 * Enforces: processing must be COMPLETED; review must not already exist; if accepted, mark submission as PROCESSED.
 	 */
 	@Transactional
 	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
-		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
-				.orElseThrow(() -> new ResourceNotFoundException("Submission with id " + submissionId + " not found"));
-
-		// Ensure processing exists and is completed
-		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
-				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (!processing.isReviewable()) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is reviewable");
-		}
-
-		// Prevent reviewing when there are no suggestions unless explicitly allowed
-		if (!allowEmptyReview && (processing.getSuggestions() == null || processing.getSuggestions().isEmpty())) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " because there are no suggestions available");
-		}
-
-		// Idempotency: don't allow a second review
-		if (reviewRepository.existsBySubmissionId(submissionId)) {
-			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
-		}
-
-		// Ensure mark exists and was among suggestions for this processing
 		Mark mark = markRepository.findById(markId)
-				.orElseThrow(() -> new ResourceNotFoundException("Mark with id " + markId + " not found"));
+				.orElseThrow(() -> new ResourceNotFoundException("Mark " + markId + " not found"));
 
-		boolean suggested = suggestionRepository.existsByProcessingIdAndMarkId(processing.getId(), markId);
-		if (!suggested) {
-			log.warn("Accepted mark {} was not present in suggestions for submission {}", markId, submissionId);
-			if (!allowNonSuggested) {
-				throw new IllegalStateException("Accepted mark was not present in suggestions and non-suggested acceptance is disabled");
+		return processReview(submissionId, ReviewDecision.APPROVED, mark, comment, (proc) -> {
+			boolean suggested = suggestionRepository.existsByProcessingIdAndMarkId(proc.getId(), markId);
+			if (!suggested && !allowNonSuggested) {
+				throw new IllegalStateException("Mark not in suggestions and non-suggested acceptance is disabled");
 			}
-		}
-
-		MarkEvidenceReview review = MarkEvidenceReview.builder()
-				.submission(submission)
-				.selectedMark(mark)
-				.reviewedAt(Instant.now())
-				.comment(comment)
-				.build();
-
-		review.setDecision(ReviewDecision.APPROVED);
-		// set reviewer if available
-		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
-
-		MarkEvidenceReview saved;
-		try {
-			saved = reviewRepository.save(review);
-		} catch (DataIntegrityViolationException dive) {
-			log.warn("Concurrent review attempted for submission {}: {}", submissionId, dive.getMessage());
-			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
-		}
-
-		// Metrics: decision counts
-		try {
-			meterRegistry.counter("review.decisions.count", "decision", saved.getDecision().name()).increment();
-		} catch (Exception e) {
-			log.debug("Failed to increment review decision metric for submission {}: {}", submissionId, e.getMessage());
-		}
-
-		// If approved, record average confidence for accepted suggestion (if available)
-		if (saved.getDecision() == ReviewDecision.APPROVED && saved.getSelectedMark() != null) {
-			try {
-				UUID processingId = processing.getId();
-				suggestionRepository.findByProcessingIdAndMarkId(processingId, saved.getSelectedMark().getId())
-						.ifPresent(s -> {
-							try {
-								meterRegistry.summary("review.accepted.suggestion.confidence", "decision", saved.getDecision().name())
-										.record(s.getConfidence());
-							} catch (Exception ex) {
-								log.debug("Failed to record accepted suggestion confidence for submission {}: {}", submissionId, ex.getMessage());
-							}
-						});
-			} catch (Exception e) {
-				log.debug("Failed to record accepted suggestion confidence for submission {}: {}", submissionId, e.getMessage());
-			}
-		}
-
-		// Publish domain event after commit to move state transitions out of the write path.
-		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
-		Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
-		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.APPROVED, selectedMarkId, reviewerId));
-
-		return saved;
+		});
 	}
 
 	/**
@@ -143,48 +92,7 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
-		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
-				.orElseThrow(() -> new ResourceNotFoundException("Submission with id " + submissionId + " not found"));
-
-		// Ensure processing exists and is completed
-		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
-				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " has not been processed"));
-		if (!processing.isReviewable()) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " before processing is reviewable");
-		}
-
-		// Prevent reviewing when there are no suggestions unless explicitly allowed
-		if (!allowEmptyReview && (processing.getSuggestions() == null || processing.getSuggestions().isEmpty())) {
-			throw new IllegalStateException("Cannot review submission " + submissionId + " because there are no suggestions available");
-		}
-
-		// Idempotency
-		if (reviewRepository.existsBySubmissionId(submissionId)) {
-			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
-		}
-
-		MarkEvidenceReview review = MarkEvidenceReview.builder()
-				.submission(submission)
-				.selectedMark(null)
-				.reviewedAt(Instant.now())
-				.comment(comment)
-				.build();
-
-		review.setDecision(ReviewDecision.REJECTED);
-		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
-
-		MarkEvidenceReview saved;
-		try {
-			saved = reviewRepository.save(review);
-		} catch (DataIntegrityViolationException dive) {
-			log.warn("Concurrent review attempted for submission {}: {}", submissionId, dive.getMessage());
-			throw new IllegalStateException("Submission " + submissionId + " has already been reviewed");
-		}
-
-		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
-		eventPublisher.publish(new ReviewCompletedEvent(submissionId, ReviewDecision.REJECTED, null, reviewerId));
-
-		return saved;
+		return processReview(submissionId, ReviewDecision.REJECTED, null, comment, null);
 	}
 
 	/**
@@ -195,5 +103,82 @@ public class ReviewService {
 		return reviewRepository.findBySubmissionId(submissionId)
 				.map(MarkEvidenceReview::getDecision)
 				.orElse(null);
+	}
+
+	/**
+	 * The "Template" that handles the repetitive lifecycle of a review.
+	 */
+	private MarkEvidenceReview processReview(
+			Long submissionId,
+			ReviewDecision decision,
+			Mark mark,
+			String comment,
+			Consumer<MarkEvidenceProcessing> extraValidation) {
+
+		// 1. Fetch and Validate
+		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
+				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
+
+		MarkEvidenceProcessing processing = processingRepository.findBySubmissionId(submissionId)
+				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
+
+		validateState(submissionId, processing);
+
+		// Note: if extraValidation creates a Mark (acceptAsNew), we want to capture that.
+		// For simplicity here, we'll keep your 'mark' parameter.
+		if (extraValidation != null) extraValidation.accept(processing);
+
+		// 2. Build Entity
+		MarkEvidenceReview review = MarkEvidenceReview.builder()
+				.submission(submission)
+				.selectedMark(mark)
+				.decision(decision)
+				.reviewedAt(Instant.now())
+				.comment(comment)
+				.build();
+
+		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
+
+		// 3. Persist with Idempotency Check
+		MarkEvidenceReview saved;
+		try {
+			saved = reviewRepository.save(review);
+		} catch (DataIntegrityViolationException dive) {
+			throw new IllegalStateException("Submission " + submissionId + " already reviewed");
+		}
+
+		// 4. Side Effects (Metrics & Events)
+		recordMetrics(saved, processing);
+
+		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
+		Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
+		eventPublisher.publish(new ReviewCompletedEvent(submissionId, decision, selectedMarkId, reviewerId));
+
+		return saved;
+	}
+
+	private void validateState(Long submissionId, MarkEvidenceProcessing processing) {
+		if (!processing.isReviewable()) {
+			throw new IllegalStateException("Processing not reviewable for submission " + submissionId);
+		}
+		if (!allowEmptyReview && (processing.getSuggestions() == null || processing.getSuggestions().isEmpty())) {
+			throw new IllegalStateException("No suggestions available for submission " + submissionId);
+		}
+		if (reviewRepository.existsBySubmissionId(submissionId)) {
+			throw new IllegalStateException("Submission " + submissionId + " already reviewed");
+		}
+	}
+
+	private void recordMetrics(MarkEvidenceReview review, MarkEvidenceProcessing processing) {
+		try {
+			meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
+
+			if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMark() != null) {
+				suggestionRepository.findByProcessingIdAndMarkId(processing.getId(), review.getSelectedMark().getId())
+						.ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
+			}
+		} catch (Exception e) {
+			log.debug("Metric recording failed: {}", e.getMessage());
+		}
 	}
 }
