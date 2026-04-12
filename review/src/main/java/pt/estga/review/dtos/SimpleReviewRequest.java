@@ -1,10 +1,7 @@
 package pt.estga.review.dtos;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@NoArgsConstructor
-public class SimpleReviewRequest {
-    private String comment;
+/**
+ * Simple request carrying an optional comment for review actions.
+ */
+public record SimpleReviewRequest(String comment) {
 }

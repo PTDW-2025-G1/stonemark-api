@@ -34,7 +34,7 @@ public class ReviewController {
             @RequestParam Long markId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
-        var comment = request != null ? request.getComment() : null;
+        var comment = request != null ? request.comment() : null;
         return mapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment));
     }
 
@@ -45,7 +45,7 @@ public class ReviewController {
             @PathVariable Long submissionId,
             @Valid @RequestBody AcceptNewMarkRequest request) {
 
-        return mapper.toDto(reviewService.acceptAsNew(submissionId, request.getMarkTitle(), request.getComment()));
+        return mapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment()));
     }
 
     @PostMapping("/{submissionId}/reject")
@@ -55,7 +55,7 @@ public class ReviewController {
             @PathVariable Long submissionId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
-        var comment = request != null ? request.getComment() : null;
+        var comment = request != null ? request.comment() : null;
         return mapper.toDto(reviewService.rejectAll(submissionId, comment));
     }
 
