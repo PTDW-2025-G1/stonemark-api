@@ -57,32 +57,21 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarTitle, String comment) {
-		// 1. Fetch lightweight processing overview (avoid loading embedding)
+		// 1. Fetch overview to check confidence
 		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
 
-		UUID processingId = overview.getId();
-		ProcessingStatus status = overview.getStatus();
-
-		// Ensure processing is reviewable before creating a new mark
-		if (status != ProcessingStatus.COMPLETED && status != ProcessingStatus.REVIEW_PENDING) {
-			throw new IllegalStateException("Processing not reviewable for submission " + submissionId);
+		// Guard: Don't allow "New Mark" if the AI found a very strong match
+		Double maxConf = suggestionRepository.findMaxConfidenceByProcessingId(overview.getId());
+		if (maxConf != null && maxConf >= newMarkMaxSuggestionConfidence) {
+			throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
 		}
 
-		long suggestionsCount = suggestionRepository.countByProcessingId(processingId);
-		Double maxConfidence = suggestionRepository.findMaxConfidenceByProcessingId(processingId);
-		double maxConf = maxConfidence == null ? 0.0 : maxConfidence;
-
-		// Allow creation when there are no suggestions, or when existing suggestions have low confidence
-		if (suggestionsCount > 0 && maxConf >= newMarkMaxSuggestionConfidence) {
-			throw new IllegalStateException("Cannot create a new mark when confident suggestions exist.");
-		}
-
-		// 2. Now that we know it's safe, create the mark
+		// 2. Create the Mark
 		Mark newMark = markRepository.save(Mark.builder().title(newMarTitle).build());
 
-		// 3. And pass it into the template.
-		return processReview(submissionId, ReviewDecision.APPROVED, newMark, comment, null);
+		// 3. Process. We pass 'true' to skip the "must have suggestions" check.
+		return processReview(submissionId, ReviewDecision.APPROVED, newMark, comment, null, true);
 	}
 
 	/**
@@ -95,11 +84,10 @@ public class ReviewService {
 				.orElseThrow(() -> new ResourceNotFoundException("Mark " + markId + " not found"));
 
 		return processReview(submissionId, ReviewDecision.APPROVED, mark, comment, (procId) -> {
-			boolean suggested = suggestionRepository.existsByProcessingIdAndMarkId(procId, markId);
-			if (!suggested && !allowNonSuggested) {
-				throw new IllegalStateException("Mark not in suggestions and non-suggested acceptance is disabled");
+			if (!suggestionRepository.existsByProcessingIdAndMarkId(procId, markId) && !allowNonSuggested) {
+				throw new IllegalStateException("Mark not in suggestions.");
 			}
-		});
+		}, false);
 	}
 
 	/**
@@ -108,7 +96,7 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
-		return processReview(submissionId, ReviewDecision.REJECTED, null, comment, null);
+		return processReview(submissionId, ReviewDecision.REJECTED, null, comment, null, false);
 	}
 
 	/**
@@ -129,25 +117,20 @@ public class ReviewService {
 			ReviewDecision decision,
 			Mark mark,
 			String comment,
-			Consumer<UUID> extraValidation) {
+			Consumer<UUID> extraValidation,
+			boolean isDiscovery) {
 
-		// 1. Fetch and Validate
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
 		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
-		UUID processingId = overview.getId();
-		ProcessingStatus status = overview.getStatus();
-		long suggestionsCount = suggestionRepository.countByProcessingId(processingId);
+		// Pass isDiscovery to allow bypassing "No suggestions available" check
+		validateState(submissionId, overview.getStatus(), suggestionRepository.countByProcessingId(overview.getId()), isDiscovery);
 
-		validateState(submissionId, status, suggestionsCount);
+		if (extraValidation != null) extraValidation.accept(overview.getId());
 
-		// Note: extraValidation receives the processing id (lightweight)
-		if (extraValidation != null) extraValidation.accept(processingId);
-
-		// 2. Build Entity
 		MarkEvidenceReview review = MarkEvidenceReview.builder()
 				.submission(submission)
 				.selectedMark(mark)
@@ -158,33 +141,30 @@ public class ReviewService {
 
 		SecurityUtils.getCurrentUserId().flatMap(userRepository::findById).ifPresent(review::setReviewedBy);
 
-		// 3. Persist with Idempotency Check
-		MarkEvidenceReview saved;
 		try {
-			saved = reviewRepository.save(review);
+			MarkEvidenceReview saved = reviewRepository.save(review);
+			recordMetrics(saved, overview.getId());
+
+			Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
+			Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
+			eventPublisher.publish(new ReviewCompletedEvent(submissionId, decision, selectedMarkId, reviewerId));
+
+			return saved;
 		} catch (DataIntegrityViolationException dive) {
 			throw new IllegalStateException("Submission " + submissionId + " already reviewed");
 		}
-
-		// 4. Side Effects (Metrics & Events)
-		recordMetrics(saved, processingId);
-
-		Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
-		Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
-		eventPublisher.publish(new ReviewCompletedEvent(submissionId, decision, selectedMarkId, reviewerId));
-
-		return saved;
 	}
 
-	private void validateState(Long submissionId, ProcessingStatus status, long suggestionsCount) {
+	private void validateState(Long submissionId, ProcessingStatus status, long count, boolean isDiscovery) {
 		if (status != ProcessingStatus.COMPLETED && status != ProcessingStatus.REVIEW_PENDING) {
-			throw new IllegalStateException("Processing not reviewable for submission " + submissionId);
+			throw new IllegalStateException("Processing not ready.");
 		}
-		if (!allowEmptyReview && suggestionsCount == 0) {
-			throw new IllegalStateException("No suggestions available for submission " + submissionId);
+		// If this ISN'T a discovery/new mark, we might require suggestions to exist
+		if (!isDiscovery && !allowEmptyReview && count == 0) {
+			throw new IllegalStateException("No suggestions available to review.");
 		}
 		if (reviewRepository.existsBySubmissionId(submissionId)) {
-			throw new IllegalStateException("Submission " + submissionId + " already reviewed");
+			throw new IllegalStateException("Submission already reviewed.");
 		}
 	}
 
