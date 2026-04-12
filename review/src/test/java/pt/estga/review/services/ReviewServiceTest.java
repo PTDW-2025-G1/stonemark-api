@@ -19,7 +19,8 @@ import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
 import pt.estga.mark.services.mark.MarkQueryService;
 import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.review.entities.MarkEvidenceReview;
-import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import pt.estga.user.services.UserQueryService;
@@ -53,7 +54,10 @@ public class ReviewServiceTest {
     MarkCommandService markCommandService;
 
     @Mock
-    MarkEvidenceReviewRepository reviewRepository;
+    MarkEvidenceReviewCommandService markEvidenceReviewCommandService;
+
+    @Mock
+    MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
 
     @Mock
     UserQueryService userQueryService;
@@ -69,7 +73,7 @@ public class ReviewServiceTest {
     @BeforeEach
     public void beforeEach() {
         // Inject meter registry manually
-        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, reviewRepository, userQueryService, eventPublisher, meterRegistry);
+        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, markEvidenceReviewCommandService, markEvidenceReviewQueryService, userQueryService, eventPublisher, meterRegistry);
         // In unit tests we construct the service directly so @Value fields are not injected.
         // Permit empty-review for tests to avoid flakiness; production behavior remains governed by properties.
         try {
@@ -107,7 +111,7 @@ public class ReviewServiceTest {
 
         // control save: first call returns saved review, second call throws DataIntegrityViolationException
         AtomicInteger counter = new AtomicInteger(0);
-        when(reviewRepository.save(any(MarkEvidenceReview.class))).thenAnswer(invocation -> {
+        when(markEvidenceReviewCommandService.create(any(MarkEvidenceReview.class))).thenAnswer(invocation -> {
             int c = counter.incrementAndGet();
             if (c == 1) {
                 MarkEvidenceReview r = invocation.getArgument(0);
@@ -139,7 +143,7 @@ public class ReviewServiceTest {
         t1.join(); t2.join();
 
         // ensure save attempted at least twice
-        verify(reviewRepository, atLeast(2)).save(any(MarkEvidenceReview.class));
+        verify(markEvidenceReviewCommandService, atLeast(2)).create(any(MarkEvidenceReview.class));
     }
 
     @Test
@@ -175,10 +179,10 @@ public class ReviewServiceTest {
         };
         when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
-        when(reviewRepository.existsBySubmissionId(submissionId)).thenReturn(false).thenReturn(true);
+        when(markEvidenceReviewQueryService.existsBySubmissionId(submissionId)).thenReturn(false).thenReturn(true);
 
         // first call should create a review — mock save to return review
-        when(reviewRepository.save(any(MarkEvidenceReview.class))).thenAnswer(i -> { MarkEvidenceReview r = i.getArgument(0); r.setId(200L); return r; });
+        when(markEvidenceReviewCommandService.create(any(MarkEvidenceReview.class))).thenAnswer(i -> { MarkEvidenceReview r = i.getArgument(0); r.setId(200L); return r; });
 
         MarkEvidenceReview saved = reviewService.rejectAll(submissionId, null);
         assertNotNull(saved);

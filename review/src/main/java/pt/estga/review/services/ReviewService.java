@@ -14,7 +14,8 @@ import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.mark.services.mark.MarkQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
-import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import pt.estga.shared.utils.SecurityUtils;
@@ -39,8 +40,9 @@ public class ReviewService {
  	private final MarkSuggestionQueryService suggestionQueryService;
  	private final MarkCommandService markCommandService;
  	private final MarkQueryService markQueryService;
-	private final MarkEvidenceReviewRepository reviewRepository;
-	private final UserQueryService userQueryService;
+ 	private final MarkEvidenceReviewCommandService markEvidenceReviewCommandService;
+ 	private final MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
+ 	private final UserQueryService userQueryService;
 	private final AfterCommitEventPublisher eventPublisher;
     private final MeterRegistry meterRegistry;
 
@@ -106,7 +108,7 @@ public class ReviewService {
 	 */
 	@Transactional(readOnly = true)
 	public ReviewDecision getReviewStatus(Long submissionId) {
-		return reviewRepository.findBySubmissionId(submissionId)
+		return markEvidenceReviewQueryService.findBySubmissionId(submissionId)
 				.map(MarkEvidenceReview::getDecision)
 				.orElse(null);
 	}
@@ -144,7 +146,7 @@ public class ReviewService {
 		SecurityUtils.getCurrentUserId().flatMap(userQueryService::findById).ifPresent(review::setReviewedBy);
 
 		try {
-			MarkEvidenceReview saved = reviewRepository.save(review);
+			MarkEvidenceReview saved = markEvidenceReviewCommandService.create(review);
 			recordMetrics(saved, overview.getId());
 
 			Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
@@ -165,7 +167,7 @@ public class ReviewService {
 		if (!isDiscovery && !allowEmptyReview && count == 0) {
 			throw new IllegalStateException("No suggestions available to review.");
 		}
-		if (reviewRepository.existsBySubmissionId(submissionId)) {
+		if (markEvidenceReviewQueryService.existsBySubmissionId(submissionId)) {
 			throw new IllegalStateException("Submission already reviewed.");
 		}
 	}
