@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.shared.converters.VectorConverter;
 import pt.estga.shared.entities.BaseEntity;
 
 import java.util.UUID;
@@ -24,7 +25,7 @@ public class MarkEvidence extends BaseEntity {
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile file;
 
-    @Column(columnDefinition = "vector")
+    @Convert(converter = VectorConverter.class)
     private float[] embedding;
 
     @ManyToOne(fetch = FetchType.LAZY)

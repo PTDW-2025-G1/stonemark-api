@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
@@ -25,7 +24,6 @@ public class ReviewEventListener {
     private final MeterRegistry meterRegistry;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.getSubmissionId();
         try {

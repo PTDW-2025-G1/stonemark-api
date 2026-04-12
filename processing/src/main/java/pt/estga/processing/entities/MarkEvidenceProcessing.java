@@ -5,7 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.shared.utils.VectorConverter;
+import pt.estga.shared.converters.VectorConverter;
 
 import java.time.Instant;
 import java.util.List;
