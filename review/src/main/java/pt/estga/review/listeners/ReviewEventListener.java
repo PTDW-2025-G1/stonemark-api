@@ -6,12 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 
 @Component
@@ -24,30 +22,23 @@ public class ReviewEventListener {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleReviewCompleted(ReviewCompletedEvent event) {
-        Long submissionId = event.getSubmissionId();
+        Long submissionId = event.submissionId();
         try {
-            // Set submission status according to review decision. Use explicit domain statuses
-            // and make the operation idempotent: only change when a transition is necessary.
+            // Use the resulting submission status carried in the event as the single source of truth
             submissionQueryService.findById(submissionId).ifPresent(s -> {
                 SubmissionStatus current = s.getStatus();
+                SubmissionStatus target = event.resultingSubmissionStatus();
                 boolean updated = false;
-                if (event.getDecision() == ReviewDecision.APPROVED) {
+                if (target == SubmissionStatus.PROCESSED) {
                     if (current != SubmissionStatus.PROCESSED) {
                         s.markProcessed();
                         updated = true;
                     }
-                } else if (event.getDecision() == ReviewDecision.REJECTED) {
+                } else if (target == SubmissionStatus.REJECTED) {
                     if (current != SubmissionStatus.REJECTED) {
                         s.markRejected();
-                        updated = true;
-                    }
-                } else {
-                    // For NO_MATCH / FLAGGED treat as processed (manual review completed)
-                    if (current != SubmissionStatus.PROCESSED && current != SubmissionStatus.REJECTED) {
-                        s.markProcessed();
                         updated = true;
                     }
                 }
@@ -58,7 +49,7 @@ public class ReviewEventListener {
                 try {
                     if (updated) {
                         try {
-                            meterRegistry.counter("review.event.applied.count", "decision", event.getDecision().name()).increment();
+                            meterRegistry.counter("review.event.applied.count", "decision", event.decision().name()).increment();
                         } catch (Exception ex) {
                             log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
                         }

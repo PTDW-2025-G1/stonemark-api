@@ -1,6 +1,7 @@
 package pt.estga.mark.repositories;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
@@ -50,7 +51,7 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	""")
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 
-	Page<MarkEvidence> findAllByEmbeddingIsNotNull(org.springframework.data.domain.Pageable pageable);
+	Page<MarkEvidence> findAllByEmbeddingIsNotNull(Pageable pageable);
 
 	// Projection-based batch fetch to return embeddings without hydrating full entities.
 	List<EvidenceEmbeddingProjection> findAllByIdIn(List<UUID> ids);

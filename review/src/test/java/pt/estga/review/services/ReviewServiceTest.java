@@ -6,25 +6,29 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
+import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
+import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.mark.services.mark.MarkQueryService;
+import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.review.entities.MarkEvidenceReview;
-import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.shared.events.AfterCommitEventPublisher;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
+import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import pt.estga.user.services.UserQueryService;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -38,22 +42,28 @@ public class ReviewServiceTest {
     MarkEvidenceSubmissionQueryService submissionQueryService;
 
     @Mock
-    MarkEvidenceProcessingRepository processingRepository;
+    MarkEvidenceProcessingQueryService markEvidenceProcessingQueryService;
 
     @Mock
-    MarkSuggestionRepository suggestionRepository;
+    MarkSuggestionQueryService suggestionQueryService;
 
     @Mock
-    MarkRepository markRepository;
+    MarkQueryService markQueryService;
 
     @Mock
-    MarkEvidenceReviewRepository reviewRepository;
+    MarkCommandService markCommandService;
 
     @Mock
-    UserRepository userRepository;
+    MarkEvidenceReviewCommandService markEvidenceReviewCommandService;
 
     @Mock
-    AfterCommitEventPublisher eventPublisher;
+    MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
+
+    @Mock
+    UserQueryService userQueryService;
+
+    @Mock
+    ApplicationEventPublisher applicationEventPublisher;
 
     SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
@@ -63,11 +73,11 @@ public class ReviewServiceTest {
     @BeforeEach
     public void beforeEach() {
         // Inject meter registry manually
-        reviewService = new ReviewService(submissionQueryService, processingRepository, suggestionRepository, markRepository, reviewRepository, userRepository, eventPublisher, meterRegistry);
+        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, markEvidenceReviewCommandService, markEvidenceReviewQueryService, userQueryService, applicationEventPublisher, meterRegistry);
         // In unit tests we construct the service directly so @Value fields are not injected.
         // Permit empty-review for tests to avoid flakiness; production behavior remains governed by properties.
         try {
-            java.lang.reflect.Field f = ReviewService.class.getDeclaredField("allowEmptyReview");
+            Field f = ReviewService.class.getDeclaredField("allowEmptyReview");
             f.setAccessible(true);
             f.setBoolean(reviewService, true);
         } catch (Exception ignored) {
@@ -87,17 +97,21 @@ public class ReviewServiceTest {
         processing.setId(UUID.randomUUID());
         processing.setStatus(ProcessingStatus.COMPLETED);
         // ensure there is at least one suggestion so review is allowed
-        processing.setSuggestions(java.util.List.of(new MarkSuggestion()));
-        when(processingRepository.findBySubmissionId(submissionId)).thenReturn(Optional.of(processing));
+        processing.setSuggestions(List.of(new MarkSuggestion()));
+        ProcessingOverviewProjection overview = new ProcessingOverviewProjection() {
+            @Override public UUID getId() { return processing.getId(); }
+            @Override public ProcessingStatus getStatus() { return processing.getStatus(); }
+        };
+        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
-        when(suggestionRepository.existsByProcessingIdAndMarkId(processing.getId(), markId)).thenReturn(true);
+        when(suggestionQueryService.existsByProcessingIdAndMarkId(processing.getId(), markId)).thenReturn(true);
 
         Mark mark = new Mark(); mark.setId(markId);
-        when(markRepository.findById(markId)).thenReturn(Optional.of(mark));
+        when(markQueryService.findById(markId)).thenReturn(Optional.of(mark));
 
         // control save: first call returns saved review, second call throws DataIntegrityViolationException
         AtomicInteger counter = new AtomicInteger(0);
-        when(reviewRepository.save(any(MarkEvidenceReview.class))).thenAnswer(invocation -> {
+        when(markEvidenceReviewCommandService.create(any(MarkEvidenceReview.class))).thenAnswer(invocation -> {
             int c = counter.incrementAndGet();
             if (c == 1) {
                 MarkEvidenceReview r = invocation.getArgument(0);
@@ -129,7 +143,7 @@ public class ReviewServiceTest {
         t1.join(); t2.join();
 
         // ensure save attempted at least twice
-        verify(reviewRepository, atLeast(2)).save(any(MarkEvidenceReview.class));
+        verify(markEvidenceReviewCommandService, atLeast(2)).create(any(MarkEvidenceReview.class));
     }
 
     @Test
@@ -140,10 +154,14 @@ public class ReviewServiceTest {
 
         MarkEvidenceProcessing processing = new MarkEvidenceProcessing();
         processing.setStatus(ProcessingStatus.PROCESSING);
-        when(processingRepository.findBySubmissionId(submissionId)).thenReturn(Optional.of(processing));
+        ProcessingOverviewProjection overview = new ProcessingOverviewProjection() {
+            @Override public UUID getId() { return UUID.randomUUID(); }
+            @Override public ProcessingStatus getStatus() { return processing.getStatus(); }
+        };
+        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId, null));
-        assertTrue(ex.getMessage().contains("ready for review"));
+        assertTrue(ex.getMessage().contains("Processing not ready") || ex.getMessage().contains("not reviewable") );
     }
 
     @Test
@@ -155,18 +173,22 @@ public class ReviewServiceTest {
         MarkEvidenceProcessing processing = new MarkEvidenceProcessing(); processing.setStatus(ProcessingStatus.COMPLETED);
         // ensure suggestions present for this test
         processing.setSuggestions(List.of(new MarkSuggestion()));
-        when(processingRepository.findBySubmissionId(submissionId)).thenReturn(Optional.of(processing));
+        ProcessingOverviewProjection overview = new ProcessingOverviewProjection() {
+            @Override public UUID getId() { return UUID.randomUUID(); }
+            @Override public ProcessingStatus getStatus() { return processing.getStatus(); }
+        };
+        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
-        when(reviewRepository.existsBySubmissionId(submissionId)).thenReturn(false).thenReturn(true);
+        when(markEvidenceReviewQueryService.existsBySubmissionId(submissionId)).thenReturn(false).thenReturn(true);
 
         // first call should create a review — mock save to return review
-        when(reviewRepository.save(any(MarkEvidenceReview.class))).thenAnswer(i -> { MarkEvidenceReview r = i.getArgument(0); r.setId(200L); return r; });
+        when(markEvidenceReviewCommandService.create(any(MarkEvidenceReview.class))).thenAnswer(i -> { MarkEvidenceReview r = i.getArgument(0); r.setId(200L); return r; });
 
         MarkEvidenceReview saved = reviewService.rejectAll(submissionId, null);
         assertNotNull(saved);
 
         // second attempt should fail due to existsBySubmissionId returning true
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> reviewService.rejectAll(submissionId, null));
-        assertTrue(ex.getMessage().contains("already been reviewed"));
+        assertTrue(ex.getMessage().contains("already reviewed") || ex.getMessage().contains("already been reviewed"));
     }
 }

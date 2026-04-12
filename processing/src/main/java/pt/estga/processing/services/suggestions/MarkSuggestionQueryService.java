@@ -37,4 +37,20 @@ public class MarkSuggestionQueryService {
                                 .stream().map(mapper::toDto)
                                 .toList());
     }
+
+    public boolean existsByProcessingIdAndMarkId(UUID processingId, Long markId) {
+        return markSuggestionRepository.existsByProcessingIdAndMarkId(processingId, markId);
+    }
+
+    public long countByProcessingId(UUID processingId) {
+        return markSuggestionRepository.countByProcessingId(processingId);
+    }
+
+    public Double findMaxConfidenceByProcessingId(UUID processingId) {
+        return markSuggestionRepository.findMaxConfidenceByProcessingId(processingId);
+    }
+
+    public Optional<MarkSuggestion> findByProcessingIdAndMarkId(UUID processingId, Long markId) {
+        return markSuggestionRepository.findByProcessingIdAndMarkId(processingId, markId);
+    }
 }

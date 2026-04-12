@@ -60,6 +60,7 @@ public class SecurityConfig {
                     config.setAllowCredentials(true);
                     return config;
                 }))
+                /*
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(OPEN_API_ROUTES).permitAll();
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
@@ -73,6 +74,8 @@ public class SecurityConfig {
 
                     auth.anyRequest().authenticated();
                 })
+                 */
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

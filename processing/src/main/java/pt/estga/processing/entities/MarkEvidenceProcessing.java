@@ -5,7 +5,6 @@ import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.shared.utils.VectorConverter;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,7 +27,7 @@ public class MarkEvidenceProcessing {
     @JoinColumn(unique = true)
     private MarkEvidenceSubmission submission;
 
-    @Convert(converter = VectorConverter.class)
+    @Column(columnDefinition = "vector(384)")
     private float[] embedding;
 
     @Enumerated(EnumType.STRING)

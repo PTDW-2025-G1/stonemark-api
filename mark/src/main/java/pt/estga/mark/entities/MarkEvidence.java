@@ -24,7 +24,7 @@ public class MarkEvidence extends BaseEntity {
     @OneToOne(cascade = CascadeType.ALL)
     private MediaFile file;
 
-    @Column(columnDefinition = "vector")
+    @Column(columnDefinition = "vector(348)")
     private float[] embedding;
 
     @ManyToOne(fetch = FetchType.LAZY)
