@@ -14,6 +14,8 @@ import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.mark.services.mark.MarkQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
+import pt.estga.review.enums.ReviewType;
+import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
 import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
@@ -26,6 +28,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -71,11 +74,11 @@ public class ReviewService {
 			throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
 		}
 
-		// 2. Create the Mark
-		Mark newMark = markCommandService.create(Mark.builder().title(newMarTitle).build());
+		// 2. Defer mark creation so it happens inside the same transaction as the review.
+		Supplier<Mark> markSupplier = () -> markCommandService.create(Mark.builder().title(newMarTitle).build());
 
-		// 3. Process. We pass 'true' to skip the "must have suggestions" check.
-		return processReview(submissionId, ReviewDecision.APPROVED, newMark, comment, null, true);
+		// 3. Process; pass ReviewType.DISCOVERY to indicate this is a new-mark flow.
+		return processReview(submissionId, ReviewDecision.APPROVED, null, markSupplier, comment, null, ReviewType.DISCOVERY);
 	}
 
 	/**
@@ -87,11 +90,11 @@ public class ReviewService {
 		Mark mark = markQueryService.findById(markId)
 				.orElseThrow(() -> new ResourceNotFoundException("Mark " + markId + " not found"));
 
-		return processReview(submissionId, ReviewDecision.APPROVED, mark, comment, (procId) -> {
+		return processReview(submissionId, ReviewDecision.APPROVED, mark, null, comment, (procId) -> {
 			if (!suggestionQueryService.existsByProcessingIdAndMarkId(procId, markId) && !allowNonSuggested) {
 				throw new IllegalStateException("Mark not in suggestions.");
 			}
-		}, false);
+		}, ReviewType.MATCH);
 	}
 
 	/**
@@ -100,7 +103,7 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
-		return processReview(submissionId, ReviewDecision.REJECTED, null, comment, null, false);
+		return processReview(submissionId, ReviewDecision.REJECTED, null, null, comment, null, ReviewType.REJECTION);
 	}
 
 	/**
@@ -120,9 +123,10 @@ public class ReviewService {
 			Long submissionId,
 			ReviewDecision decision,
 			Mark mark,
+			Supplier<Mark> markSupplier,
 			String comment,
 			Consumer<UUID> extraValidation,
-			boolean isDiscovery) {
+			ReviewType reviewType) {
 
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
@@ -130,8 +134,13 @@ public class ReviewService {
 		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
-		// Pass isDiscovery to allow bypassing "No suggestions available" check
-		validateState(submissionId, overview.getStatus(), suggestionQueryService.countByProcessingId(overview.getId()), isDiscovery);
+		// If a mark needs to be created (new/discovery flow), create it now so it participates in this transaction.
+		if (mark == null && markSupplier != null) {
+			mark = markSupplier.get();
+		}
+
+		// Pass reviewType to allow bypassing "No suggestions available" check for discovery flows
+		validateState(submissionId, overview.getStatus(), suggestionQueryService.countByProcessingId(overview.getId()), reviewType);
 
 		if (extraValidation != null) extraValidation.accept(overview.getId());
 
@@ -149,9 +158,22 @@ public class ReviewService {
 			MarkEvidenceReview saved = markEvidenceReviewCommandService.create(review);
 			recordMetrics(saved, overview.getId());
 
-			Long reviewerId = saved.getReviewedBy() == null ? null : saved.getReviewedBy().getId();
-			Long selectedMarkId = saved.getSelectedMark() == null ? null : saved.getSelectedMark().getId();
-			eventPublisher.publish(new ReviewCompletedEvent(submissionId, decision, selectedMarkId, reviewerId));
+			// Determine resulting submission status explicitly and publish it with the event so listeners
+			SubmissionStatus resultingStatus;
+			if (decision == ReviewDecision.APPROVED) {
+				resultingStatus = SubmissionStatus.PROCESSED;
+			} else if (decision == ReviewDecision.REJECTED) {
+				resultingStatus = SubmissionStatus.REJECTED;
+			} else {
+				resultingStatus = SubmissionStatus.PROCESSED;
+			}
+
+			eventPublisher.publish(ReviewCompletedEvent.builder()
+					.submissionId(submissionId)
+					.decision(decision)
+					.reviewId(saved.getId())
+					.resultingSubmissionStatus(resultingStatus)
+					.build());
 
 			return saved;
 		} catch (DataIntegrityViolationException dive) {
@@ -159,12 +181,12 @@ public class ReviewService {
 		}
 	}
 
-	private void validateState(Long submissionId, ProcessingStatus status, long count, boolean isDiscovery) {
+	private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {
 		if (status != ProcessingStatus.COMPLETED && status != ProcessingStatus.REVIEW_PENDING) {
 			throw new IllegalStateException("Processing not ready.");
 		}
 		// If this ISN'T a discovery/new mark, we might require suggestions to exist
-		if (!isDiscovery && !allowEmptyReview && count == 0) {
+		if (reviewType != ReviewType.DISCOVERY && !allowEmptyReview && count == 0) {
 			throw new IllegalStateException("No suggestions available to review.");
 		}
 		if (markEvidenceReviewQueryService.existsBySubmissionId(submissionId)) {
