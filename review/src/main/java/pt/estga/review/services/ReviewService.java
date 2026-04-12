@@ -7,10 +7,11 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.mark.services.mark.MarkCommandService;
+import pt.estga.mark.services.mark.MarkQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
@@ -35,8 +36,9 @@ public class ReviewService {
 
  	private final MarkEvidenceSubmissionQueryService submissionQueryService;
  	private final MarkEvidenceProcessingQueryService processingQueryService;
-	private final MarkSuggestionRepository suggestionRepository;
-	private final MarkRepository markRepository;
+ 	private final MarkSuggestionQueryService suggestionQueryService;
+ 	private final MarkCommandService markCommandService;
+ 	private final MarkQueryService markQueryService;
 	private final MarkEvidenceReviewRepository reviewRepository;
 	private final UserRepository userRepository;
 	private final AfterCommitEventPublisher eventPublisher;
@@ -62,13 +64,13 @@ public class ReviewService {
 				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
 
 		// Guard: Don't allow "New Mark" if the AI found a very strong match
-		Double maxConf = suggestionRepository.findMaxConfidenceByProcessingId(overview.getId());
+		Double maxConf = suggestionQueryService.findMaxConfidenceByProcessingId(overview.getId());
 		if (maxConf != null && maxConf >= newMarkMaxSuggestionConfidence) {
 			throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
 		}
 
 		// 2. Create the Mark
-		Mark newMark = markRepository.save(Mark.builder().title(newMarTitle).build());
+		Mark newMark = markCommandService.create(Mark.builder().title(newMarTitle).build());
 
 		// 3. Process. We pass 'true' to skip the "must have suggestions" check.
 		return processReview(submissionId, ReviewDecision.APPROVED, newMark, comment, null, true);
@@ -80,11 +82,11 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
-		Mark mark = markRepository.findById(markId)
+		Mark mark = markQueryService.findById(markId)
 				.orElseThrow(() -> new ResourceNotFoundException("Mark " + markId + " not found"));
 
 		return processReview(submissionId, ReviewDecision.APPROVED, mark, comment, (procId) -> {
-			if (!suggestionRepository.existsByProcessingIdAndMarkId(procId, markId) && !allowNonSuggested) {
+			if (!suggestionQueryService.existsByProcessingIdAndMarkId(procId, markId) && !allowNonSuggested) {
 				throw new IllegalStateException("Mark not in suggestions.");
 			}
 		}, false);
@@ -127,7 +129,7 @@ public class ReviewService {
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
 		// Pass isDiscovery to allow bypassing "No suggestions available" check
-		validateState(submissionId, overview.getStatus(), suggestionRepository.countByProcessingId(overview.getId()), isDiscovery);
+		validateState(submissionId, overview.getStatus(), suggestionQueryService.countByProcessingId(overview.getId()), isDiscovery);
 
 		if (extraValidation != null) extraValidation.accept(overview.getId());
 
@@ -173,7 +175,7 @@ public class ReviewService {
 			meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
 
 			if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMark() != null) {
-				suggestionRepository.findByProcessingIdAndMarkId(processingId, review.getSelectedMark().getId())
+				suggestionQueryService.findByProcessingIdAndMarkId(processingId, review.getSelectedMark().getId())
 						.ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
 			}
 		} catch (Exception e) {

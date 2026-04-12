@@ -10,13 +10,14 @@ import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
 import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
+import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.mark.services.mark.MarkQueryService;
+import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.events.AfterCommitEventPublisher;
@@ -43,10 +44,13 @@ public class ReviewServiceTest {
     MarkEvidenceProcessingQueryService markEvidenceProcessingQueryService;
 
     @Mock
-    MarkSuggestionRepository suggestionRepository;
+    MarkSuggestionQueryService suggestionQueryService;
 
     @Mock
-    MarkRepository markRepository;
+    MarkQueryService markQueryService;
+
+    @Mock
+    MarkCommandService markCommandService;
 
     @Mock
     MarkEvidenceReviewRepository reviewRepository;
@@ -65,7 +69,7 @@ public class ReviewServiceTest {
     @BeforeEach
     public void beforeEach() {
         // Inject meter registry manually
-        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionRepository, markRepository, reviewRepository, userRepository, eventPublisher, meterRegistry);
+        reviewService = new ReviewService(submissionQueryService, markEvidenceProcessingQueryService, suggestionQueryService, markCommandService, markQueryService, reviewRepository, userRepository, eventPublisher, meterRegistry);
         // In unit tests we construct the service directly so @Value fields are not injected.
         // Permit empty-review for tests to avoid flakiness; production behavior remains governed by properties.
         try {
@@ -96,10 +100,10 @@ public class ReviewServiceTest {
         };
         when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
-        when(suggestionRepository.existsByProcessingIdAndMarkId(processing.getId(), markId)).thenReturn(true);
+        when(suggestionQueryService.existsByProcessingIdAndMarkId(processing.getId(), markId)).thenReturn(true);
 
         Mark mark = new Mark(); mark.setId(markId);
-        when(markRepository.findById(markId)).thenReturn(Optional.of(mark));
+        when(markQueryService.findById(markId)).thenReturn(Optional.of(mark));
 
         // control save: first call returns saved review, second call throws DataIntegrityViolationException
         AtomicInteger counter = new AtomicInteger(0);
