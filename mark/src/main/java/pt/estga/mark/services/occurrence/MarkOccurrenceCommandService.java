@@ -81,10 +81,7 @@ public class MarkOccurrenceCommandService {
      */
     @Transactional
     public void ensureExists(Long markId, Long monumentId, Long evidenceId) {
-        repository.findByMarkIdAndMonumentId(markId, monumentId).ifPresent(o -> {
-            // already exists
-        });
-
+        // Single existence check is sufficient
         if (repository.findByMarkIdAndMonumentId(markId, monumentId).isPresent()) return;
 
         Mark mark = markQueryService.findById(markId).orElseThrow(() -> new IllegalArgumentException("Mark not found"));

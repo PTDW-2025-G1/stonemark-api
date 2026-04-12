@@ -30,64 +30,44 @@ public class ReviewEventListener {
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.submissionId();
-        try {
-            // Use the resulting submission status carried in the event as the single source of truth
-            submissionQueryService.findById(submissionId).ifPresent(s -> {
-                SubmissionStatus current = s.getStatus();
-                SubmissionStatus target = event.resultingSubmissionStatus();
-                boolean updated = false;
-                if (target == SubmissionStatus.PROCESSED) {
-                    if (current != SubmissionStatus.PROCESSED) {
-                        s.markProcessed();
-                        updated = true;
-                    }
-                } else if (target == SubmissionStatus.REJECTED) {
-                    if (current != SubmissionStatus.REJECTED) {
-                        s.markRejected();
-                        updated = true;
-                    }
-                }
-                if (updated) {
-                    submissionCommandService.update(s);
-                }
-                // Metrics: count processed/rejected reviews (record only when applied)
-                try {
-                    if (updated) {
-                        try {
-                            meterRegistry.counter("review.event.applied.count", "decision", event.decision().name()).increment();
-                        } catch (Exception ex) {
-                            log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.debug("Failed to increment review event metric for submission {}: {}", submissionId, ex.getMessage());
-                }
-            });
 
-            // Transition processing to REVIEWED if present
-            processingRepository.findBySubmissionId(submissionId).ifPresent(p -> {
-                p.markReviewed();
-                processingRepository.save(p);
-                log.info("Processing {} marked REVIEWED for submission {}", p.getId(), submissionId);
-            });
-
-            // Link review to occurrence and attach evidence (if applicable)
+        submissionQueryService.findById(submissionId).ifPresent(submission -> {
             try {
-                final UUID[] fileHolder = new UUID[1];
-                submissionQueryService.findById(submissionId).ifPresent(sub -> {
-                    if (sub.getOriginalMediaFile() != null) {
-                        fileHolder[0] = sub.getOriginalMediaFile().getId();
-                    }
+                // 1) Update submission status (if needed) and record metric
+                updateStatus(submission, event.resultingSubmissionStatus(), event.decision());
+
+                // 2) Transition processing to REVIEWED if present
+                processingRepository.findBySubmissionId(submissionId).ifPresent(p -> {
+                    p.markReviewed();
+                    processingRepository.save(p);
+                    log.info("Processing {} marked REVIEWED for submission {}", p.getId(), submissionId);
                 });
 
+                // 3) Link review to occurrence and attach evidence (if applicable)
+                UUID mediaFileId = (submission.getOriginalMediaFile() != null) ? submission.getOriginalMediaFile().getId() : null;
                 boolean approved = event.decision() == ReviewDecision.APPROVED;
-                occurrenceCommandService.linkReviewToOccurrence(fileHolder[0], event.markId(), event.monumentId(), approved);
-            } catch (Exception ex) {
-                log.error("Failed to link review {} to occurrence: {}", event.reviewId(), ex.getMessage(), ex);
+
+                if (event.markId() != null && event.monumentId() != null) {
+                    occurrenceCommandService.linkReviewToOccurrence(mediaFileId, event.markId(), event.monumentId(), approved);
+                }
+            } catch (Exception e) {
+                // Listeners should not throw - log and continue
+                log.error("Post-review failure for submission {}: {}", submissionId, e.getMessage(), e);
             }
-        } catch (Exception e) {
-            // Listeners should not throw - log and continue
-            log.error("Failed to apply post-review state transitions for submission {}: {}", submissionId, e.getMessage(), e);
+        });
+    }
+
+    private void updateStatus(pt.estga.intake.entities.MarkEvidenceSubmission submission, SubmissionStatus target, ReviewDecision decision) {
+        if (submission.getStatus() != target) {
+            if (target == SubmissionStatus.PROCESSED) submission.markProcessed();
+            else if (target == SubmissionStatus.REJECTED) submission.markRejected();
+
+            submissionCommandService.update(submission);
+            try {
+                meterRegistry.counter("review.applied", "decision", decision.name()).increment();
+            } catch (Exception ex) {
+                log.debug("Failed to increment review.applied metric: {}", ex.getMessage());
+            }
         }
     }
 }
