@@ -43,7 +43,7 @@ public class ModerationController {
     }
 
     @GetMapping("/discovery/monuments")
-    public List<ModerationDtos.MonumentDto> phantomMonuments() {
+    public List<ModerationDtos.MonumentDto> provisionalMonuments() {
         return monumentRepository.findByValidationState(ValidationState.PROVISIONAL)
                 .stream()
                 .map(m -> new ModerationDtos.MonumentDto(m.getId(), m.getName(), m.getValidationState()))
