@@ -57,6 +57,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+        log.error("Unhandled runtime exception: {}", ex.getMessage(), ex);
         if (ex.getMessage() != null) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
         }

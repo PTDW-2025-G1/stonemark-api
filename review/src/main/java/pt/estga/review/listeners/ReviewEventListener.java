@@ -10,6 +10,7 @@ import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.mark.services.occurrence.MarkOccurrenceCommandService;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
@@ -36,12 +37,15 @@ public class ReviewEventListener {
                 // 1) Update submission status (if needed) and record metric
                 updateStatus(submission, event.resultingSubmissionStatus(), event.decision());
 
-                // 2) Transition processing to REVIEWED if present
-                processingRepository.findBySubmissionId(submissionId).ifPresent(p -> {
-                    p.markReviewed();
-                    processingRepository.save(p);
-                    log.info("Processing {} marked REVIEWED for submission {}", p.getId(), submissionId);
-                });
+                // 2) Transition processing to REVIEWED if present. Use update to avoid loading the embedding vector.
+                try {
+                    int updated = processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
+                    if (updated > 0) {
+                        log.info("Processing marked REVIEWED for submission {} (rows updated={})", submissionId, updated);
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to mark processing REVIEWED for submission {}: {}", submissionId, ex.getMessage(), ex);
+                }
 
                 // 3) Link review to occurrence and attach evidence (if applicable)
                 UUID mediaFileId = (submission.getOriginalMediaFile() != null) ? submission.getOriginalMediaFile().getId() : null;

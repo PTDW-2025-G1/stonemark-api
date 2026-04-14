@@ -168,12 +168,18 @@ public class ReviewService {
 				resultingStatus = SubmissionStatus.PROCESSED;
 			}
 
-			applicationEventPublisher.publishEvent(ReviewCompletedEvent.builder()
-					.submissionId(submissionId)
-					.decision(decision)
-					.reviewId(saved.getId())
-					.resultingSubmissionStatus(resultingStatus)
-					.build());
+			try {
+				applicationEventPublisher.publishEvent(ReviewCompletedEvent.builder()
+						.submissionId(submissionId)
+						.decision(decision)
+						.reviewId(saved.getId())
+						.resultingSubmissionStatus(resultingStatus)
+						.build());
+			} catch (Exception e) {
+				// Improve error message so callers see the underlying cause instead of generic transaction text
+				log.error("Failed to publish ReviewCompletedEvent for submission {}: {}", submissionId, e.getMessage(), e);
+				throw new IllegalStateException("Post-review processing failed: " + e.getMessage(), e);
+			}
 
 			return saved;
 		} catch (DataIntegrityViolationException dive) {
