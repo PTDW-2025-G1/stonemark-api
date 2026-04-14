@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
@@ -100,7 +101,14 @@ public class ReviewService {
 
 		// 4. Decide and execute
 		ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
-		return executor.execute(submission, decision, comment, resolution, overview.getId());
+		try {
+			return executor.execute(submission, decision, comment, resolution, overview.getId());
+		} catch (DataIntegrityViolationException dive) {
+			// Translate low-level DB integrity exception into a domain-level IllegalStateException so
+			// callers (and unit tests) can rely on a consistent exception when concurrent review
+			// attempts race to create the same review record.
+			throw new IllegalStateException("Submission " + submissionId + " already reviewed", dive);
+		}
 	}
 
 	/**
