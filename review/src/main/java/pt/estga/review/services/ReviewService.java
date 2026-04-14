@@ -10,7 +10,6 @@ import pt.estga.mark.entities.Mark;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
 import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
-import pt.estga.mark.services.mark.MarkCommandService;
 import pt.estga.mark.services.mark.MarkQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
@@ -24,11 +23,14 @@ import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.services.UserQueryService;
 import org.springframework.context.ApplicationEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
+import pt.estga.review.models.ResolutionResult;
+import pt.estga.review.dtos.DiscoveryContext;
+import pt.estga.review.processors.ReviewProcessor;
+import java.util.List;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -40,13 +42,13 @@ public class ReviewService {
 
  	private final MarkEvidenceSubmissionQueryService submissionQueryService;
  	private final MarkEvidenceProcessingQueryService processingQueryService;
- 	private final MarkSuggestionQueryService suggestionQueryService;
- 	private final MarkCommandService markCommandService;
- 	private final MarkQueryService markQueryService;
+	private final MarkSuggestionQueryService suggestionQueryService;
+	private final MarkQueryService markQueryService;
  	private final MarkEvidenceReviewCommandService markEvidenceReviewCommandService;
  	private final MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
- 	private final UserQueryService userQueryService;
+	private final UserQueryService userQueryService;
 	private final ApplicationEventPublisher applicationEventPublisher;
+	private final List<ReviewProcessor> processors;
     private final MeterRegistry meterRegistry;
 
 	@Value("${review.allow-non-suggested:false}")
@@ -74,11 +76,17 @@ public class ReviewService {
 			throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
 		}
 
-		// 2. Defer mark creation so it happens inside the same transaction as the review.
-		Supplier<Mark> markSupplier = () -> markCommandService.create(Mark.builder().title(newMarTitle).build());
+		// Resolve entities via the configured processor for DISCOVERY
+		ReviewProcessor processor = processors.stream()
+				.filter(p -> p.getSupportedType() == ReviewType.DISCOVERY)
+				.findFirst()
+				.orElseThrow(() -> new IllegalStateException("No processor for DISCOVERY reviews configured"));
 
-		// 3. Process; pass ReviewType.DISCOVERY to indicate this is a new-mark flow.
-		return processReview(submissionId, ReviewDecision.APPROVED, null, markSupplier, comment, null, ReviewType.DISCOVERY);
+		DiscoveryContext ctx = new DiscoveryContext(newMarTitle, null, null, null, null);
+		ResolutionResult resolution = processor.resolve(submissionId, ctx);
+
+		// 3. Process; pass the resolved entities into the template
+		return processReview(submissionId, ReviewDecision.APPROVED, comment, null, ReviewType.DISCOVERY, resolution);
 	}
 
 	/**
@@ -90,11 +98,13 @@ public class ReviewService {
 		Mark mark = markQueryService.findById(markId)
 				.orElseThrow(() -> new ResourceNotFoundException("Mark " + markId + " not found"));
 
-		return processReview(submissionId, ReviewDecision.APPROVED, mark, null, comment, (procId) -> {
+		ResolutionResult resolution = new ResolutionResult(mark, null);
+
+		return processReview(submissionId, ReviewDecision.APPROVED, comment, (procId) -> {
 			if (!suggestionQueryService.existsByProcessingIdAndMarkId(procId, markId) && !allowNonSuggested) {
 				throw new IllegalStateException("Mark not in suggestions.");
 			}
-		}, ReviewType.MATCH);
+		}, ReviewType.MATCH, resolution);
 	}
 
 	/**
@@ -103,7 +113,7 @@ public class ReviewService {
 	 */
 	@Transactional
 	public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
-		return processReview(submissionId, ReviewDecision.REJECTED, null, null, comment, null, ReviewType.REJECTION);
+		return processReview(submissionId, ReviewDecision.REJECTED, comment, null, ReviewType.REJECTION, null);
 	}
 
 	/**
@@ -122,11 +132,10 @@ public class ReviewService {
 	private MarkEvidenceReview processReview(
 			Long submissionId,
 			ReviewDecision decision,
-			Mark mark,
-			Supplier<Mark> markSupplier,
 			String comment,
 			Consumer<UUID> extraValidation,
-			ReviewType reviewType) {
+			ReviewType reviewType,
+			ResolutionResult resolution) {
 
 		MarkEvidenceSubmission submission = submissionQueryService.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
@@ -134,10 +143,8 @@ public class ReviewService {
 		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
-		// If a mark needs to be created (new/discovery flow), create it now so it participates in this transaction.
-		if (mark == null && markSupplier != null) {
-			mark = markSupplier.get();
-		}
+		// Extract resolved mark (if any)
+		Mark mark = resolution == null ? null : resolution.mark();
 
 		// Pass reviewType to allow bypassing "No suggestions available" check for discovery flows
 		validateState(submissionId, overview.getStatus(), suggestionQueryService.countByProcessingId(overview.getId()), reviewType);
@@ -169,10 +176,15 @@ public class ReviewService {
 			}
 
 			try {
+				Long markId = resolution == null || resolution.mark() == null ? null : resolution.mark().getId();
+				Long monumentId = resolution == null || resolution.monument() == null ? null : resolution.monument().getId();
+
 				applicationEventPublisher.publishEvent(ReviewCompletedEvent.builder()
 						.submissionId(submissionId)
 						.decision(decision)
 						.reviewId(saved.getId())
+						.markId(markId)
+						.monumentId(monumentId)
 						.resultingSubmissionStatus(resultingStatus)
 						.build());
 			} catch (Exception e) {
