@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pt.estga.processing.repositories.projections.ProcessingModerationProjection;
-import pt.estga.processing.services.marksuggestion.MarkSuggestionQueryService;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.MonumentRepository;
+import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
 import pt.estga.review.dtos.ModerationDtos;
 import pt.estga.shared.enums.ValidationState;
 
