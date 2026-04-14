@@ -9,6 +9,7 @@ import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.shared.repositories.BaseRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -55,4 +56,6 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 
 	// Projection-based batch fetch to return embeddings without hydrating full entities.
 	List<EvidenceEmbeddingProjection> findAllByIdIn(List<UUID> ids);
+
+	Optional<MarkEvidence> findByFileId(UUID fileId);
 }

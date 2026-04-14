@@ -14,6 +14,8 @@ public record ReviewCompletedEvent(
         Long submissionId,
         Long reviewId,
         ReviewDecision decision,
+        Long markId,
+        Long monumentId,
         SubmissionStatus resultingSubmissionStatus
 ) {
 }

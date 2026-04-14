@@ -42,23 +42,4 @@ public class MarkEvidenceProcessing {
     @OneToMany(mappedBy = "processing")
     List<MarkSuggestion> suggestions;
 
-    /**
-     * True when processing is reviewable (COMPLETED or REVIEW_PENDING).
-     * This name conveys domain intent more explicitly than "isReadyForReview".
-     * Centralizes readiness logic to reduce coupling to enum changes.
-     */
-    public boolean isReviewable() {
-        return status != null && (status == ProcessingStatus.COMPLETED || status == ProcessingStatus.REVIEW_PENDING);
-    }
-
-    /**
-     * Domain method to mark this processing as reviewed.
-     * Encapsulates state transition so callers don't manipulate the enum directly.
-     */
-    public void markReviewed() {
-        // Idempotent: only change status when necessary.
-        if (this.status != ProcessingStatus.REVIEWED) {
-            this.status = ProcessingStatus.REVIEWED;
-        }
-    }
 }

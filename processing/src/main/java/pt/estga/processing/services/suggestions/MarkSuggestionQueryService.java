@@ -8,6 +8,7 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.repositories.projections.ProcessingModerationProjection;
 
 import java.util.List;
 import java.util.Optional;
@@ -48,6 +49,10 @@ public class MarkSuggestionQueryService {
 
     public Double findMaxConfidenceByProcessingId(UUID processingId) {
         return markSuggestionRepository.findMaxConfidenceByProcessingId(processingId);
+    }
+
+    public List<ProcessingModerationProjection> findByConfidenceRange(double min, double max) {
+        return markSuggestionRepository.findProcessingByMaxConfidenceBetween(min, max);
     }
 
     public Optional<MarkSuggestion> findByProcessingIdAndMarkId(UUID processingId, Long markId) {

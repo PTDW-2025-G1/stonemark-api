@@ -2,6 +2,7 @@ package pt.estga.processing.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -26,6 +27,10 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.submission.id = :submissionId")
 	Optional<MarkEvidenceProcessing> findBySubmissionIdForUpdate(@Param("submissionId") Long submissionId);
+
+	@Modifying
+	@Query("UPDATE MarkEvidenceProcessing p SET p.status = :status WHERE p.submission.id = :submissionId")
+	int updateStatusBySubmissionId(@Param("submissionId") Long submissionId, @Param("status") ProcessingStatus status);
 
 	List<MarkEvidenceProcessing> findByStatusIn(List<ProcessingStatus> statuses);
 }
