@@ -20,7 +20,7 @@ import java.util.Optional;
  */
 @Service
 @RequiredArgsConstructor
-public class AdministrativeDivisionQueryService {
+public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
 	private final QueryProcessor<AdministrativeDivision> queryProcessor;

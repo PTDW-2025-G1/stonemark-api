@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.entities.Country;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
-import pt.estga.territory.services.CountryQueryService;
+import pt.estga.territory.repositories.CountryRepository;
 import pt.estga.territory.exceptions.UnsupportedCountryException;
 import pt.estga.territory.services.AdministrativeDivisionParentMatchingService;
 import pt.estga.contentimport.mappers.DivisionFeatureMapper;
@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -33,7 +34,7 @@ public class DivisionImportService {
     private final AdministrativeDivisionRepository administrativeDivisionRepository;
     private final ObjectMapper objectMapper;
     private final AdministrativeDivisionParentMatchingService administrativeDivisionParentMatchingService;
-    private final CountryQueryService countryQueryService;
+    private final CountryRepository countryRepository;
     private final DivisionFeatureMapper featureMapper;
 
     public int importFromPbf(InputStream pbfStream, String countryCode) throws Exception {
@@ -61,8 +62,7 @@ public class DivisionImportService {
             List<AdministrativeDivision> batch = new ArrayList<>(1000);
             int count = 0;
 
-            // Resolve provided country code to id using CountryCommandService (normalization handled there)
-            Country providedCountry = countryQueryService.findByCode(countryCode);
+            Country providedCountry = resolveCountry(countryCode);
             if (providedCountry == null) {
                 throw new UnsupportedCountryException("Provided countryCode is missing or unknown: " + countryCode);
             }
@@ -123,5 +123,12 @@ public class DivisionImportService {
         } finally {
             Files.deleteIfExists(pbfFile);
         }
+    }
+
+    private Country resolveCountry(String code) {
+        if (code == null) return null;
+        String normalized = code.trim().toUpperCase(Locale.ROOT);
+        if (normalized.isEmpty()) return null;
+        return countryRepository.findByCode(normalized).orElse(null);
     }
 }
