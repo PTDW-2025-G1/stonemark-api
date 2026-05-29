@@ -18,8 +18,7 @@ import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserCommandService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/account")
@@ -28,8 +27,7 @@ import pt.estga.user.services.UserCommandService;
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
-    private final UserCommandService userCommandService;
-    private final UserQueryService userQueryService;
+    private final UserService userService;
     private final UserMapper mapper;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
@@ -40,7 +38,7 @@ public class AccountController {
     })
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userQueryService
+        User user = userService
                 .findByIdForProfile(principal.getId())
                 .orElseThrow();
         return ResponseEntity.ok(mapper.toDto(user));
@@ -58,9 +56,9 @@ public class AccountController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
-        User user = userQueryService.findById(principal.getId()).orElseThrow();
+        User user = userService.findById(principal.getId()).orElseThrow();
         mapper.update(user, request);
-        userCommandService.update(user);
+        userService.update(user);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
     }
 
@@ -73,7 +71,7 @@ public class AccountController {
     })
     @DeleteMapping
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        userCommandService.softDeleteUser(principal.getId());
+        userService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
     }
 }

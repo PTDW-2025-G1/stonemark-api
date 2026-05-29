@@ -10,7 +10,7 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
 import pt.estga.shared.utils.SecurityUtils;
-import pt.estga.user.services.UserQueryService;
+import pt.estga.user.repositories.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
@@ -25,7 +25,7 @@ public class ReviewExecutor {
 
     private final MarkEvidenceReviewCommandService reviewCommandService;
     private final ApplicationEventPublisher eventPublisher;
-    private final UserQueryService userQueryService;
+    private final UserRepository userRepository;
     private final MarkSuggestionQueryService suggestionQueryService;
     private final MeterRegistry meterRegistry;
 
@@ -46,7 +46,7 @@ public class ReviewExecutor {
                 .build();
 
         SecurityUtils.getCurrentUserId()
-                .flatMap(userQueryService::findById)
+                .flatMap(userRepository::findById)
                 .ifPresent(review::setReviewedBy);
 
         MarkEvidenceReview saved = reviewCommandService.create(review);
