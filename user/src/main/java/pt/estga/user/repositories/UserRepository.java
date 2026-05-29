@@ -16,6 +16,10 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
 
     Optional<User> findByKeycloakSub(String keycloakSub);
 
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByGoogleSub(String googleSub);
+
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForProfile(@Param("id") Long id);
 

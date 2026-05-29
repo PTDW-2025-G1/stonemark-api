@@ -56,6 +56,16 @@ public class User extends BaseEntity implements Serializable {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Builder.Default
+    @Column(name = "token_version")
+    private int tokenVersion = 0;
+
+    @Column(name = "google_sub", unique = true)
+    private String googleSub;
+
     private boolean accountLocked;
     @Builder.Default
     private boolean enabled = false;
