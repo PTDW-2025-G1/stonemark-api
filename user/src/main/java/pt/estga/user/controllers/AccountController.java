@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
@@ -29,6 +30,7 @@ public class AccountController {
 
     private final UserService userService;
     private final UserMapper mapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
     @ApiResponses(value = {
@@ -73,5 +75,54 @@ public class AccountController {
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         userService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeDto> me(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
+        User user = userService.findByIdForProfile(principal.getId()).orElseThrow();
+        return ResponseEntity.ok(new MeDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRole(),
+                user.getPasswordHash() != null,
+                user.isEnabled(),
+                user.isAccountLocked()
+        ));
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<MessageResponseDto> setPassword(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @Valid @RequestBody PasswordSetRequest request) {
+        User user = userService.findById(principal.getId()).orElseThrow();
+        if (user.getPasswordHash() != null) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponseDto.error("Password is already set. Use PUT to change it."));
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        userService.update(user);
+        return ResponseEntity.ok(MessageResponseDto.success("Password set successfully."));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<MessageResponseDto> changePassword(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @Valid @RequestBody PasswordChangeRequest request) {
+        User user = userService.findById(principal.getId()).orElseThrow();
+        if (user.getPasswordHash() == null) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponseDto.error("No password set. Use POST to set one first."));
+        }
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest()
+                    .body(MessageResponseDto.error("Current password is incorrect."));
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        userService.update(user);
+        return ResponseEntity.ok(MessageResponseDto.success("Password changed successfully."));
     }
 }
