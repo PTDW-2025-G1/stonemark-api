@@ -3,14 +3,18 @@ package pt.estga.chatbot.telegram.services;
 import jakarta.inject.Provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
-import pt.estga.file.controllers.MediaController;
+import pt.estga.file.entities.MediaFile;
+import pt.estga.file.services.MediaContentService;
+import pt.estga.file.services.MediaMetadataService;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.UUID;
 
 @Service
@@ -19,7 +23,8 @@ import java.util.UUID;
 public class TelegramFileService {
 
     private final Provider<StonemarkTelegramBot> botProvider;
-    private final MediaController mediaController;
+    private final MediaMetadataService mediaMetadataService;
+    private final MediaContentService mediaContentService;
 
     public File downloadFile(String fileId) {
         try {
@@ -35,15 +40,21 @@ public class TelegramFileService {
     public InputFile createInputFileFromMediaId(UUID mediaId) {
         InputFile inputFile = new InputFile();
         try {
-            var responseEntity = mediaController.getMediaById(mediaId);
-            if (responseEntity.getStatusCode().is2xxSuccessful() && responseEntity.getBody() != null) {
-                inputFile.setMedia(responseEntity.getBody().getInputStream(), "image.jpg");
-                return inputFile;
+            Resource resource = mediaMetadataService.findById(mediaId)
+                    .map(MediaFile::getStoragePath)
+                    .map(mediaContentService::loadContent)
+                    .orElse(null);
+
+            if (resource != null) {
+                try (InputStream is = resource.getInputStream()) {
+                    inputFile.setMedia(is, "image.jpg");
+                    return inputFile;
+                }
             } else {
-                log.warn("Could not retrieve media with ID {} from MediaController", mediaId);
+                log.warn("Could not retrieve media with ID {}", mediaId);
             }
         } catch (Exception e) {
-            log.error("Error retrieving media from controller for ID: {}", mediaId, e);
+            log.error("Error retrieving media for ID: {}", mediaId, e);
         }
         return null;
     }
