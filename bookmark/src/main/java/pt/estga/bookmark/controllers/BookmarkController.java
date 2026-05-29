@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
-import pt.estga.bookmark.services.BookmarkQueryService;
 import pt.estga.bookmark.services.BookmarkService;
 
 import java.util.List;
@@ -17,12 +16,11 @@ import java.util.UUID;
 @Tag(name = "Bookmarks", description = "Endpoints for user bookmarks.")
 public class BookmarkController {
 
-	private final BookmarkQueryService queryService;
 	private final BookmarkService service;
 
 	@GetMapping("/user/{userId}")
 	public List<BookmarkResponse> listByUser(@PathVariable Long userId) {
-		return queryService.listByUser(userId);
+		return service.listByUser(userId);
 	}
 
 	@PostMapping("/user/{userId}")
