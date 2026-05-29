@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.services.mark.MarkCommandService;
-import pt.estga.mark.services.mark.MarkQueryService;
+import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.Monument;
 import pt.estga.monument.services.MonumentCommandService;
 import pt.estga.monument.services.MonumentQueryService;
@@ -20,8 +19,7 @@ import pt.estga.review.models.ResolutionResult;
 @RequiredArgsConstructor
 public class DiscoveryReviewProcessor implements ReviewProcessor {
 
-    private final MarkCommandService markCommandService;
-    private final MarkQueryService markQueryService;
+    private final MarkRepository markRepository;
     private final MonumentCommandService monumentCommandService;
     private final MonumentQueryService monumentQueryService;
 
@@ -33,9 +31,9 @@ public class DiscoveryReviewProcessor implements ReviewProcessor {
     public ResolutionResult resolve(Long submissionId, DiscoveryContext context) {
         Mark mark = null;
         if (context.existingMarkId() != null) {
-            mark = markQueryService.findById(context.existingMarkId()).orElseThrow();
+            mark = markRepository.findById(context.existingMarkId()).orElseThrow();
         } else if (context.markTitle() != null) {
-            mark = markCommandService.create(Mark.builder().title(context.markTitle()).build());
+            mark = markRepository.save(Mark.builder().title(context.markTitle()).build());
         }
 
         Monument monument = null;

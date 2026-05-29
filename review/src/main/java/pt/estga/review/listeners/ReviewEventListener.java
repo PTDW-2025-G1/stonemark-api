@@ -9,11 +9,18 @@ import org.springframework.stereotype.Component;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
 import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.mark.entities.Mark;
+import pt.estga.mark.entities.MarkOccurrence;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
+import pt.estga.mark.repositories.MarkOccurrenceRepository;
+import pt.estga.mark.repositories.MarkRepository;
+import pt.estga.monument.Monument;
+import pt.estga.monument.MonumentRepository;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.mark.services.occurrence.MarkOccurrenceCommandService;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
+import pt.estga.shared.enums.ValidationState;
 
 import java.util.UUID;
 
@@ -26,7 +33,10 @@ public class ReviewEventListener {
     private final MarkEvidenceSubmissionCommandService submissionCommandService;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
-    private final MarkOccurrenceCommandService occurrenceCommandService;
+    private final MarkOccurrenceRepository occurrenceRepository;
+    private final MarkRepository markRepository;
+    private final MonumentRepository monumentRepository;
+    private final MarkEvidenceRepository evidenceRepository;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleReviewCompleted(ReviewCompletedEvent event) {
@@ -49,16 +59,41 @@ public class ReviewEventListener {
 
                 // 3) Link review to occurrence and attach evidence (if applicable)
                 UUID mediaFileId = (submission.getOriginalMediaFile() != null) ? submission.getOriginalMediaFile().getId() : null;
-                boolean approved = event.decision() == ReviewDecision.APPROVED;
 
                 if (event.markId() != null && event.monumentId() != null) {
-                    occurrenceCommandService.linkReviewToOccurrence(mediaFileId, event.markId(), event.monumentId(), approved);
+                    linkReviewToOccurrence(mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
                 }
             } catch (Exception e) {
                 // Listeners should not throw - log and continue
                 log.error("Post-review failure for submission {}: {}", submissionId, e.getMessage(), e);
             }
         });
+    }
+
+    private void linkReviewToOccurrence(UUID mediaFileId, Long markId, Long monumentId, boolean approved) {
+        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
+                .orElseGet(() -> {
+                    ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
+                    Mark mark = markRepository.findById(markId).orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+                    Monument monument = monumentRepository.findById(monumentId).orElseThrow(() -> new IllegalArgumentException("Monument not found"));
+
+                    return occurrenceRepository.save(MarkOccurrence.builder()
+                            .mark(mark)
+                            .monument(monument)
+                            .validationState(state)
+                            .build());
+                });
+
+        if (mediaFileId == null) return;
+
+        try {
+            evidenceRepository.findByFileId(mediaFileId).ifPresent(ev -> {
+                ev.setOccurrence(occurrence);
+                evidenceRepository.save(ev);
+            });
+        } catch (Exception e) {
+            log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
+        }
     }
 
     private void updateStatus(pt.estga.intake.entities.MarkEvidenceSubmission submission, SubmissionStatus target, ReviewDecision decision) {

@@ -3,7 +3,7 @@ package pt.estga.review.processors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.services.mark.MarkQueryService;
+import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.Monument;
 import pt.estga.monument.services.MonumentQueryService;
 import pt.estga.review.dtos.DiscoveryContext;
@@ -17,7 +17,7 @@ import pt.estga.review.models.ResolutionResult;
 @RequiredArgsConstructor
 public class MatchReviewProcessor implements ReviewProcessor {
 
-    private final MarkQueryService markQueryService;
+    private final MarkRepository markRepository;
     private final MonumentQueryService monumentQueryService;
 
     @Override
@@ -29,7 +29,7 @@ public class MatchReviewProcessor implements ReviewProcessor {
         Monument monument = null;
 
         if (context.existingMarkId() != null) {
-            mark = markQueryService.findById(context.existingMarkId()).orElseThrow();
+            mark = markRepository.findById(context.existingMarkId()).orElseThrow();
         }
         if (context.existingMonumentId() != null) {
             monument = monumentQueryService.findById(context.existingMonumentId()).orElseThrow();
