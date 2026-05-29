@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.services.MonumentQueryService;
-import pt.estga.monument.services.MonumentCommandService;
+import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.monument.dots.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
@@ -25,8 +24,7 @@ import java.net.URI;
 @PreAuthorize("hasRole('MODERATOR')")
 public class MonumentAdminController {
 
-    private final MonumentCommandService service;
-    private final MonumentQueryService queryService;
+    private final MonumentService service;
     private final MonumentMapper mapper;
 
     @PostMapping
@@ -36,7 +34,7 @@ public class MonumentAdminController {
     ) {
         Monument monument = mapper.toEntity(monumentDto);
 
-        Monument createdMonument = service.create(monument);
+        Monument createdMonument = service.save(monument);
         MonumentDto response = mapper.toResponseDto(createdMonument);
 
         URI location = ServletUriComponentsBuilder
@@ -54,12 +52,12 @@ public class MonumentAdminController {
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument existingMonument = queryService.findById(id)
+        Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
         mapper.updateEntityFromDto(monumentDto, existingMonument);
 
-        Monument updatedMonument = service.update(existingMonument);
+        Monument updatedMonument = service.save(existingMonument);
         return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
     }
 

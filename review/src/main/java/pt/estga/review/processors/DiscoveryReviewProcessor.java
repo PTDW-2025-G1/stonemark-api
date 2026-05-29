@@ -6,8 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.Monument;
-import pt.estga.monument.services.MonumentCommandService;
-import pt.estga.monument.services.MonumentQueryService;
+import pt.estga.monument.MonumentRepository;
 import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
@@ -20,8 +19,7 @@ import pt.estga.review.models.ResolutionResult;
 public class DiscoveryReviewProcessor implements ReviewProcessor {
 
     private final MarkRepository markRepository;
-    private final MonumentCommandService monumentCommandService;
-    private final MonumentQueryService monumentQueryService;
+    private final MonumentRepository monumentRepository;
 
     @Override
     public ReviewType getSupportedType() { return ReviewType.DISCOVERY; }
@@ -38,9 +36,9 @@ public class DiscoveryReviewProcessor implements ReviewProcessor {
 
         Monument monument = null;
         if (context.existingMonumentId() != null) {
-            monument = monumentQueryService.findById(context.existingMonumentId()).orElseThrow();
+            monument = monumentRepository.findById(context.existingMonumentId()).orElseThrow();
         } else if (context.monumentName() != null || context.location() != null) {
-            monument = monumentCommandService.create(Monument.builder()
+            monument = monumentRepository.save(Monument.builder()
                     .name(context.monumentName())
                     .location(context.location())
                     .build());

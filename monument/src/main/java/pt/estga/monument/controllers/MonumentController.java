@@ -9,7 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.services.MonumentQueryService;
+import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dots.MonumentDto;
 import pt.estga.monument.dots.MonumentListDto;
 import pt.estga.sharedweb.models.PagedRequest;
@@ -20,7 +20,7 @@ import pt.estga.sharedweb.models.PagedRequest;
 @Tag(name = "Monuments", description = "Endpoints for monuments.")
 public class MonumentController {
 
-    private final MonumentQueryService service;
+    private final MonumentService service;
     private final MonumentMapper mapper;
 
     @GetMapping("/{id}")
