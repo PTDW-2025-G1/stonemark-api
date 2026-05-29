@@ -7,12 +7,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
-import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
+import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import pt.estga.review.models.ResolutionResult;
@@ -28,9 +28,9 @@ import org.springframework.beans.factory.annotation.Value;
 public class ReviewService {
 
  	private final MarkEvidenceSubmissionRepository submissionRepository;
- 	private final MarkEvidenceProcessingQueryService processingQueryService;
+ 	private final MarkEvidenceProcessingRepository processingRepository;
 	private final MarkSuggestionQueryService suggestionQueryService;
-  	private final MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
+  	private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
 	private final List<ReviewProcessor> processors;
 	private final ReviewExecutor executor;
 
@@ -47,7 +47,7 @@ public class ReviewService {
 	@Transactional
 	public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarTitle, String comment) {
 		// Fetch overview to check confidence
-		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
+		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
 
 		// Guard: Don't allow "New Mark" if the AI found a very strong match
@@ -85,7 +85,7 @@ public class ReviewService {
 		var submission = submissionRepository.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)
+		var overview = processingRepository.findOverviewBySubmissionId(submissionId)
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
 		// 2. Policy validation
@@ -116,7 +116,7 @@ public class ReviewService {
 	 */
 	@Transactional(readOnly = true)
 	public ReviewDecision getReviewStatus(Long submissionId) {
-		return markEvidenceReviewQueryService.findBySubmissionId(submissionId)
+		return markEvidenceReviewRepository.findBySubmissionId(submissionId)
 				.map(MarkEvidenceReview::getDecision)
 				.orElse(null);
 	}
@@ -129,7 +129,7 @@ public class ReviewService {
 		if (reviewType != ReviewType.DISCOVERY && !allowEmptyReview && count == 0) {
 			throw new IllegalStateException("No suggestions available to review.");
 		}
-		if (markEvidenceReviewQueryService.existsBySubmissionId(submissionId)) {
+		if (markEvidenceReviewRepository.existsBySubmissionId(submissionId)) {
 			throw new IllegalStateException("Submission already reviewed.");
 		}
 	}

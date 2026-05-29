@@ -11,14 +11,14 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
-import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.processors.ReviewProcessor;
-import pt.estga.review.services.markevidencereview.MarkEvidenceReviewQueryService;
+import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -38,7 +38,7 @@ public class ReviewServiceTest {
     MarkEvidenceSubmissionRepository submissionRepository;
 
     @Mock
-    MarkEvidenceProcessingQueryService markEvidenceProcessingQueryService;
+    MarkEvidenceProcessingRepository markEvidenceProcessingRepository;
 
     @Mock
     MarkSuggestionQueryService suggestionQueryService;
@@ -50,7 +50,7 @@ public class ReviewServiceTest {
     ReviewProcessor processor;
 
     @Mock
-    MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
+    MarkEvidenceReviewRepository markEvidenceReviewRepository;
 
     ReviewService reviewService;
 
@@ -62,9 +62,9 @@ public class ReviewServiceTest {
 
         reviewService = new ReviewService(
                 submissionRepository,
-                markEvidenceProcessingQueryService,
+                markEvidenceProcessingRepository,
                 suggestionQueryService,
-                markEvidenceReviewQueryService,
+                markEvidenceReviewRepository,
                 List.of(processor),
                 executor
         );
@@ -89,7 +89,7 @@ public class ReviewServiceTest {
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(procId);
         when(overview.getStatus()).thenReturn(ProcessingStatus.COMPLETED);
-        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
+        when(markEvidenceProcessingRepository.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
         // Processor logic: allow resolution (REJECTION flows return empty resolution)
         when(processor.resolve(eq(submissionId), any())).thenReturn(new ResolutionResult(null, null));
@@ -145,13 +145,13 @@ public class ReviewServiceTest {
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(UUID.randomUUID());
         when(overview.getStatus()).thenReturn(ProcessingStatus.COMPLETED);
-        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
+        when(markEvidenceProcessingRepository.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
         // Allow processor to resolve
         when(processor.resolve(anyLong(), any())).thenReturn(new ResolutionResult(null, null));
 
         // Mock state: first check false, second check true
-        when(markEvidenceReviewQueryService.existsBySubmissionId(submissionId))
+        when(markEvidenceReviewRepository.existsBySubmissionId(submissionId))
                 .thenReturn(false)
                 .thenReturn(true);
 
@@ -172,7 +172,7 @@ public class ReviewServiceTest {
 
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(procId);
-        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId))
+        when(markEvidenceProcessingRepository.findOverviewBySubmissionId(submissionId))
                 .thenReturn(Optional.of(overview));
 
         // High confidence (0.9 > 0.5)
@@ -194,7 +194,7 @@ public class ReviewServiceTest {
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(procId);
         when(overview.getStatus()).thenReturn(ProcessingStatus.COMPLETED);
-        when(markEvidenceProcessingQueryService.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
+        when(markEvidenceProcessingRepository.findOverviewBySubmissionId(submissionId)).thenReturn(Optional.of(overview));
 
         Mark mark = new Mark();
 
