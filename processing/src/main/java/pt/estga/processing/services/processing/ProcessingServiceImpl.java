@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.LockAcquisitionException;
 import org.springframework.stereotype.Service;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import java.util.UUID;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
@@ -34,7 +34,7 @@ import java.util.List;
 @Slf4j
 public class ProcessingServiceImpl implements ProcessingService {
 
-    private final MarkEvidenceSubmissionQueryService submissionQueryService;
+    private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionCommandService suggestionCommandService;
     private final VisionClient visionClient;
@@ -60,7 +60,7 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     @Override
     public void processSubmission(Long submissionId) {
-        submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
+        submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();
             try {

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.dao.DataIntegrityViolationException;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.services.markevidenceprocessing.MarkEvidenceProcessingQueryService;
 import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 @Slf4j
 public class ReviewService {
 
- 	private final MarkEvidenceSubmissionQueryService submissionQueryService;
+ 	private final MarkEvidenceSubmissionRepository submissionRepository;
  	private final MarkEvidenceProcessingQueryService processingQueryService;
 	private final MarkSuggestionQueryService suggestionQueryService;
   	private final MarkEvidenceReviewQueryService markEvidenceReviewQueryService;
@@ -82,7 +82,7 @@ public class ReviewService {
 	@Transactional
 	public MarkEvidenceReview performReview(Long submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
 		// 1. Fetch data
-		var submission = submissionQueryService.findById(submissionId)
+		var submission = submissionRepository.findById(submissionId)
 				.orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
 		var overview = processingQueryService.findOverviewBySubmissionId(submissionId)

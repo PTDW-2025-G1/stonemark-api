@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.processing.AsyncProcessingService;
 
@@ -15,7 +15,7 @@ import pt.estga.processing.services.processing.AsyncProcessingService;
 @Slf4j
 public class MarkEvidenceSubmittedListener {
 
-    private final MarkEvidenceSubmissionQueryService submissionQueryService;
+    private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final AsyncProcessingService asyncProcessingService;
 
@@ -32,7 +32,7 @@ public class MarkEvidenceSubmittedListener {
             return; // already processed or in progress
         }
 
-        submissionQueryService.findById(submissionId).ifPresentOrElse(submission -> {
+        submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
             // Kick off processing asynchronously so the transaction/commit thread is not blocked.
             asyncProcessingService.processAsync(submission.getId());
         }, () -> log.warn("Submission with id {} not found while enqueuing draft", submissionId));

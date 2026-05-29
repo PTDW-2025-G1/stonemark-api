@@ -7,8 +7,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.intake.services.MarkEvidenceSubmissionCommandService;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
@@ -29,8 +28,7 @@ import java.util.UUID;
 @Slf4j
 public class ReviewEventListener {
 
-    private final MarkEvidenceSubmissionQueryService submissionQueryService;
-    private final MarkEvidenceSubmissionCommandService submissionCommandService;
+    private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MeterRegistry meterRegistry;
     private final MarkOccurrenceRepository occurrenceRepository;
@@ -42,7 +40,7 @@ public class ReviewEventListener {
     public void handleReviewCompleted(ReviewCompletedEvent event) {
         Long submissionId = event.submissionId();
 
-        submissionQueryService.findById(submissionId).ifPresent(submission -> {
+        submissionRepository.findById(submissionId).ifPresent(submission -> {
             try {
                 // 1) Update submission status (if needed) and record metric
                 updateStatus(submission, event.resultingSubmissionStatus(), event.decision());
@@ -101,7 +99,7 @@ public class ReviewEventListener {
             if (target == SubmissionStatus.PROCESSED) submission.markProcessed();
             else if (target == SubmissionStatus.REJECTED) submission.markRejected();
 
-            submissionCommandService.update(submission);
+            submissionRepository.save(submission);
             try {
                 meterRegistry.counter("review.applied", "decision", decision.name()).increment();
             } catch (Exception ex) {

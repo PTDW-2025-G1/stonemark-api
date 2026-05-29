@@ -7,7 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.services.MarkEvidenceSubmissionQueryService;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class ReviewServiceTest {
 
     @Mock
-    MarkEvidenceSubmissionQueryService submissionQueryService;
+    MarkEvidenceSubmissionRepository submissionRepository;
 
     @Mock
     MarkEvidenceProcessingQueryService markEvidenceProcessingQueryService;
@@ -61,7 +61,7 @@ public class ReviewServiceTest {
         lenient().when(processor.getSupportedType()).thenReturn(ReviewType.REJECTION);
 
         reviewService = new ReviewService(
-                submissionQueryService,
+                submissionRepository,
                 markEvidenceProcessingQueryService,
                 suggestionQueryService,
                 markEvidenceReviewQueryService,
@@ -83,7 +83,7 @@ public class ReviewServiceTest {
         // Setup Submission
         MarkEvidenceSubmission submission = new MarkEvidenceSubmission();
         submission.setId(submissionId);
-        when(submissionQueryService.findById(submissionId)).thenReturn(Optional.of(submission));
+        when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(submission));
 
         // Setup Processing Overview
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
@@ -140,7 +140,7 @@ public class ReviewServiceTest {
     @Test
     public void doubleReviewAttempt_blocked() {
         Long submissionId = 3L;
-        when(submissionQueryService.findById(submissionId)).thenReturn(Optional.of(new MarkEvidenceSubmission()));
+        when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(new MarkEvidenceSubmission()));
 
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(UUID.randomUUID());
@@ -189,7 +189,7 @@ public class ReviewServiceTest {
         UUID procId = UUID.randomUUID();
 
         // 1. Setup Data
-        when(submissionQueryService.findById(submissionId)).thenReturn(Optional.of(new MarkEvidenceSubmission()));
+        when(submissionRepository.findById(submissionId)).thenReturn(Optional.of(new MarkEvidenceSubmission()));
 
         ProcessingOverviewProjection overview = mock(ProcessingOverviewProjection.class);
         when(overview.getId()).thenReturn(procId);
