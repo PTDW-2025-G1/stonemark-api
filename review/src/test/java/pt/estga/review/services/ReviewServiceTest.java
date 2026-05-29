@@ -12,7 +12,7 @@ import pt.estga.mark.entities.Mark;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
@@ -41,7 +41,7 @@ public class ReviewServiceTest {
     MarkEvidenceProcessingRepository markEvidenceProcessingRepository;
 
     @Mock
-    MarkSuggestionQueryService suggestionQueryService;
+    MarkSuggestionRepository suggestionRepository;
 
     @Mock
     ReviewExecutor executor;
@@ -63,7 +63,7 @@ public class ReviewServiceTest {
         reviewService = new ReviewService(
                 submissionRepository,
                 markEvidenceProcessingRepository,
-                suggestionQueryService,
+                suggestionRepository,
                 markEvidenceReviewRepository,
                 List.of(processor),
                 executor
@@ -176,7 +176,7 @@ public class ReviewServiceTest {
                 .thenReturn(Optional.of(overview));
 
         // High confidence (0.9 > 0.5)
-        when(suggestionQueryService.findMaxConfidenceByProcessingId(procId)).thenReturn(0.9);
+        when(suggestionRepository.findMaxConfidenceByProcessingId(procId)).thenReturn(0.9);
 
         assertThrows(IllegalStateException.class, () ->
                 reviewService.acceptAsNew(submissionId, "New Mark", "Comment"));

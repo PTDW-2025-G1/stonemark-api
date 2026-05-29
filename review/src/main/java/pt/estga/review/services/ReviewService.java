@@ -8,7 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
@@ -29,7 +29,7 @@ public class ReviewService {
 
  	private final MarkEvidenceSubmissionRepository submissionRepository;
  	private final MarkEvidenceProcessingRepository processingRepository;
-	private final MarkSuggestionQueryService suggestionQueryService;
+	private final MarkSuggestionRepository suggestionRepository;
   	private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
 	private final List<ReviewProcessor> processors;
 	private final ReviewExecutor executor;
@@ -51,7 +51,7 @@ public class ReviewService {
 				.orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
 
 		// Guard: Don't allow "New Mark" if the AI found a very strong match
-		Double maxConf = suggestionQueryService.findMaxConfidenceByProcessingId(overview.getId());
+		Double maxConf = suggestionRepository.findMaxConfidenceByProcessingId(overview.getId());
 		if (maxConf != null && maxConf >= newMarkMaxSuggestionConfidence) {
 			throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
 		}
@@ -89,7 +89,7 @@ public class ReviewService {
 				.orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
 
 		// 2. Policy validation
-		validateState(submissionId, overview.getStatus(), suggestionQueryService.countByProcessingId(overview.getId()), type);
+		validateState(submissionId, overview.getStatus(), suggestionRepository.countByProcessingId(overview.getId()), type);
 
 		// 3. Resolve entities
 		ReviewProcessor processor = processors.stream()

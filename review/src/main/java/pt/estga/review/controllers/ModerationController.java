@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import pt.estga.processing.repositories.projections.ProcessingModerationProjection;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.ModerationDtos;
 import pt.estga.shared.enums.ValidationState;
 
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ModerationController {
 
-    private final MarkSuggestionQueryService markSuggestionQueryService;
+    private final MarkSuggestionRepository suggestionRepository;
     private final MarkRepository markRepository;
     private final MonumentRepository monumentRepository;
 
@@ -28,7 +28,7 @@ public class ModerationController {
     public List<ModerationDtos.ProcessingDto> processingByConfidence(
             @RequestParam double min,
             @RequestParam double max) {
-        List<ProcessingModerationProjection> result = markSuggestionQueryService.findByConfidenceRange(min, max);
+        List<ProcessingModerationProjection> result = suggestionRepository.findProcessingByMaxConfidenceBetween(min, max);
         return result.stream().map(p -> new ModerationDtos.ProcessingDto(
                 p.getProcessingId(), p.getSubmissionId(), p.getStatus(), p.getMaxConfidence()
         )).collect(Collectors.toList());

@@ -15,7 +15,7 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
-import pt.estga.processing.services.suggestions.MarkSuggestionCommandService;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.services.MediaContentService;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -36,7 +36,7 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final MarkSuggestionCommandService suggestionCommandService;
+    private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
     private final MediaContentService mediaContentService;
     private final SimilarityService similarityService;
@@ -251,12 +251,13 @@ public class ProcessingServiceImpl implements ProcessingService {
             p.setStatus(ProcessingStatus.COMPLETED);
             p.setProcessedAt(Instant.now());
             // remove previous suggestions to avoid duplicates on reprocessing
-            suggestionCommandService.deleteByProcessingId(p.getId());
+            suggestionRepository.deleteByProcessingId(p.getId());
                 if (suggestions != null && !suggestions.isEmpty()) {
                 // Ensure each suggestion references the managed processing entity
                 suggestions.forEach(s -> s.setProcessing(p));
                 // Persist suggestions in batch
-                suggestionCommandService.createAll(suggestions);
+                suggestions.forEach(s -> s.setId(null));
+                suggestionRepository.saveAll(suggestions);
             }
             // Persist normalized embedding (embedding parameter was normalized earlier in the flow)
             float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
