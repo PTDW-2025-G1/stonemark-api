@@ -47,7 +47,7 @@ public class SecurityConfig {
             "https://*.stonemark.pt"
     };
 
-    private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
+    private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
 
     @Bean
     @Order(2)
@@ -83,7 +83,7 @@ public class SecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(keycloakJwtAuthenticationConverter)
+                                .jwtAuthenticationConverter(appJwtAuthenticationConverter)
                         )
                 )
                 .logout(logout -> logout
