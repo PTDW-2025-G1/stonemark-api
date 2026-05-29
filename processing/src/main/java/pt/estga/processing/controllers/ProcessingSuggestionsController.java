@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.processing.mappers.MarkSuggestionMapper;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,11 +18,18 @@ import java.util.Optional;
 @Tag(name = "Processing Suggestions", description = "Suggestions for a processing submission.")
 public class ProcessingSuggestionsController {
 
-    private final MarkSuggestionQueryService queryService;
+    private final MarkEvidenceProcessingRepository processingRepository;
+    private final MarkSuggestionRepository suggestionRepository;
+    private final MarkSuggestionMapper suggestionMapper;
 
     @GetMapping("/{submissionId}/suggestions")
     public ResponseEntity<List<MarkSuggestionDto>> getSuggestionsForSubmission(@PathVariable Long submissionId) {
-        Optional<List<MarkSuggestionDto>> opt = queryService.findBySubmissionId(submissionId);
-        return opt.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return processingRepository.findBySubmissionId(submissionId)
+                .map(p -> suggestionRepository.findByProcessingId(p.getId())
+                        .stream()
+                        .map(suggestionMapper::toDto)
+                        .toList())
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

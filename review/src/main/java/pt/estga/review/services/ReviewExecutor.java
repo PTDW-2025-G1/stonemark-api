@@ -8,12 +8,12 @@ import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.models.ResolutionResult;
-import pt.estga.review.services.markevidencereview.MarkEvidenceReviewCommandService;
+import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.utils.SecurityUtils;
-import pt.estga.user.services.UserQueryService;
+import pt.estga.user.repositories.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import pt.estga.review.events.ReviewCompletedEvent;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Instant;
@@ -23,10 +23,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ReviewExecutor {
 
-    private final MarkEvidenceReviewCommandService reviewCommandService;
+    private final MarkEvidenceReviewRepository reviewRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final UserQueryService userQueryService;
-    private final MarkSuggestionQueryService suggestionQueryService;
+    private final UserRepository userRepository;
+    private final MarkSuggestionRepository suggestionRepository;
     private final MeterRegistry meterRegistry;
 
     @Transactional
@@ -46,16 +46,16 @@ public class ReviewExecutor {
                 .build();
 
         SecurityUtils.getCurrentUserId()
-                .flatMap(userQueryService::findById)
+                .flatMap(userRepository::findById)
                 .ifPresent(review::setReviewedBy);
 
-        MarkEvidenceReview saved = reviewCommandService.create(review);
+        MarkEvidenceReview saved = reviewRepository.save(review);
 
         // Metrics
         try {
             meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
             if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMark() != null) {
-                suggestionQueryService.findByProcessingIdAndMarkId(processingId, review.getSelectedMark().getId())
+                suggestionRepository.findByProcessingIdAndMarkId(processingId, review.getSelectedMark().getId())
                         .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
             }
         } catch (Exception ex) {

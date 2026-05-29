@@ -9,8 +9,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.user.entities.User;
+import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.services.ChatbotAccountService;
-import pt.estga.user.services.UserQueryService;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
@@ -25,7 +25,7 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final UserQueryService userQueryService;
+    private final UserRepository userRepository;
     private final ChatbotAccountService chatbotAccountService;
     private final AfterCommitEventPublisher eventPublisher;
 
@@ -44,7 +44,7 @@ public class AccountVerificationController {
         }
 
         String platformUserId = platformUserIdOpt.get();
-        User user = userQueryService.findById(principal.getId()).orElseThrow();
+        User user = userRepository.findById(principal.getId()).orElseThrow();
 
         // Create or update chatbot identity (platform-agnostic)
         chatbotAccountService.createOrUpdateChatbot(user, platformUserId);

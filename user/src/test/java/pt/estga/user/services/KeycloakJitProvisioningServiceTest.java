@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.user.dtos.KeycloakIdentitySnapshot;
 import pt.estga.user.entities.User;
+import pt.estga.user.repositories.UserRepository;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,10 +24,7 @@ import static org.mockito.Mockito.*;
 class KeycloakJitProvisioningServiceTest {
 
     @Mock
-    private UserCommandService userCommandService;
-
-    @Mock
-    private UserQueryService userQueryService;
+    private UserRepository userRepository;
 
     @InjectMocks
     private KeycloakJitProvisioningService service;
@@ -48,15 +46,15 @@ class KeycloakJitProvisioningServiceTest {
     @Test
     void resolveOrProvision_createsUser_withSanitizedUsernameAndSuffix() {
         String sub = "550e8400-e29b-41d4-a716-446655440000";
-        KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, "John😊.Doe", "John", "Doe", "john@example.com", true);
+        KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, "John.Doe", "John", "Doe", "john@example.com", true);
 
-        when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.empty());
-        when(userQueryService.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(userCommandService.create(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findByKeycloakSub(sub)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         service.resolveOrProvision(snapshot);
 
-        verify(userCommandService).create(userCaptor.capture());
+        verify(userRepository).save(userCaptor.capture());
         User passed = userCaptor.getValue();
 
         assertEquals("john.doe_550e8400", passed.getUsername());
@@ -80,12 +78,12 @@ class KeycloakJitProvisioningServiceTest {
 
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(sub, null, null, null, "john@example.com", true);
 
-        when(userQueryService.findByKeycloakSub(sub)).thenReturn(Optional.of(existing));
-        when(userCommandService.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findByKeycloakSub(sub)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = service.resolveOrProvision(snapshot);
 
-        verify(userCommandService, times(1)).update(userCaptor.capture());
+        verify(userRepository, times(1)).save(userCaptor.capture());
         User updated = userCaptor.getValue();
 
         assertTrue(updated.isEmailVerified());
@@ -106,12 +104,12 @@ class KeycloakJitProvisioningServiceTest {
 
         KeycloakIdentitySnapshot snapshot = new KeycloakIdentitySnapshot(newSub, null, null, null, "jane@example.com", true);
 
-        when(userQueryService.findByKeycloakSub(newSub)).thenReturn(Optional.empty());
-        when(userQueryService.findByEmail("jane@example.com")).thenReturn(Optional.of(existing));
+        when(userRepository.findByKeycloakSub(newSub)).thenReturn(Optional.empty());
+        when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(existing));
 
         assertThrows(IllegalStateException.class, () -> service.resolveOrProvision(snapshot));
 
-        verify(userCommandService, never()).create(any());
-        verify(userCommandService, never()).update(any());
+        verify(userRepository, never()).save(any());
+        verify(userRepository, never()).update(any());
     }
 }

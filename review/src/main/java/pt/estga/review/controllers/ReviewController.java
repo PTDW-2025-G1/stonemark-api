@@ -6,13 +6,16 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.processing.dtos.MarkSuggestionDto;
+import pt.estga.processing.mappers.MarkSuggestionMapper;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.AcceptNewMarkRequest;
 import pt.estga.review.dtos.ReviewResponseDto;
 import pt.estga.review.dtos.SimpleReviewRequest;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.mappers.ReviewMapper;
 import pt.estga.review.services.ReviewService;
-import pt.estga.processing.services.suggestions.MarkSuggestionQueryService;
 
 import java.util.List;
 
@@ -24,7 +27,9 @@ public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewMapper mapper;
-    private final MarkSuggestionQueryService suggestionQueryService;
+    private final MarkEvidenceProcessingRepository processingRepository;
+    private final MarkSuggestionRepository suggestionRepository;
+    private final MarkSuggestionMapper suggestionMapper;
 
     @PostMapping("/{submissionId}/accept")
     @ResponseStatus(HttpStatus.CREATED)
@@ -67,9 +72,12 @@ public class ReviewController {
     }
 
     @GetMapping("/{submissionId}/suggestions")
-    public List<?> getSuggestions(@PathVariable Long submissionId) {
-        // Assuming findBySubmissionId returns an Optional<List> or similar
-        return suggestionQueryService.findBySubmissionId(submissionId)
+    public List<MarkSuggestionDto> getSuggestions(@PathVariable Long submissionId) {
+        return processingRepository.findBySubmissionId(submissionId)
+                .map(p -> suggestionRepository.findByProcessingId(p.getId())
+                        .stream()
+                        .map(suggestionMapper::toDto)
+                        .toList())
                 .orElseThrow(() -> new pt.estga.sharedweb.exceptions.ResourceNotFoundException("Suggestions not found"));
     }
 }

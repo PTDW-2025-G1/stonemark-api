@@ -14,8 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.user.dtos.UserDto;
-import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserCommandService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
@@ -24,8 +23,7 @@ import pt.estga.user.services.UserCommandService;
 @PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
 
-    private final UserCommandService service;
-    private final UserQueryService queryService;
+    private final UserService service;
 
     @Operation(summary = "Search users", description = "Searches for users based on dynamic filters.")
     @ApiResponses(value = {
@@ -35,7 +33,7 @@ public class UserAdminController {
     })
     @PostMapping("/search")
     public ResponseEntity<Page<UserDto>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(queryService.search(request));
+        return ResponseEntity.ok(service.search(request));
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID.")
@@ -49,7 +47,7 @@ public class UserAdminController {
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return queryService.findDtoById(id)
+        return service.findDtoById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

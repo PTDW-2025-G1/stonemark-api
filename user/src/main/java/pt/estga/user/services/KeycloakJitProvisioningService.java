@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import pt.estga.shared.enums.UserRole;
 import pt.estga.user.dtos.KeycloakIdentitySnapshot;
 import pt.estga.user.entities.User;
+import pt.estga.user.repositories.UserRepository;
 
 import java.util.UUID;
 import java.time.Instant;
@@ -23,8 +24,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class KeycloakJitProvisioningService {
 
-    private final UserCommandService userCommandService;
-    private final UserQueryService userQueryService;
+    private final UserRepository userRepository;
     private KeycloakJitProvisioningService self;
     private static final Logger log = LoggerFactory.getLogger(KeycloakJitProvisioningService.class);
     private static final int SUB_SUFFIX_LENGTH = 8;
@@ -48,14 +48,14 @@ public class KeycloakJitProvisioningService {
             throw new IllegalArgumentException("Keycloak snapshot must contain a subject (sub)");
         }
 
-        return userQueryService.findByKeycloakSub(snapshot.sub())
+        return userRepository.findByKeycloakSub(snapshot.sub())
                 .map(existing -> syncSnapshot(existing, snapshot))
                 .orElseGet(() -> linkOrCreate(snapshot));
     }
 
     private User linkOrCreate(KeycloakIdentitySnapshot snapshot) {
         if (snapshot.email() != null && snapshot.emailVerified()) {
-            return userQueryService.findByEmail(snapshot.email())
+            return userRepository.findByEmail(snapshot.email())
                     .map(existing -> linkExistingUser(existing, snapshot))
                     .orElseGet(() -> createUser(snapshot));
         }
@@ -90,7 +90,7 @@ public class KeycloakJitProvisioningService {
                 .build();
 
         log.info("Creating new user username={} email={} keycloakSub={}", user.getUsername(), user.getEmail(), user.getKeycloakSub());
-        return userCommandService.create(user);
+        return userRepository.save(user);
     }
 
     private User syncSnapshot(User user, KeycloakIdentitySnapshot snapshot) {
@@ -120,7 +120,7 @@ public class KeycloakJitProvisioningService {
         }
 
         if (changed) {
-            User updated = userCommandService.update(user);
+            User updated = userRepository.save(user);
             // Use 'self' proxy to trigger @CacheEvict
             if (self != null) {
                 self.evictProvisioningCache(updated.getKeycloakSub());

@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserQueryService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/public/users")
@@ -18,7 +18,7 @@ import pt.estga.user.services.UserQueryService;
 @Tag(name = "Users", description = "Public endpoints for users.")
 public class UserPublicController {
 
-    private final UserQueryService service;
+    private final UserService service;
     private final UserMapper mapper;
 
     @GetMapping("/{id}")

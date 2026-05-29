@@ -8,8 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.services.ContactRequestQueryService;
-import pt.estga.support.services.ContactRequestCommandService;
+import pt.estga.support.services.ContactRequestService;
 import pt.estga.sharedweb.models.PagedRequest;
 
 @RestController
@@ -19,17 +18,16 @@ import pt.estga.sharedweb.models.PagedRequest;
 @PreAuthorize("hasRole('MODERATOR')")
 public class ContactRequestAdminController {
 
-    private final ContactRequestQueryService queryService;
-    private final ContactRequestCommandService service;
+    private final ContactRequestService service;
 
     @PostMapping("/search")
     public ResponseEntity<Page<ContactRequest>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(queryService.search(request));
+        return ResponseEntity.ok(service.search(request));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ContactRequest> getById(@PathVariable Long id) {
-        return queryService.findById(id)
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
