@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import pt.estga.shared.entities.BaseEntity;
-import pt.estga.shared.enums.UserRole;
+import pt.estga.shared.legacy.UserRole;
 
 import java.io.Serial;
 import java.io.Serializable;

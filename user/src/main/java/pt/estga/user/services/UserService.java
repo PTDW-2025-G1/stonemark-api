@@ -25,6 +25,7 @@ public class UserService {
     private final ChatbotAccountRepository chatbotAccountRepository;
     private final QueryProcessor<User> queryProcessor;
     private final UserMapper mapper;
+    private final AuthenticationService authenticationService;
 
     public Page<UserDto> search(PagedRequest request) {
         QueryResult<User> result = queryProcessor.process(request);
@@ -65,7 +66,9 @@ public class UserService {
         User existing = repository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + user.getId() + " not found"));
         mapper.update(user, existing);
-        return repository.save(existing);
+        User saved = repository.save(existing);
+        authenticationService.invalidateCache(saved.getId());
+        return saved;
     }
 
     @Transactional
@@ -77,6 +80,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         mapper.updateFromDto(dto, existing);
         User saved = repository.save(existing);
+        authenticationService.invalidateCache(saved.getId());
         return mapper.toDto(saved);
     }
 

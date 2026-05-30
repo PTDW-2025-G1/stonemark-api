@@ -15,6 +15,15 @@ import pt.estga.user.services.AuthenticationService;
 
 import java.io.IOException;
 
+/**
+ * SOLE SOURCE of authentication enrichment.
+ * Runs after {@code BearerTokenAuthenticationFilter} and before authorization.
+ * Detects a JWT-authenticated principal with empty authorities,
+ * loads permissions from the database via {@link AuthenticationService},
+ * and replaces the {@code SecurityContext} authentication with the enriched principal.
+ *
+ * No other component may construct or modify the authentication authorities.
+ */
 @Component
 @RequiredArgsConstructor
 public class PermissionEnrichmentFilter extends OncePerRequestFilter {
