@@ -2,14 +2,10 @@ package pt.estga.shared.utils;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import pt.estga.shared.legacy.UserRole;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.shared.models.AppPrincipal;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 public final class SecurityUtils {
@@ -52,27 +48,4 @@ public final class SecurityUtils {
         return Optional.of(p);
     }
 
-    @Deprecated(forRemoval = true)
-    public static Collection<? extends GrantedAuthority> mapUserRolesToAuthorities(UserRole role) {
-        return switch (role) {
-            case ADMIN -> List.of(
-                    () -> UserRole.USER.name(),
-                    () -> UserRole.REVIEWER.name(),
-                    () -> UserRole.MODERATOR.name(),
-                    () -> UserRole.ADMIN.name()
-            );
-            case MODERATOR -> List.of(
-                    () -> UserRole.USER.name(),
-                    () -> UserRole.REVIEWER.name(),
-                    () -> UserRole.MODERATOR.name()
-            );
-            case REVIEWER -> List.of(
-                    () -> UserRole.USER.name(),
-                    () -> UserRole.REVIEWER.name()
-            );
-            case USER -> List.of(
-                    () -> UserRole.USER.name()
-            );
-        };
-    }
 }
