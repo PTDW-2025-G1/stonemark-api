@@ -22,29 +22,37 @@
 		<developer/>
 	</developers>
     <modules>
-        <module>boot</module>
-        <module>mark</module>
-        <module>vision</module>
-        <module>file</module>
-        <module>user</module>
-        <module>user-api</module>
+        <!-- Foundation: no internal dependencies -->
         <module>shared-core</module>
-        <module>shared-infra</module>
-        <module>shared</module>
-        <module>mark-api</module>
-        <module>file-api</module>
-        <module>intake</module>
-        <module>support</module>
-        <module>chatbot</module>
-        <module>verification</module>
-        <module>territory</module>
         <module>shared-web</module>
-        <module>bookmark</module>
-        <module>content-import</module>
-        <module>monument</module>
+        <module>file-api</module>
+        <module>mark-api</module>
         <module>notification</module>
-        <module>processing</module>
-        <module>review</module>
+        <module>vision</module>
+
+        <!-- Infrastructure layer -->
+        <module>shared-infra</module>       <!-- needs shared-core -->
+        <module>user-api</module>           <!-- needs file-api -->
+
+        <!-- Domain services -->
+        <module>file</module>               <!-- needs file-api, shared-web, shared-infra -->
+        <module>territory</module>          <!-- needs shared-web, shared-infra -->
+        <module>monument</module>           <!-- needs territory, shared-web, shared-infra -->
+        <module>user</module>               <!-- needs user-api, file-api, shared-web, shared-infra -->
+        <module>verification</module>       <!-- needs shared-web, shared-infra, user-api -->
+        <module>mark</module>               <!-- needs monument, file-api, vision, shared-web, shared-infra, mark-api -->
+        <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
+        <module>bookmark</module>           <!-- needs shared-web, mark-api, monument, user-api -->
+        <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
+        <module>content-import</module>     <!-- needs shared-web, shared-infra, territory, monument, mark-api -->
+
+        <!-- Higher-order services -->
+        <module>processing</module>         <!-- needs file, mark-api, intake, vision, monument -->
+        <module>review</module>             <!-- needs processing, shared-infra, mark, user -->
+        <module>chatbot</module>            <!-- needs file, user, intake, verification -->
+
+        <!-- Entry point: depends on everything -->
+        <module>boot</module>
     </modules>
     <scm>
 		<connection/>
