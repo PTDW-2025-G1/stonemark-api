@@ -24,10 +24,12 @@ public class SasUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByIdWithRolesAndPermissions(
-                userRepository.findByUsername(username)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username))
-                        .getId());
+        Long userId = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username))
+                .getId();
+
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
         Collection<GrantedAuthority> authorities = user.getRoles().stream()
                 .flatMap(role -> role.getPermissions().stream())
