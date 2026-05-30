@@ -3,6 +3,8 @@ package pt.estga.file.services.application;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -28,8 +30,25 @@ public class MediaService {
     private final MediaMetadataService mediaMetadataService;
     private final FileStorageService fileStorageService;
 
+    public MediaFile upload(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
+        if (fileSize <= 0) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
+    }
+
     public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
         return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
+    }
+
+    public MediaType resolveMediaType(MediaFile mediaFile) {
+        return MediaTypeFactory.getMediaType(mediaFile.getOriginalFilename())
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+    }
+
+    public String buildDownloadFilename(MediaFile mediaFile) {
+        String extension = StringUtils.getFilenameExtension(mediaFile.getOriginalFilename());
+        return "stonemark-" + mediaFile.getId() + (extension != null ? "." + extension : "");
     }
 
     public Resource loadFileById(UUID fileId) {

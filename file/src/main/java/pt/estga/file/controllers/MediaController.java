@@ -12,10 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
-import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.file.dtos.MediaFileDto;
@@ -24,7 +22,6 @@ import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.services.application.MediaService;
 import pt.estga.file.services.application.MediaVariantService;
-import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -53,11 +50,7 @@ public class MediaController {
             @RequestParam("file") MultipartFile file) throws IOException {
         log.info("Request to upload media file: {} (size: {})", file.getOriginalFilename(), file.getSize());
 
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("Uploaded file is empty");
-        }
-
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
+        MediaFile mediaFile = mediaService.upload(file.getInputStream(), file.getOriginalFilename(), file.getSize());
         var location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(mediaFile.getId())
@@ -81,33 +74,19 @@ public class MediaController {
             @PathVariable UUID id) {
         log.info("Request to get media with id: {}", id);
 
-        // Fetch metadata first
         MediaFile mediaFile = mediaService.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Media not found with id: {}", id);
-                    return new FileNotFoundException("Media not found with id: " + id);
+                    return new pt.estga.sharedweb.exceptions.FileNotFoundException("Media not found with id: " + id);
                 });
 
-        if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
-            log.warn("MediaFile with id {} has no storage path.", id);
-            throw new FileNotFoundException("Media file has no storage path");
-        }
-
         log.info("Found media file, loading from path: {}", mediaFile.getStoragePath());
-        
-        // Use the new method to load resource directly from entity
         Resource resource = mediaService.loadFile(mediaFile);
 
-        MediaType mediaType = MediaTypeFactory.getMediaType(mediaFile.getOriginalFilename())
-                .orElse(MediaType.APPLICATION_OCTET_STREAM);
-
-        String extension = StringUtils.getFilenameExtension(mediaFile.getOriginalFilename());
-        String filename = "stonemark-" + mediaFile.getId() + (extension != null ? "." + extension : "");
-
         return ResponseEntity.ok()
-                .contentType(mediaType)
-                .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
-                .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic()) // Cache for 1 year
+                .contentType(mediaService.resolveMediaType(mediaFile))
+                .header("Content-Disposition", "inline; filename=\"" + mediaService.buildDownloadFilename(mediaFile) + "\"")
+                .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic())
                 .body(resource);
     }
 

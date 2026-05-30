@@ -12,13 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
-import pt.estga.user.entities.User;
-import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.services.UserService;
 
 @RestController
@@ -29,8 +26,6 @@ import pt.estga.user.services.UserService;
 public class AccountController {
 
     private final UserService userService;
-    private final UserMapper mapper;
-    private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
     @ApiResponses(value = {
@@ -40,10 +35,7 @@ public class AccountController {
     })
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService
-                .findByIdForProfile(principal.getId())
-                .orElseThrow();
-        return ResponseEntity.ok(mapper.toDto(user));
+        return ResponseEntity.ok(userService.getProfile(principal.getId()));
     }
 
     @Operation(summary = "Update user profile", description = "Updates the profile information of the authenticated user.")
@@ -58,9 +50,7 @@ public class AccountController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        mapper.update(user, request);
-        userService.update(user);
+        userService.updateProfile(principal.getId(), request);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
     }
 
@@ -79,30 +69,14 @@ public class AccountController {
 
     @GetMapping("/me")
     public ResponseEntity<MeDto> me(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userService.findByIdForProfile(principal.getId()).orElseThrow();
-        return ResponseEntity.ok(new MeDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getPasswordHash() != null,
-                user.isEnabled(),
-                user.isAccountLocked()
-        ));
+        return ResponseEntity.ok(userService.getMe(principal.getId()));
     }
 
     @PostMapping("/password")
     public ResponseEntity<MessageResponseDto> setPassword(
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody PasswordSetRequest request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        if (user.getPasswordHash() != null) {
-            return ResponseEntity.badRequest()
-                    .body(MessageResponseDto.error("Password is already set. Use PUT to change it."));
-        }
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        userService.update(user);
+        userService.setPassword(principal.getId(), request.password());
         return ResponseEntity.ok(MessageResponseDto.success("Password set successfully."));
     }
 
@@ -110,18 +84,7 @@ public class AccountController {
     public ResponseEntity<MessageResponseDto> changePassword(
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Valid @RequestBody PasswordChangeRequest request) {
-        User user = userService.findById(principal.getId()).orElseThrow();
-        if (user.getPasswordHash() == null) {
-            return ResponseEntity.badRequest()
-                    .body(MessageResponseDto.error("No password set. Use POST to set one first."));
-        }
-        if (!passwordEncoder.matches(request.oldPassword(), user.getPasswordHash())) {
-            return ResponseEntity.badRequest()
-                    .body(MessageResponseDto.error("Current password is incorrect."));
-        }
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        user.setTokenVersion(user.getTokenVersion() + 1);
-        userService.update(user);
+        userService.changePassword(principal.getId(), request.oldPassword(), request.newPassword());
         return ResponseEntity.ok(MessageResponseDto.success("Password changed successfully."));
     }
 }

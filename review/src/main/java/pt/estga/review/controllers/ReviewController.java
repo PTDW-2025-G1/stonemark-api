@@ -8,9 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.processing.mappers.MarkSuggestionMapper;
-import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.AcceptNewMarkRequest;
 import pt.estga.review.dtos.ReviewResponseDto;
 import pt.estga.review.dtos.SimpleReviewRequest;
@@ -29,9 +26,6 @@ public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewMapper mapper;
-    private final MarkEvidenceProcessingRepository processingRepository;
-    private final MarkSuggestionRepository suggestionRepository;
-    private final MarkSuggestionMapper suggestionMapper;
 
     @PostMapping("/{submissionId}/accept")
     @ResponseStatus(HttpStatus.CREATED)
@@ -75,11 +69,6 @@ public class ReviewController {
 
     @GetMapping("/{submissionId}/suggestions")
     public List<MarkSuggestionDto> getSuggestions(@PathVariable Long submissionId) {
-        return processingRepository.findBySubmissionId(submissionId)
-                .map(p -> suggestionRepository.findByProcessingId(p.getId())
-                        .stream()
-                        .map(suggestionMapper::toDto)
-                        .toList())
-                .orElseThrow(() -> new pt.estga.sharedweb.exceptions.ResourceNotFoundException("Suggestions not found"));
+        return reviewService.getSuggestions(submissionId);
     }
 }
