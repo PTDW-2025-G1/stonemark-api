@@ -27,6 +27,7 @@
         <module>vision</module>
         <module>file</module>
         <module>user</module>
+        <module>user-api</module>
         <module>shared-core</module>
         <module>shared-infra</module>
         <module>shared</module>
