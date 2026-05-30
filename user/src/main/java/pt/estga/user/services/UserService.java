@@ -2,12 +2,15 @@ package pt.estga.user.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.sharedweb.filtering.QueryProcessor;
 import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.sharedweb.models.QueryResult;
+import pt.estga.user.dtos.MeDto;
+import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
@@ -26,6 +29,7 @@ public class UserService {
     private final QueryProcessor<User> queryProcessor;
     private final UserMapper mapper;
     private final AuthenticationService authenticationService;
+    private final PasswordEncoder passwordEncoder;
 
     public Page<UserDto> search(PagedRequest request) {
         QueryResult<User> result = queryProcessor.process(request);
@@ -95,5 +99,61 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         chatbotAccountRepository.deleteByUser(user);
         repository.softDelete(user);
+    }
+
+    public UserDto getProfile(Long userId) {
+        User user = repository.findByIdForProfile(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return mapper.toDto(user);
+    }
+
+    public MeDto getMe(Long userId) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return new MeDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getPasswordHash() != null,
+                user.isEnabled(),
+                user.isAccountLocked()
+        );
+    }
+
+    @Transactional
+    public void updateProfile(Long userId, ProfileUpdateRequestDto request) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        mapper.update(user, request);
+        repository.save(user);
+        authenticationService.invalidateCache(user.getId());
+    }
+
+    @Transactional
+    public void setPassword(Long userId, String rawPassword) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        if (user.getPasswordHash() != null) {
+            throw new IllegalArgumentException("Password is already set. Use PUT to change it.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        repository.save(user);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = repository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        if (user.getPasswordHash() == null) {
+            throw new IllegalArgumentException("No password set. Use POST to set one first.");
+        }
+        if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setTokenVersion(user.getTokenVersion() + 1);
+        repository.save(user);
     }
 }
