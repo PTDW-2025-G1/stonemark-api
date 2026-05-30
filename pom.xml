@@ -30,6 +30,7 @@
         <module>shared-core</module>
         <module>shared-infra</module>
         <module>shared</module>
+        <module>mark-api</module>
         <module>intake</module>
         <module>support</module>
         <module>chatbot</module>
@@ -42,7 +43,6 @@
         <module>notification</module>
         <module>processing</module>
         <module>review</module>
-        <module>mark-api</module>
     </modules>
     <scm>
 		<connection/>
@@ -108,6 +108,11 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>shared</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>mark-api</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
