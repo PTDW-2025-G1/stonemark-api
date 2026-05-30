@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import pt.estga.file.config.StorageProperties;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ImageVariantGeneratorTest {
 
-    private final ImageVariantGenerator generator = new ImageVariantGenerator();
+    private final ImageVariantGenerator generator = new ImageVariantGenerator(new StorageProperties());
 
     @TempDir
     static Path tempDir;

@@ -15,6 +15,8 @@ import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.storage.variant.VariantStorageService;
 import pt.estga.file.services.upload.MediaValidationService;
 
+import org.springframework.util.StringUtils;
+import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,7 +79,7 @@ public class MediaProcessingService {
             mediaFile = mediaMetadataService.saveMetadata(mediaFile);
 
             Resource resource = mediaContentService.loadContent(mediaFile.getStoragePath());
-            Path tempOriginal = Files.createTempFile("original-", ".tmp");
+            Path tempOriginal = createTempFile("original-", ".tmp");
 
             try {
                 try (var is = resource.getInputStream()) {
@@ -144,5 +146,15 @@ public class MediaProcessingService {
         } finally {
             if (timer != null) metrics.recordProcessingDuration(timer);
         }
+    }
+
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String customDir = storageProperties.getTempDir();
+        if (StringUtils.hasText(customDir)) {
+            Path dir = Path.of(customDir);
+            Files.createDirectories(dir);
+            return Files.createTempFile(dir, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
     }
 }

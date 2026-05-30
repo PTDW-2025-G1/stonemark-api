@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import org.springframework.util.StringUtils;
 
 @Component
 @Slf4j
@@ -62,7 +63,7 @@ public class MediaUploadOrchestrator {
         long startNanos = System.nanoTime();
         if (metrics != null) metrics.recordUploadAttempt();
 
-        Path tempFile = Files.createTempFile("upload-", ".tmp");
+        Path tempFile = createTempFile("upload-", ".tmp");
         try {
             Files.copy(input, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             long actualSize = Files.size(tempFile);
@@ -133,5 +134,15 @@ public class MediaUploadOrchestrator {
         } catch (Exception e) {
             log.error("Failed to mark media id {} as FAILED (reason: {})", media.getId(), reason, e);
         }
+    }
+
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String customDir = storageProperties.getTempDir();
+        if (StringUtils.hasText(customDir)) {
+            Path dir = Path.of(customDir);
+            Files.createDirectories(dir);
+            return Files.createTempFile(dir, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
     }
 }

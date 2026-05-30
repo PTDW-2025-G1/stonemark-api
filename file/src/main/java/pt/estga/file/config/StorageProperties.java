@@ -33,6 +33,10 @@ public class StorageProperties {
     @Setter
     private long maxUploadSize = 10 * 1024 * 1024;
 
+    /** Custom temp directory for upload and processing temp files. Falls back to system default if blank. */
+    @Setter
+    private String tempDir = "";
+
     private final Local local = new Local();
 
     @Setter

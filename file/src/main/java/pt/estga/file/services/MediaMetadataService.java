@@ -3,6 +3,7 @@ package pt.estga.file.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.context.ApplicationContext;
@@ -32,11 +33,11 @@ public class MediaMetadataService {
 
     /**
      * Saves metadata and registers the provided event to be published after the
-     * surrounding transaction successfully commits. This method ensures the
-     * save and event registration occur within the same transaction so handlers
-     * will observe committed state.
+     * surrounding transaction successfully commits. Uses REQUIRES_NEW to ensure
+     * retry attempts in saveMetadataWithRetriesAndPublish do not inherit an
+     * outer caller transaction, which would pin a connection during backoff.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public MediaFile saveMetadataAndPublish(MediaFile mediaFile, Object event) {
         MediaFile saved = mediaFileRepository.save(mediaFile);
         eventPublisher.publish(event);

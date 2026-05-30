@@ -11,8 +11,8 @@ import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +25,14 @@ public class MarkEvidenceSubmissionSubmitService {
 
     /**
      * Submits a mark evidence submission. The provided submission object already contains user and source information
-     * (if available) and will be preserved. The method stores the provided photo bytes, attaches the
+     * (if available) and will be preserved. The method stores the provided photo stream, attaches the
      * resulting MediaFile to the submission, sets the status to SUBMITTED, persists the submission and
      * publishes a MarkEvidenceSubmittedEvent after commit.
      */
     @Transactional
     public void submit(
             MarkEvidenceSubmission submission,
-            byte[] photoData,
+            InputStream photoStream,
             String photoFilename
     ) throws IOException {
 
@@ -40,14 +40,14 @@ public class MarkEvidenceSubmissionSubmitService {
             throw new IllegalArgumentException("Submission cannot be null");
         }
 
-        if (photoData == null || photoData.length == 0) {
+        if (photoStream == null) {
             throw new IllegalArgumentException("Submission photo is required");
         }
 
         // Use a safe filename when none is provided
         String safeFilename = (photoFilename == null || photoFilename.isBlank()) ? "upload.jpg" : photoFilename;
 
-        var mediaFile = fileStorage.upload(new ByteArrayInputStream(photoData), safeFilename);
+        var mediaFile = fileStorage.upload(photoStream, safeFilename);
         submission.setOriginalMediaFileId(mediaFile.id());
 
         // Preserve submittedBy and submissionSource that may already be present on the submission

@@ -23,7 +23,7 @@ public class MediaVariantService {
     private final MediaVariantRepository mediaVariantRepository;
 
     @Transactional(readOnly = true)
-    @Cacheable(value = "mediaVariantPaths", key = "#mediaId + '-' + #type")
+    @Cacheable(value = "mediaVariantPaths", key = "#mediaId + '-' + #type", sync = true)
     public Resource loadVariant(UUID mediaId, MediaVariantType type) {
         String storagePath = findVariantPath(mediaId, type);
         return fileStorageService.loadFile(storagePath);
