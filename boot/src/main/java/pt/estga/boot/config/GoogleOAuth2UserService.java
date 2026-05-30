@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.shared.legacy.UserRole;
 import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.RoleRepository;
@@ -82,7 +81,6 @@ public class GoogleOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .googleSub(googleSub)
                 .emailVerified(email != null)
                 .enabled(true)
-                .role(UserRole.USER)
                 .roles(new HashSet<>(Set.of(getDefaultUserRole())))
                 .build();
 

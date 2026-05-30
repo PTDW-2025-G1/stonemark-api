@@ -2,9 +2,7 @@ package pt.estga.user.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
 import pt.estga.shared.entities.BaseEntity;
-import pt.estga.shared.legacy.UserRole;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -38,10 +36,6 @@ public class User extends BaseEntity implements Serializable {
 
     @Builder.Default
     private boolean emailVerified = false;
-
-    @Deprecated
-    @Enumerated(EnumType.STRING)
-    private UserRole role;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
