@@ -32,31 +32,14 @@ public class AdministrativeDivisionParentMatchingService {
     }
 
     private void matchDivision(AdministrativeDivision division) {
-        Integer parentAdminLevel = getParentAdminLevel(division.getOsmAdminLevel());
-        if (parentAdminLevel == null) {
-            return;
-        }
-
-        Optional<AdministrativeDivision> parentOpt = repository.findParentByGeometry(division.getId(), parentAdminLevel);
+        Optional<AdministrativeDivision> parentOpt = repository.findParentByGeometry(division.getId());
         parentOpt.ifPresent(parent -> {
             division.setParent(parent);
             repository.save(division);
         });
 
         if (parentOpt.isEmpty()) {
-            log.warn("Could not find parent for division '{}' (Level {}) with expected parent admin level {}", division.getName(), division.getOsmAdminLevel(), parentAdminLevel);
+            log.warn("Could not find parent for division '{}'", division.getName());
         }
-    }
-
-    private Integer getParentAdminLevel(int adminLevel) {
-        return switch (adminLevel) {
-            case 8 -> // Parish
-                    7; // Parent is Municipality
-            case 7 -> // Municipality
-                    6; // Parent is District
-            case 6 -> // District
-                    null;
-            default -> null;
-        };
     }
 }

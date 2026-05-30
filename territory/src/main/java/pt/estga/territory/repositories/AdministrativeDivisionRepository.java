@@ -20,13 +20,13 @@ public interface AdministrativeDivisionRepository extends BaseRepository<Adminis
     List<AdministrativeDivision> findAllByParentIsNull();
 
     @Query(value = "SELECT p.* FROM administrative_division p " +
-            "JOIN administrative_division c ON ST_Intersects(p.geometry, c.geometry) " +
-            "WHERE c.id = :childId AND p.osm_admin_level = :parentLevel " +
-            "ORDER BY ST_Area(ST_Intersection(p.geometry, c.geometry)) DESC LIMIT 1", nativeQuery = true)
-    Optional<AdministrativeDivision> findParentByGeometry(@Param("childId") Long childId, @Param("parentLevel") int parentLevel);
+            "JOIN administrative_division c ON ST_Contains(p.geometry, c.geometry) " +
+            "WHERE c.id = :childId AND p.id != :childId " +
+            "ORDER BY ST_Area(p.geometry) ASC LIMIT 1", nativeQuery = true)
+    Optional<AdministrativeDivision> findParentByGeometry(@Param("childId") Long childId);
 
     @Query(value = "SELECT * FROM administrative_division d " +
             "WHERE ST_Contains(d.geometry, ST_SetSRID(ST_Point(:longitude, :latitude), 4326)) " +
-            "ORDER BY d.osm_admin_level ASC", nativeQuery = true)
+            "ORDER BY ST_Area(d.geometry) ASC", nativeQuery = true)
     List<AdministrativeDivision> findByCoordinates(@Param("latitude") double latitude, @Param("longitude") double longitude);
 }
