@@ -32,7 +32,11 @@ public class MediaService {
     @Deprecated
     @Transactional
     public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
+        return save(fileStream, originalFilename, -1);
+    }
+
+    public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
     }
 
     public Resource loadFileById(UUID fileId) {

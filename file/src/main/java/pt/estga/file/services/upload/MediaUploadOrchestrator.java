@@ -31,6 +31,15 @@ public class MediaUploadOrchestrator {
     private final StoragePathStrategy storagePathStrategy;
 
     public MediaFile orchestrateUpload(InputStream input, String originalFilename) throws IOException {
+        return orchestrateUpload(input, originalFilename, -1);
+    }
+
+    public MediaFile orchestrateUpload(InputStream input, String originalFilename, long fileSize) throws IOException {
+        if (fileSize > storageProperties.getMaxUploadSize()) {
+            throw new OversizeFileException(
+                    "Uploaded file exceeds maximum allowed size of " + storageProperties.getMaxUploadSize() + " bytes");
+        }
+
         String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
         StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
 

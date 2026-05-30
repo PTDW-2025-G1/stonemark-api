@@ -56,12 +56,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
+    public ResponseEntity<MessageResponseDto> handleRuntimeException(RuntimeException ex) {
         log.error("Unhandled runtime exception: {}", ex.getMessage(), ex);
-        if (ex.getMessage() != null) {
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<>("An unexpected error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(MessageResponseDto.error("An unexpected error occurred"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
