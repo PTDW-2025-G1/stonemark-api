@@ -3,6 +3,7 @@ package pt.estga.file.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.file.dtos.MediaFileDto;
+import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.fileapi.FileStorageOperations;
@@ -17,12 +18,13 @@ public class FileStorageAdapter implements FileStorageOperations {
 
     private final MediaUploadOrchestrator orchestrator;
     private final MediaFileRepository repository;
+    private final MediaFileMapper mediaFileMapper;
 
     @Override
     public MediaFileDto upload(InputStream data, String originalFilename) {
         try {
             var entity = orchestrator.orchestrateUpload(data, originalFilename);
-            return toDto(entity);
+            return mediaFileMapper.toDto(entity);
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to upload file", e);
         }
@@ -30,16 +32,6 @@ public class FileStorageAdapter implements FileStorageOperations {
 
     @Override
     public Optional<MediaFileDto> findById(UUID id) {
-        return repository.findById(id).map(this::toDto);
-    }
-
-    private MediaFileDto toDto(pt.estga.file.entities.MediaFile entity) {
-        return new MediaFileDto(
-                entity.getId(),
-                entity.getFilename(),
-                entity.getOriginalFilename(),
-                entity.getSize(),
-                entity.getStatus() != null ? entity.getStatus().name() : null
-        );
+        return repository.findById(id).map(mediaFileMapper::toDto);
     }
 }

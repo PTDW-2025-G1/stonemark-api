@@ -74,7 +74,7 @@ public class MediaProcessingService {
 
         try {
             mediaFile.setStatus(MediaStatus.PROCESSING);
-            mediaMetadataService.saveMetadata(mediaFile);
+            mediaFile = mediaMetadataService.saveMetadata(mediaFile);
 
             Resource resource = mediaContentService.loadContent(mediaFile.getStoragePath());
             Path tempOriginal = Files.createTempFile("original-", ".tmp");
@@ -87,7 +87,7 @@ public class MediaProcessingService {
                 if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
-                    mediaMetadataService.saveMetadata(mediaFile);
+                    mediaFile = mediaMetadataService.saveMetadata(mediaFile);
                     return;
                 }
 
@@ -127,7 +127,7 @@ public class MediaProcessingService {
                 }
 
                 mediaFile.setStatus(MediaStatus.READY);
-                mediaMetadataService.saveMetadata(mediaFile);
+                mediaFile = mediaMetadataService.saveMetadata(mediaFile);
                 log.info("Processing completed for media file ID: {}", mediaFileId);
             } finally {
                 Files.deleteIfExists(tempOriginal);

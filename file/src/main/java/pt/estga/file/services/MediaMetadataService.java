@@ -65,7 +65,8 @@ public class MediaMetadataService {
                 }
                 log.warn("Transient error saving media metadata for id {} - retry {}/{}", mediaFile.getId(), tried, maxAttempts, e);
                 try {
-                    java.util.concurrent.TimeUnit.MILLISECONDS.sleep(250L * tried);
+                    long backoff = (long) (250L * tried * (0.5 + Math.random()));
+                    java.util.concurrent.TimeUnit.MILLISECONDS.sleep(backoff);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new RuntimeException("Interrupted while retrying metadata save", ie);
