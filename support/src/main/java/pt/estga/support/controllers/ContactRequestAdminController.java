@@ -15,7 +15,7 @@ import pt.estga.sharedweb.models.PagedRequest;
 @RequestMapping("/api/v1/admin/contact-requests")
 @RequiredArgsConstructor
 @Tag(name = "Admin Contact Requests", description = "Admin endpoints for contact requests.")
-@PreAuthorize("hasRole('MODERATOR')")
+@PreAuthorize("hasAuthority('CONTACT_MANAGE')")
 public class ContactRequestAdminController {
 
     private final ContactRequestService service;

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
@@ -23,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
 @Tag(name = "Review", description = "Review submissions and manage mark suggestions")
+@PreAuthorize("hasAuthority('REVIEW_MODERATE')")
 public class ReviewController {
 
     private final ReviewService reviewService;
