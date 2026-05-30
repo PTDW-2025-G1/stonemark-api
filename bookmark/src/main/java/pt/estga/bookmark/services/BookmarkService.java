@@ -17,9 +17,7 @@ import pt.estga.bookmark.repositories.MarkBookmarkRepository;
 import pt.estga.bookmark.repositories.MarkEvidenceBookmarkRepository;
 import pt.estga.bookmark.repositories.MarkOccurrenceBookmarkRepository;
 import pt.estga.bookmark.repositories.MonumentBookmarkRepository;
-import pt.estga.mark.mappers.MarkEvidenceMapper;
-import pt.estga.mark.mappers.MarkMapper;
-import pt.estga.mark.mappers.MarkOccurrenceMapper;
+import pt.estga.markapi.MarkService;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.sharedweb.exceptions.DuplicateResourceException;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
@@ -41,9 +39,7 @@ public class BookmarkService {
     private final BaseBookmarkRepository baseBookmarkRepo;
     private final UserRepository userRepository;
     private final MonumentMapper monumentMapper;
-    private final MarkMapper markMapper;
-    private final MarkOccurrenceMapper markOccurrenceMapper;
-    private final MarkEvidenceMapper markEvidenceMapper;
+    private final MarkService markService;
 
     public List<BookmarkResponse> listByUser(Long userId) {
         List<BookmarkResponse> monuments = monumentRepo.findAllByCreatedById(userId).stream()
@@ -78,11 +74,18 @@ public class BookmarkService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
+        Long parsedLong = parseLong(request.targetId());
+
         BaseBookmark saved = switch (request.targetType()) {
-            case MONUMENT -> monumentRepo.save(MonumentBookmark.builder().createdBy(user).build());
-            case MARK -> markRepo.save(MarkBookmark.builder().createdBy(user).build());
-            case MARK_OCCURRENCE -> markOccurrenceRepo.save(MarkOccurrenceBookmark.builder().createdBy(user).build());
-            case MARK_EVIDENCE -> markEvidenceRepo.save(MarkEvidenceBookmark.builder().createdBy(user).build());
+            case MONUMENT -> monumentRepo.save(
+                    MonumentBookmark.builder().createdBy(user).build());
+            case MARK -> markRepo.save(
+                    MarkBookmark.builder().createdBy(user).markId(parsedLong).build());
+            case MARK_OCCURRENCE -> markOccurrenceRepo.save(
+                    MarkOccurrenceBookmark.builder().createdBy(user).markOccurrenceId(parsedLong).build());
+            case MARK_EVIDENCE -> markEvidenceRepo.save(
+                    MarkEvidenceBookmark.builder().createdBy(user)
+                            .markEvidenceId(UUID.fromString(request.targetId())).build());
             default -> throw new IllegalArgumentException("Unsupported bookmark type");
         };
 
@@ -134,21 +137,29 @@ public class BookmarkService {
             }
             case MARK -> {
                 MarkBookmark mb = (MarkBookmark) b;
-                targetId = String.valueOf(mb.getMark().getId());
-                content = markMapper.toDto(mb.getMark());
+                targetId = String.valueOf(mb.getMarkId());
+                content = markService.findMarkById(mb.getMarkId()).orElse(null);
             }
             case MARK_OCCURRENCE -> {
                 MarkOccurrenceBookmark mb = (MarkOccurrenceBookmark) b;
-                targetId = String.valueOf(mb.getMarkOccurrence().getId());
-                content = markOccurrenceMapper.toDto(mb.getMarkOccurrence());
+                targetId = String.valueOf(mb.getMarkOccurrenceId());
+                content = markService.findOccurrenceById(mb.getMarkOccurrenceId()).orElse(null);
             }
             case MARK_EVIDENCE -> {
                 MarkEvidenceBookmark mb = (MarkEvidenceBookmark) b;
-                targetId = String.valueOf(mb.getMarkEvidence().getId());
-                content = markEvidenceMapper.toDto(mb.getMarkEvidence());
+                targetId = String.valueOf(mb.getMarkEvidenceId());
+                content = markService.findEvidenceById(mb.getMarkEvidenceId()).orElse(null);
             }
             default -> targetId = "";
         }
         return new BookmarkResponse(id, type, targetId, b.getCreatedAt(), content);
+    }
+
+    private static Long parseLong(String s) {
+        try {
+            return Long.parseLong(s);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid target ID: " + s);
+        }
     }
 }
