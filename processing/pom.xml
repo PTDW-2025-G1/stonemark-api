@@ -20,6 +20,11 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>file</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>mark-api</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
