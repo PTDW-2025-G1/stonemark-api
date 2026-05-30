@@ -61,6 +61,17 @@ cache:
     ttl-minutes: 15
     max-size: 1000
 
+rate-limit:
+  enabled: true
+  exclude-paths:
+    - /actuator
+    - /actuator/**
+  default:
+    capacity: 100
+    refill-tokens: 100
+    refill-period: 1
+    refill-unit: MINUTES
+
 management:
   endpoints:
     web:

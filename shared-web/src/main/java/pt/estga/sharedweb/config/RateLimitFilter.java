@@ -2,7 +2,6 @@ package pt.estga.sharedweb.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Bucket4j;
 import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.Refill;
 import jakarta.servlet.FilterChain;
@@ -69,7 +68,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private Bucket createBucket(String ip) {
         RateLimitProperties.BandwidthConfig config = properties.getDefaultLimit();
-        return Bucket4j.builder()
+        return Bucket.builder()
                 .addLimit(Bandwidth.classic(config.getCapacity(),
                         Refill.greedy(config.getRefillTokens(),
                                 Duration.of(config.getRefillPeriod(), config.getRefillUnit()))))
