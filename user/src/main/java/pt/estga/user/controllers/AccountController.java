@@ -24,7 +24,7 @@ import pt.estga.user.services.UserService;
 @RestController
 @RequestMapping("/api/v1/account")
 @RequiredArgsConstructor
-@Tag(name = "User Account", description = "Self-service operations for logged-in users. Password management via Keycloak.")
+@Tag(name = "User Account", description = "Self-service operations for logged-in users.")
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
