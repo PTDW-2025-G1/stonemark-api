@@ -42,7 +42,7 @@ class MediaControllerTest {
 
         var mediaFile = new MediaFile();
         mediaFile.setId(fileId);
-        when(mediaService.save(any(), anyString(), anyLong())).thenReturn(mediaFile);
+        when(mediaService.upload(any(), anyString(), anyLong())).thenReturn(mediaFile);
         when(mediaFileMapper.toDto(any())).thenReturn(new MediaFileDto(fileId, "stored.jpg", "test.jpg", 2L, "UPLOADED", null));
 
         mockMvc.perform(multipart("/api/v1/public/media")
