@@ -3,6 +3,7 @@ package pt.estga.boot.config;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -12,11 +13,15 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.shared.enums.UserRole;
+import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
+import pt.estga.user.repositories.RoleRepository;
 import pt.estga.user.repositories.UserRepository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +29,7 @@ public class GoogleOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private static final Logger log = LoggerFactory.getLogger(GoogleOAuth2UserService.class);
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     @Transactional
@@ -77,6 +83,7 @@ public class GoogleOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
                 .emailVerified(email != null)
                 .enabled(true)
                 .role(UserRole.USER)
+                .roles(new HashSet<>(Set.of(getDefaultUserRole())))
                 .build();
 
         user = userRepository.save(user);
@@ -85,10 +92,17 @@ public class GoogleOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
     private static OAuth2User mapToPrincipal(User user, Map<String, Object> attributes) {
-        return new DefaultOAuth2User(
-                List.of(() -> "ROLE_" + user.getRole().name()),
-                attributes,
-                user.getUsername());
+        List<GrantedAuthority> authorities = user.getRoles().stream()
+                .flatMap(role -> role.getPermissions().stream())
+                .map(permission -> (GrantedAuthority) permission::getName)
+                .toList();
+
+        return new DefaultOAuth2User(authorities, attributes, user.getUsername());
+    }
+
+    private Role getDefaultUserRole() {
+        return roleRepository.findByName("USER")
+                .orElseThrow(() -> new IllegalStateException("Default USER role not found in database"));
     }
 
     private String resolveUsername(String email, String givenName, String familyName, String googleSub) {
