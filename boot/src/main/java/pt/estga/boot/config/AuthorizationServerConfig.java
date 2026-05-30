@@ -5,9 +5,14 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
@@ -16,6 +21,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.web.SecurityFilterChain;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,10 +31,31 @@ import java.time.Duration;
 import java.util.UUID;
 
 @Configuration
+@RequiredArgsConstructor
 public class AuthorizationServerConfig {
 
     @Value("${spring.security.oauth2.authorizationserver.issuer:http://localhost:8080}")
     private String issuer;
+
+    private final GoogleOAuth2UserService googleOAuth2UserService;
+
+    @Bean
+    @Order(0)
+    public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) {
+        OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
+                new OAuth2AuthorizationServerConfigurer();
+
+        http
+                .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
+                .with(authorizationServerConfigurer, Customizer.withDefaults())
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .formLogin(Customizer.withDefaults())
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(googleOAuth2UserService)));
+
+        return http.build();
+    }
 
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
