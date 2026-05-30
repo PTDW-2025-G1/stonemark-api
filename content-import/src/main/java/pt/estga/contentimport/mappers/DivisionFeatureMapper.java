@@ -36,7 +36,6 @@ public class DivisionFeatureMapper {
         if (!props.hasNonNull("admin_level")) return Optional.empty();
 
         int adminLevel = props.path("admin_level").asInt(-1);
-        if (adminLevel != 6 && adminLevel != 7 && adminLevel != 8) return Optional.empty();
 
         String name = resolveName(props);
         if (name == null || name.isBlank()) return Optional.empty();

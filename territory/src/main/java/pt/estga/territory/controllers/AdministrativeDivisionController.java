@@ -2,9 +2,7 @@ package pt.estga.territory.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.sharedweb.models.PagedRequest;
@@ -14,8 +12,6 @@ import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import pt.estga.territory.services.DivisionService;
 
 import java.util.List;
-
-@Slf4j
 @RestController
 @RequestMapping("/api/v1/public/divisions")
 @RequiredArgsConstructor
@@ -38,31 +34,15 @@ public class AdministrativeDivisionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/districts/{districtId}/municipalities")
-    public ResponseEntity<List<AdministrativeDivisionDto>> getMunicipalitiesByDistrict(@PathVariable Long districtId) {
-        List<AdministrativeDivision> municipalities = service.findChildren(districtId);
-        log.info("Municipalities: {}", municipalities);
-        return ResponseEntity.ok(mapper.toDtoList(municipalities));
+    @GetMapping("/{parentId}/children")
+    public ResponseEntity<List<AdministrativeDivisionDto>> getChildren(@PathVariable Long parentId) {
+        List<AdministrativeDivision> children = service.findChildren(parentId);
+        return ResponseEntity.ok(mapper.toDtoList(children));
     }
 
-    @GetMapping("/municipalities/{municipalityId}/parishes")
-    public ResponseEntity<List<AdministrativeDivisionDto>> getParishesByMunicipality(@PathVariable Long municipalityId) {
-        List<AdministrativeDivision> parishes = service.findChildren(municipalityId);
-        log.info("Parishes: {}", parishes);
-        return ResponseEntity.ok(mapper.toDtoList(parishes));
-    }
-
-    @GetMapping("/municipalities/{municipalityId}/district")
-    public ResponseEntity<AdministrativeDivisionDto> getDistrictByMunicipality(@PathVariable Long municipalityId) {
-        return service.findParent(municipalityId)
-                .map(mapper::toDto)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/parishes/{parishId}/municipality")
-    public ResponseEntity<AdministrativeDivisionDto> getMunicipalityByParish(@PathVariable Long parishId) {
-        return service.findParent(parishId)
+    @GetMapping("/{childId}/parent")
+    public ResponseEntity<AdministrativeDivisionDto> getParent(@PathVariable Long childId) {
+        return service.findParent(childId)
                 .map(mapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

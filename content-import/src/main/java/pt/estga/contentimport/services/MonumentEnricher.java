@@ -6,10 +6,7 @@ import pt.estga.monument.Monument;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -19,8 +16,8 @@ public class MonumentEnricher {
 
     /**
      * Enrich the monument by setting its administrative division based on coordinates.
-     * Selects the division with the highest non-null osmAdminLevel; if none have a level,
-     * falls back to the first non-null division returned by the repository.
+     * The repository returns divisions ordered by area ascending (smallest = most specific),
+     * so the first result is the deepest/narrowest division containing the point.
      */
     public void enrichWithDivisions(Monument m) {
         if (m.getLocation() == null) return;
@@ -32,15 +29,6 @@ public class MonumentEnricher {
             return;
         }
 
-        Optional<AdministrativeDivision> bestByLevel = divisions.stream()
-            .filter(Objects::nonNull)
-            .filter(d -> d.getOsmAdminLevel() != null)
-            .max(Comparator.comparing(AdministrativeDivision::getOsmAdminLevel));
-
-        AdministrativeDivision best = bestByLevel.orElseGet(() ->
-            divisions.stream().filter(Objects::nonNull).findFirst().orElse(null)
-        );
-
-        m.setDivision(best);
+        m.setDivision(divisions.getFirst());
     }
 }
