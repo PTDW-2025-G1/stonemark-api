@@ -1,7 +1,6 @@
 package pt.estga.processing.services.similarity.aggregation;
 
 import org.junit.jupiter.api.Test;
-import pt.estga.mark.entities.Mark;
 import pt.estga.processing.config.policies.ScoringPolicy;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.AggregationResult;
@@ -29,19 +28,17 @@ public class DeterminismFullPipelineTest {
                 TestBuilders.candidate(e2, 101L, 0.6)
         );
 
-        // Build markByEvidenceId as a LinkedHashMap to simulate service behaviour
-        Map<UUID, List<Mark>> markByEvidenceId = new LinkedHashMap<>();
-        markByEvidenceId.put(e1, List.of(TestBuilders.mark(10L)));
-        markByEvidenceId.put(e2, List.of(TestBuilders.mark(20L)));
+        Map<UUID, List<Long>> markIdsByEvidenceId = new LinkedHashMap<>();
+        markIdsByEvidenceId.put(e1, List.of(TestBuilders.mark(10L)));
+        markIdsByEvidenceId.put(e2, List.of(TestBuilders.mark(20L)));
 
-        AggregationResult reference = aggregator.aggregate(candidates, markByEvidenceId, 10, 0);
+        AggregationResult reference = aggregator.aggregate(candidates, markIdsByEvidenceId, 10, 0);
 
-        // Shuffle inputs and vary insertion order in markByEvidenceId to stress determinism
         Random rnd = new Random(12345);
         for (int iter = 0; iter < 10; iter++) {
             List<CandidateEvidence> shuffled = new ArrayList<>(candidates);
             Collections.shuffle(shuffled, rnd);
-            Map<UUID, List<Mark>> variedMap = new LinkedHashMap<>();
+            Map<UUID, List<Long>> variedMap = new LinkedHashMap<>();
             if ((iter & 1) == 0) {
                 variedMap.put(e1, List.of(TestBuilders.mark(10L)));
                 variedMap.put(e2, List.of(TestBuilders.mark(20L)));
@@ -55,7 +52,6 @@ public class DeterminismFullPipelineTest {
                 var sRef = reference.topScores().get(i);
                 var s = r.topScores().get(i);
                 assertEquals(sRef.markId(), s.markId());
-                // Compare quantized confidences (AggregationResultBuilder quantizes to 1e-6)
                 double qRef = Math.round(sRef.confidence() * 1_000_000d) / 1_000_000d;
                 double q = Math.round(s.confidence() * 1_000_000d) / 1_000_000d;
                 assertEquals(qRef, q, 0.0);

@@ -20,14 +20,38 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>shared-web</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>shared</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${stonemark.version}</version>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>mark</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>shared-infra</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>territory</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>monument</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>mark-api</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
     </dependencies>
 

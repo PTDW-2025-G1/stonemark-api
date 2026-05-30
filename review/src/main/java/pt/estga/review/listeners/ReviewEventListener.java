@@ -56,7 +56,7 @@ public class ReviewEventListener {
                 }
 
                 // 3) Link review to occurrence and attach evidence (if applicable)
-                UUID mediaFileId = (submission.getOriginalMediaFile() != null) ? submission.getOriginalMediaFile().getId() : null;
+                UUID mediaFileId = submission.getOriginalMediaFileId();
 
                 if (event.markId() != null && event.monumentId() != null) {
                     linkReviewToOccurrence(mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);

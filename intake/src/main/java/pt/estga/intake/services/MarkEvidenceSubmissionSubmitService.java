@@ -3,8 +3,7 @@ package pt.estga.intake.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.upload.MediaUploadOrchestrator;
+import pt.estga.fileapi.FileStorageOperations;
 import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
@@ -21,7 +20,7 @@ import java.io.IOException;
 public class MarkEvidenceSubmissionSubmitService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
-    private final MediaUploadOrchestrator mediaUploadOrchestrator;
+    private final FileStorageOperations fileStorage;
     private final AfterCommitEventPublisher eventPublisher;
 
     /**
@@ -48,9 +47,8 @@ public class MarkEvidenceSubmissionSubmitService {
         // Use a safe filename when none is provided
         String safeFilename = (photoFilename == null || photoFilename.isBlank()) ? "upload.jpg" : photoFilename;
 
-        // Save the photo using the orchestrator (non-deprecated API)
-        MediaFile mediaFile = mediaUploadOrchestrator.orchestrateUpload(new ByteArrayInputStream(photoData), safeFilename);
-        submission.setOriginalMediaFile(mediaFile);
+        var mediaFile = fileStorage.upload(new ByteArrayInputStream(photoData), safeFilename);
+        submission.setOriginalMediaFileId(mediaFile.id());
 
         // Preserve submittedBy and submissionSource that may already be present on the submission
 

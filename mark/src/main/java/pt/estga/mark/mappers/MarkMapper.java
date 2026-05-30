@@ -7,9 +7,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkRequestDto;
 import pt.estga.mark.entities.Mark;
-import pt.estga.file.mappers.MediaFileMapper;
 
-@Mapper(componentModel = "spring", uses = {MediaFileMapper.class})
+@Mapper(componentModel = "spring")
 public interface MarkMapper {
 
     MarkDto toDto(Mark mark);

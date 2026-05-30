@@ -17,7 +17,9 @@ import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.vision.VisionClient;
+import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaContentService;
+import pt.estga.file.services.MediaMetadataService;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
@@ -39,6 +41,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
     private final MediaContentService mediaContentService;
+    private final MediaMetadataService mediaMetadataService;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
     private final PlatformTransactionManager transactionManager;
@@ -85,9 +88,14 @@ public class ProcessingServiceImpl implements ProcessingService {
                     return;
                 }
 
-                var mediaFile = submission.getOriginalMediaFile();
-                if (mediaFile == null) {
+                UUID mediaFileId = submission.getOriginalMediaFileId();
+                if (mediaFileId == null) {
                     setProcessingFailed(processing.getId(), "No original media file available", true, startNanos);
+                    return;
+                }
+                MediaFile mediaFile = mediaMetadataService.findById(mediaFileId).orElse(null);
+                if (mediaFile == null) {
+                    setProcessingFailed(processing.getId(), "Original media file not found: " + mediaFileId, true, startNanos);
                     return;
                 }
 

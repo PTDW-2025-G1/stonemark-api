@@ -1,6 +1,5 @@
 package pt.estga.processing.testutils;
 
-import pt.estga.mark.entities.Mark;
 import pt.estga.processing.models.CandidateEvidence;
 
 import java.util.UUID;
@@ -13,12 +12,11 @@ public final class TestBuilders {
         return new CandidateEvidence(evidenceId, occurrenceId, similarity);
     }
 
-    public static Mark mark(Long id) {
-        return Mark.builder().id(id).build();
+    public static Long mark(Long id) {
+        return id;
     }
 
     public static UUID uuid(String literal) {
-        // Strict parsing only: require standard dashed UUID string format.
         return UUID.fromString(literal);
     }
 }

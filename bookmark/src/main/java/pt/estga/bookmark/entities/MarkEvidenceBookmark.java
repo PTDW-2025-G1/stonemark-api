@@ -1,9 +1,11 @@
 package pt.estga.bookmark.entities;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import pt.estga.mark.entities.MarkEvidence;
+
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
@@ -13,6 +15,6 @@ import pt.estga.mark.entities.MarkEvidence;
 @SuperBuilder
 public class MarkEvidenceBookmark extends BaseBookmark {
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    private MarkEvidence markEvidence;
+    @Column(nullable = false)
+    private UUID markEvidenceId;
 }

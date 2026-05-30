@@ -1,7 +1,5 @@
 package pt.estga.file.dtos;
 
-import pt.estga.file.enums.MediaStatus;
-
 import java.util.UUID;
 
 public record MediaFileDto(
@@ -9,5 +7,5 @@ public record MediaFileDto(
         String filename,
         String originalFilename,
         Long size,
-        MediaStatus status
+        String status
 ) { }
