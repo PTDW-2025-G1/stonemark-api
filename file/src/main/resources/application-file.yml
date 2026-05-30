@@ -3,6 +3,12 @@ storage:
   local:
     root-path: uploads
 
+upload:
+  rate-limit:
+    enabled: true
+    max-requests: 10
+    window-seconds: 60
+
 minio:
   endpoint: http://localhost:9000
   bucket-name: stonemark

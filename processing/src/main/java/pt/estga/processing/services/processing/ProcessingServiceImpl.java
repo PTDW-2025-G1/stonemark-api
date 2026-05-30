@@ -18,8 +18,8 @@ import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
@@ -40,7 +40,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
     private final MediaMetadataService mediaMetadataService;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
@@ -120,7 +120,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     }
 
                     float[] embedding;
-                    try (InputStream in = mediaContentService.loadContent(mediaFile.getStoragePath()).getInputStream()) {
+                    try (InputStream in = fileStorageService.loadFile(mediaFile.getStoragePath()).getInputStream()) {
                         var detection = visionClient.detectMark(in, mediaFile.getOriginalFilename());
                         embedding = detection.embedding();
                     }

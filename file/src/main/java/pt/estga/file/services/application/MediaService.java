@@ -5,14 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaContentService;
+import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,16 +26,10 @@ public class MediaService {
 
     private final MediaUploadOrchestrator uploadOrchestrator;
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
 
-    /**
-     * Deprecated: use MediaUploadOrchestrator.orchestrateUpload instead. Kept for
-     * backward compatibility and delegates to the orchestrator.
-     */
-    @Deprecated
-    @Transactional
-    public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
+    public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
     }
 
     public Resource loadFileById(UUID fileId) {
@@ -46,10 +43,34 @@ public class MediaService {
         if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
             throw new FileNotFoundException("Media file has no storage path");
         }
-        return mediaContentService.loadContent(mediaFile.getStoragePath());
+        return fileStorageService.loadFile(mediaFile.getStoragePath());
     }
 
     public Optional<MediaFile> findById(UUID id) {
         return mediaMetadataService.findById(id);
+    }
+
+    @Transactional
+    public void deleteMedia(UUID id) {
+        MediaFile mediaFile = mediaMetadataService.findById(id)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
+
+        for (MediaVariant variant : List.copyOf(mediaFile.getVariants())) {
+            try {
+                fileStorageService.deleteFile(variant.getStoragePath());
+            } catch (Exception e) {
+                log.warn("Failed to delete variant file for {}: {}", variant.getType(), e.getMessage());
+            }
+        }
+
+        if (StringUtils.hasText(mediaFile.getStoragePath())) {
+            try {
+                fileStorageService.deleteFile(mediaFile.getStoragePath());
+            } catch (Exception e) {
+                log.warn("Failed to delete main file: {}", e.getMessage());
+            }
+        }
+
+        mediaMetadataService.deleteById(id);
     }
 }

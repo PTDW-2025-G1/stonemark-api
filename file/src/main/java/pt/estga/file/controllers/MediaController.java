@@ -14,6 +14,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,7 +43,7 @@ public class MediaController {
 
     @Operation(summary = "Upload a media file", description = "Uploads a media file and returns its metadata.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "File uploaded successfully",
+            @ApiResponse(responseCode = "201", description = "File uploaded successfully",
                     content = @Content(schema = @Schema(implementation = MediaFileDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input or file upload error")
     })
@@ -50,9 +51,23 @@ public class MediaController {
     public ResponseEntity<MediaFileDto> uploadMedia(
             @Parameter(description = "The file to upload", required = true)
             @RequestParam("file") MultipartFile file) throws IOException {
-        log.info("Request to upload media file: {}", file.getOriginalFilename());
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
-        return ResponseEntity.ok(mediaFileMapper.toDto(mediaFile));
+        log.info("Request to upload media file: {} (size: {})", file.getOriginalFilename(), file.getSize());
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+
+        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
+        var location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(mediaFile.getId())
+                .toUri();
+        MediaFileDto dto = mediaFileMapper.toDto(mediaFile);
+        MediaFileDto dtoWithUrl = new MediaFileDto(
+                dto.id(), dto.filename(), dto.originalFilename(),
+                dto.size(), dto.status(), location.toString()
+        );
+        return ResponseEntity.created(location).body(dtoWithUrl);
     }
 
     @Operation(summary = "Get media file by ID", description = "Retrieves the original media file by its ID.")
@@ -96,6 +111,20 @@ public class MediaController {
                 .body(resource);
     }
 
+    @Operation(summary = "Delete a media file", description = "Deletes a media file and all its variants from storage.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "File deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Media file not found")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMedia(
+            @Parameter(description = "ID of the media file to delete", required = true)
+            @PathVariable UUID id) {
+        log.info("Request to delete media with id: {}", id);
+        mediaService.deleteMedia(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @Operation(summary = "Get media thumbnail", description = "Retrieves the thumbnail variant of the media file.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Thumbnail retrieved successfully"),
@@ -104,7 +133,7 @@ public class MediaController {
     @GetMapping("/{id}/thumbnail")
     public ResponseEntity<Resource> getThumbnail(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.THUMBNAIL);
     }
 
@@ -116,7 +145,7 @@ public class MediaController {
     @GetMapping("/{id}/preview")
     public ResponseEntity<Resource> getPreview(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.PREVIEW);
     }
 
@@ -128,11 +157,11 @@ public class MediaController {
     @GetMapping("/{id}/optimized")
     public ResponseEntity<Resource> getOptimized(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.OPTIMIZED);
     }
 
-    private ResponseEntity<Resource> getVariant(Long id, MediaVariantType type) {
+    private ResponseEntity<Resource> getVariant(UUID id, MediaVariantType type) {
         Resource resource = mediaVariantService.loadVariant(id, type);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("image/webp"))

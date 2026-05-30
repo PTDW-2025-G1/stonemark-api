@@ -1,5 +1,8 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 200
 
 spring:
   profiles:
@@ -14,7 +17,8 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
+      connection-timeout: 10000
   jpa:
     hibernate:
       ddl-auto: update

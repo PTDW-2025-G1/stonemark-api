@@ -77,6 +77,12 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
         log.debug("Loading file from path: {}", path);
         try {
             Path filePath = rootPath.resolve(path).normalize();
+
+            if (!filePath.startsWith(rootPath)) {
+                log.error("Security check failed: Cannot load file outside of root path. Path: {}", path);
+                throw new SecurityException("Cannot load file outside of root path");
+            }
+
             Resource resource = new UrlResource(filePath.toUri());
 
             if (!resource.exists()) {
@@ -97,6 +103,12 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
         log.debug("Deleting file from path: {}", path);
         try {
             Path filePath = rootPath.resolve(path).normalize();
+
+            if (!filePath.startsWith(rootPath)) {
+                log.error("Security check failed: Cannot delete file outside of root path. Path: {}", path);
+                throw new SecurityException("Cannot delete file outside of root path");
+            }
+
             Files.deleteIfExists(filePath);
             
             // Try to delete the parent folder if it's empty (cleanup)

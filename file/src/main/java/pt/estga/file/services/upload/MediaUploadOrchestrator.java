@@ -1,7 +1,7 @@
 package pt.estga.file.services.upload;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.dtos.SaveResult;
@@ -11,62 +11,120 @@ import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
+import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
-import pt.estga.file.services.MediaContentService;
-import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
+import pt.estga.file.util.CountingInputStream;
+import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+import org.springframework.util.StringUtils;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class MediaUploadOrchestrator {
 
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
+    private final MediaValidationService mediaValidationService;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
     private final StoragePathStrategy storagePathStrategy;
+    private final MediaMetricsService metrics;
+
+    public MediaUploadOrchestrator(
+            MediaMetadataService mediaMetadataService,
+            FileStorageService fileStorageService,
+            MediaValidationService mediaValidationService,
+            FileNamingService fileNamingService,
+            StorageProperties storageProperties,
+            StoragePathStrategy storagePathStrategy,
+            ObjectProvider<MediaMetricsService> metricsProvider) {
+        this.mediaMetadataService = mediaMetadataService;
+        this.fileStorageService = fileStorageService;
+        this.mediaValidationService = mediaValidationService;
+        this.fileNamingService = fileNamingService;
+        this.storageProperties = storageProperties;
+        this.storagePathStrategy = storagePathStrategy;
+        this.metrics = metricsProvider.getIfAvailable();
+    }
 
     public MediaFile orchestrateUpload(InputStream input, String originalFilename) throws IOException {
-        String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
-        StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
+        return orchestrateUpload(input, originalFilename, -1);
+    }
 
-        MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
-        media = mediaMetadataService.saveMetadata(media);
+    public MediaFile orchestrateUpload(InputStream input, String originalFilename, long fileSize) throws IOException {
+        long startNanos = System.nanoTime();
+        if (metrics != null) metrics.recordUploadAttempt();
 
-        String relativePath = storagePathStrategy.generatePath(media);
-
-        SaveResult result;
-        try (InputStream in = input) {
-            result = mediaContentService.saveContent(in, relativePath);
-        } catch (Exception e) {
-            markMediaFailed(media, "storage failed", e);
-            throw e;
-        }
-
-        if (result.size() > storageProperties.getMaxUploadSize()) {
-            try {
-                mediaContentService.deleteContent(result.storagePath());
-            } catch (Exception ignored) {}
-            markMediaFailed(media, "uploaded file exceeds maximum allowed size", null);
-            throw new OversizeFileException("Uploaded file exceeds maximum allowed size");
-        }
-
-        media.completeUpload(result.size(), result.storagePath(), null, MediaStatus.UPLOADED);
-
+        Path tempFile = createTempFile("upload-", ".tmp");
         try {
-            return mediaMetadataService.saveMetadataWithRetriesAndPublish(
-                    media, new MediaUploadedEvent(media.getId()));
-        } catch (Exception e) {
+            Files.copy(input, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            long actualSize = Files.size(tempFile);
+
+            if (actualSize > storageProperties.getMaxUploadSize()) {
+                if (metrics != null) metrics.recordUploadRejected();
+                throw new OversizeFileException(
+                        "Uploaded file exceeds maximum allowed size of " + storageProperties.getMaxUploadSize() + " bytes");
+            }
+
+            Set<String> allowedTypes = Set.copyOf(storageProperties.getAllowedMimeTypes());
+            if (!mediaValidationService.isAllowedImage(tempFile, allowedTypes)) {
+                if (metrics != null) metrics.recordUploadRejected();
+                throw new UnsupportedFileTypeException(
+                        "File type is not allowed. Supported types: " + String.join(", ", allowedTypes));
+            }
+
+            String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
+            StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
+
+            MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
+            media = mediaMetadataService.saveMetadata(media);
+
+            String relativePath = storagePathStrategy.generatePath(media);
+
+            SaveResult result;
+            try (InputStream fileIn = new FileInputStream(tempFile.toFile())) {
+                var counting = new CountingInputStream(fileIn);
+                String storagePath = fileStorageService.storeFile(counting, relativePath);
+                result = new SaveResult(storagePath, counting.getCount());
+            } catch (Exception e) {
+                markMediaFailed(media, "storage failed", e);
+                throw e;
+            }
+
+            media.completeUpload(actualSize, result.storagePath(), null, MediaStatus.UPLOADED);
+
             try {
-                mediaContentService.deleteContent(result.storagePath());
-            } catch (Exception ignored) {}
-            markMediaFailed(media, "failed to persist final media state", e);
-            throw new MediaPersistenceException(
-                    "Failed to persist final media state for id " + media.getId(), e);
+                MediaFile saved = mediaMetadataService.saveMetadataAndPublish(
+                        media, new MediaUploadedEvent(media.getId()));
+                if (metrics != null) {
+                    long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
+                    metrics.recordUploadSuccess(actualSize, elapsed);
+                }
+                return saved;
+            } catch (Exception e) {
+                try {
+                    fileStorageService.deleteFile(result.storagePath());
+                } catch (Exception ignored) {}
+                markMediaFailed(media, "failed to persist final media state", e);
+                if (metrics != null) metrics.recordUploadFailed();
+                throw new MediaPersistenceException(
+                        "Failed to persist final media state for id " + media.getId(), e);
+            }
+        } finally {
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException e) {
+                log.warn("Failed to delete temp file: {}", tempFile, e);
+            }
         }
     }
 
@@ -79,5 +137,15 @@ public class MediaUploadOrchestrator {
         } catch (Exception e) {
             log.error("Failed to mark media id {} as FAILED (reason: {})", media.getId(), reason, e);
         }
+    }
+
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String customDir = storageProperties.getTempDir();
+        if (StringUtils.hasText(customDir)) {
+            Path dir = Path.of(customDir);
+            Files.createDirectories(dir);
+            return Files.createTempFile(dir, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
     }
 }
