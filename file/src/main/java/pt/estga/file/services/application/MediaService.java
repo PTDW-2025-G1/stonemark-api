@@ -28,16 +28,6 @@ public class MediaService {
     private final MediaMetadataService mediaMetadataService;
     private final MediaContentService mediaContentService;
 
-    /**
-     * Deprecated: use MediaUploadOrchestrator.orchestrateUpload instead. Kept for
-     * backward compatibility and delegates to the orchestrator.
-     */
-    @Deprecated
-    @Transactional
-    public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
-        return save(fileStream, originalFilename, -1);
-    }
-
     public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
         return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
     }

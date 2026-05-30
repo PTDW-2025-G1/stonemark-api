@@ -27,7 +27,6 @@ import pt.estga.file.services.application.MediaVariantService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -57,16 +56,18 @@ public class MediaController {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        if (!Objects.requireNonNullElse(file.getContentType(), "").startsWith("image/")) {
-            log.warn("Rejecting non-image upload with Content-Type: {}", file.getContentType());
-        }
 
         MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
         var location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(mediaFile.getId())
                 .toUri();
-        return ResponseEntity.created(location).body(mediaFileMapper.toDto(mediaFile));
+        MediaFileDto dto = mediaFileMapper.toDto(mediaFile);
+        MediaFileDto dtoWithUrl = new MediaFileDto(
+                dto.id(), dto.filename(), dto.originalFilename(),
+                dto.size(), dto.status(), location.toString()
+        );
+        return ResponseEntity.created(location).body(dtoWithUrl);
     }
 
     @Operation(summary = "Get media file by ID", description = "Retrieves the original media file by its ID.")
