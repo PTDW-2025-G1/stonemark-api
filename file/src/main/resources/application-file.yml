@@ -5,7 +5,7 @@ storage:
 
 upload:
   rate-limit:
-    enabled: false
+    enabled: true
     max-requests: 10
     window-seconds: 60
 
