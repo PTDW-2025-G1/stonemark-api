@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.userapi.UserLookupOperations;
 
 import java.io.IOException;
 
@@ -19,7 +19,7 @@ import java.io.IOException;
 public class ChatbotSubmissionFacade {
 
     private final MarkEvidenceSubmissionSubmitService markEvidenceSubmissionSubmitService;
-    private final UserRepository userRepository;
+    private final UserLookupOperations userLookup;
 
     public void submitFromChatbot(
             MarkEvidenceSubmission submission,
@@ -29,7 +29,7 @@ public class ChatbotSubmissionFacade {
             SubmissionSource source
     ) throws IOException {
         if (domainUserId != null) {
-            userRepository.findById(domainUserId).ifPresent(submission::setSubmittedBy);
+            submission.setSubmittedById(domainUserId);
         }
 
         if (submission.getSubmissionSource() == null) {

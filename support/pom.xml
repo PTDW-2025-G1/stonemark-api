@@ -20,9 +20,18 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>user</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>shared-web</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>user-api</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>

@@ -21,8 +21,7 @@ import pt.estga.markapi.MarkService;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.sharedweb.exceptions.DuplicateResourceException;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.user.entities.User;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.userapi.UserLookupOperations;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,9 +36,9 @@ public class BookmarkService {
     private final MarkOccurrenceBookmarkRepository markOccurrenceRepo;
     private final MarkEvidenceBookmarkRepository markEvidenceRepo;
     private final BaseBookmarkRepository baseBookmarkRepo;
-    private final UserRepository userRepository;
     private final MonumentMapper monumentMapper;
     private final MarkService markService;
+    private final UserLookupOperations userLookup;
 
     public List<BookmarkResponse> listByUser(Long userId) {
         List<BookmarkResponse> monuments = monumentRepo.findAllByCreatedById(userId).stream()
@@ -71,20 +70,20 @@ public class BookmarkService {
             throw new DuplicateResourceException("Bookmark already exists");
         }
 
-        User user = userRepository.findById(userId)
+        userLookup.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Long parsedLong = parseLong(request.targetId());
 
         BaseBookmark saved = switch (request.targetType()) {
             case MONUMENT -> monumentRepo.save(
-                    MonumentBookmark.builder().createdBy(user).build());
+                    MonumentBookmark.builder().createdById(userId).build());
             case MARK -> markRepo.save(
-                    MarkBookmark.builder().createdBy(user).markId(parsedLong).build());
+                    MarkBookmark.builder().createdById(userId).markId(parsedLong).build());
             case MARK_OCCURRENCE -> markOccurrenceRepo.save(
-                    MarkOccurrenceBookmark.builder().createdBy(user).markOccurrenceId(parsedLong).build());
+                    MarkOccurrenceBookmark.builder().createdById(userId).markOccurrenceId(parsedLong).build());
             case MARK_EVIDENCE -> markEvidenceRepo.save(
-                    MarkEvidenceBookmark.builder().createdBy(user)
+                    MarkEvidenceBookmark.builder().createdById(userId)
                             .markEvidenceId(UUID.fromString(request.targetId())).build());
             default -> throw new IllegalArgumentException("Unsupported bookmark type");
         };

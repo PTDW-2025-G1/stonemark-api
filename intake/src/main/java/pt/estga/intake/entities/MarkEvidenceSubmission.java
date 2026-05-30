@@ -4,12 +4,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +17,6 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.user.entities.User;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -54,8 +51,8 @@ public class MarkEvidenceSubmission {
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User submittedBy;
+    @Column
+    private Long submittedById;
 
     @CreatedDate
     private Instant submittedAt;

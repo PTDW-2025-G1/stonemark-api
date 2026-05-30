@@ -1,10 +1,19 @@
 package pt.estga.support.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import pt.estga.support.enums.ContactStatus;
-import pt.estga.user.entities.User;
 
 import java.time.Instant;
 
@@ -39,7 +48,7 @@ public class ContactRequest {
     @Enumerated(EnumType.STRING)
     private ContactStatus status = ContactStatus.PENDING;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User submittedBy;
+    @Column
+    private Long submittedById;
 
 }

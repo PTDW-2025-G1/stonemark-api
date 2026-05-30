@@ -8,9 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.user.entities.User;
-import pt.estga.user.repositories.UserRepository;
-import pt.estga.user.services.ChatbotAccountService;
+import pt.estga.userapi.ChatbotAccountOperations;
+import pt.estga.userapi.UserLookupOperations;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
@@ -25,8 +24,8 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final UserRepository userRepository;
-    private final ChatbotAccountService chatbotAccountService;
+    private final UserLookupOperations userLookup;
+    private final ChatbotAccountOperations chatbotAccountOps;
     private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
@@ -44,13 +43,12 @@ public class AccountVerificationController {
         }
 
         String platformUserId = platformUserIdOpt.get();
-        User user = userRepository.findById(principal.getId()).orElseThrow();
+        Long userId = principal.getId();
+        userLookup.findById(userId).orElseThrow();
 
-        // Create or update chatbot identity (platform-agnostic)
-        chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
+        chatbotAccountOps.createOrUpdateChatbot(userId, platformUserId);
 
-        // Publish event for chatbot to handle notification, platform set to TELEGRAM for now
-        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
+        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, userId));
 
         return ResponseEntity.ok(
                 MessageResponseDto.success("Messaging account linked successfully")

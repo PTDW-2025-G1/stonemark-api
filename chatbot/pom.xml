@@ -26,6 +26,11 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>user</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>intake</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
