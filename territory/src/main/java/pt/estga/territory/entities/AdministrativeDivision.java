@@ -17,8 +17,6 @@ public class AdministrativeDivision extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    private Integer osmAdminLevel;
-
     private String name;
 
     @Column(columnDefinition = "geometry")

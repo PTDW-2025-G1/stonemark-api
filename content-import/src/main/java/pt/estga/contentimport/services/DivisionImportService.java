@@ -93,7 +93,6 @@ public class DivisionImportService {
                 if (existingOpt.isPresent()) {
                     AdministrativeDivision existing = existingOpt.get();
                     existing.setName(div.getName());
-                    existing.setOsmAdminLevel(div.getOsmAdminLevel());
                     existing.setGeometry(div.getGeometry());
                     existing.setCountry(div.getCountry());
                     batch.add(existing);
