@@ -34,6 +34,11 @@
             <artifactId>shared-infra</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>mark</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
     </dependencies>
 
 </project>
