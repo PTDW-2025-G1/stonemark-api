@@ -34,27 +34,21 @@ public class User extends BaseEntity implements Serializable {
     @Column(unique = true)
     private String email;
 
-    /**
-     * External Keycloak subject identifier (subclaim).
-     * <p>
-     * This value is used only as an external lookup key for JIT provisioning and
-     * account linking. Internal domain relationships should reference the local
-     * database id (Long) to preserve local data ownership and portability.
-     */
-    @Column(name = "keycloak_sub", unique = true)
-    private String keycloakSub;
-
-    /**
-     * Snapshot of email verification status from Keycloak.
-     * This field is synchronized during JIT (Just-In-Time) provisioning from the Keycloak JWT token.
-     * Do NOT manually set this field - it is managed by Keycloak and synced on login.
-     * Source: JWT claim 'email_verified'
-     */
     @Builder.Default
     private boolean emailVerified = false;
 
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(name = "password_hash")
+    private String passwordHash;
+
+    @Builder.Default
+    @Column(name = "token_version")
+    private int tokenVersion = 0;
+
+    @Column(name = "google_sub", unique = true)
+    private String googleSub;
 
     private boolean accountLocked;
     @Builder.Default
@@ -67,14 +61,11 @@ public class User extends BaseEntity implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        if (keycloakSub != null && user.keycloakSub != null) {
-            return Objects.equals(keycloakSub, user.keycloakSub);
-        }
         return Objects.equals(id, user.id);
     }
 
     @Override
     public int hashCode() {
-        return keycloakSub != null ? Objects.hash(keycloakSub) : Objects.hash(id);
+        return Objects.hash(id);
     }
 }
