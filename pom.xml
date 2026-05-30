@@ -27,6 +27,8 @@
         <module>vision</module>
         <module>file</module>
         <module>user</module>
+        <module>shared-core</module>
+        <module>shared-infra</module>
         <module>shared</module>
         <module>intake</module>
         <module>support</module>
@@ -40,8 +42,6 @@
         <module>notification</module>
         <module>processing</module>
         <module>review</module>
-        <module>shared-core</module>
-        <module>shared-infra</module>
     </modules>
     <scm>
 		<connection/>
@@ -94,6 +94,16 @@
                 <version>4.12.0</version>
             </dependency>
             <!-- Internal modules -->
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared-core</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared-infra</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>shared</artifactId>
