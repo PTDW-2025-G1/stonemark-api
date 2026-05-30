@@ -42,6 +42,7 @@
         <module>notification</module>
         <module>processing</module>
         <module>review</module>
+        <module>mark-api</module>
     </modules>
     <scm>
 		<connection/>
