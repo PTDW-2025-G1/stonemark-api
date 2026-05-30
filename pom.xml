@@ -31,6 +31,7 @@
         <module>shared-infra</module>
         <module>shared</module>
         <module>mark-api</module>
+        <module>file-api</module>
         <module>intake</module>
         <module>support</module>
         <module>chatbot</module>
@@ -113,6 +114,11 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>mark-api</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>file-api</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
