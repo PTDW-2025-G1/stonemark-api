@@ -20,6 +20,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>file-api</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.tika</groupId>
             <artifactId>tika-core</artifactId>
         </dependency>
