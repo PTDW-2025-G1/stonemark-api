@@ -2,13 +2,11 @@ package pt.estga.user.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.sharedweb.filtering.QueryProcessor;
-import pt.estga.sharedweb.models.PagedRequest;
-import pt.estga.sharedweb.models.QueryResult;
 import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
@@ -26,15 +24,12 @@ public class UserService {
 
     private final UserRepository repository;
     private final ChatbotAccountRepository chatbotAccountRepository;
-    private final QueryProcessor<User> queryProcessor;
     private final UserMapper mapper;
     private final AuthenticationService authenticationService;
     private final PasswordEncoder passwordEncoder;
 
-    public Page<UserDto> search(PagedRequest request) {
-        QueryResult<User> result = queryProcessor.process(request);
-        Page<User> userPage = repository.findAll(result.specification(), result.pageable());
-        return userPage.map(mapper::toDto);
+    public Page<UserDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toDto);
     }
 
     public Optional<User> findById(Long id) {

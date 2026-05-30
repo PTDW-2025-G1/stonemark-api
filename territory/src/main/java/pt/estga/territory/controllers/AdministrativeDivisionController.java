@@ -3,9 +3,10 @@ package pt.estga.territory.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import pt.estga.territory.services.DivisionService;
@@ -21,14 +22,14 @@ public class AdministrativeDivisionController {
     private final DivisionService service;
     private final AdministrativeDivisionMapper mapper;
 
-    @GetMapping
+    @GetMapping("/roots")
     public ResponseEntity<List<AdministrativeDivisionDto>> getRoots() {
         return ResponseEntity.ok(mapper.toDtoList(service.findRoots()));
     }
 
-    @PostMapping("/search")
-    public ResponseEntity<Page<AdministrativeDivisionDto>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(service.search(request));
+    @GetMapping
+    public ResponseEntity<Page<AdministrativeDivisionDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
     }
 
     @GetMapping("/{id}")

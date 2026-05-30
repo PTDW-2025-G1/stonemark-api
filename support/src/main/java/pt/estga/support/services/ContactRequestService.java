@@ -2,17 +2,15 @@ package pt.estga.support.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.mappers.ContactRequestMapper;
 import pt.estga.support.repositories.ContactRequestRepository;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.sharedweb.filtering.QueryProcessor;
-import pt.estga.sharedweb.models.PagedRequest;
-import pt.estga.sharedweb.models.QueryResult;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -24,7 +22,6 @@ public class ContactRequestService {
 
     private final ContactRequestRepository repository;
     private final ContactRequestMapper mapper;
-    private final QueryProcessor<ContactRequest> queryProcessor;
 
     @Transactional
     public ContactRequest create(ContactRequestDto dto) {
@@ -38,9 +35,8 @@ public class ContactRequestService {
         return repository.findById(id);
     }
 
-    public Page<ContactRequest> search(PagedRequest request) {
-        QueryResult<ContactRequest> result = queryProcessor.process(request);
-        return repository.findAll(result.specification(), result.pageable());
+    public Page<ContactRequest> findAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     @Transactional

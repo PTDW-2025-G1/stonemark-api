@@ -2,11 +2,9 @@ package pt.estga.territory.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedweb.filtering.QueryProcessor;
-import pt.estga.sharedweb.models.PagedRequest;
-import pt.estga.sharedweb.models.QueryResult;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
@@ -27,18 +25,10 @@ import java.util.Optional;
 public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
-	private final QueryProcessor<AdministrativeDivision> queryProcessor;
 	private final AdministrativeDivisionMapper mapper;
 
-	public Page<AdministrativeDivisionDto> search(PagedRequest request) {
-		QueryResult<AdministrativeDivision> result = queryProcessor.process(request);
-
-		Page<AdministrativeDivision> entityPage = repository.findAll(
-				result.specification(),
-				result.pageable()
-		);
-
-		return entityPage.map(mapper::toDto);
+	public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
+		return repository.findAll(pageable).map(mapper::toDto);
 	}
 
 	public Optional<AdministrativeDivision> findById(Long id) {
