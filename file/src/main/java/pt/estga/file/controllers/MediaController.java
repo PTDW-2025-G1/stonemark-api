@@ -50,8 +50,8 @@ public class MediaController {
     public ResponseEntity<MediaFileDto> uploadMedia(
             @Parameter(description = "The file to upload", required = true)
             @RequestParam("file") MultipartFile file) throws IOException {
-        log.info("Request to upload media file: {}", file.getOriginalFilename());
-        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename());
+        log.info("Request to upload media file: {} (size: {})", file.getOriginalFilename(), file.getSize());
+        MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
         return ResponseEntity.ok(mediaFileMapper.toDto(mediaFile));
     }
 
@@ -104,7 +104,7 @@ public class MediaController {
     @GetMapping("/{id}/thumbnail")
     public ResponseEntity<Resource> getThumbnail(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.THUMBNAIL);
     }
 
@@ -116,7 +116,7 @@ public class MediaController {
     @GetMapping("/{id}/preview")
     public ResponseEntity<Resource> getPreview(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.PREVIEW);
     }
 
@@ -128,11 +128,11 @@ public class MediaController {
     @GetMapping("/{id}/optimized")
     public ResponseEntity<Resource> getOptimized(
             @Parameter(description = "ID of the media file", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return getVariant(id, MediaVariantType.OPTIMIZED);
     }
 
-    private ResponseEntity<Resource> getVariant(Long id, MediaVariantType type) {
+    private ResponseEntity<Resource> getVariant(UUID id, MediaVariantType type) {
         Resource resource = mediaVariantService.loadVariant(id, type);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("image/webp"))

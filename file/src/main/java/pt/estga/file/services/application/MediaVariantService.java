@@ -12,6 +12,8 @@ import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -22,12 +24,12 @@ public class MediaVariantService {
 
     @Transactional(readOnly = true)
     @Cacheable(value = "mediaVariantPaths", key = "#mediaId + '-' + #type")
-    public Resource loadVariant(Long mediaId, MediaVariantType type) {
+    public Resource loadVariant(UUID mediaId, MediaVariantType type) {
         String storagePath = findVariantPath(mediaId, type);
         return fileStorageService.loadFile(storagePath);
     }
 
-    private String findVariantPath(Long mediaId, MediaVariantType type) {
+    private String findVariantPath(UUID mediaId, MediaVariantType type) {
         log.debug("Fetching variant path from DB for media ID: {} type: {}", mediaId, type);
         return mediaVariantRepository.findByMediaFileIdAndType(mediaId, type)
                 .map(MediaVariant::getStoragePath)
