@@ -13,8 +13,6 @@ import java.util.Optional;
 
 @Repository
 public interface AdministrativeDivisionRepository extends BaseRepository<AdministrativeDivision, Long>, JpaSpecificationExecutor<AdministrativeDivision> {
-    List<AdministrativeDivision> findByOsmAdminLevel(int osmAdminLevel);
-
     List<AdministrativeDivision> findByParentId(Long parentId);
 
     List<AdministrativeDivision> findAllByParentIsNull();

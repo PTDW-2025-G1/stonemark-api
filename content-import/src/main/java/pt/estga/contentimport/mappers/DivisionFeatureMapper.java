@@ -33,9 +33,6 @@ public class DivisionFeatureMapper {
         if (props == null || geomNode == null) return Optional.empty();
 
         if (!"administrative".equals(props.path("boundary").asText())) return Optional.empty();
-        if (!props.hasNonNull("admin_level")) return Optional.empty();
-
-        int adminLevel = props.path("admin_level").asInt(-1);
 
         String name = resolveName(props);
         if (name == null || name.isBlank()) return Optional.empty();
@@ -60,7 +57,6 @@ public class DivisionFeatureMapper {
 
         AdministrativeDivision div = AdministrativeDivision.builder()
                 .id(osmId)
-                .osmAdminLevel(adminLevel)
                 .name(name)
                 .geometry(geometry)
                 .country(providedCountryId == null ? null : Country.builder().id(providedCountryId).build())
