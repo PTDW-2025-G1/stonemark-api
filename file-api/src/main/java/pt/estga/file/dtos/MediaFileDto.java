@@ -7,5 +7,6 @@ public record MediaFileDto(
         String filename,
         String originalFilename,
         Long size,
-        String status
+        String status,
+        String url
 ) { }
