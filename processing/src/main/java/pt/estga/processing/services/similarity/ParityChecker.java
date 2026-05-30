@@ -1,12 +1,11 @@
 package pt.estga.processing.services.similarity;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
-import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
-import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
+import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
+import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.markapi.MarkService;
 import pt.estga.processing.config.policies.ParityPolicy;
 import pt.estga.shared.utils.VectorUtils;
 
@@ -16,18 +15,12 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-/**
- * Parity checker responsible for startup validation comparing DB similarity with
- * Java cosine similarity. Runs synchronously or asynchronously on a dedicated
- * single-thread daemon executor.
- */
 @Service
 @RequiredArgsConstructor
 public class ParityChecker {
 
-    private final MarkEvidenceRepository evidenceRepository;
+    private final MarkService markService;
     private final ParityPolicy parityPolicy;
-    // Cached configuration values
     private boolean parityAsyncLocal;
     private int paritySampleSizeLocal;
     private double parityToleranceLocal;
@@ -54,25 +47,24 @@ public class ParityChecker {
     }
 
     public void run() {
-        var page = PageRequest.of(0, Math.max(1, paritySampleSizeLocal));
-        var pageRes = evidenceRepository.findAllByEmbeddingIsNotNull(page);
-        if (pageRes == null || pageRes.isEmpty()) return;
-        for (var ev : pageRes.getContent()) {
-            float[] emb = ev.getEmbedding();
+        List<MarkEvidenceDto> sample = markService.findEvidenceWithEmbeddings(Math.max(1, paritySampleSizeLocal));
+        if (sample == null || sample.isEmpty()) return;
+        for (var ev : sample) {
+            float[] emb = ev.embedding();
             if (emb == null || emb.length == 0) continue;
             String vec = VectorUtils.toVectorLiteral(emb);
-            List<MarkEvidenceDistanceProjection> hits = evidenceRepository.findTopKSimilarEvidence(vec, 5);
+            List<MarkEvidenceDistanceDto> hits = markService.findTopKSimilar(vec, 5);
             if (hits == null || hits.isEmpty()) continue;
-            List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceProjection::id).filter(id -> !id.equals(ev.getId())).distinct().toList();
+            List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceDto::id).filter(id -> !id.equals(ev.id())).distinct().toList();
             if (hitIds.isEmpty()) continue;
-            List<EvidenceEmbeddingProjection> fetched = evidenceRepository.findAllByIdIn(hitIds);
+            List<MarkEvidenceDto> fetched = markService.findEvidenceByIdIn(hitIds);
             Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
-                    EvidenceEmbeddingProjection::getId,
-                    EvidenceEmbeddingProjection::getEmbedding
+                    MarkEvidenceDto::id,
+                    MarkEvidenceDto::embedding
             ));
             for (var p : hits) {
-                if (p.id().equals(ev.getId())) continue;
-                Double dbSim = p.getSimilarity();
+                if (p.id().equals(ev.id())) continue;
+                Double dbSim = p.similarity();
                 if (dbSim == null) continue;
                 float[] otherEmb = fetchedById.get(p.id());
                 if (otherEmb == null) continue;

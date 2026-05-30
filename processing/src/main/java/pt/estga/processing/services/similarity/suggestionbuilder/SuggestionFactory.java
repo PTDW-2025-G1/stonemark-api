@@ -22,7 +22,7 @@ public class SuggestionFactory {
             double conf = Math.max(0.0, Math.min(1.0, ms.confidence()));
             suggestions.add(MarkSuggestion.builder()
                     .processing(processing)
-                    .mark(ms.mark())
+                    .markId(ms.markId())
                     .confidence(conf)
                     .build());
         }

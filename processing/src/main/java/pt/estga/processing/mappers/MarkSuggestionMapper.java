@@ -9,6 +9,5 @@ import pt.estga.processing.entities.MarkSuggestion;
 public interface MarkSuggestionMapper {
 
     @Mapping(source = "processing.id", target = "processingId")
-    @Mapping(source = "mark.id", target = "markId")
     MarkSuggestionDto toDto(MarkSuggestion suggestion);
 }
