@@ -1,8 +1,8 @@
 package pt.estga.file.services;
 
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.StorageProperties;
@@ -12,8 +12,8 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.file.services.upload.MediaValidationService;
 import pt.estga.file.services.storage.variant.VariantStorageService;
+import pt.estga.file.services.upload.MediaValidationService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
@@ -27,7 +27,6 @@ import java.util.UUID;
  * to dedicated services to keep orchestration logic compact and testable.
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class MediaProcessingService {
 
@@ -38,6 +37,26 @@ public class MediaProcessingService {
     private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
     private final StorageProperties storageProperties;
+    private final MediaMetricsService metrics;
+
+    public MediaProcessingService(
+            MediaMetadataService mediaMetadataService,
+            MediaVariantRepository mediaVariantRepository,
+            MediaContentService mediaContentService,
+            MediaValidationService mediaValidationService,
+            ImageVariantGenerator imageVariantGenerator,
+            VariantStorageService variantStorageService,
+            StorageProperties storageProperties,
+            ObjectProvider<MediaMetricsService> metricsProvider) {
+        this.mediaMetadataService = mediaMetadataService;
+        this.mediaVariantRepository = mediaVariantRepository;
+        this.mediaContentService = mediaContentService;
+        this.mediaValidationService = mediaValidationService;
+        this.imageVariantGenerator = imageVariantGenerator;
+        this.variantStorageService = variantStorageService;
+        this.storageProperties = storageProperties;
+        this.metrics = metricsProvider.getIfAvailable();
+    }
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -48,6 +67,7 @@ public class MediaProcessingService {
 
     public void process(UUID mediaFileId) {
         log.info("Starting processing for media file ID: {}", mediaFileId);
+        var timer = metrics != null ? metrics.startProcessingTimer() : null;
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
                 .orElseThrow(() -> new RuntimeException("MediaFile not found: " + mediaFileId));
@@ -97,6 +117,10 @@ public class MediaProcessingService {
                                 .build();
 
                         mediaVariantRepository.save(variant);
+                        if (metrics != null) metrics.recordVariantGenerated();
+                    } catch (Exception e) {
+                        if (metrics != null) metrics.recordVariantFailed();
+                        throw e;
                     } finally {
                         Files.deleteIfExists(generated.file());
                     }
@@ -117,6 +141,8 @@ public class MediaProcessingService {
             } catch (Exception ex) {
                 log.error("Failed to mark media as FAILED for id {}", mediaFileId, ex);
             }
+        } finally {
+            if (timer != null) metrics.recordProcessingDuration(timer);
         }
     }
 }

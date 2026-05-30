@@ -1,6 +1,9 @@
 package pt.estga.file.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.enums.MediaStatus;
@@ -12,6 +15,9 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_media_file_status_created", columnList = "status, created_at")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -24,6 +30,7 @@ public class MediaFile extends CreationAuditedEntity {
     @UuidGenerator
     private UUID id;
 
+    @NotBlank
     @Column(nullable = false)
     private String filename;
 
@@ -35,13 +42,16 @@ public class MediaFile extends CreationAuditedEntity {
 
     private Long size;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private StorageProvider storageProvider;
 
+    @Size(max = 1024)
     @Column(nullable = false, length = 1024)
     private String storagePath;
 
+    @Size(max = 512)
     @Column(length = 512)
     private String providerPublicId;
 
@@ -53,6 +63,7 @@ public class MediaFile extends CreationAuditedEntity {
     @Builder.Default
     private List<MediaVariant> variants = new ArrayList<>();
 
+    @NotNull
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private MediaStatus status;

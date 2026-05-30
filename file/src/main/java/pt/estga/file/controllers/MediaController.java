@@ -27,6 +27,7 @@ import pt.estga.file.services.application.MediaVariantService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -52,6 +53,14 @@ public class MediaController {
             @Parameter(description = "The file to upload", required = true)
             @RequestParam("file") MultipartFile file) throws IOException {
         log.info("Request to upload media file: {} (size: {})", file.getOriginalFilename(), file.getSize());
+
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+        if (!Objects.requireNonNullElse(file.getContentType(), "").startsWith("image/")) {
+            log.warn("Rejecting non-image upload with Content-Type: {}", file.getContentType());
+        }
+
         MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
         var location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
