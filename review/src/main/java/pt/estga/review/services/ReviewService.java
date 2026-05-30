@@ -20,6 +20,8 @@ import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.processors.ReviewProcessor;
 import java.util.List;
 
+import pt.estga.processing.dtos.MarkSuggestionDto;
+import pt.estga.processing.mappers.MarkSuggestionMapper;
 import org.springframework.beans.factory.annotation.Value;
 
 @Service
@@ -30,6 +32,7 @@ public class ReviewService {
  	private final MarkEvidenceSubmissionRepository submissionRepository;
  	private final MarkEvidenceProcessingRepository processingRepository;
 	private final MarkSuggestionRepository suggestionRepository;
+	private final MarkSuggestionMapper suggestionMapper;
   	private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
 	private final List<ReviewProcessor> processors;
 	private final ReviewExecutor executor;
@@ -109,6 +112,19 @@ public class ReviewService {
 			// attempts race to create the same review record.
 			throw new IllegalStateException("Submission " + submissionId + " already reviewed", dive);
 		}
+	}
+
+	/**
+	 * Returns all suggestions for a given submission.
+	 */
+	@Transactional(readOnly = true)
+	public List<MarkSuggestionDto> getSuggestions(Long submissionId) {
+		return processingRepository.findBySubmissionId(submissionId)
+				.map(p -> suggestionRepository.findByProcessingId(p.getId())
+						.stream()
+						.map(suggestionMapper::toDto)
+						.toList())
+				.orElseThrow(() -> new ResourceNotFoundException("Suggestions not found"));
 	}
 
 	/**

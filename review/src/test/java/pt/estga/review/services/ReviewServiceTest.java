@@ -11,6 +11,7 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
+import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
@@ -52,6 +53,9 @@ public class ReviewServiceTest {
     @Mock
     MarkEvidenceReviewRepository markEvidenceReviewRepository;
 
+    @Mock
+    MarkSuggestionMapper suggestionMapper;
+
     ReviewService reviewService;
 
     @BeforeEach
@@ -64,6 +68,7 @@ public class ReviewServiceTest {
                 submissionRepository,
                 markEvidenceProcessingRepository,
                 suggestionRepository,
+                suggestionMapper,
                 markEvidenceReviewRepository,
                 List.of(processor),
                 executor
