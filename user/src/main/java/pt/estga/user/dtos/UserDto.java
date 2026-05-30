@@ -1,7 +1,7 @@
 package pt.estga.user.dtos;
 
 import lombok.*;
-import pt.estga.file.dtos.MediaFileDto;
+import pt.estga.file.dtos.MediaFileDto; // file-api module
 
 import java.time.Instant;
 import java.util.Set;
