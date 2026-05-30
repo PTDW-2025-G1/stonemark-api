@@ -1,15 +1,16 @@
 package pt.estga.chatbot.whatsapp.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.AuthService;
 import pt.estga.shared.models.AppPrincipal;
-import pt.estga.shared.utils.SecurityUtils;
 import pt.estga.user.enums.ChatbotPlatform;
 import pt.estga.user.services.ChatbotAccountService;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,10 @@ public class WhatsAppAuthService implements AuthService {
                             .id(user.getId())
                             .identifier(user.getUsername())
                             .password(null)
-                            .authorities(SecurityUtils.mapUserRolesToAuthorities(user.getRole()))
+                            .authorities(user.getRoles().stream()
+                                    .flatMap(role -> role.getPermissions().stream())
+                                    .map(permission -> new SimpleGrantedAuthority(permission.getName()))
+                                    .collect(Collectors.toUnmodifiableSet()))
                             .enabled(user.isEnabled())
                             .accountNonLocked(!user.isAccountLocked())
                             .build();

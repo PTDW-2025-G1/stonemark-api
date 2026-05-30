@@ -86,7 +86,6 @@ public class AccountController {
                 user.getEmail(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getRole(),
                 user.getPasswordHash() != null,
                 user.isEnabled(),
                 user.isAccountLocked()

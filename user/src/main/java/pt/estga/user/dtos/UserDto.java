@@ -2,9 +2,9 @@ package pt.estga.user.dtos;
 
 import lombok.*;
 import pt.estga.file.dtos.MediaFileDto;
-import pt.estga.shared.enums.UserRole;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Builder
 public record UserDto(
@@ -14,6 +14,6 @@ public record UserDto(
         String username,
         String email,
         MediaFileDto photo,
-        UserRole role,
+        Set<String> roles,
         Instant createdAt
 ) { }

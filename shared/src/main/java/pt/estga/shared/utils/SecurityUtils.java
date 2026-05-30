@@ -4,7 +4,7 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import pt.estga.shared.enums.UserRole;
+import pt.estga.shared.legacy.UserRole;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.shared.models.AppPrincipal;
 
@@ -52,6 +52,7 @@ public final class SecurityUtils {
         return Optional.of(p);
     }
 
+    @Deprecated(forRemoval = true)
     public static Collection<? extends GrantedAuthority> mapUserRolesToAuthorities(UserRole role) {
         return switch (role) {
             case ADMIN -> List.of(
