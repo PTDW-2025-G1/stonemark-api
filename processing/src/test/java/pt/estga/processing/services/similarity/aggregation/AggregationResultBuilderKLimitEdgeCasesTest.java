@@ -1,10 +1,10 @@
 package pt.estga.processing.services.similarity.aggregation;
 
 import org.junit.jupiter.api.Test;
-import pt.estga.mark.entities.Mark;
 import pt.estga.processing.models.AggregationState;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,22 +17,15 @@ public class AggregationResultBuilderKLimitEdgeCasesTest {
         AggregationState state = new AggregationState(scores, weights, 0,0,0,0,0);
 
         AggregationResultBuilder builder = new AggregationResultBuilder();
-        Map<Long, Mark> marksById = Map.of(
-                1L, Mark.builder().id(1L).build(),
-                2L, Mark.builder().id(2L).build(),
-                3L, Mark.builder().id(3L).build()
-        );
+        Set<Long> validMarkIds = Set.of(1L, 2L, 3L);
 
-        // k = 0 -> treated as no limit (full list)
-        var r0 = builder.build(state, marksById, 0, 0);
+        var r0 = builder.build(state, validMarkIds, 0, 0);
         assertEquals(3, r0.topScores().size());
 
-        // k > size -> full list
-        var rBig = builder.build(state, marksById, 10, 0);
+        var rBig = builder.build(state, validMarkIds, 10, 0);
         assertEquals(3, rBig.topScores().size());
 
-        // negative k -> treated as no limit
-        var rNeg = builder.build(state, marksById, -1, 0);
+        var rNeg = builder.build(state, validMarkIds, -1, 0);
         assertEquals(3, rNeg.topScores().size());
     }
 }

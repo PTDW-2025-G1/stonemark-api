@@ -1,11 +1,12 @@
 package pt.estga.processing.services.similarity.aggregation;
 
 import org.junit.jupiter.api.Test;
-import pt.estga.mark.entities.Mark;
 import pt.estga.processing.models.AggregationState;
 
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,17 +28,13 @@ public class AggregationResultBuilderInvariantsTest {
 
         AggregationResultBuilder builder = new AggregationResultBuilder();
 
-        // only provide Mark for id=1; id=3 is missing and should be skipped
-        Map<Long, Mark> marksById = Map.of(1L, Mark.builder().id(1L).build());
+        Set<Long> validMarkIds = Set.of(1L);
 
-        var res = builder.build(state, marksById, 10, 0);
+        var res = builder.build(state, validMarkIds, 10, 0);
 
-        // Entry for mark 1 should appear, mark 3 should be skipped because it's missing
         assertTrue(res.topScores().stream().anyMatch(s -> s.markId() == 1L));
         assertFalse(res.topScores().stream().anyMatch(s -> s.markId() == 3L));
 
-        // tiny weight for mark 3 should have been treated as anomaly leading to confidence 0 if present
-        // confirm weight anomalies counter is set
         assertTrue(res.weightSums().containsKey(3L));
     }
 
@@ -49,15 +46,13 @@ public class AggregationResultBuilderInvariantsTest {
 
         AggregationResultBuilder builder = new AggregationResultBuilder();
 
-        // Provide marks map in a different insertion order
-        Map<Long, Mark> marksById = new LinkedHashMap<>();
-        marksById.put(9L, Mark.builder().id(9L).build());
-        marksById.put(2L, Mark.builder().id(2L).build());
-        marksById.put(5L, Mark.builder().id(5L).build());
+        Set<Long> validMarkIds = new LinkedHashSet<>();
+        validMarkIds.add(9L);
+        validMarkIds.add(2L);
+        validMarkIds.add(5L);
 
-        var res = builder.build(state, marksById, 10, 0);
+        var res = builder.build(state, validMarkIds, 10, 0);
 
-        // Expect deterministic order: highest confidence first (mark 2), then 5, then 9
         assertEquals(2L, res.topScores().get(0).markId());
         assertEquals(5L, res.topScores().get(1).markId());
         assertEquals(9L, res.topScores().get(2).markId());

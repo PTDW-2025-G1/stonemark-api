@@ -13,7 +13,6 @@ public class OrderingInvarianceTest {
 
     @Test
     void different_input_orders_produce_same_aggregation() {
-        // Use full MarkAggregator to produce AggregationResult with topScores
         CandidateGrouper grouper = new CandidateGrouper();
         ScoreCalculator calc = new ScoreCalculator(new ScoringPolicy(true, 0.5, "SPLIT"));
         AggregationResultBuilder builder = new AggregationResultBuilder();
@@ -25,11 +24,11 @@ public class OrderingInvarianceTest {
         List<CandidateEvidence> candidatesA = List.of(new CandidateEvidence(e1, 1L, 0.8), new CandidateEvidence(e2, 2L, 0.6));
         List<CandidateEvidence> candidatesB = List.of(new CandidateEvidence(e2, 2L, 0.6), new CandidateEvidence(e1, 1L, 0.8));
 
-        Map<UUID, List<pt.estga.mark.entities.Mark>> mkA = new LinkedHashMap<>();
+        Map<UUID, List<Long>> mkA = new LinkedHashMap<>();
         mkA.put(e1, List.of(TestBuilders.mark(10L)));
         mkA.put(e2, List.of(TestBuilders.mark(20L)));
 
-        Map<UUID, List<pt.estga.mark.entities.Mark>> mkB = new LinkedHashMap<>();
+        Map<UUID, List<Long>> mkB = new LinkedHashMap<>();
         mkB.put(e2, List.of(TestBuilders.mark(20L)));
         mkB.put(e1, List.of(TestBuilders.mark(10L)));
 
