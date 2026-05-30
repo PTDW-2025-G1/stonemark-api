@@ -100,7 +100,7 @@ public class MediaUploadOrchestrator {
             media.completeUpload(actualSize, result.storagePath(), null, MediaStatus.UPLOADED);
 
             try {
-                MediaFile saved = mediaMetadataService.saveMetadataWithRetriesAndPublish(
+                MediaFile saved = mediaMetadataService.saveMetadataAndPublish(
                         media, new MediaUploadedEvent(media.getId()));
                 if (metrics != null) {
                     long elapsed = (System.nanoTime() - startNanos) / 1_000_000;

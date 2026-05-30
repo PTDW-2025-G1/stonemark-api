@@ -93,7 +93,7 @@ class MediaUploadOrchestratorTest {
         savedMedia.setId(UUID.randomUUID());
         when(mediaMetadataService.saveMetadata(any())).thenReturn(savedMedia);
         when(mediaContentService.saveContent(any(), eq(relativePath))).thenReturn(new SaveResult(relativePath, content.length));
-        when(mediaMetadataService.saveMetadataWithRetriesAndPublish(any(), any())).thenReturn(savedMedia);
+        when(mediaMetadataService.saveMetadataAndPublish(any(), any())).thenReturn(savedMedia);
 
         MediaFile result = orchestrator.orchestrateUpload(input, filename, content.length);
 
@@ -101,7 +101,7 @@ class MediaUploadOrchestratorTest {
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
         verify(mediaContentService).saveContent(any(), eq(relativePath));
-        verify(mediaMetadataService).saveMetadataWithRetriesAndPublish(any(), any());
+        verify(mediaMetadataService).saveMetadataAndPublish(any(), any());
     }
 
     @Test
