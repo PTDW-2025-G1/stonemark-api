@@ -31,11 +31,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-infra</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>mark-api</artifactId>
             <version>${stonemark.version}</version>
         </dependency>

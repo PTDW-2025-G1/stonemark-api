@@ -1,27 +1,22 @@
 package pt.estga.bookmark.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.experimental.SuperBuilder;
+import jakarta.persistence.*;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UuidGenerator;
+import pt.estga.bookmark.enums.BookmarkTargetType;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@MappedSuperclass
+@Entity
+@Table(name = "bookmark")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@SuperBuilder
-public abstract class BaseBookmark {
+@Builder
+public class Bookmark {
 
     @Id
     @GeneratedValue
@@ -33,4 +28,11 @@ public abstract class BaseBookmark {
 
     @CreationTimestamp
     private Instant createdAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private BookmarkTargetType targetType;
+
+    @Column(nullable = false)
+    private String targetId;
 }
