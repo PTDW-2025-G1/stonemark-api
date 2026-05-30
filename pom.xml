@@ -40,6 +40,8 @@
         <module>notification</module>
         <module>processing</module>
         <module>review</module>
+        <module>shared-core</module>
+        <module>shared-infra</module>
     </modules>
     <scm>
 		<connection/>
