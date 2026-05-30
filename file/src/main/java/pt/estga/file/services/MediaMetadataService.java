@@ -81,4 +81,9 @@ public class MediaMetadataService {
     public List<MediaFile> findProcessingOlderThan(Instant before) {
         return mediaFileRepository.findProcessingOlderThan(MediaStatus.PROCESSING, before);
     }
+
+    @Transactional
+    public void deleteById(UUID id) {
+        mediaFileRepository.deleteById(id);
+    }
 }

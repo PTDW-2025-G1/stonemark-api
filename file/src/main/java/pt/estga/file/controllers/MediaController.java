@@ -14,6 +14,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,7 +43,7 @@ public class MediaController {
 
     @Operation(summary = "Upload a media file", description = "Uploads a media file and returns its metadata.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "File uploaded successfully",
+            @ApiResponse(responseCode = "201", description = "File uploaded successfully",
                     content = @Content(schema = @Schema(implementation = MediaFileDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input or file upload error")
     })
@@ -52,7 +53,11 @@ public class MediaController {
             @RequestParam("file") MultipartFile file) throws IOException {
         log.info("Request to upload media file: {} (size: {})", file.getOriginalFilename(), file.getSize());
         MediaFile mediaFile = mediaService.save(file.getInputStream(), file.getOriginalFilename(), file.getSize());
-        return ResponseEntity.ok(mediaFileMapper.toDto(mediaFile));
+        var location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(mediaFile.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(mediaFileMapper.toDto(mediaFile));
     }
 
     @Operation(summary = "Get media file by ID", description = "Retrieves the original media file by its ID.")
@@ -94,6 +99,20 @@ public class MediaController {
                 .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
                 .cacheControl(CacheControl.maxAge(365, TimeUnit.DAYS).cachePublic()) // Cache for 1 year
                 .body(resource);
+    }
+
+    @Operation(summary = "Delete a media file", description = "Deletes a media file and all its variants from storage.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "File deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Media file not found")
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMedia(
+            @Parameter(description = "ID of the media file to delete", required = true)
+            @PathVariable UUID id) {
+        log.info("Request to delete media with id: {}", id);
+        mediaService.deleteMedia(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Get media thumbnail", description = "Retrieves the thumbnail variant of the media file.")

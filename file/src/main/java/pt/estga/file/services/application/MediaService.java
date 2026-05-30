@@ -5,7 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import pt.estga.file.entities.MediaFile;
+import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
@@ -13,6 +15,7 @@ import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,5 +58,29 @@ public class MediaService {
 
     public Optional<MediaFile> findById(UUID id) {
         return mediaMetadataService.findById(id);
+    }
+
+    @Transactional
+    public void deleteMedia(UUID id) {
+        MediaFile mediaFile = mediaMetadataService.findById(id)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
+
+        for (MediaVariant variant : List.copyOf(mediaFile.getVariants())) {
+            try {
+                mediaContentService.deleteContent(variant.getStoragePath());
+            } catch (Exception e) {
+                log.warn("Failed to delete variant file for {}: {}", variant.getType(), e.getMessage());
+            }
+        }
+
+        if (StringUtils.hasText(mediaFile.getStoragePath())) {
+            try {
+                mediaContentService.deleteContent(mediaFile.getStoragePath());
+            } catch (Exception e) {
+                log.warn("Failed to delete main file: {}", e.getMessage());
+            }
+        }
+
+        mediaMetadataService.deleteById(id);
     }
 }
