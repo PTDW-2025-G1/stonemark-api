@@ -52,6 +52,7 @@ public final class SecurityUtils {
         return Optional.of(p);
     }
 
+    @Deprecated(forRemoval = true)
     public static Collection<? extends GrantedAuthority> mapUserRolesToAuthorities(UserRole role) {
         return switch (role) {
             case ADMIN -> List.of(
