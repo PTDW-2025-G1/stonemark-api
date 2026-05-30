@@ -52,6 +52,11 @@ application:
 user:
   delete-after-days: 30
 
+cache:
+  user-permissions:
+    ttl-minutes: 15
+    max-size: 1000
+
 management:
   endpoints:
     web:

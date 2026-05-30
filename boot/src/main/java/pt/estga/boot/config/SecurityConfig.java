@@ -9,6 +9,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -48,6 +49,7 @@ public class SecurityConfig {
     };
 
     private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
+    private final PermissionEnrichmentFilter permissionEnrichmentFilter;
 
     @Bean
     @Order(2)
@@ -62,7 +64,6 @@ public class SecurityConfig {
                     config.setAllowCredentials(true);
                     return config;
                 }))
-                /*
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(OPEN_API_ROUTES).permitAll();
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
@@ -76,8 +77,6 @@ public class SecurityConfig {
 
                     auth.anyRequest().authenticated();
                 })
-                 */
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -86,6 +85,7 @@ public class SecurityConfig {
                                 .jwtAuthenticationConverter(appJwtAuthenticationConverter)
                         )
                 )
+                .addFilterAfter(permissionEnrichmentFilter, BearerTokenAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
                         .logoutSuccessHandler(
