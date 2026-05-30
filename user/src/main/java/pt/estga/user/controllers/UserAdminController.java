@@ -9,10 +9,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.services.UserService;
 
@@ -31,9 +32,9 @@ public class UserAdminController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class)))
     })
-    @PostMapping("/search")
-    public ResponseEntity<Page<UserDto>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(service.search(request));
+    @GetMapping
+    public ResponseEntity<Page<UserDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID.")

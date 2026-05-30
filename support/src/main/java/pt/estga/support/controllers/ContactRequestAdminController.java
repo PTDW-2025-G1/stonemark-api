@@ -3,13 +3,14 @@ package pt.estga.support.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.services.ContactRequestService;
-import pt.estga.sharedweb.models.PagedRequest;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")
@@ -20,9 +21,9 @@ public class ContactRequestAdminController {
 
     private final ContactRequestService service;
 
-    @PostMapping("/search")
-    public ResponseEntity<Page<ContactRequest>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(service.search(request));
+    @GetMapping
+    public ResponseEntity<Page<ContactRequest>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
     }
 
     @GetMapping("/{id}")

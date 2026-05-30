@@ -10,9 +10,6 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.monument.dots.MonumentListDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.sharedweb.filtering.QueryProcessor;
-import pt.estga.sharedweb.models.PagedRequest;
-import pt.estga.sharedweb.models.QueryResult;
 
 import java.util.Optional;
 
@@ -23,21 +20,13 @@ public class MonumentService {
 
     private final MonumentRepository repository;
     private final MonumentMapper mapper;
-    private final QueryProcessor<Monument> queryProcessor;
 
     public Optional<Monument> findById(Long id) {
         return repository.findById(id);
     }
 
-    public Page<MonumentListDto> search(PagedRequest request) {
-        QueryResult<Monument> result = queryProcessor.process(request);
-
-        Page<Monument> monuments = repository.findAll(
-                result.specification(),
-                result.pageable()
-        );
-
-        return monuments.map(mapper::toListDto);
+    public Page<MonumentListDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable).map(mapper::toListDto);
     }
 
     public Page<Monument> findByPolygon(String geoJson, Pageable pageable) {
