@@ -11,11 +11,12 @@ import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
+import pt.estga.file.services.storage.FileStorageService;
+import pt.estga.file.util.CountingInputStream;
 import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.FileInputStream;
@@ -31,7 +32,7 @@ import org.springframework.util.StringUtils;
 public class MediaUploadOrchestrator {
 
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
@@ -40,14 +41,14 @@ public class MediaUploadOrchestrator {
 
     public MediaUploadOrchestrator(
             MediaMetadataService mediaMetadataService,
-            MediaContentService mediaContentService,
+            FileStorageService fileStorageService,
             MediaValidationService mediaValidationService,
             FileNamingService fileNamingService,
             StorageProperties storageProperties,
             StoragePathStrategy storagePathStrategy,
             ObjectProvider<MediaMetricsService> metricsProvider) {
         this.mediaMetadataService = mediaMetadataService;
-        this.mediaContentService = mediaContentService;
+        this.fileStorageService = fileStorageService;
         this.mediaValidationService = mediaValidationService;
         this.fileNamingService = fileNamingService;
         this.storageProperties = storageProperties;
@@ -91,7 +92,9 @@ public class MediaUploadOrchestrator {
 
             SaveResult result;
             try (InputStream fileIn = new FileInputStream(tempFile.toFile())) {
-                result = mediaContentService.saveContent(fileIn, relativePath);
+                var counting = new CountingInputStream(fileIn);
+                String storagePath = fileStorageService.storeFile(counting, relativePath);
+                result = new SaveResult(storagePath, counting.getCount());
             } catch (Exception e) {
                 markMediaFailed(media, "storage failed", e);
                 throw e;
@@ -109,7 +112,7 @@ public class MediaUploadOrchestrator {
                 return saved;
             } catch (Exception e) {
                 try {
-                    mediaContentService.deleteContent(result.storagePath());
+                    fileStorageService.deleteFile(result.storagePath());
                 } catch (Exception ignored) {}
                 markMediaFailed(media, "failed to persist final media state", e);
                 if (metrics != null) metrics.recordUploadFailed();

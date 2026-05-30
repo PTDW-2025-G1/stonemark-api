@@ -5,18 +5,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import pt.estga.file.config.StorageProperties;
-import pt.estga.file.dtos.SaveResult;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
-import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
@@ -24,10 +21,8 @@ import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +35,7 @@ class MediaUploadOrchestratorTest {
     @Mock
     private MediaMetadataService mediaMetadataService;
     @Mock
-    private MediaContentService mediaContentService;
+    private FileStorageService fileStorageService;
     @Mock
     private MediaValidationService mediaValidationService;
     @Mock
@@ -67,7 +62,7 @@ class MediaUploadOrchestratorTest {
 
         orchestrator = new MediaUploadOrchestrator(
                 mediaMetadataService,
-                mediaContentService,
+                fileStorageService,
                 mediaValidationService,
                 fileNamingService,
                 storageProperties,
@@ -92,7 +87,7 @@ class MediaUploadOrchestratorTest {
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StoragePropertiesConfig.provider());
         savedMedia.setId(UUID.randomUUID());
         when(mediaMetadataService.saveMetadata(any())).thenReturn(savedMedia);
-        when(mediaContentService.saveContent(any(), eq(relativePath))).thenReturn(new SaveResult(relativePath, content.length));
+        when(fileStorageService.storeFile(any(), eq(relativePath))).thenReturn(relativePath);
         when(mediaMetadataService.saveMetadataAndPublish(any(), any())).thenReturn(savedMedia);
 
         MediaFile result = orchestrator.orchestrateUpload(input, filename, content.length);
@@ -100,7 +95,7 @@ class MediaUploadOrchestratorTest {
         assertNotNull(result);
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
-        verify(mediaContentService).saveContent(any(), eq(relativePath));
+        verify(fileStorageService).storeFile(any(), eq(relativePath));
         verify(mediaMetadataService).saveMetadataAndPublish(any(), any());
     }
 
@@ -115,7 +110,7 @@ class MediaUploadOrchestratorTest {
 
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadRejected();
-        verifyNoInteractions(mediaContentService);
+        verifyNoInteractions(fileStorageService);
         verifyNoInteractions(mediaValidationService);
     }
 
@@ -132,7 +127,7 @@ class MediaUploadOrchestratorTest {
 
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadRejected();
-        verify(mediaContentService, never()).saveContent(any(), any());
+        verify(fileStorageService, never()).storeFile(any(), any());
     }
 
     @Test
@@ -150,7 +145,7 @@ class MediaUploadOrchestratorTest {
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StoragePropertiesConfig.provider());
         savedMedia.setId(UUID.randomUUID());
         when(mediaMetadataService.saveMetadata(any())).thenReturn(savedMedia);
-        when(mediaContentService.saveContent(any(), any())).thenThrow(new RuntimeException("Disk full"));
+        when(fileStorageService.storeFile(any(), any())).thenThrow(new RuntimeException("Disk full"));
 
         assertThrows(RuntimeException.class,
                 () -> orchestrator.orchestrateUpload(input, filename));

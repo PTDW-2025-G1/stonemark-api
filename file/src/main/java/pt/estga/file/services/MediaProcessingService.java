@@ -12,6 +12,7 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.storage.variant.VariantStorageService;
 import pt.estga.file.services.upload.MediaValidationService;
 
@@ -34,7 +35,7 @@ public class MediaProcessingService {
 
     private final MediaMetadataService mediaMetadataService;
     private final MediaVariantRepository mediaVariantRepository;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
     private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
@@ -44,7 +45,7 @@ public class MediaProcessingService {
     public MediaProcessingService(
             MediaMetadataService mediaMetadataService,
             MediaVariantRepository mediaVariantRepository,
-            MediaContentService mediaContentService,
+            FileStorageService fileStorageService,
             MediaValidationService mediaValidationService,
             ImageVariantGenerator imageVariantGenerator,
             VariantStorageService variantStorageService,
@@ -52,7 +53,7 @@ public class MediaProcessingService {
             ObjectProvider<MediaMetricsService> metricsProvider) {
         this.mediaMetadataService = mediaMetadataService;
         this.mediaVariantRepository = mediaVariantRepository;
-        this.mediaContentService = mediaContentService;
+        this.fileStorageService = fileStorageService;
         this.mediaValidationService = mediaValidationService;
         this.imageVariantGenerator = imageVariantGenerator;
         this.variantStorageService = variantStorageService;
@@ -78,7 +79,7 @@ public class MediaProcessingService {
             mediaFile.setStatus(MediaStatus.PROCESSING);
             mediaFile = mediaMetadataService.saveMetadata(mediaFile);
 
-            Resource resource = mediaContentService.loadContent(mediaFile.getStoragePath());
+            Resource resource = fileStorageService.loadFile(mediaFile.getStoragePath());
             Path tempOriginal = createTempFile("original-", ".tmp");
 
             try {

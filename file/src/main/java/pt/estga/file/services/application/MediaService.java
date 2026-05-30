@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
@@ -26,7 +26,7 @@ public class MediaService {
 
     private final MediaUploadOrchestrator uploadOrchestrator;
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
 
     public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
         return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
@@ -43,7 +43,7 @@ public class MediaService {
         if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
             throw new FileNotFoundException("Media file has no storage path");
         }
-        return mediaContentService.loadContent(mediaFile.getStoragePath());
+        return fileStorageService.loadFile(mediaFile.getStoragePath());
     }
 
     public Optional<MediaFile> findById(UUID id) {
@@ -57,7 +57,7 @@ public class MediaService {
 
         for (MediaVariant variant : List.copyOf(mediaFile.getVariants())) {
             try {
-                mediaContentService.deleteContent(variant.getStoragePath());
+                fileStorageService.deleteFile(variant.getStoragePath());
             } catch (Exception e) {
                 log.warn("Failed to delete variant file for {}: {}", variant.getType(), e.getMessage());
             }
@@ -65,7 +65,7 @@ public class MediaService {
 
         if (StringUtils.hasText(mediaFile.getStoragePath())) {
             try {
-                mediaContentService.deleteContent(mediaFile.getStoragePath());
+                fileStorageService.deleteFile(mediaFile.getStoragePath());
             } catch (Exception e) {
                 log.warn("Failed to delete main file: {}", e.getMessage());
             }

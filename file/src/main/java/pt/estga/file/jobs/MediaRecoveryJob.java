@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaStatus;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -21,7 +21,7 @@ import java.util.List;
 public class MediaRecoveryJob {
 
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
 
     @Scheduled(fixedDelayString = "PT15M")
     public void markStaleProcessingAsFailed() {
@@ -43,7 +43,7 @@ public class MediaRecoveryJob {
         List<MediaVariant> variants = List.copyOf(mediaFile.getVariants());
         for (MediaVariant variant : variants) {
             try {
-                mediaContentService.deleteContent(variant.getStoragePath());
+                fileStorageService.deleteFile(variant.getStoragePath());
             } catch (Exception e) {
                 log.warn("Failed to delete variant storage for media {} variant {}: {}",
                         mediaFile.getId(), variant.getType(), e.getMessage());

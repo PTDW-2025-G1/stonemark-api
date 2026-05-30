@@ -10,8 +10,8 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaContentService;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 
 import java.io.File;
 import java.io.InputStream;
@@ -24,7 +24,7 @@ public class TelegramFileService {
 
     private final Provider<StonemarkTelegramBot> botProvider;
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
 
     public File downloadFile(String fileId) {
         try {
@@ -42,7 +42,7 @@ public class TelegramFileService {
         try {
             Resource resource = mediaMetadataService.findById(mediaId)
                     .map(MediaFile::getStoragePath)
-                    .map(mediaContentService::loadContent)
+                    .map(fileStorageService::loadFile)
                     .orElse(null);
 
             if (resource != null) {
