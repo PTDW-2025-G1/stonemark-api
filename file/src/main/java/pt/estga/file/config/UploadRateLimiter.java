@@ -1,6 +1,7 @@
 package pt.estga.file.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -12,22 +13,30 @@ public class UploadRateLimiter {
 
     private final Map<String, ConcurrentLinkedDeque<Long>> requests = new ConcurrentHashMap<>();
 
-    private int maxRequests = 10;
+    private final boolean enabled;
+    private final int maxRequests;
+    private final long windowMillis;
 
-    private long windowMillis = 60_000;
+    public UploadRateLimiter(
+            @Value("${upload.rate-limit.enabled:true}") boolean enabled,
+            @Value("${upload.rate-limit.max-requests:10}") int maxRequests,
+            @Value("${upload.rate-limit.window-seconds:60}") long windowSeconds) {
+        this.enabled = enabled;
+        this.maxRequests = maxRequests;
+        this.windowMillis = windowSeconds * 1000;
+    }
 
     public static final String RATE_LIMIT_REMAINING = "X-RateLimit-Remaining";
     public static final String RATE_LIMIT_RESET = "X-RateLimit-Reset";
 
-    public void setMaxRequests(int maxRequests) {
-        this.maxRequests = maxRequests;
-    }
-
-    public void setWindowMillis(long windowMillis) {
-        this.windowMillis = windowMillis;
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public boolean isAllowed(HttpServletRequest request) {
+        if (!enabled) {
+            return true;
+        }
         String clientIp = resolveClientIp(request);
         long now = System.currentTimeMillis();
         long windowStart = now - windowMillis;

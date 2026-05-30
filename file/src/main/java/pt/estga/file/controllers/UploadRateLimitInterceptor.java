@@ -31,6 +31,10 @@ public class UploadRateLimitInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        if (!rateLimiter.isEnabled()) {
+            return true;
+        }
+
         response.setHeader(UploadRateLimiter.RATE_LIMIT_REMAINING,
                 String.valueOf(rateLimiter.getRemainingRequests(request)));
 

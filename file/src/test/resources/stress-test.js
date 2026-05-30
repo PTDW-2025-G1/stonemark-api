@@ -1,6 +1,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { Rate, Trend } from 'k6/metrics';
+import { Rate, Trend, Counter } from 'k6/metrics';
 import { SharedArray } from 'k6/data';
 import { randomItem } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
@@ -8,13 +8,14 @@ const uploadDuration = new Trend('upload_duration_ms');
 const processingLatency = new Trend('processing_ready_latency_ms');
 const uploadErrors = new Rate('upload_errors');
 const processingTimeouts = new Rate('processing_timeouts');
-const rateLimited = new Rate('rate_limited');
 
 const FILES = new SharedArray('test-images', function () {
   return [
     { name: 'small.jpg',  size: 128 * 1024,       type: 'image/jpeg' },
     { name: 'medium.jpg', size: 512 * 1024,       type: 'image/jpeg' },
     { name: 'large.jpg',  size: 1 * 1024 * 1024,  type: 'image/jpeg' },
+    { name: 'xlarge.png', size: 4 * 1024 * 1024,  type: 'image/png'  },
+    { name: 'max.jpg',    size: 10 * 1024 * 1024, type: 'image/jpeg' },
   ];
 });
 
@@ -34,16 +35,16 @@ function generatePayload(sizeBytes, mimeType) {
 
 export const options = {
   stages: [
-    { target: 5,  duration: '15s' },
-    { target: 10, duration: '15s' },
-    { target: 20, duration: '15s' },
-    { target: 20, duration: '30s' },
-    { target: 0,  duration: '15s' },
+    { target: 200,  duration: '30s' },
+    { target: 500,  duration: '30s' },
+    { target: 1000, duration: '1m'  },
+    { target: 1000, duration: '2m'  },
+    { target: 0,    duration: '30s' },
   ],
   thresholds: {
-    upload_errors: ['rate<0.05'],
-    upload_duration_ms: ['p(95)<10000'],
-    processing_timeouts: ['rate<0.05'],
+    upload_errors:        ['rate<0.01'],
+    upload_duration_ms:   ['p(95)<5000'],
+    processing_timeouts:  ['rate<0.02'],
   },
 };
 
@@ -61,14 +62,6 @@ export default function () {
   });
   const uploadElapsed = Date.now() - uploadStart;
   uploadDuration.add(uploadElapsed);
-
-  if (uploadResp.status === 429) {
-    rateLimited.add(1);
-    const retryAfter = uploadResp.headers['Retry-After'];
-    const wait = retryAfter ? parseInt(retryAfter) * 1000 : 1000;
-    sleep(wait / 1000);
-    return;
-  }
 
   const ok = check(uploadResp, {
     'upload status 201': (r) => r.status === 201,
@@ -115,12 +108,11 @@ export default function () {
 export function handleSummary(data) {
   return {
     'stdout': JSON.stringify({
-      upload_p95_ms: data.metrics.upload_duration_ms?.values?.['p(95)'],
-      upload_error_rate: data.metrics.upload_errors?.values?.rate,
-      rate_limited: data.metrics.rate_limited?.values?.rate,
-      processing_timeout_rate: data.metrics.processing_timeouts?.values?.rate,
+      upload_p95_ms:             data.metrics.upload_duration_ms?.values?.['p(95)'],
+      upload_error_rate:         data.metrics.upload_errors?.values?.rate,
+      processing_timeout_rate:   data.metrics.processing_timeouts?.values?.rate,
       processing_latency_p95_ms: data.metrics.processing_ready_latency_ms?.values?.['p(95)'],
-      total_uploads: data.metrics.http_reqs?.values?.count,
+      total_uploads:             data.metrics.http_reqs?.values?.count,
     }, null, 2),
   };
 }
