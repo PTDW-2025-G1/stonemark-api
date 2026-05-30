@@ -14,8 +14,6 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
 
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByKeycloakSub(String keycloakSub);
-
     Optional<User> findByUsername(String username);
 
     Optional<User> findByGoogleSub(String googleSub);

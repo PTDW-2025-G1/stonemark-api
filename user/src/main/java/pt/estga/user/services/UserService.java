@@ -44,10 +44,6 @@ public class UserService {
         return repository.findByEmail(email);
     }
 
-    public Optional<User> findByKeycloakSub(String keycloakSub) {
-        return repository.findByKeycloakSub(keycloakSub);
-    }
-
     public Optional<User> findByIdForProfile(Long id) {
         return repository.findByIdForProfile(id);
     }
