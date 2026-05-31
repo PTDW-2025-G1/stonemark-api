@@ -2,6 +2,7 @@ package pt.estga.review.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.review.converters.ReviewDecisionConverter;
 import pt.estga.review.enums.ReviewDecision;
 
@@ -33,4 +34,8 @@ public class MarkEvidenceReview {
     private Long reviewedById;
 
     String comment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "review_group_id")
+    private ReviewGroup reviewGroup;
 }

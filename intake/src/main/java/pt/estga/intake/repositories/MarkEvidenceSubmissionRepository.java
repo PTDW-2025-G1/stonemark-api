@@ -5,6 +5,14 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 @Repository
 public interface MarkEvidenceSubmissionRepository extends JpaRepository<MarkEvidenceSubmission, Long>, JpaSpecificationExecutor<MarkEvidenceSubmission> {
+
+    Optional<MarkEvidenceSubmission> findByOriginalMediaFileId(UUID originalMediaFileId);
+
+    List<MarkEvidenceSubmission> findByOriginalMediaFileIdIn(List<UUID> originalMediaFileIds);
 }

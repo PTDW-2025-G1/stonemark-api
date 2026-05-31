@@ -7,5 +7,6 @@ package pt.estga.review.enums;
 public enum ReviewType {
     MATCH,
     DISCOVERY,
-    REJECTION
+    REJECTION,
+    GROUP_DISCOVERY
 }

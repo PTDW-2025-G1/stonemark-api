@@ -1,19 +1,20 @@
 package pt.estga.review.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
+import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
+import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.review.enums.ReviewDecision;
+import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.utils.SecurityUtils;
-import org.springframework.context.ApplicationEventPublisher;
-import pt.estga.review.events.ReviewCompletedEvent;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
-import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -34,6 +35,17 @@ public class ReviewExecutor {
             String comment,
             ResolutionResult resolution,
             UUID processingId) {
+        return execute(submission, decision, comment, resolution, processingId, null);
+    }
+
+    @Transactional
+    public MarkEvidenceReview execute(
+            MarkEvidenceSubmission submission,
+            ReviewDecision decision,
+            String comment,
+            ResolutionResult resolution,
+            UUID processingId,
+            ReviewGroup reviewGroup) {
 
         Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().getId() : null;
 
@@ -43,13 +55,13 @@ public class ReviewExecutor {
                 .decision(decision)
                 .reviewedAt(Instant.now())
                 .comment(comment)
+                .reviewGroup(reviewGroup)
                 .build();
 
         SecurityUtils.getCurrentUserId().ifPresent(review::setReviewedById);
 
         MarkEvidenceReview saved = reviewRepository.save(review);
 
-        // Metrics
         try {
             meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
             if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMarkId() != null) {

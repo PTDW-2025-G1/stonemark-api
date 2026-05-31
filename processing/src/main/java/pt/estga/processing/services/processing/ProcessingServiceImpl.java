@@ -14,6 +14,7 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.services.similarity.DeduplicationService;
 import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.vision.VisionClient;
@@ -43,6 +44,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final FileStorageService fileStorageService;
     private final MediaMetadataService mediaMetadataService;
     private final SimilarityService similarityService;
+    private final DeduplicationService deduplicationService;
     private final MeterRegistry meterRegistry;
     private final PlatformTransactionManager transactionManager;
     private TransactionTemplate transactionTemplate;
@@ -260,31 +262,50 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     /**
      * Finalize successful processing: persist embedding and suggestions, mark completed and record metrics.
+     * Before marking COMPLETED, runs a deduplication check: if the new embedding is very similar and spatially
+     * close to existing evidence, the processing is absorbed into a ReviewGroup (status REVIEW_PENDING) instead
+     * of generating a standalone review task.
      */
     protected void finalizeProcessingSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
         transactionTemplate.executeWithoutResult(status ->
             processingRepository.findById(processingId).ifPresent(p -> {
                 p.setEmbedding(embedding);
-                p.setStatus(ProcessingStatus.COMPLETED);
                 p.setProcessedAt(Instant.now());
                 p.setRetryCount(0);
                 p.setLastRetryAt(null);
                 p.setPermanent(false);
-                suggestionRepository.deleteByProcessingId(p.getId());
-                if (suggestions != null && !suggestions.isEmpty()) {
-                    suggestions.forEach(s -> s.setProcessing(p));
-                    suggestions.forEach(s -> s.setId(null));
-                    suggestionRepository.saveAll(suggestions);
-                }
-                processingRepository.save(p);
 
-                meterRegistry.counter("processing.submissions.success").increment();
-                long durationNanos = System.nanoTime() - startNanos;
-                meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
-                long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-                int suggestionCount = suggestions == null ? 0 : suggestions.size();
-                Long submissionId = p.getSubmissionId();
-                log.info("Processing {} completed for submission {} after {} ms — suggestions={}", processingId, submissionId, durationMs, suggestionCount);
+                boolean absorbed = deduplicationService.tryAbsorbIntoGroup(p);
+
+                if (absorbed) {
+                    p.setStatus(ProcessingStatus.REVIEW_PENDING);
+                    suggestionRepository.deleteByProcessingId(p.getId());
+                    processingRepository.save(p);
+
+                    meterRegistry.counter("processing.submissions.deduplicated").increment();
+                    long durationNanos = System.nanoTime() - startNanos;
+                    meterRegistry.timer("processing.submissions.duration", "result", "deduplicated").record(Duration.ofNanos(durationNanos));
+                    long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+                    log.info("Processing {} deduplicated for submission {} after {} ms — absorbed into ReviewGroup",
+                            processingId, p.getSubmissionId(), durationMs);
+                } else {
+                    p.setStatus(ProcessingStatus.COMPLETED);
+                    suggestionRepository.deleteByProcessingId(p.getId());
+                    if (suggestions != null && !suggestions.isEmpty()) {
+                        suggestions.forEach(s -> s.setProcessing(p));
+                        suggestions.forEach(s -> s.setId(null));
+                        suggestionRepository.saveAll(suggestions);
+                    }
+                    processingRepository.save(p);
+
+                    meterRegistry.counter("processing.submissions.success").increment();
+                    long durationNanos = System.nanoTime() - startNanos;
+                    meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
+                    long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+                    int suggestionCount = suggestions == null ? 0 : suggestions.size();
+                    log.info("Processing {} completed for submission {} after {} ms — suggestions={}",
+                            processingId, p.getSubmissionId(), durationMs, suggestionCount);
+                }
             })
         );
     }
