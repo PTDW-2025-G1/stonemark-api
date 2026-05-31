@@ -12,10 +12,12 @@ import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
+import pt.estga.chatbot.models.Platform;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,7 +30,7 @@ public class BotEngineImpl implements BotEngine {
 
     private final ConversationDispatcher conversationDispatcher;
     private final CacheManager cacheManager;
-    private final AuthServiceFactory authServiceFactory;
+    private final List<AuthService> authServices;
 
     @Override
     public List<BotResponse> handleInput(BotInput input) {
@@ -72,13 +74,6 @@ public class BotEngineImpl implements BotEngine {
         return cache.get(conversationKey, () -> new ChatbotContext());
     }
 
-    /**
-     * Derives a stable, non-null cache key for conversation contexts.
-     * Priority:
-     * 1. Resolved domain user id (USER:{id})
-     * 2. Platform + chat id (PLATFORM:{chatId})
-     * If neither can be derived an IllegalArgumentException is thrown.
-     */
     private String deriveConversationKey(BotInput input, String resolvedUserId) {
         if (resolvedUserId != null) {
             return "USER:" + resolvedUserId;
@@ -90,7 +85,7 @@ public class BotEngineImpl implements BotEngine {
     }
 
     private void authenticateUserIfPossible(ChatbotContext context, BotInput input) {
-        AuthService authService = authServiceFactory.getAuthService(input.getPlatform());
+        AuthService authService = resolveAuthService(input.getPlatform());
         Optional<AppPrincipal> principalOpt = authService.authenticate(input.getUserId());
         
         principalOpt.ifPresent(principal -> {
@@ -100,6 +95,13 @@ public class BotEngineImpl implements BotEngine {
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         });
+    }
+
+    private AuthService resolveAuthService(Platform platform) {
+        return authServices.stream()
+                .filter(s -> s.supports(platform))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No AuthService found for platform: " + platform));
     }
 
     private static boolean isGlobalCommand(BotInput input) {
