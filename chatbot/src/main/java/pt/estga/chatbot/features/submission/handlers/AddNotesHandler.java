@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
-import pt.estga.chatbot.features.submission.SubmissionCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.ChatbotSubmissionFacade;
@@ -23,7 +23,7 @@ public class AddNotesHandler implements ConversationStateHandler {
             return new HandlerOutcome.Failure();
         }
 
-        if (input.getCallbackData() == null || !input.getCallbackData().equals(SubmissionCallbackData.SKIP_NOTES)) {
+        if (input.getCallbackData() == null || !input.getCallbackData().equals(CallbackData.SKIP_NOTES)) {
             if (input.getText() != null) {
                 markEvidenceSubmission.setUserNotes(input.getText());
             }

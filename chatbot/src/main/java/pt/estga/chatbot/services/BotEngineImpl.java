@@ -9,7 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.CoreState;
-import pt.estga.chatbot.constants.SharedCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.shared.models.AppPrincipal;
@@ -104,7 +104,7 @@ public class BotEngineImpl implements BotEngine {
 
     private static boolean isGlobalCommand(BotInput input) {
         return (input.getText() != null && SLASH_COMMANDS.contains(input.getText()))
-                || SharedCallbackData.BACK_TO_MAIN_MENU.equals(input.getCallbackData());
+                || CallbackData.BACK_TO_MAIN_MENU.equals(input.getCallbackData());
     }
 
     private void resetContext(ChatbotContext context) {

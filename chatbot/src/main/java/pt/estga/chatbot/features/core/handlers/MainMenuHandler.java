@@ -3,8 +3,7 @@ package pt.estga.chatbot.features.core.handlers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.*;
-import pt.estga.chatbot.features.submission.SubmissionCallbackData;
-import pt.estga.chatbot.features.verification.VerificationCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 
 @Component
@@ -19,11 +18,11 @@ public class MainMenuHandler implements ConversationStateHandler {
             return new HandlerOutcome.Failure();
         }
 
-        if (callbackData.equals(SubmissionCallbackData.START_SUBMISSION)) {
+        if (callbackData.equals(CallbackData.START_SUBMISSION)) {
             return new HandlerOutcome.StartNew();
         }
 
-        if (callbackData.equals(VerificationCallbackData.START_VERIFICATION)) {
+        if (callbackData.equals(CallbackData.START_VERIFICATION)) {
             return new HandlerOutcome.StartVerification();
         }
 

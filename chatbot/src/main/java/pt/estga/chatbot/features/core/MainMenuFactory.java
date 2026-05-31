@@ -3,12 +3,11 @@ package pt.estga.chatbot.features.core;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.config.ChatbotAuthProperties;
-import pt.estga.chatbot.features.submission.SubmissionCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.Menu;
-import pt.estga.chatbot.features.verification.VerificationCallbackData;
 import pt.estga.chatbot.services.AuthService;
 import pt.estga.chatbot.services.AuthServiceFactory;
 import pt.estga.chatbot.services.UiTextService;
@@ -35,7 +34,7 @@ public class MainMenuFactory {
             buttonRows.add(List.of(
                     Button.builder()
                             .textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))
-                            .callbackData(SubmissionCallbackData.START_SUBMISSION)
+                            .callbackData(CallbackData.START_SUBMISSION)
                             .build()
             ));
         }
@@ -44,7 +43,7 @@ public class MainMenuFactory {
             buttonRows.add(List.of(
                     Button.builder()
                             .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN))
-                            .callbackData(VerificationCallbackData.START_VERIFICATION)
+                            .callbackData(CallbackData.START_VERIFICATION)
                             .build()
             ));
         }

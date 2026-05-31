@@ -2,6 +2,7 @@ package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
@@ -62,7 +63,7 @@ public class SubmissionResponseProvider implements ResponseProvider {
                 .buttons(List.of(
                         List.of(Button.builder()
                                 .textNode(textService.get(MessageKey.SKIP_BTN))
-                                .callbackData(SubmissionCallbackData.SKIP_NOTES)
+                                .callbackData(CallbackData.SKIP_NOTES)
                                 .build())
                 ))
                 .build();

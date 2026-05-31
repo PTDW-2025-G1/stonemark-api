@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import pt.estga.chatbot.constants.MessageKey;
-import pt.estga.chatbot.constants.SharedCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
@@ -77,7 +77,7 @@ public class TelegramNotificationService implements MessengerNotificationService
                     .chatId(chatId)
                     .platform(Platform.TELEGRAM)
                     .type(BotInput.InputType.CALLBACK)
-                    .callbackData(SharedCallbackData.BACK_TO_MAIN_MENU)
+                    .callbackData(CallbackData.BACK_TO_MAIN_MENU)
                     .build();
             telegramBot.dispatchAndSend(menuInput);
             log.debug("Main menu dispatched and sent to Telegram user: {}", recipientId);
