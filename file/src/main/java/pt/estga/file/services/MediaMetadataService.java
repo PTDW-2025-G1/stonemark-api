@@ -40,20 +40,16 @@ public class MediaMetadataService {
     }
 
     /**
-     * Saves metadata with retries and publishes an event after the transaction
-     * commits. Each attempt runs in a new transaction (REQUIRES_NEW) to keep
-     * the connection pool from being pinned during backoff.
+     * Saves metadata with retries. Each attempt runs in a new transaction (REQUIRES_NEW)
+     * to keep the connection pool from being pinned during backoff. After the final save,
+     * callers should invoke {@link #publishAfterCommit(Object)} to fire any events.
      */
-    public MediaFile saveMetadataAndPublish(MediaFile mediaFile, Object event) {
+    public MediaFile saveMetadataAndPublish(MediaFile mediaFile) {
         final int maxAttempts = 3;
         int tried = 0;
         while (true) {
             try {
-                return requiresNewTemplate.execute(status -> {
-                    MediaFile saved = mediaFileRepository.save(mediaFile);
-                    eventPublisher.publish(event);
-                    return saved;
-                });
+                return requiresNewTemplate.execute(status -> mediaFileRepository.save(mediaFile));
             } catch (Exception e) {
                 tried++;
                 if (tried >= maxAttempts) {
@@ -69,6 +65,10 @@ public class MediaMetadataService {
                 }
             }
         }
+    }
+
+    public void publishAfterCommit(Object event) {
+        eventPublisher.publish(event);
     }
 
     public Optional<MediaFile> findById(UUID id) {
