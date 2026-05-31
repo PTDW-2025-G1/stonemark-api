@@ -1,12 +1,12 @@
 package pt.estga.chatbot.context;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
 
-import java.util.List;
-
-@Data
+@Getter
+@Setter
 public class SubmissionContext {
     private MarkEvidenceSubmission submission;
 

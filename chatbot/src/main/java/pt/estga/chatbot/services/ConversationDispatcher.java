@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ConversationDispatcher {
 
+    private static final int MAX_DISPATCH_DEPTH = 10;
+
     private final Map<ConversationState, ConversationStateHandler> handlers;
     private final ConversationFlowManager submissionFlow;
     private final ResponseFactory responseFactory;
@@ -29,14 +31,32 @@ public class ConversationDispatcher {
             ResponseFactory responseFactory
     ) {
         this.handlers = handlerList.stream()
-                .collect(Collectors.toMap(ConversationStateHandler::canHandle, Function.identity()));
+                .collect(Collectors.toMap(
+                        ConversationStateHandler::canHandle,
+                        Function.identity(),
+                        (a, b) -> {
+                            throw new IllegalStateException(
+                                    "Duplicate handler registration for state " + a.canHandle()
+                                            + ": " + a.getClass().getName() + " and " + b.getClass().getName()
+                            );
+                        }
+                ));
         this.submissionFlow = submissionFlow;
         this.responseFactory = responseFactory;
     }
 
     public List<BotResponse> dispatch(ChatbotContext context, BotInput input) {
+        return dispatch(context, input, 0);
+    }
+
+    private List<BotResponse> dispatch(ChatbotContext context, BotInput input, int depth) {
+        if (depth > MAX_DISPATCH_DEPTH) {
+            log.error("Max dispatch depth ({}) exceeded for state: {}", MAX_DISPATCH_DEPTH, context.getCurrentState());
+            return responseFactory.createErrorResponse(context);
+        }
+
         ConversationState currentState = context.getCurrentState();
-        log.debug("Dispatching state: {} with input type: {}", currentState, input.getType());
+        log.debug("Dispatching state: {} with input type: {} (depth: {})", currentState, input.getType(), depth);
 
         ConversationStateHandler handler = handlers.get(currentState);
 
@@ -55,7 +75,7 @@ public class ConversationDispatcher {
         // Handle re-dispatch outcome
         if (outcome == HandlerOutcome.RE_DISPATCH) {
             log.debug("Re-dispatching due to RE_DISPATCH outcome");
-            return dispatch(context, input);
+            return dispatch(context, input, depth + 1);
         }
 
         // Determine the next state.
