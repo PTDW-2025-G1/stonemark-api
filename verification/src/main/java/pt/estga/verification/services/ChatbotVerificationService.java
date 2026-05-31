@@ -63,11 +63,6 @@ public class ChatbotVerificationService {
 
         ActionCode actionCode = actionCodeOptional.get();
 
-        if (actionCode.isConsumed()) {
-            log.warn("Code already consumed: {}", code);
-            return Optional.empty();
-        }
-
         if (actionCode.getExpiresAt().isBefore(Instant.now())) {
             log.warn("Code expired: {}", code);
             return Optional.empty();
@@ -78,12 +73,14 @@ public class ChatbotVerificationService {
             return Optional.empty();
         }
 
+        // Atomically mark as consumed — prevents race where two requests both pass validation
+        int updated = actionCodeRepository.markConsumed(code);
+        if (updated == 0) {
+            log.warn("Code already consumed (concurrent request): {}", code);
+            return Optional.empty();
+        }
+
         String platformUserId = actionCode.getPlatformUserId();
-
-        // Mark code as consumed
-        actionCode.setConsumed(true);
-        actionCodeRepository.save(actionCode);
-
         log.info("Chatbot verification successful for platform user: {}", platformUserId);
         return Optional.of(platformUserId);
     }
