@@ -16,16 +16,12 @@ import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class BotEngineImpl implements BotEngine {
-
-    private static final long CONTEXT_IDLE_TIMEOUT_MS = TimeUnit.HOURS.toMillis(2);
 
     private final ConversationDispatcher conversationDispatcher;
     private final CacheManager cacheManager;
@@ -45,34 +41,24 @@ public class BotEngineImpl implements BotEngine {
         String conversationKey = deriveConversationKey(input, userId);
         ChatbotContext context = getOrCreateContext(conversationKey);
 
-        // Evict stale contexts (abandoned conversations) to free memory
-        if (isStale(context)) {
-            log.warn("Evicting stale context for key: {} (idle since {})", conversationKey, context.getLastActivityTimestamp());
-            context = new ChatbotContext();
-            Objects.requireNonNull(cacheManager.getCache("conversations")).put(conversationKey, context);
-        }
-
-        ChatbotContext ctx = context;
-        ctx.touch();
-
         currentUserId.ifPresent(id -> {
-            if (ctx.getDomainUserId() == null) {
-                ctx.setDomainUserId(id);
+            if (context.getDomainUserId() == null) {
+                context.setDomainUserId(id);
             }
         });
 
-        authenticateUserIfPossible(ctx, input);
+        authenticateUserIfPossible(context, input);
 
         if (isGlobalCommand(input)) {
-            resetContext(ctx);
+            resetContext(context);
         }
 
-        if (ctx.getCurrentState() == null) {
-            ctx.setCurrentState(CoreState.START);
+        if (context.getCurrentState() == null) {
+            context.setCurrentState(CoreState.START);
         }
 
 
-        return conversationDispatcher.dispatch(ctx, input);
+        return conversationDispatcher.dispatch(context, input);
     }
 
     private ChatbotContext getOrCreateContext(String conversationKey) {
@@ -80,12 +66,7 @@ public class BotEngineImpl implements BotEngine {
         if (cache == null) {
             throw new IllegalStateException("Conversation cache 'conversations' is not configured");
         }
-        return cache.get(conversationKey, ChatbotContext::new);
-    }
-
-    private boolean isStale(ChatbotContext context) {
-        long idle = System.currentTimeMillis() - context.getLastActivityTimestamp();
-        return idle > CONTEXT_IDLE_TIMEOUT_MS;
+        return cache.get(conversationKey, () -> new ChatbotContext());
     }
 
     /**

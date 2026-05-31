@@ -11,15 +11,9 @@ public class ChatbotContext {
     private String userName;
     private String verificationCode;
     private SubmissionContext submissionContext;
-    private long lastActivityTimestamp;
 
     public ChatbotContext() {
         this.submissionContext = new SubmissionContext();
-        touch();
-    }
-
-    public void touch() {
-        this.lastActivityTimestamp = System.currentTimeMillis();
     }
 
     public void clear() {
