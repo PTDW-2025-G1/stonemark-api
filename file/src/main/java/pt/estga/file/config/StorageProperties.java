@@ -37,6 +37,10 @@ public class StorageProperties {
     @Setter
     private String tempDir = "";
 
+    /** Directory for staged files awaiting final commit. Relative to tempDir if not absolute. */
+    @Setter
+    private String stagingDir = "staging";
+
     private final Local local = new Local();
 
     @Setter

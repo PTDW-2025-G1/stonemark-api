@@ -31,16 +31,14 @@ public class AddNotesHandler implements ConversationStateHandler {
         }
 
         try {
-            // Delegate chatbot-specific orchestration to the facade which resolves user and source
             submitFacade.submitFromChatbot(
                     markEvidenceSubmission,
-                    context.getSubmissionContext().getPhotoData(),
+                    context.getSubmissionContext().getStagedFileId(),
                     context.getSubmissionContext().getPhotoFilename(),
                     context.getDomainUserId(),
                     context.getSubmissionContext().getSubmissionSource()
             );
 
-            // Clean up the context
             context.clear();
 
             return HandlerOutcome.SUCCESS;

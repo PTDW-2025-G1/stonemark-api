@@ -1,6 +1,7 @@
 package pt.estga.chatbot.features.submission.handlers;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
@@ -9,12 +10,18 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
+import pt.estga.fileapi.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
 
+import java.io.ByteArrayInputStream;
+
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class InitialPhotoHandler implements ConversationStateHandler {
+
+    private final FileStorageOperations fileStorage;
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
@@ -24,16 +31,22 @@ public class InitialPhotoHandler implements ConversationStateHandler {
 
         MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
 
-        // Initialize a submission object if not exists (but don't persist yet)
         if (submission == null) {
-            MarkEvidenceSubmission markEvidenceSubmission = new MarkEvidenceSubmission();
-            context.getSubmissionContext().setSubmission(markEvidenceSubmission);
+            submission = new MarkEvidenceSubmission();
+            context.getSubmissionContext().setSubmission(submission);
         }
 
-        // Store photo data and metadata in context (will be persisted at submission)
-        context.getSubmissionContext().setPhotoData(input.getFileData());
-        context.getSubmissionContext().setPhotoFilename(input.getFileName());
-        context.getSubmissionContext().setSubmissionSource(mapPlatformToSubmissionSource(input.getPlatform()));
+        // Stage the photo immediately to avoid keeping large byte[] in memory
+        try {
+            var staged = fileStorage.stage(new ByteArrayInputStream(input.getFileData()), input.getFileName());
+            context.getSubmissionContext().setStagedFileId(staged.id());
+            context.getSubmissionContext().setPhotoFilename(input.getFileName());
+            context.getSubmissionContext().setSubmissionSource(mapPlatformToSubmissionSource(input.getPlatform()));
+            log.debug("Staged photo {} as {}", input.getFileName(), staged.id());
+        } catch (Exception e) {
+            log.error("Failed to stage photo from chat {}", input.getChatId(), e);
+            return HandlerOutcome.FAILURE;
+        }
 
         return HandlerOutcome.SUCCESS;
     }
