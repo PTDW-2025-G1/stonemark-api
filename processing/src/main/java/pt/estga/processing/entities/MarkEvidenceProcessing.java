@@ -48,6 +48,8 @@ public class MarkEvidenceProcessing {
     @Builder.Default
     private boolean permanent = false;
 
+    private Instant updatedAt;
+
     private String errorMessage;
 
     @OneToMany(mappedBy = "processing")

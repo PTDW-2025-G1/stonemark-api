@@ -276,12 +276,6 @@ public class ProcessingServiceImpl implements ProcessingService {
                     suggestions.forEach(s -> s.setId(null));
                     suggestionRepository.saveAll(suggestions);
                 }
-                float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
-                if (normalizedToSave != null) {
-                    p.setEmbedding(normalizedToSave);
-                } else {
-                    p.setEmbedding(embedding);
-                }
                 processingRepository.save(p);
 
                 meterRegistry.counter("processing.submissions.success").increment();
