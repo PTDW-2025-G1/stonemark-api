@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
 @Slf4j
 public class StonemarkTelegramBot extends TelegramWebhookBot {
 
@@ -36,6 +38,9 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final ConcurrentHashMap<Long, Long> processedUpdates = new ConcurrentHashMap<>();
     private static final long UPDATE_ID_TTL_MS = 60_000;
     private static final int UPDATE_ID_CACHE_MAX = 10_000;
+    // Retry configuration for transient Telegram API errors
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_BASE_DELAY_MS = 1_000;
 
     public StonemarkTelegramBot(String botUsername,
                                 String botToken,
@@ -172,17 +177,47 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
             }
             for (PartialBotApiMethod<?> method : methods) {
                 log.debug("Sending Telegram method {} for chatId={}", method == null ? "<null>" : method.getClass().getSimpleName(), chatId);
+                executeWithRetry(method, chatId);
+            }
+        }
+    }
+
+    private void executeWithRetry(PartialBotApiMethod<?> method, long chatId) {
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            try {
+                if (method instanceof BotApiMethod<?>) {
+                    execute((BotApiMethod<?>) method);
+                } else if (method instanceof SendPhoto) {
+                    execute((SendPhoto) method);
+                }
+                return;
+            } catch (TelegramApiException e) {
+                if (!isRetryable(e) || attempt >= MAX_RETRIES) {
+                    log.error("Failed to send Telegram response to chatId={} after {} attempt(s): {}", chatId, attempt, e.getMessage());
+                    return;
+                }
+                long delay = RETRY_BASE_DELAY_MS * (1L << (attempt - 1));
+                log.warn("Transient error sending to chatId={}, retrying in {}ms (attempt {}/{})", chatId, delay, attempt, MAX_RETRIES);
                 try {
-                    if (method instanceof BotApiMethod<?>) {
-                        execute((BotApiMethod<?>) method);
-                    } else if (method instanceof SendPhoto) {
-                        execute((SendPhoto) method);
-                    }
-                } catch (TelegramApiException e) {
-                    log.error("Error sending Telegram response", e);
+                    MILLISECONDS.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
         }
+    }
+
+    private static boolean isRetryable(TelegramApiException e) {
+        String msg = e.getMessage();
+        if (msg == null) return false;
+        // Rate limit, network timeout, or server error — retryable
+        if (msg.contains("429") || msg.contains("Too Many Requests")) return true;
+        if (msg.contains("502") || msg.contains("Bad Gateway")) return true;
+        if (msg.contains("503") || msg.contains("Service Unavailable")) return true;
+        return msg.contains("timed out") || msg.contains("timeout") || msg.contains("Connection reset");
     }
 
     @Override
