@@ -44,7 +44,7 @@
         <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
         <module>bookmark</module>           <!-- needs shared-web, mark-api, monument, user-api -->
         <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
-        <module>content-import</module>     <!-- needs shared-web, shared-infra, territory, monument, mark-api -->
+
 
         <!-- Higher-order services -->
         <module>processing</module>         <!-- needs file, mark-api, intake, vision, monument -->
@@ -202,11 +202,6 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>bookmark</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>content-import</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

@@ -1,4 +1,4 @@
-package pt.estga.contentimport.services;
+package pt.estga.territory.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,22 +8,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.entities.Country;
+import pt.estga.territory.exceptions.UnsupportedCountryException;
+import pt.estga.territory.mappers.DivisionFeatureMapper;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 import pt.estga.territory.repositories.CountryRepository;
-import pt.estga.territory.exceptions.UnsupportedCountryException;
-import pt.estga.territory.services.AdministrativeDivisionParentMatchingService;
-import pt.estga.contentimport.mappers.DivisionFeatureMapper;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Locale;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -83,7 +82,6 @@ public class DivisionImportService {
                     throw new IOException("Failed to parse GeoJSON output from osmium. The line was: '" + line + "'. Make sure 'osmium-tool' is installed and in the system's PATH.", e);
                 }
 
-                // Map feature to domain object using dedicated mapper
                 Optional<AdministrativeDivision> mapped = featureMapper.mapFeature(feature, providedCountryId);
                 if (mapped.isEmpty()) continue;
 
@@ -115,9 +113,9 @@ public class DivisionImportService {
             if (exit != 0) {
                 throw new IllegalStateException("osmium failed with exit code " + exit);
             }
-            
+
             administrativeDivisionParentMatchingService.matchAllDivisions();
-            
+
             return count;
         } finally {
             Files.deleteIfExists(pbfFile);

@@ -1,4 +1,4 @@
-package pt.estga.contentimport.mappers;
+package pt.estga.territory.mappers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,10 +21,6 @@ public class DivisionFeatureMapper {
 
     private final GeoJsonReader geoJsonReader = new GeoJsonReader();
 
-    /**
-     * Map a GeoJSON feature to an AdministrativeDivision.
-     * Returns empty when the feature is not a supported administrative division.
-     */
     public Optional<AdministrativeDivision> mapFeature(JsonNode feature, Integer providedCountryId) throws Exception {
         if (feature == null) return Optional.empty();
 
