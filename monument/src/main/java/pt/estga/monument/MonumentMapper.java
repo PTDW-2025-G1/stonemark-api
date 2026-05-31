@@ -96,14 +96,4 @@ public class MonumentMapper {
             }
         }
     }
-
-    public void update(Monument source, Monument target) {
-        if (source == null || target == null) return;
-        target.setName(source.getName());
-        target.setDescription(source.getDescription());
-        target.setProtectionTitle(source.getProtectionTitle());
-        target.setWebsite(source.getWebsite());
-        target.setAddress(source.getAddress());
-        target.setPostalCode(source.getPostalCode());
-    }
 }
