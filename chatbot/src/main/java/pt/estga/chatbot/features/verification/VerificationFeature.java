@@ -5,13 +5,16 @@ import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.HandlerOutcome.Failure;
+import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.TextNode;
-import pt.estga.chatbot.services.ResponseProvider;
+import pt.estga.chatbot.services.FeatureHandler;
 import pt.estga.chatbot.services.UiTextService;
 
 import java.util.ArrayList;
@@ -21,7 +24,7 @@ import static pt.estga.chatbot.services.ResponseFactory.menuResponse;
 
 @Component
 @RequiredArgsConstructor
-public class VerificationResponseProvider implements ResponseProvider {
+public class VerificationFeature implements FeatureHandler {
 
     private final UiTextService textService;
     private final MainMenuFactory mainMenuFactory;
@@ -29,6 +32,23 @@ public class VerificationResponseProvider implements ResponseProvider {
     @Override
     public boolean supports(ConversationState state) {
         return state instanceof VerificationState;
+    }
+
+    @Override
+    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+        if (outcome instanceof Failure) {
+            return currentState;
+        }
+
+        if (currentState == VerificationState.DISPLAYING_VERIFICATION_CODE) {
+            return CoreState.START;
+        }
+
+        if (outcome instanceof Success) {
+            return CoreState.START;
+        }
+
+        return currentState;
     }
 
     @Override

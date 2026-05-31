@@ -29,13 +29,13 @@ public class ConversationDispatcher {
     private static final int MAX_CONSECUTIVE_FAILURES = 3;
 
     private final Map<ConversationState, ConversationStateHandler> handlers;
-    private final ConversationFlowManager submissionFlow;
+    private final List<FeatureHandler> featureHandlers;
     private final ResponseFactory responseFactory;
     private final UiTextService textService;
 
     public ConversationDispatcher(
             List<ConversationStateHandler> handlerList,
-            ConversationFlowManager submissionFlow,
+            List<FeatureHandler> featureHandlers,
             ResponseFactory responseFactory,
             UiTextService textService
     ) {
@@ -57,7 +57,7 @@ public class ConversationDispatcher {
                             );
                         }
                 ));
-        this.submissionFlow = submissionFlow;
+        this.featureHandlers = featureHandlers;
         this.responseFactory = responseFactory;
         this.textService = textService;
     }
@@ -84,7 +84,6 @@ public class ConversationDispatcher {
 
         log.debug("Executing handler: {} for state: {}", handler.getClass().getSimpleName(), currentState);
 
-        // Execute the handler for the current state.
         HandlerOutcome outcome = handler.handle(context, input);
 
         log.debug("Handler {} returned outcome: {}", handler.getClass().getSimpleName(), outcome);
@@ -111,7 +110,7 @@ public class ConversationDispatcher {
             context.setConsecutiveFailures(0);
         }
 
-        ConversationState nextState = submissionFlow.getNextState(context, currentState, outcome);
+        ConversationState nextState = resolveNextState(context, currentState, outcome);
         log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         ConversationState previousState = context.getCurrentState();
         context.setCurrentState(nextState);
@@ -141,9 +140,18 @@ public class ConversationDispatcher {
 
             if (outcome instanceof Success) break;
 
-            ConversationState nextState = submissionFlow.getNextState(context, context.getCurrentState(), outcome);
+            ConversationState nextState = resolveNextState(context, context.getCurrentState(), outcome);
             log.debug("Automatic state transition: {} -> {} (outcome: {})", context.getCurrentState(), nextState, outcome);
             context.setCurrentState(nextState);
         }
+    }
+
+    private ConversationState resolveNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+        for (FeatureHandler feature : featureHandlers) {
+            if (feature.supports(currentState)) {
+                return feature.getNextState(context, currentState, outcome);
+            }
+        }
+        return currentState;
     }
 }

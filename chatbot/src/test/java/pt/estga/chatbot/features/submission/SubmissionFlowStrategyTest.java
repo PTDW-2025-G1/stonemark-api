@@ -7,21 +7,24 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.SubmissionState;
+import pt.estga.chatbot.features.core.MainMenuFactory;
+import pt.estga.chatbot.services.UiTextService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 class SubmissionFlowStrategyTest {
 
-    private SubmissionFlowStrategy strategy;
+    private SubmissionFeature feature;
 
     @BeforeEach
     void setUp() {
-        strategy = new SubmissionFlowStrategy();
+        feature = new SubmissionFeature(mock(UiTextService.class), mock(MainMenuFactory.class));
     }
 
     @Test
     void getNextState_ShouldAdvanceFromStartToPhoto_WhenSuccess() {
-        ConversationState nextState = strategy.getNextState(
+        ConversationState nextState = feature.getNextState(
                 new ChatbotContext(),
                 SubmissionState.SUBMISSION_STATE,
                 new HandlerOutcome.Success()
@@ -32,7 +35,7 @@ class SubmissionFlowStrategyTest {
 
     @Test
     void getNextState_ShouldAdvanceFromPhotoToLocation_WhenSuccess() {
-        ConversationState nextState = strategy.getNextState(
+        ConversationState nextState = feature.getNextState(
                 new ChatbotContext(),
                 SubmissionState.WAITING_FOR_PHOTO,
                 new HandlerOutcome.Success()
@@ -43,7 +46,7 @@ class SubmissionFlowStrategyTest {
 
     @Test
     void getNextState_ShouldAdvanceFromLocationToNotes_WhenSuccess() {
-        ConversationState nextState = strategy.getNextState(
+        ConversationState nextState = feature.getNextState(
                 new ChatbotContext(),
                 SubmissionState.AWAITING_LOCATION,
                 new HandlerOutcome.Success()
@@ -54,7 +57,7 @@ class SubmissionFlowStrategyTest {
 
     @Test
     void getNextState_ShouldAdvanceFromSubmittedToMainMenu_WhenSuccess() {
-        ConversationState nextState = strategy.getNextState(
+        ConversationState nextState = feature.getNextState(
                 new ChatbotContext(),
                 SubmissionState.SUBMITTED,
                 new HandlerOutcome.Success()
@@ -65,7 +68,7 @@ class SubmissionFlowStrategyTest {
 
     @Test
     void getNextState_ShouldStayInSameState_WhenFailure() {
-        ConversationState nextState = strategy.getNextState(
+        ConversationState nextState = feature.getNextState(
                 new ChatbotContext(),
                 SubmissionState.AWAITING_LOCATION,
                 new HandlerOutcome.Failure()

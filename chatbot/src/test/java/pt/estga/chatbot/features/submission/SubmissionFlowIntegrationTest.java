@@ -7,35 +7,38 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.SubmissionState;
+import pt.estga.chatbot.features.core.MainMenuFactory;
+import pt.estga.chatbot.services.UiTextService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.mock;
 
 class SubmissionFlowIntegrationTest {
 
-    private SubmissionFlowStrategy strategy;
+    private SubmissionFeature feature;
 
     @BeforeEach
     void setUp() {
-        strategy = new SubmissionFlowStrategy();
+        feature = new SubmissionFeature(mock(UiTextService.class), mock(MainMenuFactory.class));
     }
 
     @Test
     void testCompleteLinearFlow_ToMainMenu() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, SubmissionState.SUBMISSION_STATE, new HandlerOutcome.Success());
+        ConversationState state = feature.getNextState(context, SubmissionState.SUBMISSION_STATE, new HandlerOutcome.Success());
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
 
-        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
+        state = feature.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.AWAITING_LOCATION, state);
 
-        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
+        state = feature.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.AWAITING_NOTES, state);
 
-        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
+        state = feature.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
+        state = feature.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(CoreState.MAIN_MENU, state);
     }
 
@@ -43,7 +46,7 @@ class SubmissionFlowIntegrationTest {
     void testFailure_DoesNotAdvanceState() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, new HandlerOutcome.Failure());
+        ConversationState state = feature.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, new HandlerOutcome.Failure());
 
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
     }

@@ -9,8 +9,9 @@ import pt.estga.chatbot.models.text.TextNode;
 
 import java.util.List;
 
-public interface ResponseProvider {
+public interface FeatureHandler {
     boolean supports(ConversationState state);
+    ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome);
     List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input);
 
     default TextNode failureResponse(ChatbotContext context) {

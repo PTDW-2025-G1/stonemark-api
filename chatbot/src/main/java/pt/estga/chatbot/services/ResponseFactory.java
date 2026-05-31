@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResponseFactory {
 
-    private final List<ResponseProvider> responseProviders;
+    private final List<FeatureHandler> featureHandlers;
     private final UiTextService textService;
 
     public static List<BotResponse> menuResponse(TextNode titleNode) {
@@ -35,9 +35,9 @@ public class ResponseFactory {
             return createErrorResponse(context);
         }
 
-        for (ResponseProvider provider : responseProviders) {
-            if (provider.supports(currentState)) {
-                return provider.createResponse(context, outcome, input);
+        for (FeatureHandler handler : featureHandlers) {
+            if (handler.supports(currentState)) {
+                return handler.createResponse(context, outcome, input);
             }
         }
 
@@ -45,9 +45,9 @@ public class ResponseFactory {
     }
 
     public List<BotResponse> createErrorResponse(ChatbotContext context) {
-        for (ResponseProvider provider : responseProviders) {
-            if (provider.supports(context.getCurrentState())) {
-                TextNode message = provider.failureResponse(context);
+        for (FeatureHandler handler : featureHandlers) {
+            if (handler.supports(context.getCurrentState())) {
+                TextNode message = handler.failureResponse(context);
                 if (message != null) {
                     return menuResponse(message);
                 }

@@ -1,12 +1,16 @@
 package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.HandlerOutcome.Failure;
+import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
@@ -15,20 +19,27 @@ import pt.estga.chatbot.models.text.TextNode;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
-import pt.estga.chatbot.services.ResponseProvider;
+import pt.estga.chatbot.services.FeatureHandler;
 import pt.estga.chatbot.services.UiTextService;
 
-import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static pt.estga.chatbot.services.ResponseFactory.menuResponse;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class SubmissionResponseProvider implements ResponseProvider {
+public class SubmissionFeature implements FeatureHandler {
+
+    private static final Map<ConversationState, ConversationState> SUCCESS_TRANSITIONS = Map.ofEntries(
+            Map.entry(SubmissionState.WAITING_FOR_PHOTO, SubmissionState.AWAITING_LOCATION),
+            Map.entry(SubmissionState.AWAITING_LOCATION, SubmissionState.AWAITING_NOTES),
+            Map.entry(SubmissionState.AWAITING_NOTES, SubmissionState.SUBMITTED),
+            Map.entry(SubmissionState.SUBMITTED, CoreState.MAIN_MENU)
+    );
 
     private final UiTextService textService;
     private final MainMenuFactory mainMenuFactory;
@@ -36,6 +47,23 @@ public class SubmissionResponseProvider implements ResponseProvider {
     @Override
     public boolean supports(ConversationState state) {
         return state instanceof SubmissionState;
+    }
+
+    @Override
+    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+        if (outcome instanceof Failure) {
+            return currentState;
+        }
+
+        if (currentState == SubmissionState.SUBMISSION_STATE) {
+            return SubmissionState.WAITING_FOR_PHOTO;
+        }
+
+        if (outcome instanceof Success) {
+            return SUCCESS_TRANSITIONS.getOrDefault(currentState, CoreState.START);
+        }
+
+        return currentState;
     }
 
     @Override
@@ -54,6 +82,15 @@ public class SubmissionResponseProvider implements ResponseProvider {
                 }
                 yield menuResponse(message);
             }
+        };
+    }
+
+    @Override
+    public TextNode failureResponse(ChatbotContext context) {
+        return switch ((SubmissionState) context.getCurrentState()) {
+            case WAITING_FOR_PHOTO -> textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
+            case AWAITING_LOCATION -> textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
+            default -> null;
         };
     }
 
@@ -82,15 +119,6 @@ public class SubmissionResponseProvider implements ResponseProvider {
         responses.addAll(menuResponse(textService.get(MessageKey.SUBMISSION_SUCCESS)));
         responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
         return responses;
-    }
-
-    @Override
-    public TextNode failureResponse(ChatbotContext context) {
-        return switch ((SubmissionState) context.getCurrentState()) {
-            case WAITING_FOR_PHOTO -> textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
-            case AWAITING_LOCATION -> textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
-            default -> null;
-        };
     }
 
     private TextNode getEntryMessageForState(SubmissionState state) {
