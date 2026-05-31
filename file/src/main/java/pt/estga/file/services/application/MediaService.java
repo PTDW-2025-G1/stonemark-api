@@ -30,6 +30,7 @@ public class MediaService {
     private final MediaMetadataService mediaMetadataService;
     private final FileStorageService fileStorageService;
 
+    @Transactional
     public MediaFile upload(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
         if (fileSize <= 0) {
             throw new IllegalArgumentException("Uploaded file is empty");

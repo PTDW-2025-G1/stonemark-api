@@ -34,7 +34,17 @@ public class TempFileCleanupJob {
         }
         Instant cutoff = Instant.now().minusSeconds(CLEANUP_AGE_MINUTES * 60);
         log.debug("Running temp file cleanup in {}", dir);
-        try (Stream<Path> files = Files.list(dir)) {
+        cleanDirectory(dir, cutoff);
+
+        Path stagingDir = dir.resolve(storageProperties.getStagingDir());
+        if (Files.isDirectory(stagingDir)) {
+            log.debug("Running staging file cleanup in {}", stagingDir);
+            cleanDirectory(stagingDir, cutoff);
+        }
+    }
+
+    private void cleanDirectory(Path directory, Instant cutoff) {
+        try (Stream<Path> files = Files.list(directory)) {
             files.filter(f -> {
                 try {
                     return Files.isRegularFile(f)
@@ -52,7 +62,7 @@ public class TempFileCleanupJob {
                 }
             });
         } catch (IOException e) {
-            log.warn("Failed to list temp directory {}", dir, e);
+            log.warn("Failed to list directory {}", directory, e);
         }
     }
 }
