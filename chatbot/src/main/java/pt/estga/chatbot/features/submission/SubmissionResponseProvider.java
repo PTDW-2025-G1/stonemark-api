@@ -83,6 +83,15 @@ public class SubmissionResponseProvider implements ResponseProvider {
         return responses;
     }
 
+    @Override
+    public TextNode failureResponse(ChatbotContext context) {
+        return switch ((SubmissionState) context.getCurrentState()) {
+            case WAITING_FOR_PHOTO -> textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
+            case AWAITING_LOCATION -> textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
+            default -> null;
+        };
+    }
+
     private TextNode getEntryMessageForState(SubmissionState state) {
         return switch (state) {
             case WAITING_FOR_PHOTO -> textService.get(MessageKey.REQUEST_PHOTO_PROMPT);
