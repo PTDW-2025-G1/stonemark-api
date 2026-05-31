@@ -1,6 +1,7 @@
 package pt.estga.monument.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
+import pt.estga.monument.dtos.PolygonSearchRequest;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")
@@ -36,15 +38,15 @@ public class MonumentController {
     public ResponseEntity<Page<MonumentListDto>> findAll(
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toListDto));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Page<MonumentListDto>> searchMonumentsByPolygon(
-            @RequestBody String geoJson,
+            @Valid @RequestBody PolygonSearchRequest request,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(service.findByPolygon(geoJson, pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.findByPolygon(request.geoJson(), pageable).map(mapper::toListDto));
     }
 
     @GetMapping("/division/{id}")

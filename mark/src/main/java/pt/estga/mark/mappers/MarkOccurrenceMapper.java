@@ -8,9 +8,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 import pt.estga.mark.dtos.MarkOccurrenceRequestDto;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
-import pt.estga.monument.MonumentMapper;
-
-@Mapper(componentModel = "spring", uses = {MarkMapper.class, MonumentMapper.class})
+@Mapper(componentModel = "spring", uses = {MarkMapper.class})
 public interface MarkOccurrenceMapper {
 
     @Mapping(target = "markId", source = "mark.id")
