@@ -6,9 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.monument.Monument;
-import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.monument.dots.MonumentListDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.util.Optional;
@@ -19,14 +17,13 @@ import java.util.Optional;
 public class MonumentService {
 
     private final MonumentRepository repository;
-    private final MonumentMapper mapper;
 
     public Optional<Monument> findById(Long id) {
         return repository.findById(id);
     }
 
-    public Page<MonumentListDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toListDto);
+    public Page<Monument> findAll(Pageable pageable) {
+        return repository.findAll(pageable);
     }
 
     public Page<Monument> findByPolygon(String geoJson, Pageable pageable) {

@@ -44,7 +44,7 @@
         <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
         <module>bookmark</module>           <!-- needs shared-web, mark-api, monument, user-api -->
         <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
-        <module>content-import</module>     <!-- needs shared-web, shared-infra, territory, monument, mark-api -->
+
 
         <!-- Higher-order services -->
         <module>processing</module>         <!-- needs file, mark-api, intake, vision, monument -->
@@ -67,12 +67,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Build tools -->
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>1.6.3</version>
-            </dependency>
             <!-- Third-party libraries (not managed by Spring Boot BOM) -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -212,11 +206,6 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>content-import</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
                 <artifactId>notification</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
@@ -256,10 +245,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
     </dependencies>
 
 	<build>
@@ -273,11 +258,6 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>1.6.3</version>
-                        </path>
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>

@@ -1,4 +1,4 @@
-package pt.estga.monument.dots;
+package pt.estga.monument.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -10,8 +10,8 @@ public record MonumentRequestDto(
         String website,
         @NotNull Double latitude,
         @NotNull Double longitude,
-        String street,
-        String houseNumber,
+        String address,
+        String postalCode,
         Long divisionId,
         Boolean active
 ) { }

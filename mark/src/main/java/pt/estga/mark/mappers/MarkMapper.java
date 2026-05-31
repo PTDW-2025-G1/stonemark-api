@@ -1,22 +1,22 @@
 package pt.estga.mark.mappers;
 
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.springframework.stereotype.Component;
 import pt.estga.mark.dtos.MarkDto;
-import pt.estga.mark.dtos.MarkRequestDto;
 import pt.estga.mark.entities.Mark;
+import pt.estga.shared.enums.EntityStatus;
 
-@Mapper(componentModel = "spring")
-public interface MarkMapper {
+@Component
+public class MarkMapper {
 
-    MarkDto toDto(Mark mark);
-
-    Mark toEntity(MarkRequestDto markDto);
-
-    void update(Mark source, @MappingTarget Mark target);
-
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntityFromDto(MarkRequestDto dto, @MappingTarget Mark entity);
+    public MarkDto toDto(Mark mark) {
+        if (mark == null) return null;
+        return new MarkDto(
+                mark.getId(),
+                mark.getTitle(),
+                mark.getDescription(),
+                null,
+                null,
+                mark.getStatus() == EntityStatus.ACTIVE
+        );
+    }
 }
