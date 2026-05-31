@@ -32,6 +32,10 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final Executor botExecutor;
     // Map used to serialize processing per chatId to prevent concurrent dispatch races
     private final ConcurrentMap<Long, Object> chatLocks = new ConcurrentHashMap<>();
+    // Idempotency guard: tracks recently processed Telegram update IDs to discard duplicate deliveries
+    private final ConcurrentHashMap<Long, Long> processedUpdates = new ConcurrentHashMap<>();
+    private static final long UPDATE_ID_TTL_MS = 60_000;
+    private static final int UPDATE_ID_CACHE_MAX = 10_000;
 
     public StonemarkTelegramBot(String botUsername,
                                 String botToken,
@@ -66,6 +70,8 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         try {
             if (update == null) {
                 log.warn("Received null Telegram update");
+            } else if (isDuplicateUpdate(update.getUpdateId())) {
+                log.debug("Skipping duplicate updateId={}", update.getUpdateId());
             } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
                 CallbackQuery cq = update.getCallbackQuery();
                 String callbackId = cq.getId();
@@ -142,23 +148,17 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         log.debug("Attempting to acquire chat lock for chatId={}", chatId);
         synchronized (lock) {
             log.debug("Acquired chat lock for chatId={}", chatId);
-            List<BotResponse> botResponses = conversationService.handleInput(botInput);
-            if (botResponses == null) {
-                // Attempt to remove the lock to avoid unbounded map growth.
-                chatLocks.remove(chatId, lock);
-                return;
-            }
-
             try {
-                log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
-                sendBotResponses(chatId, botResponses);
+                List<BotResponse> botResponses = conversationService.handleInput(botInput);
+                if (botResponses != null) {
+                    log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
+                    sendBotResponses(chatId, botResponses);
+                }
             } catch (Exception e) {
                 log.error("Error dispatching and sending bot responses", e);
                 throw e;
             } finally {
                 log.debug("Releasing chat lock for chatId={}", chatId);
-                // Remove lock reference when done to keep map size bounded. Removal is conditional
-                // to avoid removing a lock instance that was replaced concurrently.
                 chatLocks.remove(chatId, lock);
             }
         }
@@ -190,4 +190,17 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     @Override
     public String getBotPath() { return botPath; }
+
+    private boolean isDuplicateUpdate(long updateId) {
+        Long previous = processedUpdates.putIfAbsent(updateId, System.currentTimeMillis());
+        if (previous != null) {
+            return true;
+        }
+        // Evict stale entries when cache grows large to prevent unbounded memory growth
+        if (processedUpdates.size() > UPDATE_ID_CACHE_MAX) {
+            long cutoff = System.currentTimeMillis() - UPDATE_ID_TTL_MS;
+            processedUpdates.values().removeIf(v -> v < cutoff);
+        }
+        return false;
+    }
 }

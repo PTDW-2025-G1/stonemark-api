@@ -81,28 +81,35 @@ public class ConversationDispatcher {
         // Determine the next state.
         ConversationState nextState = submissionFlow.getNextState(context, currentState, outcome);
         log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
+        ConversationState previousState = context.getCurrentState();
         context.setCurrentState(nextState);
 
-        // If the next state is automatic, execute it first to populate context before generating response
-        ConversationStateHandler nextHandler = handlers.get(nextState);
-        if (nextHandler != null && nextHandler.isAutomatic()) {
-            log.debug("Executing automatic handler: {} for state: {}", nextHandler.getClass().getSimpleName(), nextState);
-            BotInput nextInput = BotInput.builder()
-                    .userId(input.getUserId())
-                    .platform(input.getPlatform())
-                    .build();
-            HandlerOutcome autoOutcome = nextHandler.handle(context, nextInput);
-            log.debug("Automatic handler {} returned outcome: {}", nextHandler.getClass().getSimpleName(), autoOutcome);
+        try {
+            // If the next state is automatic, execute it first to populate context before generating response
+            ConversationStateHandler nextHandler = handlers.get(nextState);
+            if (nextHandler != null && nextHandler.isAutomatic()) {
+                log.debug("Executing automatic handler: {} for state: {}", nextHandler.getClass().getSimpleName(), nextState);
+                BotInput nextInput = BotInput.builder()
+                        .userId(input.getUserId())
+                        .platform(input.getPlatform())
+                        .build();
+                HandlerOutcome autoOutcome = nextHandler.handle(context, nextInput);
+                log.debug("Automatic handler {} returned outcome: {}", nextHandler.getClass().getSimpleName(), autoOutcome);
 
-            // If automatic handler needs state transition, handle it recursively
-            if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
-                ConversationState autoNextState = submissionFlow.getNextState(context, nextState, autoOutcome);
-                log.debug("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
-                context.setCurrentState(autoNextState);
+                // If automatic handler needs state transition, handle it recursively
+                if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
+                    ConversationState autoNextState = submissionFlow.getNextState(context, nextState, autoOutcome);
+                    log.debug("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
+                    context.setCurrentState(autoNextState);
+                }
             }
-        }
 
-        // Generate a response for the NEW state (after automatic handlers have populated context).
-        return new ArrayList<>(responseFactory.createResponse(context, outcome, input));
+            // Generate a response for the NEW state (after automatic handlers have populated context).
+            return new ArrayList<>(responseFactory.createResponse(context, outcome, input));
+        } catch (RuntimeException e) {
+            log.error("Error generating response for state {}, rolling back to {}", nextState, previousState, e);
+            context.setCurrentState(previousState);
+            throw e;
+        }
     }
 }
