@@ -2,6 +2,7 @@ package pt.estga.chatbot.context;
 
 import lombok.Getter;
 import lombok.Setter;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
 
 @Getter
 @Setter
@@ -10,6 +11,7 @@ public class ChatbotContext {
     private Long domainUserId;
     private String userName;
     private String verificationCode;
+    private MarkEvidenceSubmission submission;
     private SubmissionContext submissionContext;
     private int consecutiveFailures;
 
@@ -18,6 +20,7 @@ public class ChatbotContext {
     }
 
     public void clear() {
+        this.submission = null;
         this.submissionContext.clear();
         this.consecutiveFailures = 0;
     }

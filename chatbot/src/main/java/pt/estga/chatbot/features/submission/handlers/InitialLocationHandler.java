@@ -26,7 +26,7 @@ public class InitialLocationHandler implements ConversationStateHandler {
             return new HandlerOutcome.Failure();
         }
 
-        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
+        MarkEvidenceSubmission submission = context.getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
             return new HandlerOutcome.Failure();
         }

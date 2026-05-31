@@ -27,7 +27,7 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
+        MarkEvidenceSubmission submission = context.getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
             return new HandlerOutcome.Failure();
         }
