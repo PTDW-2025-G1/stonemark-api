@@ -14,6 +14,8 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Menu;
+import pt.estga.chatbot.services.messages.ResponseFactory;
+import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.submission.handlers;
+package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -8,7 +8,7 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.LocationRequest;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 
 import java.util.Collections;

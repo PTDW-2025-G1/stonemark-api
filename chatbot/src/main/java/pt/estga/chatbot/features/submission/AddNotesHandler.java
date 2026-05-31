@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.submission.handlers;
+package pt.estga.chatbot.features.submission;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.Menu;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.services.ChatbotSubmissionFacade;
 

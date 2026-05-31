@@ -12,7 +12,7 @@ import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.models.text.RichText;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.chatbot.telegram.services.TelegramTextService;
 

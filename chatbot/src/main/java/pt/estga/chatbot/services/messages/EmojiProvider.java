@@ -1,4 +1,4 @@
-package pt.estga.chatbot.services;
+package pt.estga.chatbot.services.messages;
 
 import pt.estga.chatbot.constants.EmojiKey;
 

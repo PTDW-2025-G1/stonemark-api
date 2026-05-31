@@ -13,8 +13,8 @@ import pt.estga.chatbot.models.text.RichText.Italic;
 import pt.estga.chatbot.models.text.RichText.NewLine;
 import pt.estga.chatbot.models.text.RichText.Plain;
 import pt.estga.chatbot.models.text.RichText.Placeholder;
-import pt.estga.chatbot.services.EmojiProvider;
-import pt.estga.chatbot.services.TextRenderer;
+import pt.estga.chatbot.services.messages.EmojiProvider;
+import pt.estga.chatbot.services.messages.TextRenderer;
 
 import java.util.List;
 

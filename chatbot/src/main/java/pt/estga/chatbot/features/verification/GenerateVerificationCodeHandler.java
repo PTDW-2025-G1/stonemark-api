@@ -1,4 +1,4 @@
-package pt.estga.chatbot.features.verification.handlers;
+package pt.estga.chatbot.features.verification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +9,8 @@ import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RichText;
-import pt.estga.chatbot.services.ResponseFactory;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.ResponseFactory;
+import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.services.ChatbotVerificationService;
 

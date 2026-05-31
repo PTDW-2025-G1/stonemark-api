@@ -1,11 +1,12 @@
-package pt.estga.chatbot.features.submission.handlers;
+package pt.estga.chatbot.features.core;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 
@@ -13,26 +14,26 @@ import java.util.Collections;
 import java.util.List;
 
 @Component
-public class SubmissionStartHandler implements ConversationStateHandler {
+@RequiredArgsConstructor
+public class StartHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        return new HandlerOutcome.Redispatch();
+        context.setCurrentState(CoreState.MAIN_MENU);
+        return new HandlerOutcome.Success();
     }
 
     @Override
     public ConversationState canHandle() {
-        return SubmissionState.SUBMISSION_STATE;
-    }
-
-    @Override
-    public boolean isAutomatic() {
-        return true;
+        return CoreState.START;
     }
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        return SubmissionState.WAITING_FOR_PHOTO;
+        if (outcome instanceof HandlerOutcome.Failure) {
+            return currentState;
+        }
+        return CoreState.MAIN_MENU;
     }
 
     @Override

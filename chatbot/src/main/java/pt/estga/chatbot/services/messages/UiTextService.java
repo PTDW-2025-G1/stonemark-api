@@ -1,4 +1,4 @@
-package pt.estga.chatbot.services;
+package pt.estga.chatbot.services.messages;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.MessageSource;

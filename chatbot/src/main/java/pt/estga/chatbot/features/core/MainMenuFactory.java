@@ -10,7 +10,7 @@ import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.services.AuthService;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.ArrayList;
 import java.util.List;
