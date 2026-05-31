@@ -59,7 +59,7 @@ public class SimilarityService {
         if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
             log.warn("Processing {} (submission={}) has no embedding, skipping similarity",
                     processing == null ? "null" : processing.getId(),
-                    processing == null || processing.getSubmission() == null ? "null" : processing.getSubmission().getId());
+                    processing.getSubmissionId() == null ? "null" : String.valueOf(processing.getSubmissionId()));
             return List.of();
         }
 
@@ -121,7 +121,7 @@ public class SimilarityService {
             Double topConfidence = result.stream().findFirst().map(MarkSuggestion::getConfidence).orElse(null);
             log.debug("Processing {} (submission={}) → {} suggestions (top confidence={})",
                     processing.getId(),
-                    processing.getSubmission() == null ? "null" : processing.getSubmission().getId(),
+                    processing.getSubmissionId() == null ? "null" : String.valueOf(processing.getSubmissionId()),
                     result.size(),
                     topConfidence);
         }

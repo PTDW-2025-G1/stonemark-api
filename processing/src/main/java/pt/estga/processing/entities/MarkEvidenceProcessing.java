@@ -3,7 +3,6 @@ package pt.estga.processing.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.processing.enums.ProcessingStatus;
 
 import java.time.Instant;
@@ -23,9 +22,8 @@ public class MarkEvidenceProcessing {
     @UuidGenerator
     private UUID id;
 
-    @OneToOne
-    @JoinColumn(unique = true)
-    private MarkEvidenceSubmission submission;
+    @Column(unique = true)
+    private Long submissionId;
 
     @Column(columnDefinition = "vector(384)")
     private float[] embedding;

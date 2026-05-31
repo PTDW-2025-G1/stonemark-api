@@ -195,7 +195,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 // No existing record; attempt to create one. Another concurrent inserter may produce a unique constraint
                 // violation; handle it gracefully by reading that record and deciding what to do next.
                 MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
-                        .submission(submission)
+                        .submissionId(submission.getId())
                         .status(ProcessingStatus.PROCESSING)
                         .build();
                 try {
@@ -252,7 +252,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 long durationNanos = System.nanoTime() - startNanos;
                 meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
                 long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                Long submissionId = p.getSubmissionId();
                 log.info("Processing {} failed for submission {} after {} ms: {}", processingId, submissionId, durationMs, message);
             })
         );
@@ -283,7 +283,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
                 long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
                 int suggestionCount = suggestions == null ? 0 : suggestions.size();
-                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                Long submissionId = p.getSubmissionId();
                 log.info("Processing {} completed for submission {} after {} ms — suggestions={}", processingId, submissionId, durationMs, suggestionCount);
             })
         );

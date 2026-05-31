@@ -21,15 +21,15 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
 
-	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submission.id = :submissionId")
+	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
 	Optional<ProcessingOverviewProjection> findOverviewBySubmissionId(@Param("submissionId") Long submissionId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.submission.id = :submissionId")
+	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
 	Optional<MarkEvidenceProcessing> findBySubmissionIdForUpdate(@Param("submissionId") Long submissionId);
 
 	@Modifying
-	@Query("UPDATE MarkEvidenceProcessing p SET p.status = :status WHERE p.submission.id = :submissionId")
+	@Query("UPDATE MarkEvidenceProcessing p SET p.status = :status WHERE p.submissionId = :submissionId")
 	int updateStatusBySubmissionId(@Param("submissionId") Long submissionId, @Param("status") ProcessingStatus status);
 
 	List<MarkEvidenceProcessing> findByStatusIn(List<ProcessingStatus> statuses);

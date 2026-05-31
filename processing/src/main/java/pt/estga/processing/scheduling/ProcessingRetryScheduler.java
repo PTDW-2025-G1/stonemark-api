@@ -96,7 +96,7 @@ public class ProcessingRetryScheduler {
             var batch = entries.subList(i, end);
 
             for (var p : batch) {
-                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                Long submissionId = p.getSubmissionId();
                 if (submissionId == null) {
                     log.warn("Skipping processing entry {} with no submission linked", p.getId());
                     continue;
