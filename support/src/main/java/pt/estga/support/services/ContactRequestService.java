@@ -21,11 +21,10 @@ import java.util.Optional;
 public class ContactRequestService {
 
     private final ContactRequestRepository repository;
-    private final ContactRequestMapper mapper;
 
     @Transactional
     public ContactRequest create(ContactRequestDto dto) {
-        ContactRequest contact = mapper.toEntity(dto);
+        ContactRequest contact = ContactRequestMapper.toEntity(dto);
         contact.setStatus(ContactStatus.PENDING);
         contact.setCreatedAt(Instant.now());
         return repository.save(contact);

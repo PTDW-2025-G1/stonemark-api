@@ -25,10 +25,9 @@ import java.util.Optional;
 public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
-	private final AdministrativeDivisionMapper mapper;
 
 	public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
-		return repository.findAll(pageable).map(mapper::toDto);
+		return repository.findAll(pageable).map(AdministrativeDivisionMapper::toDto);
 	}
 
 	public Optional<AdministrativeDivision> findById(Long id) {

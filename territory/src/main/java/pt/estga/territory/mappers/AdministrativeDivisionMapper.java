@@ -1,15 +1,15 @@
 package pt.estga.territory.mappers;
 
-import org.springframework.stereotype.Component;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 
 import java.util.List;
 
-@Component
 public class AdministrativeDivisionMapper {
 
-    public AdministrativeDivisionDto toDto(AdministrativeDivision entity) {
+    private AdministrativeDivisionMapper() {}
+
+    public static AdministrativeDivisionDto toDto(AdministrativeDivision entity) {
         if (entity == null) return null;
         return new AdministrativeDivisionDto(
                 entity.getId(),
@@ -19,8 +19,8 @@ public class AdministrativeDivisionMapper {
         );
     }
 
-    public List<AdministrativeDivisionDto> toDtoList(List<AdministrativeDivision> entities) {
+    public static List<AdministrativeDivisionDto> toDtoList(List<AdministrativeDivision> entities) {
         if (entities == null) return List.of();
-        return entities.stream().map(this::toDto).toList();
+        return entities.stream().map(AdministrativeDivisionMapper::toDto).toList();
     }
 }

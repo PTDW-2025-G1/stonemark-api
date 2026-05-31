@@ -10,7 +10,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.services.application.MediaService;
 import pt.estga.file.services.application.MediaVariantService;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
@@ -28,10 +27,9 @@ class MediaControllerTest {
 
     private final MediaService mediaService = mock();
     private final MediaVariantService mediaVariantService = mock();
-    private final MediaFileMapper mediaFileMapper = mock();
 
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
-            new MediaController(mediaService, mediaVariantService, mediaFileMapper)
+            new MediaController(mediaService, mediaVariantService)
     ).setControllerAdvice(new GlobalExceptionHandler()).build();
 
     @Test
@@ -43,7 +41,6 @@ class MediaControllerTest {
         var mediaFile = new MediaFile();
         mediaFile.setId(fileId);
         when(mediaService.upload(any(), anyString(), anyLong())).thenReturn(mediaFile);
-        when(mediaFileMapper.toDto(any())).thenReturn(new MediaFileDto(fileId, "stored.jpg", "test.jpg", 2L, "UPLOADED", null));
 
         mockMvc.perform(multipart("/api/v1/public/media")
                         .file(mockFile)

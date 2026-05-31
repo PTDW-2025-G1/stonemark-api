@@ -19,14 +19,13 @@ import pt.estga.user.services.UserService;
 public class UserPublicController {
 
     private final UserService service;
-    private final UserMapper mapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDto> publicGetById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
         return service.findById(id)
-                .map(mapper::toPublicDto)
+                .map(UserMapper::toPublicDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

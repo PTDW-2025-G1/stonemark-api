@@ -36,7 +36,6 @@ public class MediaController {
 
     private final MediaService mediaService;
     private final MediaVariantService mediaVariantService;
-    private final MediaFileMapper mediaFileMapper;
 
     @Operation(summary = "Upload a media file", description = "Uploads a media file and returns its metadata.")
     @ApiResponses(value = {
@@ -55,7 +54,7 @@ public class MediaController {
                 .path("/{id}")
                 .buildAndExpand(mediaFile.getId())
                 .toUri();
-        MediaFileDto dto = mediaFileMapper.toDto(mediaFile);
+        MediaFileDto dto = MediaFileMapper.toDto(mediaFile);
         MediaFileDto dtoWithUrl = new MediaFileDto(
                 dto.id(), dto.filename(), dto.originalFilename(),
                 dto.size(), dto.status(), location.toString()

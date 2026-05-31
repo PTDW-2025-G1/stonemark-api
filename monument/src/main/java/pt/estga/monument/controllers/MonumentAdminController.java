@@ -25,17 +25,16 @@ import java.net.URI;
 public class MonumentAdminController {
 
     private final MonumentService service;
-    private final MonumentMapper mapper;
 
     @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument monument = mapper.toEntity(monumentDto);
+        Monument monument = MonumentMapper.toEntity(monumentDto);
 
         Monument createdMonument = service.save(monument);
-        MonumentDto response = mapper.toResponseDto(createdMonument);
+        MonumentDto response = MonumentMapper.toResponseDto(createdMonument);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -55,10 +54,10 @@ public class MonumentAdminController {
         Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
-        mapper.updateEntityFromDto(monumentDto, existingMonument);
+        MonumentMapper.updateEntityFromDto(monumentDto, existingMonument);
 
         Monument updatedMonument = service.save(existingMonument);
-        return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
+        return ResponseEntity.ok(MonumentMapper.toResponseDto(updatedMonument));
     }
 
     @DeleteMapping("/{id}")

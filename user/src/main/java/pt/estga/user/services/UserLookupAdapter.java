@@ -14,10 +14,9 @@ import java.util.Optional;
 public class UserLookupAdapter implements UserLookupOperations {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     @Override
     public Optional<UserDto> findById(Long id) {
-        return userRepository.findById(id).map(userMapper::toDto);
+        return userRepository.findById(id).map(UserMapper::toDto);
     }
 }

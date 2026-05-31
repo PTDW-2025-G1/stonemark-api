@@ -20,11 +20,10 @@ import java.util.List;
 public class AdministrativeDivisionController {
 
     private final DivisionService service;
-    private final AdministrativeDivisionMapper mapper;
 
     @GetMapping("/roots")
     public ResponseEntity<List<AdministrativeDivisionDto>> getRoots() {
-        return ResponseEntity.ok(mapper.toDtoList(service.findRoots()));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findRoots()));
     }
 
     @GetMapping
@@ -35,27 +34,27 @@ public class AdministrativeDivisionController {
     @GetMapping("/{id}")
     public ResponseEntity<AdministrativeDivisionDto> getById(@PathVariable Long id) {
         return service.findById(id)
-                .map(mapper::toDto)
+                .map(AdministrativeDivisionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/children")
     public ResponseEntity<List<AdministrativeDivisionDto>> getChildren(@PathVariable Long id) {
-        return ResponseEntity.ok(mapper.toDtoList(service.findChildren(id)));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findChildren(id)));
     }
 
     @GetMapping("/{id}/parent")
     public ResponseEntity<AdministrativeDivisionDto> getParent(@PathVariable Long id) {
         return service.findParent(id)
-                .map(mapper::toDto)
+                .map(AdministrativeDivisionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/{id}/ancestors")
     public ResponseEntity<List<AdministrativeDivisionDto>> getAncestors(@PathVariable Long id) {
-        return ResponseEntity.ok(mapper.toDtoList(service.findAncestors(id)));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findAncestors(id)));
     }
 
     @GetMapping("/coordinates")
@@ -63,6 +62,6 @@ public class AdministrativeDivisionController {
             @RequestParam double latitude,
             @RequestParam double longitude
     ) {
-        return ResponseEntity.ok(mapper.toDtoList(service.findByCoordinates(latitude, longitude)));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findByCoordinates(latitude, longitude)));
     }
 }

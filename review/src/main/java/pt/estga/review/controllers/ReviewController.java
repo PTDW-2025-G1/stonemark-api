@@ -25,7 +25,6 @@ import java.util.List;
 public class ReviewController {
 
     private final ReviewService reviewService;
-    private final ReviewMapper mapper;
 
     @PostMapping("/{submissionId}/accept")
     @ResponseStatus(HttpStatus.CREATED)
@@ -36,7 +35,7 @@ public class ReviewController {
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
-        return mapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment));
+        return ReviewMapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment));
     }
 
     @PostMapping("/{submissionId}/accept-as-new")
@@ -46,7 +45,7 @@ public class ReviewController {
             @PathVariable Long submissionId,
             @Valid @RequestBody AcceptNewMarkRequest request) {
 
-        return mapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment()));
+        return ReviewMapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment()));
     }
 
     @PostMapping("/{submissionId}/reject")
@@ -57,7 +56,7 @@ public class ReviewController {
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
-        return mapper.toDto(reviewService.rejectAll(submissionId, comment));
+        return ReviewMapper.toDto(reviewService.rejectAll(submissionId, comment));
     }
 
     @GetMapping("/{submissionId}")

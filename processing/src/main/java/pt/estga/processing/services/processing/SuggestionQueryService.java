@@ -18,13 +18,12 @@ public class SuggestionQueryService {
 
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
-    private final MarkSuggestionMapper suggestionMapper;
 
     public Optional<List<MarkSuggestionDto>> findSuggestionsBySubmissionId(Long submissionId) {
         return processingRepository.findBySubmissionId(submissionId)
                 .map(p -> suggestionRepository.findByProcessingId(p.getId())
                         .stream()
-                        .map(suggestionMapper::toDto)
+                        .map(MarkSuggestionMapper::toDto)
                         .toList());
     }
 }

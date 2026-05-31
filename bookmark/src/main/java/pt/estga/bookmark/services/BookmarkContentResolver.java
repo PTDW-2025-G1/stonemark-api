@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 public class BookmarkContentResolver {
 
     private final MonumentRepository monumentRepository;
-    private final MonumentMapper monumentMapper;
     private final MarkService markService;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
@@ -47,7 +46,7 @@ public class BookmarkContentResolver {
                 .map(b -> Long.parseLong(b.getTargetId()))
                 .toList();
         Map<Long, MonumentDto> monumentMap = monumentRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Monument::getId, monumentMapper::toResponseDto));
+                .collect(Collectors.toMap(Monument::getId, MonumentMapper::toResponseDto));
         for (Bookmark b : bookmarks) {
             MonumentDto dto = monumentMap.get(Long.parseLong(b.getTargetId()));
             if (dto != null) {
