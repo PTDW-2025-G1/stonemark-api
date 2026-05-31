@@ -198,7 +198,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         }
     }
 
-    private static boolean isRetryable(TelegramApiException e) {
+    static boolean isRetryable(TelegramApiException e) {
         String msg = e.getMessage();
         if (msg == null) return false;
         // Rate limit, network timeout, or server error — retryable
@@ -214,7 +214,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     @Override
     public String getBotPath() { return botPath; }
 
-    private boolean isDuplicateUpdate(long updateId) {
+    boolean isDuplicateUpdate(long updateId) {
         Long previous = processedUpdates.putIfAbsent(updateId, System.currentTimeMillis());
         if (previous != null) {
             return true;
