@@ -3,7 +3,9 @@ package pt.estga.sharedweb.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @ConfigurationProperties("rate-limit")
 public class RateLimitProperties {
@@ -11,6 +13,7 @@ public class RateLimitProperties {
     private boolean enabled = true;
     private List<String> excludePaths = List.of("/actuator", "/actuator/**");
     private BandwidthConfig defaultLimit = new BandwidthConfig();
+    private Map<String, BandwidthConfig> paths = new LinkedHashMap<>();
 
     public boolean isEnabled() {
         return enabled;
@@ -34,6 +37,14 @@ public class RateLimitProperties {
 
     public void setDefaultLimit(BandwidthConfig defaultLimit) {
         this.defaultLimit = defaultLimit;
+    }
+
+    public Map<String, BandwidthConfig> getPaths() {
+        return paths;
+    }
+
+    public void setPaths(Map<String, BandwidthConfig> paths) {
+        this.paths = paths;
     }
 
     public static class BandwidthConfig {

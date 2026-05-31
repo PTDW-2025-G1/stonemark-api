@@ -71,6 +71,12 @@ rate-limit:
     refill-tokens: 100
     refill-period: 1
     refill-unit: MINUTES
+  paths:
+    /api/v1/account/verification/chatbot:
+      capacity: 10
+      refill-tokens: 10
+      refill-period: 1
+      refill-unit: MINUTES
 
 management:
   endpoints:
