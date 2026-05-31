@@ -12,6 +12,7 @@ import pt.estga.chatbot.context.HandlerOutcome.Redispatch;
 import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
+import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Menu;
 
 import java.util.ArrayList;
@@ -29,14 +30,10 @@ public class ConversationDispatcher {
     private static final int MAX_CONSECUTIVE_FAILURES = 3;
 
     private final Map<ConversationState, ConversationStateHandler> handlers;
-    private final List<FeatureHandler> featureHandlers;
-    private final ResponseFactory responseFactory;
     private final UiTextService textService;
 
     public ConversationDispatcher(
             List<ConversationStateHandler> handlerList,
-            List<FeatureHandler> featureHandlers,
-            ResponseFactory responseFactory,
             UiTextService textService
     ) {
         this.handlers = handlerList.stream()
@@ -57,8 +54,6 @@ public class ConversationDispatcher {
                             );
                         }
                 ));
-        this.featureHandlers = featureHandlers;
-        this.responseFactory = responseFactory;
         this.textService = textService;
     }
 
@@ -69,7 +64,7 @@ public class ConversationDispatcher {
     private List<BotResponse> dispatch(ChatbotContext context, BotInput input, int depth) {
         if (depth > MAX_DISPATCH_DEPTH) {
             log.error("Max dispatch depth ({}) exceeded for state: {}", MAX_DISPATCH_DEPTH, context.getCurrentState());
-            return responseFactory.createErrorResponse(context);
+            return createErrorResponse(context);
         }
 
         ConversationState currentState = context.getCurrentState();
@@ -79,7 +74,7 @@ public class ConversationDispatcher {
 
         if (handler == null) {
             log.warn("No handler found for state: {}", currentState);
-            return responseFactory.createErrorResponse(context);
+            return createErrorResponse(context);
         }
 
         log.debug("Executing handler: {} for state: {}", handler.getClass().getSimpleName(), currentState);
@@ -110,14 +105,18 @@ public class ConversationDispatcher {
             context.setConsecutiveFailures(0);
         }
 
-        ConversationState nextState = resolveNextState(context, currentState, outcome, input);
+        ConversationState nextState = handler.getNextState(context, currentState, outcome, input);
         log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         ConversationState previousState = context.getCurrentState();
         context.setCurrentState(nextState);
 
         try {
             executeAutomaticHandlers(context, input);
-            return new ArrayList<>(responseFactory.createResponse(context, outcome, input));
+            ConversationStateHandler responseHandler = handlers.get(context.getCurrentState());
+            if (responseHandler != null) {
+                return new ArrayList<>(responseHandler.createResponse(context, outcome, input));
+            }
+            return Collections.emptyList();
         } catch (RuntimeException e) {
             log.error("Error generating response for state {}, rolling back to {}", nextState, previousState, e);
             context.setCurrentState(previousState);
@@ -140,18 +139,20 @@ public class ConversationDispatcher {
 
             if (outcome instanceof Success) break;
 
-            ConversationState nextState = resolveNextState(context, context.getCurrentState(), outcome, autoInput);
+            ConversationState nextState = handler.getNextState(context, context.getCurrentState(), outcome, autoInput);
             log.debug("Automatic state transition: {} -> {} (outcome: {})", context.getCurrentState(), nextState, outcome);
             context.setCurrentState(nextState);
         }
     }
 
-    private ConversationState resolveNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        for (FeatureHandler feature : featureHandlers) {
-            if (feature.supports(currentState)) {
-                return feature.getNextState(context, currentState, outcome, input);
+    private List<BotResponse> createErrorResponse(ChatbotContext context) {
+        ConversationStateHandler handler = handlers.get(context.getCurrentState());
+        if (handler != null) {
+            RichText message = handler.failureResponse(context);
+            if (message != null) {
+                return ResponseFactory.menuResponse(message);
             }
         }
-        return currentState;
+        return ResponseFactory.menuResponse(textService.get(MessageKey.ERROR_GENERIC));
     }
 }

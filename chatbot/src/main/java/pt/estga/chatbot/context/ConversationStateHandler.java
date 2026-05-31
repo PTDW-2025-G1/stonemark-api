@@ -1,34 +1,26 @@
 package pt.estga.chatbot.context;
 
 import pt.estga.chatbot.models.BotInput;
+import pt.estga.chatbot.models.BotResponse;
+import pt.estga.chatbot.models.text.RichText;
 
-/**
- * Defines a handler for a specific state in the conversation.
- * A handler is responsible for executing business logic for its state
- * and reporting the outcome. It does NOT decide the next state.
- */
+import java.util.List;
+
 public interface ConversationStateHandler {
 
-    /**
-     * Handles the user input for the current conversation state.
-     *
-     * @param context The current conversation context.
-     * @param input The user's input.
-     * @return The outcome of the handling process.
-     */
     HandlerOutcome handle(ChatbotContext context, BotInput input);
 
-    /**
-     * @return The specific {@link ConversationState} that this handler is responsible for.
-     */
     ConversationState canHandle();
 
-    /**
-     * Indicates whether this state should be executed automatically without waiting for user input.
-     *
-     * @return true if the state is automatic, false otherwise.
-     */
+    ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input);
+
+    List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input);
+
     default boolean isAutomatic() {
         return false;
+    }
+
+    default RichText failureResponse(ChatbotContext context) {
+        return null;
     }
 }

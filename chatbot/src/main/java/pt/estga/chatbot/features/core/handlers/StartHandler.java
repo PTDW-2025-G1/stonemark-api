@@ -8,6 +8,10 @@ import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.models.BotInput;
+import pt.estga.chatbot.models.BotResponse;
+
+import java.util.Collections;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -22,5 +26,18 @@ public class StartHandler implements ConversationStateHandler {
     @Override
     public ConversationState canHandle() {
         return CoreState.START;
+    }
+
+    @Override
+    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
+        if (outcome instanceof HandlerOutcome.Failure) {
+            return currentState;
+        }
+        return CoreState.MAIN_MENU;
+    }
+
+    @Override
+    public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
+        return Collections.emptyList();
     }
 }
