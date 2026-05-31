@@ -1,6 +1,8 @@
 package pt.estga.file.services;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -40,22 +42,26 @@ public class MediaMetadataService {
     }
 
     /**
-     * Saves metadata with retries. Each attempt runs in a new transaction (REQUIRES_NEW)
-     * to keep the connection pool from being pinned during backoff. After the final save,
-     * callers should invoke {@link #publishAfterCommit(Object)} to fire any events.
+     * Saves metadata with retries for transient database failures only.
+     * Non-transient errors (constraint violations, data integrity) fail immediately.
+     * Each attempt runs in a new transaction (REQUIRES_NEW) to avoid pinning
+     * the connection pool during backoff.
      */
-    public MediaFile saveMetadataAndPublish(MediaFile mediaFile) {
+    public MediaFile saveMetadataWithRetry(MediaFile mediaFile) {
         final int maxAttempts = 3;
         int tried = 0;
         while (true) {
             try {
                 return requiresNewTemplate.execute(status -> mediaFileRepository.save(mediaFile));
-            } catch (Exception e) {
+            } catch (DataIntegrityViolationException e) {
+                throw e;
+            } catch (DataAccessException e) {
                 tried++;
                 if (tried >= maxAttempts) {
                     throw e;
                 }
-                log.warn("Transient error saving media metadata for id {} - retry {}/{}", mediaFile.getId(), tried, maxAttempts, e);
+                log.warn("Transient error saving media metadata for id {} - retry {}/{}",
+                        mediaFile.getId(), tried, maxAttempts, e);
                 try {
                     long backoff = (long) (250L * tried * (0.5 + Math.random()));
                     TimeUnit.MILLISECONDS.sleep(backoff);

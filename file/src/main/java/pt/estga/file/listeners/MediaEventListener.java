@@ -8,6 +8,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
+import pt.estga.file.events.MediaApprovedEvent;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.MediaProcessingService;
@@ -23,7 +24,13 @@ public class MediaEventListener {
     @Async("fileTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMediaUploaded(MediaUploadedEvent event) {
-        log.info("Received MediaUploadedEvent for media ID: {}", event.mediaFileId());
+        log.info("Media uploaded with ID: {} — variant generation deferred until approval", event.mediaFileId());
+    }
+
+    @Async("fileTaskExecutor")
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMediaApproved(MediaApprovedEvent event) {
+        log.info("Media approved with ID: {} — starting variant generation", event.mediaFileId());
         try {
             processingService.process(event.mediaFileId());
         } catch (Exception e) {

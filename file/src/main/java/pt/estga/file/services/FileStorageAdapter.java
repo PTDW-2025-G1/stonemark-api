@@ -2,6 +2,7 @@ package pt.estga.file.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.repositories.MediaFileRepository;
@@ -25,12 +26,13 @@ public class FileStorageAdapter implements FileStorageOperations {
     private final FileStagingService stagingService;
 
     @Override
+    @Transactional
     public MediaFileDto upload(InputStream data, String originalFilename) {
         try {
             var entity = orchestrator.orchestrateUpload(data, originalFilename);
             return mediaFileMapper.toDto(entity);
         } catch (java.io.IOException e) {
-            throw new RuntimeException("Failed to upload file", e);
+            throw new pt.estga.sharedweb.exceptions.FileStorageException("Failed to upload file", e);
         }
     }
 
@@ -40,6 +42,7 @@ public class FileStorageAdapter implements FileStorageOperations {
     }
 
     @Override
+    @Transactional
     public MediaFileDto commit(UUID stagingId, String originalFilename) {
         try {
             var stagedPath = stagingService.resolveStagedPath(stagingId, originalFilename);
@@ -49,7 +52,7 @@ public class FileStorageAdapter implements FileStorageOperations {
                 return mediaFileMapper.toDto(entity);
             }
         } catch (java.io.IOException e) {
-            throw new RuntimeException("Failed to commit staged file " + stagingId, e);
+            throw new pt.estga.sharedweb.exceptions.FileStorageException("Failed to commit staged file " + stagingId, e);
         }
     }
 

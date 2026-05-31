@@ -4,20 +4,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.exceptions.OversizeFileException;
 import pt.estga.file.services.MediaMetadataService;
-import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.MediaMetricsService;
+import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.ByteArrayInputStream;
@@ -45,21 +43,20 @@ class MediaUploadOrchestratorTest {
     private StoragePathStrategy storagePathStrategy;
     @Mock
     private MediaMetricsService metrics;
+    @Mock
+    private TempFileFactory tempFileFactory;
 
     private StorageProperties storageProperties;
     private MediaUploadOrchestrator orchestrator;
 
-    @TempDir
-    Path tempDir;
-
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         storageProperties = new StorageProperties();
-        storageProperties.setMaxUploadSize(10 * 1024 * 1024); // 10MB
+        storageProperties.setMaxUploadSize(10 * 1024 * 1024);
         storageProperties.setAllowedMimeTypes(List.of("image/jpeg", "image/png"));
 
-        ObjectProvider<MediaMetricsService> metricsProvider = mock(ObjectProvider.class);
-        when(metricsProvider.getIfAvailable()).thenReturn(metrics);
+        when(tempFileFactory.createTempFile(anyString(), anyString()))
+                .thenAnswer(inv -> java.nio.file.Files.createTempFile("test-upload-", ".tmp"));
 
         orchestrator = new MediaUploadOrchestrator(
                 mediaMetadataService,
@@ -68,7 +65,8 @@ class MediaUploadOrchestratorTest {
                 fileNamingService,
                 storageProperties,
                 storagePathStrategy,
-                metricsProvider
+                tempFileFactory,
+                metrics
         );
     }
 
@@ -85,28 +83,28 @@ class MediaUploadOrchestratorTest {
         when(storagePathStrategy.generatePath(anyString())).thenReturn(relativePath);
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
 
-        MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StoragePropertiesConfig.provider());
+        MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StorageProvider.LOCAL);
         savedMedia.setId(UUID.randomUUID());
-        when(fileStorageService.storeFile(any(), eq(relativePath))).thenReturn(relativePath);
-        when(mediaMetadataService.saveMetadataAndPublish(any())).thenReturn(savedMedia);
+        when(fileStorageService.storeFile(any(), eq(relativePath), anyLong())).thenReturn(relativePath);
+        when(mediaMetadataService.saveMetadataWithRetry(any())).thenReturn(savedMedia);
 
-        MediaFile result = orchestrator.orchestrateUpload(input, filename, content.length);
+        MediaFile result = orchestrator.orchestrateUpload(input, filename);
 
         assertNotNull(result);
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
-        verify(fileStorageService).storeFile(any(), eq(relativePath));
-        verify(mediaMetadataService).saveMetadataAndPublish(any());
+        verify(fileStorageService).storeFile(any(), eq(relativePath), anyLong());
+        verify(mediaMetadataService).saveMetadataWithRetry(any());
     }
 
     @Test
     @DisplayName("should reject file exceeding max upload size")
     void shouldRejectOversizeFile() {
-        byte[] content = new byte[11 * 1024 * 1024]; // 11MB
+        byte[] content = new byte[11 * 1024 * 1024];
         InputStream input = new ByteArrayInputStream(content);
 
         assertThrows(OversizeFileException.class,
-                () -> orchestrator.orchestrateUpload(input, "large.jpg", content.length));
+                () -> orchestrator.orchestrateUpload(input, "large.jpg"));
 
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadRejected();
@@ -123,11 +121,11 @@ class MediaUploadOrchestratorTest {
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(false);
 
         assertThrows(UnsupportedFileTypeException.class,
-                () -> orchestrator.orchestrateUpload(input, "test.txt", content.length));
+                () -> orchestrator.orchestrateUpload(input, "test.txt"));
 
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadRejected();
-        verify(fileStorageService, never()).storeFile(any(), any());
+        verify(fileStorageService, never()).storeFile(any(), any(), anyLong());
     }
 
     @Test
@@ -141,19 +139,13 @@ class MediaUploadOrchestratorTest {
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
         when(storagePathStrategy.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
-        when(fileStorageService.storeFile(any(), any())).thenThrow(new RuntimeException("Disk full"));
+        when(fileStorageService.storeFile(any(), any(), anyLong())).thenThrow(new RuntimeException("Disk full"));
 
         assertThrows(RuntimeException.class,
                 () -> orchestrator.orchestrateUpload(input, filename));
 
-        verify(mediaMetadataService, never()).saveMetadataAndPublish(any());
+        verify(mediaMetadataService, never()).saveMetadataWithRetry(any());
         verify(mediaMetadataService, never()).publishAfterCommit(any());
-    }
-
-    private static class StoragePropertiesConfig {
-        static StorageProvider provider() {
-                return StorageProvider.LOCAL;
-            }
     }
 }
 

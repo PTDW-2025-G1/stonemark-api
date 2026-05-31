@@ -35,7 +35,7 @@ public class FileStorageServiceLocalImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(InputStream fileStream, String filename) {
+    public String storeFile(InputStream fileStream, String filename, long size) {
         log.debug("Storing file with filename: {}", filename);
         if (fileStream == null) {
             log.error("Cannot store empty file stream");

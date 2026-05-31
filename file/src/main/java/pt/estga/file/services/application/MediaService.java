@@ -30,15 +30,12 @@ public class MediaService {
     private final MediaMetadataService mediaMetadataService;
     private final FileStorageService fileStorageService;
 
+    @Transactional
     public MediaFile upload(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
         if (fileSize <= 0) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
-    }
-
-    public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
     }
 
     public MediaType resolveMediaType(MediaFile mediaFile) {
@@ -74,22 +71,26 @@ public class MediaService {
         MediaFile mediaFile = mediaMetadataService.findById(id)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
 
-        for (MediaVariant variant : List.copyOf(mediaFile.getVariants())) {
-            try {
-                fileStorageService.deleteFile(variant.getStoragePath());
-            } catch (Exception e) {
-                log.warn("Failed to delete variant file for {}: {}", variant.getType(), e.getMessage());
-            }
-        }
-
-        if (StringUtils.hasText(mediaFile.getStoragePath())) {
-            try {
-                fileStorageService.deleteFile(mediaFile.getStoragePath());
-            } catch (Exception e) {
-                log.warn("Failed to delete main file: {}", e.getMessage());
-            }
-        }
+        List<String> variantPaths = List.copyOf(mediaFile.getVariants()).stream()
+                .map(MediaVariant::getStoragePath)
+                .toList();
+        String mainPath = mediaFile.getStoragePath();
 
         mediaMetadataService.deleteById(id);
+
+        for (String path : variantPaths) {
+            try {
+                fileStorageService.deleteFile(path);
+            } catch (Exception e) {
+                log.warn("Failed to delete variant file for media {}: {}", id, e.getMessage());
+            }
+        }
+        if (StringUtils.hasText(mainPath)) {
+            try {
+                fileStorageService.deleteFile(mainPath);
+            } catch (Exception e) {
+                log.warn("Failed to delete main file for media {}: {}", id, e.getMessage());
+            }
+        }
     }
 }

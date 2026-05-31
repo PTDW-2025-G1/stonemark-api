@@ -104,5 +104,4 @@ public class MediaFile extends CreationAuditedEntity {
         this.providerPublicId = providerPublicId;
         this.status = finalStatus;
     }
-
 }
