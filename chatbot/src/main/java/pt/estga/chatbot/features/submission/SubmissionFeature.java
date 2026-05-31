@@ -50,7 +50,7 @@ public class SubmissionFeature implements FeatureHandler {
     }
 
     @Override
-    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
         if (outcome instanceof Failure) {
             return currentState;
         }

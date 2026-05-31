@@ -110,7 +110,7 @@ public class ConversationDispatcher {
             context.setConsecutiveFailures(0);
         }
 
-        ConversationState nextState = resolveNextState(context, currentState, outcome);
+        ConversationState nextState = resolveNextState(context, currentState, outcome, input);
         log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         ConversationState previousState = context.getCurrentState();
         context.setCurrentState(nextState);
@@ -140,16 +140,16 @@ public class ConversationDispatcher {
 
             if (outcome instanceof Success) break;
 
-            ConversationState nextState = resolveNextState(context, context.getCurrentState(), outcome);
+            ConversationState nextState = resolveNextState(context, context.getCurrentState(), outcome, autoInput);
             log.debug("Automatic state transition: {} -> {} (outcome: {})", context.getCurrentState(), nextState, outcome);
             context.setCurrentState(nextState);
         }
     }
 
-    private ConversationState resolveNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+    private ConversationState resolveNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
         for (FeatureHandler feature : featureHandlers) {
             if (feature.supports(currentState)) {
-                return feature.getNextState(context, currentState, outcome);
+                return feature.getNextState(context, currentState, outcome, input);
             }
         }
         return currentState;

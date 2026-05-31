@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface FeatureHandler {
     boolean supports(ConversationState state);
-    ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome);
+    ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input);
     List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input);
 
     default RichText failureResponse(ChatbotContext context) {

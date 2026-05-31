@@ -19,11 +19,11 @@ public class MainMenuHandler implements ConversationStateHandler {
         }
 
         if (callbackData.equals(CallbackData.START_SUBMISSION)) {
-            return new HandlerOutcome.StartNew();
+            return new HandlerOutcome.Success();
         }
 
         if (callbackData.equals(CallbackData.START_VERIFICATION)) {
-            return new HandlerOutcome.StartVerification();
+            return new HandlerOutcome.Success();
         }
 
         return new HandlerOutcome.Failure();

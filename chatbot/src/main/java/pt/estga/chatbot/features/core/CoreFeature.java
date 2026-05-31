@@ -2,6 +2,7 @@ package pt.estga.chatbot.features.core;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
@@ -9,8 +10,6 @@ import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.HandlerOutcome.Failure;
 import pt.estga.chatbot.context.HandlerOutcome.Success;
-import pt.estga.chatbot.context.HandlerOutcome.StartNew;
-import pt.estga.chatbot.context.HandlerOutcome.StartVerification;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
@@ -40,14 +39,14 @@ public class CoreFeature implements FeatureHandler {
     }
 
     @Override
-    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
+    public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
         if (outcome instanceof Failure) {
             return currentState;
         }
 
         if (currentState == CoreState.MAIN_MENU) {
-            if (outcome instanceof StartNew) return SubmissionState.SUBMISSION_STATE;
-            if (outcome instanceof StartVerification) return VerificationState.DISPLAYING_VERIFICATION_CODE;
+            if (CallbackData.START_SUBMISSION.equals(input.getCallbackData())) return SubmissionState.SUBMISSION_STATE;
+            if (CallbackData.START_VERIFICATION.equals(input.getCallbackData())) return VerificationState.DISPLAYING_VERIFICATION_CODE;
         }
 
         if (outcome instanceof Success) {
