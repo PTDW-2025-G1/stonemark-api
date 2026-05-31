@@ -10,13 +10,11 @@ import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.Message;
+import pt.estga.chatbot.models.text.TextNode;
 import pt.estga.chatbot.models.ui.Menu;
 
 import java.util.Collections;
 import java.util.List;
-
-import static pt.estga.chatbot.constants.EmojiKey.WARNING;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +22,12 @@ public class ResponseFactory {
 
     private final List<ResponseProvider> responseProviders;
     private final UiTextService textService;
+
+    public static List<BotResponse> menuResponse(TextNode titleNode) {
+        return Collections.singletonList(BotResponse.builder()
+                .uiComponent(Menu.builder().titleNode(titleNode).build())
+                .build());
+    }
 
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         ConversationState currentState = context.getCurrentState();
@@ -42,30 +46,22 @@ public class ResponseFactory {
     }
 
     public List<BotResponse> createErrorResponse(ChatbotContext context) {
-        Message message = getFailureMessageForState(context.getCurrentState());
-        return buildSimpleMenuResponse(message);
-    }
-
-    private List<BotResponse> buildSimpleMenuResponse(Message message) {
+        TextNode message = resolveFailureMessage(context.getCurrentState());
         if (message == null) {
-            return Collections.singletonList(BotResponse.builder().textNode(textService.get(new Message(MessageKey.ERROR_GENERIC, WARNING))).build());
+            return menuResponse(textService.get(MessageKey.ERROR_GENERIC));
         }
-        return Collections.singletonList(BotResponse.builder()
-                .uiComponent(Menu.builder().titleNode(textService.get(message)).build())
-                .build());
+        return menuResponse(message);
     }
 
-    private Message getFailureMessageForState(ConversationState state) {
-        if (state instanceof SubmissionState submissionState) {
-            return switch (submissionState) {
-                case WAITING_FOR_PHOTO -> new Message(MessageKey.EXPECTING_PHOTO_ERROR, WARNING);
-                case AWAITING_LOCATION -> new Message(MessageKey.EXPECTING_LOCATION_ERROR, WARNING);
+    private TextNode resolveFailureMessage(ConversationState state) {
+        if (state instanceof SubmissionState) {
+            return switch ((SubmissionState) state) {
+                case WAITING_FOR_PHOTO -> textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
+                case AWAITING_LOCATION -> textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
                 default -> null;
             };
-        } else if (state instanceof VerificationState verificationState) {
-            return switch (verificationState) {
-                case DISPLAYING_VERIFICATION_CODE -> new Message(MessageKey.ERROR_GENERIC, WARNING);
-            };
+        } else if (state instanceof VerificationState) {
+            return textService.get(MessageKey.ERROR_GENERIC);
         }
         return null;
     }

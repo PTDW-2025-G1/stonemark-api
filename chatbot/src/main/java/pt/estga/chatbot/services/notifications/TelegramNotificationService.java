@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.constants.SharedCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
+import pt.estga.chatbot.models.text.TextNode;
 import pt.estga.chatbot.services.UiTextService;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.chatbot.telegram.services.TelegramTextService;
@@ -30,14 +32,32 @@ public class TelegramNotificationService implements MessengerNotificationService
 
     @Override
     public void sendNotification(String recipientId, Message message) {
-        try {
-            RenderedText rendered = telegramTextService.render(uiTextService.get(message));
+        send(recipientId, uiTextService.get(message));
+    }
 
+    @Override
+    public void sendNotification(String recipientId, MessageKey messageKey, Object... args) {
+        send(recipientId, uiTextService.get(messageKey, args));
+    }
+
+    @Override
+    public void sendNotificationWithMenu(String recipientId, Message message) {
+        sendNotification(recipientId, message);
+        sendMenu(recipientId);
+    }
+
+    @Override
+    public void sendNotificationWithMenu(String recipientId, MessageKey messageKey, Object... args) {
+        sendNotification(recipientId, messageKey, args);
+        sendMenu(recipientId);
+    }
+
+    private void send(String recipientId, RenderedText rendered) {
+        try {
             SendMessage sendMessage = new SendMessage(recipientId, rendered.text());
             if (rendered.parseMode() != null) {
                 sendMessage.setParseMode(rendered.parseMode());
             }
-
             telegramBot.execute(sendMessage);
             log.debug("Notification sent to Telegram user: {}", recipientId);
         } catch (TelegramApiException e) {
@@ -45,14 +65,13 @@ public class TelegramNotificationService implements MessengerNotificationService
         }
     }
 
-    @Override
-    public void sendNotificationWithMenu(String recipientId, Message message) {
-        sendNotification(recipientId, message);
+    private void send(String recipientId, TextNode textNode) {
+        send(recipientId, telegramTextService.render(textNode));
+    }
 
+    private void sendMenu(String recipientId) {
         try {
             long chatId = Long.parseLong(recipientId);
-
-            // Ask dispatcher for the canonical menu flow instead of rendering menu here.
             BotInput menuInput = BotInput.builder()
                     .userId(recipientId)
                     .chatId(chatId)
@@ -60,7 +79,6 @@ public class TelegramNotificationService implements MessengerNotificationService
                     .type(BotInput.InputType.CALLBACK)
                     .callbackData(SharedCallbackData.BACK_TO_MAIN_MENU)
                     .build();
-
             telegramBot.dispatchAndSend(menuInput);
             log.debug("Main menu dispatched and sent to Telegram user: {}", recipientId);
         } catch (NumberFormatException e) {

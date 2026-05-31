@@ -1,5 +1,6 @@
 package pt.estga.chatbot.services.notifications;
 
+import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 
@@ -9,5 +10,9 @@ public interface MessengerNotificationService {
 
     void sendNotification(String recipientId, Message message);
 
+    void sendNotification(String recipientId, MessageKey messageKey, Object... args);
+
     void sendNotificationWithMenu(String recipientId, Message message);
+
+    void sendNotificationWithMenu(String recipientId, MessageKey messageKey, Object... args);
 }

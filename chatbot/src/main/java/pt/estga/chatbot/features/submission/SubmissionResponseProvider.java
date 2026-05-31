@@ -10,7 +10,7 @@ import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.Message;
+import pt.estga.chatbot.models.text.TextNode;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
@@ -21,13 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static pt.estga.chatbot.constants.EmojiKey.ARROW_RIGHT;
-import static pt.estga.chatbot.constants.EmojiKey.CAMERA;
-import static pt.estga.chatbot.constants.EmojiKey.LOCATION;
-import static pt.estga.chatbot.constants.EmojiKey.MEMO;
-import static pt.estga.chatbot.constants.EmojiKey.PAPERCLIP;
-import static pt.estga.chatbot.constants.EmojiKey.TADA;
-import static pt.estga.chatbot.constants.EmojiKey.WARNING;
+import static pt.estga.chatbot.services.ResponseFactory.menuResponse;
 
 @Component
 @RequiredArgsConstructor
@@ -50,18 +44,18 @@ public class SubmissionResponseProvider implements ResponseProvider {
             case AWAITING_NOTES -> createNotesResponse();
             case SUBMITTED -> createSubmissionSuccessResponse(input);
             default -> {
-                Message message = getEntryMessageForState(state);
-                yield buildSimpleMenuResponse(message);
+                TextNode message = getEntryMessageForState(state);
+                yield message != null ? menuResponse(message) : Collections.emptyList();
             }
         };
     }
 
     private List<BotResponse> createNotesResponse() {
         Menu menu = Menu.builder()
-                .titleNode(textService.get(new Message(MessageKey.ADD_NOTES_PROMPT, MEMO)))
+                .titleNode(textService.get(MessageKey.ADD_NOTES_PROMPT))
                 .buttons(List.of(
                         List.of(Button.builder()
-                                .textNode(textService.get(new Message(MessageKey.SKIP_BTN, ARROW_RIGHT)))
+                                .textNode(textService.get(MessageKey.SKIP_BTN))
                                 .callbackData(SubmissionCallbackData.SKIP_NOTES)
                                 .build())
                 ))
@@ -71,31 +65,22 @@ public class SubmissionResponseProvider implements ResponseProvider {
 
     private List<BotResponse> createLocationRequestResponse() {
         LocationRequest locationRequest = LocationRequest.builder()
-                .messageNode(textService.get(new Message(MessageKey.REQUEST_LOCATION_PROMPT, LOCATION, PAPERCLIP)))
+                .messageNode(textService.get(MessageKey.REQUEST_LOCATION_PROMPT))
                 .build();
         return Collections.singletonList(BotResponse.builder().uiComponent(locationRequest).build());
     }
 
     private List<BotResponse> createSubmissionSuccessResponse(BotInput input) {
         List<BotResponse> responses = new ArrayList<>();
-        responses.add(buildSimpleMenuResponse(new Message(MessageKey.SUBMISSION_SUCCESS, TADA)).getFirst());
+        responses.addAll(menuResponse(textService.get(MessageKey.SUBMISSION_SUCCESS)));
         responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
         return responses;
     }
 
-    private List<BotResponse> buildSimpleMenuResponse(Message message) {
-        if (message == null) {
-            return Collections.singletonList(BotResponse.builder().textNode(textService.get(new Message(MessageKey.ERROR_GENERIC, WARNING))).build());
-        }
-        return Collections.singletonList(BotResponse.builder()
-                .uiComponent(Menu.builder().titleNode(textService.get(message)).build())
-                .build());
-    }
-
-    private Message getEntryMessageForState(SubmissionState state) {
+    private TextNode getEntryMessageForState(SubmissionState state) {
         return switch (state) {
-            case WAITING_FOR_PHOTO -> new Message(MessageKey.REQUEST_PHOTO_PROMPT, CAMERA);
-            case AWAITING_LOCATION -> new Message(MessageKey.REQUEST_LOCATION_PROMPT, LOCATION, PAPERCLIP);
+            case WAITING_FOR_PHOTO -> textService.get(MessageKey.REQUEST_PHOTO_PROMPT);
+            case AWAITING_LOCATION -> textService.get(MessageKey.REQUEST_LOCATION_PROMPT);
             default -> null;
         };
     }

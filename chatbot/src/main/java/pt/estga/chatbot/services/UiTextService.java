@@ -5,6 +5,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.constants.EmojiKey;
+import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.text.*;
 import pt.estga.chatbot.utils.TextTemplateParser;
@@ -19,6 +20,14 @@ public class UiTextService {
 
     private final MessageSource messageSource;
     private final TextTemplateParser parser;
+
+    public TextNode get(MessageKey messageKey, Object... userArgs) {
+        return get(messageKey.getKey(), mergeArgs(userArgs, messageKey.getDefaultEmojis()));
+    }
+
+    public TextNode get(MessageKey messageKey) {
+        return get(messageKey.getKey(), (Object[]) messageKey.getDefaultEmojis());
+    }
 
     public TextNode get(Message message) {
         return get(message.getKey(), message.getArgs());
@@ -50,6 +59,18 @@ public class UiTextService {
         }
 
         return message;
+    }
+
+    private Object[] mergeArgs(Object[] userArgs, EmojiKey[] defaultEmojis) {
+        if (defaultEmojis.length == 0) {
+            return userArgs != null ? userArgs : new Object[0];
+        }
+        Object[] result = new Object[(userArgs != null ? userArgs.length : 0) + defaultEmojis.length];
+        if (userArgs != null) {
+            System.arraycopy(userArgs, 0, result, 0, userArgs.length);
+        }
+        System.arraycopy(defaultEmojis, 0, result, userArgs != null ? userArgs.length : 0, defaultEmojis.length);
+        return result;
     }
 
     private TextNode replacePlaceholders(TextNode node, Object[] args) {

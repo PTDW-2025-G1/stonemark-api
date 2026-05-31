@@ -5,9 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import pt.estga.chatbot.constants.EmojiKey;
 import pt.estga.chatbot.constants.MessageKey;
-import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.notifications.MessengerNotificationService;
 import pt.estga.chatbot.services.notifications.MessengerNotificationServiceFactory;
@@ -31,7 +29,7 @@ public class MessengerAccountConnectedListener {
             MessengerNotificationService notificationService = notificationServiceFactory.getNotificationService(platform);
             notificationService.sendNotificationWithMenu(
                     event.getRecipientId(),
-                    new Message(MessageKey.ACCOUNT_CONNECTED_NOTIFICATION, EmojiKey.TADA)
+                    MessageKey.ACCOUNT_CONNECTED_NOTIFICATION
             );
         } catch (IllegalArgumentException e) {
             log.error("Unsupported platform in ChatbotAccountConnectedEvent: {}", event.getPlatform(), e);

@@ -3,7 +3,6 @@ package pt.estga.chatbot.features.core;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.config.ChatbotAuthProperties;
-import pt.estga.chatbot.constants.EmojiKey;
 import pt.estga.chatbot.features.submission.SubmissionCallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.BotInput;
@@ -44,7 +43,7 @@ public class MainMenuFactory {
         if (!isAuthenticated) {
             buttonRows.add(List.of(
                     Button.builder()
-                            .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN, EmojiKey.KEY))
+                            .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN))
                             .callbackData(VerificationCallbackData.START_VERIFICATION)
                             .build()
             ));
