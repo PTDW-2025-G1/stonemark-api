@@ -15,10 +15,11 @@ public interface FileStorageService {
      *
      * @param fileStream the input stream of the file to store
      * @param filename   the name of the file to store (may include relative path)
+     * @param size       known byte count of the stream, or -1 if unknown
      * @return the path or identifier where the file was stored
      * @throws RuntimeException if the file cannot be stored
      */
-    String storeFile(InputStream fileStream, String filename);
+    String storeFile(InputStream fileStream, String filename, long size);
 
     /**
      * Loads a file as a resource.

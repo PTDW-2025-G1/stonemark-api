@@ -85,7 +85,7 @@ class MediaUploadOrchestratorTest {
 
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StorageProvider.LOCAL);
         savedMedia.setId(UUID.randomUUID());
-        when(fileStorageService.storeFile(any(), eq(relativePath))).thenReturn(relativePath);
+        when(fileStorageService.storeFile(any(), eq(relativePath), anyLong())).thenReturn(relativePath);
         when(mediaMetadataService.saveMetadataWithRetry(any())).thenReturn(savedMedia);
 
         MediaFile result = orchestrator.orchestrateUpload(input, filename);
@@ -93,7 +93,7 @@ class MediaUploadOrchestratorTest {
         assertNotNull(result);
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
-        verify(fileStorageService).storeFile(any(), eq(relativePath));
+        verify(fileStorageService).storeFile(any(), eq(relativePath), anyLong());
         verify(mediaMetadataService).saveMetadataWithRetry(any());
     }
 
@@ -125,7 +125,7 @@ class MediaUploadOrchestratorTest {
 
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadRejected();
-        verify(fileStorageService, never()).storeFile(any(), any());
+        verify(fileStorageService, never()).storeFile(any(), any(), anyLong());
     }
 
     @Test
@@ -139,7 +139,7 @@ class MediaUploadOrchestratorTest {
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
         when(storagePathStrategy.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
-        when(fileStorageService.storeFile(any(), any())).thenThrow(new RuntimeException("Disk full"));
+        when(fileStorageService.storeFile(any(), any(), anyLong())).thenThrow(new RuntimeException("Disk full"));
 
         assertThrows(RuntimeException.class,
                 () -> orchestrator.orchestrateUpload(input, filename));

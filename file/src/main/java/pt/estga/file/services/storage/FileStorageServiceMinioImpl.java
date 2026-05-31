@@ -27,21 +27,20 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(InputStream fileStream, String filename) {
-        log.debug("Storing file with filename: {}", filename);
+    public String storeFile(InputStream fileStream, String filename, long size) {
+        log.debug("Storing file with filename: {} (size: {})", filename, size);
         if (fileStream == null) {
             log.error("Cannot store empty file stream");
             throw new FileStorageException("Cannot store empty file stream");
         }
 
         try {
-
             log.debug("Putting object with name: {}", filename);
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(filename)
-                            .stream(fileStream, -1L, 10485760L) // Let Minio handle stream size and multipart
+                            .stream(fileStream, size, -1L)
                             .build()
             );
 

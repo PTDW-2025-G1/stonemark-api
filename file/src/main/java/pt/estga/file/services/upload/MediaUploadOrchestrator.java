@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.file.config.StorageProperties;
-import pt.estga.file.dtos.SaveResult;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
@@ -17,7 +16,6 @@ import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.file.util.CountingInputStream;
 import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.FileInputStream;
@@ -68,18 +66,16 @@ public class MediaUploadOrchestrator {
 
             String relativePath = storagePathStrategy.generatePath(storedFilename);
 
-            SaveResult result;
+            String storagePath;
             try (InputStream fileIn = new FileInputStream(tempFile.toFile())) {
-                var counting = new CountingInputStream(fileIn);
-                String storagePath = fileStorageService.storeFile(counting, relativePath);
-                result = new SaveResult(storagePath, counting.getCount());
+                storagePath = fileStorageService.storeFile(fileIn, relativePath, actualSize);
             } catch (Exception e) {
                 log.error("Storage failed for file {}", storedFilename, e);
                 throw e;
             }
 
             MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
-            media.completeUpload(actualSize, result.storagePath(), null, MediaStatus.UPLOADED);
+            media.completeUpload(actualSize, storagePath, null, MediaStatus.UPLOADED);
 
             try {
                 MediaFile saved = mediaMetadataService.saveMetadataWithRetry(media);
@@ -92,7 +88,7 @@ public class MediaUploadOrchestrator {
                 return saved;
             } catch (Exception e) {
                 try {
-                    fileStorageService.deleteFile(result.storagePath());
+                    fileStorageService.deleteFile(storagePath);
                 } catch (Exception ignored) {}
                 metrics.recordUploadFailed();
                 throw new MediaPersistenceException(

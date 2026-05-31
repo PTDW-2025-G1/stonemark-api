@@ -35,7 +35,7 @@ class FileStorageServiceLocalImplTest {
         String content = "file content";
         String path = storage.storeFile(
                 new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),
-                "test/file.txt");
+                "test/file.txt", content.length());
 
         Resource resource = storage.loadFile(path);
 
@@ -49,7 +49,7 @@ class FileStorageServiceLocalImplTest {
         String content = "to delete";
         String path = storage.storeFile(
                 new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8)),
-                "delete/me.txt");
+                "delete/me.txt", content.length());
 
         storage.deleteFile(path);
 
@@ -69,7 +69,7 @@ class FileStorageServiceLocalImplTest {
         assertThrows(SecurityException.class,
                 () -> storage.storeFile(
                         new ByteArrayInputStream("data".getBytes()),
-                        "../../etc/passwd"));
+                        "../../etc/passwd", 4));
     }
 
     @Test
@@ -90,6 +90,6 @@ class FileStorageServiceLocalImplTest {
     @DisplayName("should throw on null input stream")
     void shouldThrowOnNullStream() {
         assertThrows(FileStorageException.class,
-                () -> storage.storeFile(null, "file.txt"));
+                () -> storage.storeFile(null, "file.txt", 0));
     }
 }
