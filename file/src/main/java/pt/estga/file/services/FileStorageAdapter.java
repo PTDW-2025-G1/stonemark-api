@@ -22,7 +22,6 @@ public class FileStorageAdapter implements FileStorageOperations {
 
     private final MediaUploadOrchestrator orchestrator;
     private final MediaFileRepository repository;
-    private final MediaFileMapper mediaFileMapper;
     private final FileStagingService stagingService;
 
     @Override
@@ -30,7 +29,7 @@ public class FileStorageAdapter implements FileStorageOperations {
     public MediaFileDto upload(InputStream data, String originalFilename) {
         try {
             var entity = orchestrator.orchestrateUpload(data, originalFilename);
-            return mediaFileMapper.toDto(entity);
+            return MediaFileMapper.toDto(entity);
         } catch (java.io.IOException e) {
             throw new pt.estga.sharedweb.exceptions.FileStorageException("Failed to upload file", e);
         }
@@ -49,7 +48,7 @@ public class FileStorageAdapter implements FileStorageOperations {
             try (var in = Files.newInputStream(stagedPath)) {
                 var entity = orchestrator.orchestrateUpload(in, originalFilename);
                 stagingService.deleteStagedFile(stagingId, originalFilename);
-                return mediaFileMapper.toDto(entity);
+                return MediaFileMapper.toDto(entity);
             }
         } catch (java.io.IOException e) {
             throw new pt.estga.sharedweb.exceptions.FileStorageException("Failed to commit staged file " + stagingId, e);
@@ -58,6 +57,6 @@ public class FileStorageAdapter implements FileStorageOperations {
 
     @Override
     public Optional<MediaFileDto> findById(UUID id) {
-        return repository.findById(id).map(mediaFileMapper::toDto);
+        return repository.findById(id).map(MediaFileMapper::toDto);
     }
 }

@@ -22,14 +22,13 @@ import pt.estga.monument.dtos.PolygonSearchRequest;
 public class MonumentController {
 
     private final MonumentService service;
-    private final MonumentMapper mapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<MonumentDto> getMonumentById(
             @PathVariable Long id
     ) {
         return service.findById(id)
-                .map(mapper::toResponseDto)
+                .map(MonumentMapper::toResponseDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -38,7 +37,7 @@ public class MonumentController {
     public ResponseEntity<Page<MonumentListDto>> findAll(
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        return ResponseEntity.ok(service.findAll(pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.findAll(pageable).map(MonumentMapper::toListDto));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -46,7 +45,7 @@ public class MonumentController {
             @Valid @RequestBody PolygonSearchRequest request,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(service.findByPolygon(request.geoJson(), pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.findByPolygon(request.geoJson(), pageable).map(MonumentMapper::toListDto));
     }
 
     @GetMapping("/division/{id}")
@@ -54,6 +53,6 @@ public class MonumentController {
             @PathVariable Long id,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(service.findByDivisionId(id, pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.findByDivisionId(id, pageable).map(MonumentMapper::toListDto));
     }
 }

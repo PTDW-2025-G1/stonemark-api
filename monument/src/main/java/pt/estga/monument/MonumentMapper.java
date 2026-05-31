@@ -1,6 +1,5 @@
 package pt.estga.monument;
 
-import org.springframework.stereotype.Component;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
@@ -9,10 +8,11 @@ import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.utils.GeometryUtils;
 
-@Component
 public class MonumentMapper {
 
-    public MonumentDto toResponseDto(Monument monument) {
+    private MonumentMapper() {}
+
+    public static MonumentDto toResponseDto(Monument monument) {
         if (monument == null) return null;
         AdministrativeDivisionDto divisionDto = null;
         if (monument.getDivision() != null) {
@@ -38,7 +38,7 @@ public class MonumentMapper {
         );
     }
 
-    public MonumentListDto toListDto(Monument monument) {
+    public static MonumentListDto toListDto(Monument monument) {
         if (monument == null) return null;
         AdministrativeDivisionDto divisionDto = null;
         if (monument.getDivision() != null) {
@@ -55,7 +55,7 @@ public class MonumentMapper {
         );
     }
 
-    public Monument toEntity(MonumentRequestDto dto) {
+    public static Monument toEntity(MonumentRequestDto dto) {
         if (dto == null) return null;
         Monument monument = new Monument();
         monument.setName(dto.name());
@@ -74,7 +74,7 @@ public class MonumentMapper {
         return monument;
     }
 
-    public void updateEntityFromDto(MonumentRequestDto dto, Monument entity) {
+    public static void updateEntityFromDto(MonumentRequestDto dto, Monument entity) {
         if (dto == null || entity == null) return;
         entity.setName(dto.name());
         entity.setDescription(dto.description());

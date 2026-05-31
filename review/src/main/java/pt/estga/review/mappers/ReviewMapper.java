@@ -1,13 +1,13 @@
 package pt.estga.review.mappers;
 
-import org.springframework.stereotype.Component;
 import pt.estga.review.dtos.ReviewResponseDto;
 import pt.estga.review.entities.MarkEvidenceReview;
 
-@Component
 public class ReviewMapper {
 
-    public ReviewResponseDto toDto(MarkEvidenceReview review) {
+    private ReviewMapper() {}
+
+    public static ReviewResponseDto toDto(MarkEvidenceReview review) {
         if (review == null) return null;
         String reviewerName = review.getReviewedBy() != null
                 ? review.getReviewedBy().getFirstName() + " " + review.getReviewedBy().getLastName()

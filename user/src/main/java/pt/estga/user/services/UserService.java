@@ -24,12 +24,11 @@ public class UserService {
 
     private final UserRepository repository;
     private final ChatbotAccountRepository chatbotAccountRepository;
-    private final UserMapper mapper;
     private final AuthenticationService authenticationService;
     private final PasswordEncoder passwordEncoder;
 
     public Page<UserDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toDto);
+        return repository.findAll(pageable).map(UserMapper::toDto);
     }
 
     public Optional<User> findById(Long id) {
@@ -37,7 +36,7 @@ public class UserService {
     }
 
     public Optional<UserDto> findDtoById(Long id) {
-        return repository.findById(id).map(mapper::toDto);
+        return repository.findById(id).map(UserMapper::toDto);
     }
 
     public Optional<User> findByEmail(String email) {
@@ -64,7 +63,7 @@ public class UserService {
         }
         User existing = repository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + user.getId() + " not found"));
-        mapper.update(user, existing);
+        UserMapper.update(user, existing);
         User saved = repository.save(existing);
         authenticationService.invalidateCache(saved.getId());
         return saved;
@@ -77,10 +76,10 @@ public class UserService {
         }
         User existing = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
-        mapper.updateFromDto(dto, existing);
+        UserMapper.updateFromDto(dto, existing);
         User saved = repository.save(existing);
         authenticationService.invalidateCache(saved.getId());
-        return mapper.toDto(saved);
+        return UserMapper.toDto(saved);
     }
 
     @Transactional
@@ -99,7 +98,7 @@ public class UserService {
     public UserDto getProfile(Long userId) {
         User user = repository.findByIdForProfile(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        return mapper.toDto(user);
+        return UserMapper.toDto(user);
     }
 
     public MeDto getMe(Long userId) {
@@ -121,7 +120,7 @@ public class UserService {
     public void updateProfile(Long userId, ProfileUpdateRequestDto request) {
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        mapper.update(user, request);
+        UserMapper.update(user, request);
         repository.save(user);
         authenticationService.invalidateCache(user.getId());
     }

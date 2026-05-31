@@ -31,8 +31,7 @@ public class ReviewService {
 
  	private final MarkEvidenceSubmissionRepository submissionRepository;
  	private final MarkEvidenceProcessingRepository processingRepository;
-	private final MarkSuggestionRepository suggestionRepository;
-	private final MarkSuggestionMapper suggestionMapper;
+ 	private final MarkSuggestionRepository suggestionRepository;
   	private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
 	private final List<ReviewProcessor> processors;
 	private final ReviewExecutor executor;
@@ -122,7 +121,7 @@ public class ReviewService {
 		return processingRepository.findBySubmissionId(submissionId)
 				.map(p -> suggestionRepository.findByProcessingId(p.getId())
 						.stream()
-						.map(suggestionMapper::toDto)
+						.map(MarkSuggestionMapper::toDto)
 						.toList())
 				.orElseThrow(() -> new ResourceNotFoundException("Suggestions not found"));
 	}
