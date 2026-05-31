@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 
 import java.util.Set;
@@ -15,7 +16,7 @@ public class UserMapper {
     public UserDto toDto(User user) {
         if (user == null) return null;
         Set<String> roleNames = user.getRoles().stream()
-                .map(r -> r.getName())
+                .map(Role::getName)
                 .collect(Collectors.toSet());
         return new UserDto(
                 user.getId(),

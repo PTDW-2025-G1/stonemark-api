@@ -67,12 +67,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Build tools -->
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>1.6.3</version>
-            </dependency>
             <!-- Third-party libraries (not managed by Spring Boot BOM) -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -256,10 +250,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
     </dependencies>
 
 	<build>
@@ -273,11 +263,6 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>1.6.3</version>
-                        </path>
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
