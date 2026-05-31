@@ -16,6 +16,7 @@ import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.processing.repositories.ReviewGroupRepository;
+import pt.estga.processing.services.cluster.SpatialClusterService;
 import pt.estga.review.dtos.AcceptGroupRequest;
 import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.dtos.GroupResponseDto;
@@ -35,6 +36,7 @@ import java.util.List;
 @Slf4j
 public class ReviewService {
 
+    private final SpatialClusterService spatialClusterService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
@@ -125,12 +127,12 @@ public class ReviewService {
         DiscoveryContext ctx = buildGroupContext(request, group);
         String comment = request.comment();
 
+        ResolutionResult resolution = processor.resolve(members.getFirst().getSubmissionId(), ctx);
+
         for (MarkEvidenceProcessing member : members) {
             Long submissionId = member.getSubmissionId();
             MarkEvidenceSubmission submission = submissionRepository.findById(submissionId)
                     .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
-
-            ResolutionResult resolution = processor.resolve(submissionId, ctx);
 
             executor.execute(submission, ReviewDecision.APPROVED, comment, resolution,
                     member.getId(),
@@ -140,11 +142,14 @@ public class ReviewService {
         group.setGroupStatus(ReviewGroupStatus.REVIEWED);
         group.setDecision(ReviewDecision.APPROVED.getCode());
         reviewGroupRepository.save(group);
+
+        boolean hasMonument = resolution != null && resolution.monument() != null;
+        spatialClusterService.promoteIfEligible(group, true, hasMonument);
     }
 
     private static DiscoveryContext buildGroupContext(AcceptGroupRequest request, ReviewGroup group) {
         org.locationtech.jts.geom.Point location = null;
-        if (group.getCentroid() != null) {
+        if (request.monumentName() != null && group.getCentroid() != null) {
             location = group.getCentroid();
         }
         return new DiscoveryContext(
@@ -185,6 +190,8 @@ public class ReviewService {
         group.setGroupStatus(ReviewGroupStatus.REVIEWED);
         group.setDecision(ReviewDecision.REJECTED.getCode());
         reviewGroupRepository.save(group);
+
+        spatialClusterService.promoteIfEligible(group, false, false);
     }
 
     @Transactional(readOnly = true)

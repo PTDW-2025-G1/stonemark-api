@@ -16,8 +16,13 @@ import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.entities.MarkEvidenceProcessing;
+import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.processing.enums.ReviewGroupStatus;
+import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.repositories.ReviewGroupRepository;
+import pt.estga.processing.services.cluster.SpatialClusterService;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.shared.enums.ValidationState;
@@ -29,8 +34,10 @@ import java.util.UUID;
 @Slf4j
 public class ReviewEventListener {
 
+    private final SpatialClusterService spatialClusterService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
+    private final ReviewGroupRepository reviewGroupRepository;
     private final MeterRegistry meterRegistry;
     private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkRepository markRepository;
@@ -43,10 +50,8 @@ public class ReviewEventListener {
 
         submissionRepository.findById(submissionId).ifPresent(submission -> {
             try {
-                // 1) Update submission status (if needed) and record metric
                 updateStatus(submission, event.resultingSubmissionStatus(), event.decision());
 
-                // 2) Transition processing to REVIEWED if present. Use update to avoid loading the embedding vector.
                 try {
                     int updated = processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
                     if (updated > 0) {
@@ -56,15 +61,38 @@ public class ReviewEventListener {
                     log.error("Failed to mark processing REVIEWED for submission {}: {}", submissionId, ex.getMessage(), ex);
                 }
 
-                // 3) Link review to occurrence and attach evidence (if applicable)
                 UUID mediaFileId = submission.getOriginalMediaFileId();
 
                 if (event.markId() != null && event.monumentId() != null) {
                     linkReviewToOccurrence(submissionId, mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
                 }
+
+                checkAndCloseGroup(submissionId);
             } catch (Exception e) {
-                // Listeners should not throw - log and continue
                 log.error("Post-review failure for submission {}: {}", submissionId, e.getMessage(), e);
+            }
+        });
+    }
+
+    /**
+     * Reaper: after an individual submission review completes, check if its parent ReviewGroup
+     * is fully reviewed. If so, close the group and publish ReviewGroupCompletedEvent.
+     */
+    private void checkAndCloseGroup(Long submissionId) {
+        processingRepository.findBySubmissionId(submissionId).ifPresent(proc -> {
+            ReviewGroup group = proc.getReviewGroup();
+            if (group == null || group.getGroupStatus() != ReviewGroupStatus.OPEN) return;
+
+            long unreviewedCount = processingRepository.countByReviewGroupIdAndStatus(
+                    group.getId(), ProcessingStatus.REVIEWED);
+
+            if (unreviewedCount >= group.getMemberCount()) {
+                group.setGroupStatus(ReviewGroupStatus.REVIEWED);
+                reviewGroupRepository.save(group);
+
+                spatialClusterService.promoteIfEligible(group, true, false);
+
+                log.info("ReviewGroup {} auto-closed — all {} members reviewed", group.getId(), group.getMemberCount());
             }
         });
     }

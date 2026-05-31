@@ -13,6 +13,8 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.processing.repositories.ReviewGroupRepository;
+import pt.estga.processing.services.cluster.SpatialClusterService;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
@@ -52,6 +54,12 @@ public class ReviewServiceTest {
     @Mock
     MarkEvidenceReviewRepository markEvidenceReviewRepository;
 
+    @Mock
+    SpatialClusterService spatialClusterService;
+
+    @Mock
+    ReviewGroupRepository reviewGroupRepository;
+
     ReviewService reviewService;
 
     @BeforeEach
@@ -61,10 +69,12 @@ public class ReviewServiceTest {
         lenient().when(processor.getSupportedType()).thenReturn(ReviewType.REJECTION);
 
         reviewService = new ReviewService(
+                spatialClusterService,
                 submissionRepository,
                 markEvidenceProcessingRepository,
                 suggestionRepository,
                 markEvidenceReviewRepository,
+                reviewGroupRepository,
                 List.of(processor),
                 executor
         );

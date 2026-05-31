@@ -23,6 +23,8 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 
 	List<MarkEvidenceProcessing> findByReviewGroupId(Long reviewGroupId);
 
+	long countByReviewGroupIdAndStatus(Long reviewGroupId, ProcessingStatus status);
+
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
 
 	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
