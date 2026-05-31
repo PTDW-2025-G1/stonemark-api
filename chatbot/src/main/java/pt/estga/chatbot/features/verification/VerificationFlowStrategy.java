@@ -24,13 +24,7 @@ public class VerificationFlowStrategy implements FlowStrategy {
             return currentState;
         }
 
-        // After displaying code, go back to main start
         if (currentState == VerificationState.DISPLAYING_VERIFICATION_CODE) {
-            return CoreState.START;
-        }
-
-        // If awaiting contact and success, return to main start
-        if (currentState == VerificationState.AWAITING_CONTACT && outcome == SUCCESS) {
             return CoreState.START;
         }
 

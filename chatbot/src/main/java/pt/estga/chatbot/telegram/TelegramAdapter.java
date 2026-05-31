@@ -23,7 +23,6 @@ import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.models.text.TextNode;
 import pt.estga.chatbot.models.ui.Button;
-import pt.estga.chatbot.models.ui.ContactRequest;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.models.ui.PhotoItem;
@@ -205,9 +204,6 @@ public class TelegramAdapter {
         if (uiComponent instanceof LocationRequest locationRequest) {
             log.debug("Rendering LocationRequest component");
             methods.add(renderLocationRequest(chatId, locationRequest));
-        } else if (uiComponent instanceof ContactRequest contactRequest) {
-            log.debug("Rendering ContactRequest component");
-            methods.add(renderContactRequest(chatId, contactRequest));
         } else if (uiComponent instanceof PhotoItem photoItem) {
             log.debug("Rendering PhotoItem component");
             methods.addAll(renderPhotoItem(chatId, photoItem));
@@ -241,14 +237,6 @@ public class TelegramAdapter {
         SendMessage message = new SendMessage(chatId, rendered.text());
         if (rendered.parseMode() != null) message.setParseMode(rendered.parseMode());
         message.setReplyMarkup(createReplyKeyboardMarkup("Send my location", true, false));
-        return message;
-    }
-
-    private SendMessage renderContactRequest(String chatId, ContactRequest contactRequest) {
-        RenderedText rendered = textService.render(contactRequest.getMessageNode());
-        SendMessage message = new SendMessage(chatId, rendered.text());
-        if (rendered.parseMode() != null) message.setParseMode(rendered.parseMode());
-        message.setReplyMarkup(createReplyKeyboardMarkup("Share my phone number", false, true));
         return message;
     }
 

@@ -10,7 +10,6 @@ import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Message;
-import pt.estga.chatbot.models.ui.ContactRequest;
 import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.services.ResponseProvider;
@@ -51,16 +50,7 @@ public class VerificationResponseProvider implements ResponseProvider {
                 responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
                 yield responses;
             }
-            case AWAITING_CONTACT -> createContactRequestResponse();
         };
-    }
-
-    private List<BotResponse> createContactRequestResponse() {
-        // Phone removed: instruct user to visit web UI and use the code to connect their messenger account.
-        ContactRequest contactRequest = ContactRequest.builder()
-                .messageNode(textService.get(new Message(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS, KEY)))
-                .build();
-        return Collections.singletonList(BotResponse.builder().uiComponent(contactRequest).build());
     }
 
     private List<BotResponse> buildSimpleMenuResponse(Message message) {

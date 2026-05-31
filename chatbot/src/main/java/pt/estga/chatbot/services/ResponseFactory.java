@@ -65,8 +65,6 @@ public class ResponseFactory {
         } else if (state instanceof VerificationState verificationState) {
             return switch (verificationState) {
                 case DISPLAYING_VERIFICATION_CODE -> new Message(MessageKey.ERROR_GENERIC, WARNING);
-                case AWAITING_CONTACT -> new Message(MessageKey.USER_NOT_FOUND_ERROR, WARNING);
-                default -> null;
             };
         }
         return null;
