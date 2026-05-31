@@ -10,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentService;
-import pt.estga.monument.dots.MonumentDto;
-import pt.estga.monument.dots.MonumentListDto;
+import pt.estga.monument.dtos.MonumentDto;
+import pt.estga.monument.dtos.MonumentListDto;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")

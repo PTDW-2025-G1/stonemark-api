@@ -1,9 +1,9 @@
 package pt.estga.monument;
 
 import org.mapstruct.*;
-import pt.estga.monument.dots.MonumentDto;
-import pt.estga.monument.dots.MonumentListDto;
-import pt.estga.monument.dots.MonumentRequestDto;
+import pt.estga.monument.dtos.MonumentDto;
+import pt.estga.monument.dtos.MonumentListDto;
+import pt.estga.monument.dtos.MonumentRequestDto;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import org.locationtech.jts.geom.Point;
 import pt.estga.territory.utils.GeometryUtils;
@@ -26,13 +26,11 @@ public interface MonumentMapper {
     Monument toEntity(MonumentRequestDto dto);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "externalId", ignore = true)
     @Mapping(target = "location", expression = "java(toPoint(dto))")
     @Mapping(target = "division", ignore = true)
     void updateEntityFromDto(MonumentRequestDto dto, @MappingTarget Monument entity);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "externalId", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "division", ignore = true)
     void update(Monument source, @MappingTarget Monument target);

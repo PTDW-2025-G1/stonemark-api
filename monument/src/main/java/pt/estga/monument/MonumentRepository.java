@@ -12,7 +12,6 @@ import pt.estga.shared.enums.ValidationState;
 import pt.estga.shared.repositories.BaseRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaSpecificationExecutor<Monument> {
@@ -23,8 +22,6 @@ public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaS
     default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable) {
         return findByDivisionIdAndStatus(divisionId, pageable, EntityStatus.ACTIVE);
     }
-
-    Optional<Monument> findByExternalId(String externalId);
 
     List<Monument> findByValidationState(ValidationState state);
 

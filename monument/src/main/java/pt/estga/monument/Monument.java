@@ -20,16 +20,13 @@ public class Monument extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    @Column(unique = true)
-    private String externalId;
-
     private String name;
     private String protectionTitle;
     private String description;
     private String website;
 
-    private String street;
-    private String houseNumber;
+    private String address;
+    private String postalCode;
 
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point location;

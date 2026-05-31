@@ -1,6 +1,5 @@
-package pt.estga.monument.dots;
+package pt.estga.monument.dtos;
 
-import org.locationtech.jts.geom.Geometry;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 
 import java.time.Instant;
@@ -13,8 +12,8 @@ public record MonumentDto(
         String website,
         Double latitude,
         Double longitude,
-        String street,
-        String houseNumber,
+        String address,
+        String postalCode,
         AdministrativeDivisionDto division,
         Instant createdAt,
         Instant lastModifiedAt,

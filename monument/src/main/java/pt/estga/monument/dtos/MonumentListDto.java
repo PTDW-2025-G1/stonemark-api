@@ -1,4 +1,4 @@
-package pt.estga.monument.dots;
+package pt.estga.monument.dtos;
 
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 

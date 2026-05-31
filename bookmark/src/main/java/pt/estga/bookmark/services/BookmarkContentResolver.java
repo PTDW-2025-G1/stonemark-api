@@ -10,7 +10,7 @@ import pt.estga.markapi.MarkService;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.monument.dots.MonumentDto;
+import pt.estga.monument.dtos.MonumentDto;
 
 import java.util.*;
 import java.util.function.Function;

@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.monument.dots.MonumentListDto;
+import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.util.Optional;
