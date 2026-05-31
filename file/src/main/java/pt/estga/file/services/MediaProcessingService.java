@@ -50,8 +50,13 @@ public class MediaProcessingService {
         }
     }
 
-    public void process(UUID mediaFileId) {
-        log.info("Starting processing for media file ID: {}", mediaFileId);
+    public void process(UUID mediaFileId, MediaVariantType... variantTypes) {
+        List<MediaVariantType> types = List.of(variantTypes);
+        if (types.isEmpty()) {
+            log.debug("No variant types requested for media {} — skipping", mediaFileId);
+            return;
+        }
+        log.info("Starting processing for media file ID: {} (types: {})", mediaFileId, types);
         var timer = metrics.startProcessingTimer();
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
@@ -76,13 +81,7 @@ public class MediaProcessingService {
                     return;
                 }
 
-                List<MediaVariantType> variants = List.of(
-                        MediaVariantType.THUMBNAIL,
-                        MediaVariantType.PREVIEW,
-                        MediaVariantType.OPTIMIZED
-                );
-
-                for (MediaVariantType type : variants) {
+                for (MediaVariantType type : types) {
                     if (mediaVariantRepository.existsByMediaFileAndType(mediaFile, type)) {
                         log.debug("Variant {} exists for media {}, skipping.", type, mediaFile.getId());
                         continue;
