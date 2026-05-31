@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
@@ -101,6 +102,10 @@ public class MediaProcessingService {
                                 .build();
 
                         mediaVariantRepository.save(variant);
+                        metrics.recordVariantGenerated();
+                    } catch (DataIntegrityViolationException e) {
+                        log.warn("Variant {} already persisted for media {} by concurrent processor — skipping",
+                                type, mediaFile.getId());
                         metrics.recordVariantGenerated();
                     } catch (Exception e) {
                         metrics.recordVariantFailed();
