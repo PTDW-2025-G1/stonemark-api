@@ -1,5 +1,6 @@
 package pt.estga.chatbot.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +16,16 @@ import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class BotEngineImpl implements BotEngine {
+
+    private static final long CONTEXT_IDLE_TIMEOUT_MS = TimeUnit.HOURS.toMillis(2);
 
     private final ConversationDispatcher conversationDispatcher;
     private final CacheManager cacheManager;
@@ -39,34 +45,47 @@ public class BotEngineImpl implements BotEngine {
         String conversationKey = deriveConversationKey(input, userId);
         ChatbotContext context = getOrCreateContext(conversationKey);
 
+        // Evict stale contexts (abandoned conversations) to free memory
+        if (isStale(context)) {
+            log.warn("Evicting stale context for key: {} (idle since {})", conversationKey, context.getLastActivityTimestamp());
+            context = new ChatbotContext();
+            Objects.requireNonNull(cacheManager.getCache("conversations")).put(conversationKey, context);
+        }
+
+        ChatbotContext ctx = context;
+        ctx.touch();
+
         currentUserId.ifPresent(id -> {
-            if (context.getDomainUserId() == null) {
-                context.setDomainUserId(id);
+            if (ctx.getDomainUserId() == null) {
+                ctx.setDomainUserId(id);
             }
         });
 
-        authenticateUserIfPossible(context, input);
+        authenticateUserIfPossible(ctx, input);
 
         if (isGlobalCommand(input)) {
-            resetContext(context);
+            resetContext(ctx);
         }
 
-        if (context.getCurrentState() == null) {
-            context.setCurrentState(CoreState.START);
+        if (ctx.getCurrentState() == null) {
+            ctx.setCurrentState(CoreState.START);
         }
 
 
-        return conversationDispatcher.dispatch(context, input);
+        return conversationDispatcher.dispatch(ctx, input);
     }
 
     private ChatbotContext getOrCreateContext(String conversationKey) {
         Cache cache = cacheManager.getCache("conversations");
         if (cache == null) {
-            // Fallback to an in-memory ChatbotContext if no cache manager is available
-            return new ChatbotContext();
+            throw new IllegalStateException("Conversation cache 'conversations' is not configured");
         }
-        // Use the Spring Cache abstraction to create or retrieve the ChatbotContext
-        return cache.get(conversationKey, () -> new ChatbotContext());
+        return cache.get(conversationKey, ChatbotContext::new);
+    }
+
+    private boolean isStale(ChatbotContext context) {
+        long idle = System.currentTimeMillis() - context.getLastActivityTimestamp();
+        return idle > CONTEXT_IDLE_TIMEOUT_MS;
     }
 
     /**

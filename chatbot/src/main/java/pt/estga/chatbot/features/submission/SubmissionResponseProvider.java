@@ -17,6 +17,7 @@ import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.services.ResponseProvider;
 import pt.estga.chatbot.services.UiTextService;
 
+import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.List;
 import static pt.estga.chatbot.services.ResponseFactory.menuResponse;
 
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class SubmissionResponseProvider implements ResponseProvider {
 
@@ -45,7 +47,11 @@ public class SubmissionResponseProvider implements ResponseProvider {
             case SUBMITTED -> createSubmissionSuccessResponse(input);
             default -> {
                 TextNode message = getEntryMessageForState(state);
-                yield message != null ? menuResponse(message) : Collections.emptyList();
+                if (message == null) {
+                    log.warn("Unhandled submission state: {}, returning empty response", state);
+                    yield Collections.emptyList();
+                }
+                yield menuResponse(message);
             }
         };
     }
