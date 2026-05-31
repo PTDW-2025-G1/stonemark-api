@@ -13,7 +13,7 @@ public class SubmissionStartHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        return HandlerOutcome.RE_DISPATCH;
+        return new HandlerOutcome.Redispatch();
     }
 
     @Override

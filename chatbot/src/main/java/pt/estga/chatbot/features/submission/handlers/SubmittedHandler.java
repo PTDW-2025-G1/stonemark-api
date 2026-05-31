@@ -17,7 +17,7 @@ public class SubmittedHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         context.setCurrentState(CoreState.MAIN_MENU);
-        return HandlerOutcome.RE_DISPATCH;
+        return new HandlerOutcome.Redispatch();
     }
 
     @Override

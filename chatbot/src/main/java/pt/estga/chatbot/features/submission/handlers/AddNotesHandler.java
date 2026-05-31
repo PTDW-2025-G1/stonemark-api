@@ -20,10 +20,9 @@ public class AddNotesHandler implements ConversationStateHandler {
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
-        // Handle "skip" or text input for notes
         if (input.getCallbackData() == null || !input.getCallbackData().equals(SubmissionCallbackData.SKIP_NOTES)) {
             if (input.getText() != null) {
                 markEvidenceSubmission.setUserNotes(input.getText());
@@ -41,10 +40,10 @@ public class AddNotesHandler implements ConversationStateHandler {
 
             context.clear();
 
-            return HandlerOutcome.SUCCESS;
+            return new HandlerOutcome.Success();
         } catch (Exception e) {
             log.error("Failed to submit submission from chatbot", e);
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
     }
 

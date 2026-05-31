@@ -6,12 +6,12 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.HandlerOutcome.Failure;
+import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.services.FlowStrategy;
 
 import java.util.Map;
-
-import static pt.estga.chatbot.context.HandlerOutcome.*;
 
 @Component
 @RequiredArgsConstructor
@@ -31,7 +31,7 @@ public class SubmissionFlowStrategy implements FlowStrategy {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
-        if (outcome == FAILURE) {
+        if (outcome instanceof Failure) {
             return currentState;
         }
 
@@ -39,7 +39,7 @@ public class SubmissionFlowStrategy implements FlowStrategy {
             return SubmissionState.WAITING_FOR_PHOTO;
         }
 
-        if (outcome == SUCCESS) {
+        if (outcome instanceof Success) {
             return SUCCESS_TRANSITIONS.getOrDefault(currentState, CoreState.START);
         }
 

@@ -23,19 +23,19 @@ class SubmissionFlowIntegrationTest {
     void testCompleteLinearFlow_ToMainMenu() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, SubmissionState.SUBMISSION_STATE, HandlerOutcome.SUCCESS);
+        ConversationState state = strategy.getNextState(context, SubmissionState.SUBMISSION_STATE, new HandlerOutcome.Success());
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
 
-        state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
+        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.AWAITING_LOCATION, state);
 
-        state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
+        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.AWAITING_NOTES, state);
 
-        state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
+        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(SubmissionState.SUBMITTED, state);
 
-        state = strategy.getNextState(context, state, HandlerOutcome.SUCCESS);
+        state = strategy.getNextState(context, state, new HandlerOutcome.Success());
         assertEquals(CoreState.MAIN_MENU, state);
     }
 
@@ -43,7 +43,7 @@ class SubmissionFlowIntegrationTest {
     void testFailure_DoesNotAdvanceState() {
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = strategy.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, HandlerOutcome.FAILURE);
+        ConversationState state = strategy.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, new HandlerOutcome.Failure());
 
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
     }

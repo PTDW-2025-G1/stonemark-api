@@ -31,7 +31,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
 
         log.debug("Generated verification code for platform user: {}", platformUserId);
 
-        return HandlerOutcome.SUCCESS;
+        return new HandlerOutcome.Success();
     }
 
     @Override

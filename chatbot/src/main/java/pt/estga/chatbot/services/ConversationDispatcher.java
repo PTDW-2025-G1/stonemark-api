@@ -6,6 +6,9 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.HandlerOutcome.AwaitingInput;
+import pt.estga.chatbot.context.HandlerOutcome.Redispatch;
+import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 
@@ -80,7 +83,7 @@ public class ConversationDispatcher {
         log.debug("Handler {} returned outcome: {}", handler.getClass().getSimpleName(), outcome);
 
         // Handle re-dispatch outcome
-        if (outcome == HandlerOutcome.RE_DISPATCH) {
+        if (outcome instanceof Redispatch) {
             log.debug("Re-dispatching due to RE_DISPATCH outcome");
             return dispatch(context, input, depth + 1);
         }
@@ -104,7 +107,7 @@ public class ConversationDispatcher {
                 log.debug("Automatic handler {} returned outcome: {}", nextHandler.getClass().getSimpleName(), autoOutcome);
 
                 // If automatic handler needs state transition, handle it recursively
-                if (autoOutcome != HandlerOutcome.SUCCESS && autoOutcome != HandlerOutcome.AWAITING_INPUT) {
+                if (!(autoOutcome instanceof Success) && !(autoOutcome instanceof AwaitingInput)) {
                     ConversationState autoNextState = submissionFlow.getNextState(context, nextState, autoOutcome);
                     log.debug("Automatic state transition: {} -> {} (outcome: {})", nextState, autoNextState, autoOutcome);
                     context.setCurrentState(autoNextState);

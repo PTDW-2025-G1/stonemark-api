@@ -26,7 +26,7 @@ public class InitialPhotoHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         if (input.getType() != BotInput.InputType.PHOTO || input.getFileData() == null) {
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
         MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
@@ -45,10 +45,10 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             log.debug("Staged photo {} as {}", input.getFileName(), staged.id());
         } catch (Exception e) {
             log.error("Failed to stage photo from chat {}", input.getChatId(), e);
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
-        return HandlerOutcome.SUCCESS;
+        return new HandlerOutcome.Success();
     }
 
     @Override

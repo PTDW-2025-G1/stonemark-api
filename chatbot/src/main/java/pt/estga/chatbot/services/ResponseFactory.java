@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
+import pt.estga.chatbot.context.HandlerOutcome.Failure;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.context.VerificationState;
@@ -32,7 +33,7 @@ public class ResponseFactory {
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         ConversationState currentState = context.getCurrentState();
 
-        if (outcome == HandlerOutcome.FAILURE) {
+        if (outcome instanceof Failure) {
             return createErrorResponse(context);
         }
 

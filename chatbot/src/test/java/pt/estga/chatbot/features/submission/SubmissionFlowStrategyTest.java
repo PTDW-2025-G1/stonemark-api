@@ -24,7 +24,7 @@ class SubmissionFlowStrategyTest {
         ConversationState nextState = strategy.getNextState(
                 new ChatbotContext(),
                 SubmissionState.SUBMISSION_STATE,
-                HandlerOutcome.SUCCESS
+                new HandlerOutcome.Success()
         );
 
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, nextState);
@@ -35,7 +35,7 @@ class SubmissionFlowStrategyTest {
         ConversationState nextState = strategy.getNextState(
                 new ChatbotContext(),
                 SubmissionState.WAITING_FOR_PHOTO,
-                HandlerOutcome.SUCCESS
+                new HandlerOutcome.Success()
         );
 
         assertEquals(SubmissionState.AWAITING_LOCATION, nextState);
@@ -46,7 +46,7 @@ class SubmissionFlowStrategyTest {
         ConversationState nextState = strategy.getNextState(
                 new ChatbotContext(),
                 SubmissionState.AWAITING_LOCATION,
-                HandlerOutcome.SUCCESS
+                new HandlerOutcome.Success()
         );
 
         assertEquals(SubmissionState.AWAITING_NOTES, nextState);
@@ -57,7 +57,7 @@ class SubmissionFlowStrategyTest {
         ConversationState nextState = strategy.getNextState(
                 new ChatbotContext(),
                 SubmissionState.SUBMITTED,
-                HandlerOutcome.SUCCESS
+                new HandlerOutcome.Success()
         );
 
         assertEquals(CoreState.MAIN_MENU, nextState);
@@ -68,7 +68,7 @@ class SubmissionFlowStrategyTest {
         ConversationState nextState = strategy.getNextState(
                 new ChatbotContext(),
                 SubmissionState.AWAITING_LOCATION,
-                HandlerOutcome.FAILURE
+                new HandlerOutcome.Failure()
         );
 
         assertEquals(SubmissionState.AWAITING_LOCATION, nextState);

@@ -15,19 +15,18 @@ public class InitialLocationHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         if (input.getLocation() == null) {
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
         MarkEvidenceSubmission submission = context.getSubmissionContext().getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
         markEvidenceSubmission.setLatitude(input.getLocation().getLatitude());
         markEvidenceSubmission.setLongitude(input.getLocation().getLongitude());
 
-        // Flow strategy advances directly to optional notes.
-        return HandlerOutcome.SUCCESS;
+        return new HandlerOutcome.Success();
     }
 
     @Override

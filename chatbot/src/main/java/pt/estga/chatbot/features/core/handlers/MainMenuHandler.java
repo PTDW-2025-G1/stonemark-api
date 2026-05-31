@@ -16,18 +16,18 @@ public class MainMenuHandler implements ConversationStateHandler {
         String callbackData = input.getCallbackData();
 
         if (callbackData == null) {
-            return HandlerOutcome.FAILURE;
+            return new HandlerOutcome.Failure();
         }
 
         if (callbackData.equals(SubmissionCallbackData.START_SUBMISSION)) {
-            return HandlerOutcome.START_NEW;
+            return new HandlerOutcome.StartNew();
         }
 
         if (callbackData.equals(VerificationCallbackData.START_VERIFICATION)) {
-            return HandlerOutcome.START_VERIFICATION;
+            return new HandlerOutcome.StartVerification();
         }
 
-        return HandlerOutcome.FAILURE;
+        return new HandlerOutcome.Failure();
     }
 
     @Override

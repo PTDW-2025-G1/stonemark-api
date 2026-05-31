@@ -16,7 +16,7 @@ public class StartHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         context.setCurrentState(CoreState.MAIN_MENU);
-        return HandlerOutcome.SUCCESS;
+        return new HandlerOutcome.Success();
     }
 
     @Override

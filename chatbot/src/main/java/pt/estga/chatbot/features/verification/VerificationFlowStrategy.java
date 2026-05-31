@@ -5,10 +5,10 @@ import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
+import pt.estga.chatbot.context.HandlerOutcome.Failure;
+import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.services.FlowStrategy;
-
-import static pt.estga.chatbot.context.HandlerOutcome.*;
 
 @Component
 public class VerificationFlowStrategy implements FlowStrategy {
@@ -20,7 +20,7 @@ public class VerificationFlowStrategy implements FlowStrategy {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome) {
-        if (outcome == FAILURE) {
+        if (outcome instanceof Failure) {
             return currentState;
         }
 
@@ -28,7 +28,7 @@ public class VerificationFlowStrategy implements FlowStrategy {
             return CoreState.START;
         }
 
-        if (outcome == SUCCESS) {
+        if (outcome instanceof Success) {
             return CoreState.START;
         }
 
