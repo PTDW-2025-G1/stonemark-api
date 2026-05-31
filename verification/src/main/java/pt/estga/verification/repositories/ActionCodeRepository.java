@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.enums.ActionCodeType;
 
+import java.time.Instant;
 import java.util.Optional;
 
 @Repository
@@ -20,5 +21,8 @@ public interface ActionCodeRepository extends JpaRepository<ActionCode, Long> {
     int markConsumed(@Param("code") String code);
 
     void deleteByPlatformUserIdAndType(String telegramId, ActionCodeType type);
+
+    @Modifying
+    int deleteByExpiresAtBefore(Instant now);
 
 }

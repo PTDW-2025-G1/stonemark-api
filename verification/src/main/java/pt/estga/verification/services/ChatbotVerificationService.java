@@ -2,6 +2,7 @@ package pt.estga.verification.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.verification.entities.ActionCode;
@@ -83,6 +84,15 @@ public class ChatbotVerificationService {
         String platformUserId = actionCode.getPlatformUserId();
         log.info("Chatbot verification successful for platform user: {}", platformUserId);
         return Optional.of(platformUserId);
+    }
+
+    @Scheduled(cron = "0 0 * * * *")
+    @Transactional
+    public void cleanupExpiredCodes() {
+        int deleted = actionCodeRepository.deleteByExpiresAtBefore(Instant.now());
+        if (deleted > 0) {
+            log.info("Cleaned up {} expired chatbot verification codes", deleted);
+        }
     }
 
     private String generateRandomCode() {
