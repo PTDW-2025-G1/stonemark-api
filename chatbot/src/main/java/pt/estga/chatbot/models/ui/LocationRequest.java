@@ -6,6 +6,6 @@ import pt.estga.chatbot.models.text.RichText;
 
 @Data
 @Builder
-public class LocationRequest implements UIComponent {
+public final class LocationRequest implements UIComponent {
     private RichText messageNode;
 }

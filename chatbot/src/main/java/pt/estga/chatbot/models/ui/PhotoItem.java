@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class PhotoItem implements UIComponent {
+public final class PhotoItem implements UIComponent {
     private UUID mediaFileId;
     private RichText captionNode;
     private String callbackData;

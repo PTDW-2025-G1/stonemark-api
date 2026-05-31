@@ -6,7 +6,7 @@ import pt.estga.chatbot.models.text.RichText;
 
 @Data
 @Builder
-public class Button implements UIComponent {
+public class Button {
     private RichText textNode;
     private String callbackData;
 }

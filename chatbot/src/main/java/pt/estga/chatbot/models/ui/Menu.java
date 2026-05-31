@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class Menu implements UIComponent {
+public final class Menu implements UIComponent {
     private RichText titleNode;
     private List<List<Button>> buttons;
 }

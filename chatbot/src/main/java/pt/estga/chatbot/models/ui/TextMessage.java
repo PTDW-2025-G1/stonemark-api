@@ -8,6 +8,6 @@ import pt.estga.chatbot.models.text.RichText;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
-public class TextMessage implements UIComponent {
+public final class TextMessage implements UIComponent {
     private RichText textNode;
 }
