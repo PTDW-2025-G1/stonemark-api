@@ -9,7 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.CoreState;
-import pt.estga.chatbot.features.core.GlobalCommandHandler;
+import pt.estga.chatbot.constants.SharedCallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.shared.models.AppPrincipal;
@@ -17,16 +17,18 @@ import pt.estga.shared.utils.SecurityUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class BotEngineImpl implements BotEngine {
 
+    private static final Set<String> SLASH_COMMANDS = Set.of("/start", "/help", "/options");
+
     private final ConversationDispatcher conversationDispatcher;
     private final CacheManager cacheManager;
     private final AuthServiceFactory authServiceFactory;
-    private final List<GlobalCommandHandler> globalCommandHandlers;
 
     @Override
     public List<BotResponse> handleInput(BotInput input) {
@@ -50,7 +52,7 @@ public class BotEngineImpl implements BotEngine {
 
         authenticateUserIfPossible(context, input);
 
-        if (isGlobalCommand(input, context)) {
+        if (isGlobalCommand(input)) {
             resetContext(context);
         }
 
@@ -100,8 +102,9 @@ public class BotEngineImpl implements BotEngine {
         });
     }
 
-    private boolean isGlobalCommand(BotInput input, ChatbotContext context) {
-        return globalCommandHandlers.stream().anyMatch(h -> h.matches(input));
+    private static boolean isGlobalCommand(BotInput input) {
+        return (input.getText() != null && SLASH_COMMANDS.contains(input.getText()))
+                || SharedCallbackData.BACK_TO_MAIN_MENU.equals(input.getCallbackData());
     }
 
     private void resetContext(ChatbotContext context) {
