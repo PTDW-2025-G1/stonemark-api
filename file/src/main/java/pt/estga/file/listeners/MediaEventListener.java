@@ -8,6 +8,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
+import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.events.MediaApprovedEvent;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.services.MediaMetadataService;
@@ -24,15 +25,21 @@ public class MediaEventListener {
     @Async("fileTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMediaUploaded(MediaUploadedEvent event) {
-        log.info("Media uploaded with ID: {} — variant generation deferred until approval", event.mediaFileId());
+        log.info("Media uploaded with ID: {} — generating optimized variant", event.mediaFileId());
+        try {
+            processingService.process(event.mediaFileId(), MediaVariantType.OPTIMIZED);
+        } catch (Exception e) {
+            log.error("Failed to generate optimized variant for media {} — marking FAILED", event.mediaFileId(), e);
+            markMediaFailed(event.mediaFileId());
+        }
     }
 
     @Async("fileTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMediaApproved(MediaApprovedEvent event) {
-        log.info("Media approved with ID: {} — starting variant generation", event.mediaFileId());
+        log.info("Media approved with ID: {} — generating display variants", event.mediaFileId());
         try {
-            processingService.process(event.mediaFileId());
+            processingService.process(event.mediaFileId(), MediaVariantType.THUMBNAIL, MediaVariantType.PREVIEW);
         } catch (Exception e) {
             log.error("Unhandled failure processing media {} — marking FAILED", event.mediaFileId(), e);
             markMediaFailed(event.mediaFileId());

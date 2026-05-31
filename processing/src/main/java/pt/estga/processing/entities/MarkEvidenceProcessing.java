@@ -37,6 +37,19 @@ public class MarkEvidenceProcessing {
 
     private Instant failedAt;
 
+    @Builder.Default
+    private int retryCount = 0;
+
+    @Builder.Default
+    private int maxRetries = 5;
+
+    private Instant lastRetryAt;
+
+    @Builder.Default
+    private boolean permanent = false;
+
+    private Instant updatedAt;
+
     private String errorMessage;
 
     @OneToMany(mappedBy = "processing")

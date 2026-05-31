@@ -33,4 +33,9 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 	int updateStatusBySubmissionId(@Param("submissionId") Long submissionId, @Param("status") ProcessingStatus status);
 
 	List<MarkEvidenceProcessing> findByStatusIn(List<ProcessingStatus> statuses);
+
+	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
+	List<MarkEvidenceProcessing> findRetryableByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
+
+	long countByStatusAndPermanentFalse(ProcessingStatus status);
 }
