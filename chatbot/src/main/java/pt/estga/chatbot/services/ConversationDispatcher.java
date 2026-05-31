@@ -2,17 +2,21 @@ package pt.estga.chatbot.services;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
+import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.HandlerOutcome.AwaitingInput;
 import pt.estga.chatbot.context.HandlerOutcome.Redispatch;
 import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
+import pt.estga.chatbot.models.ui.Menu;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -23,15 +27,18 @@ import java.util.stream.Collectors;
 public class ConversationDispatcher {
 
     private static final int MAX_DISPATCH_DEPTH = 10;
+    private static final int MAX_CONSECUTIVE_FAILURES = 3;
 
     private final Map<ConversationState, ConversationStateHandler> handlers;
     private final ConversationFlowManager submissionFlow;
     private final ResponseFactory responseFactory;
+    private final UiTextService textService;
 
     public ConversationDispatcher(
             List<ConversationStateHandler> handlerList,
             ConversationFlowManager submissionFlow,
-            ResponseFactory responseFactory
+            ResponseFactory responseFactory,
+            UiTextService textService
     ) {
         this.handlers = handlerList.stream()
                 .peek(h -> {
@@ -53,6 +60,7 @@ public class ConversationDispatcher {
                 ));
         this.submissionFlow = submissionFlow;
         this.responseFactory = responseFactory;
+        this.textService = textService;
     }
 
     public List<BotResponse> dispatch(ChatbotContext context, BotInput input) {
@@ -85,6 +93,23 @@ public class ConversationDispatcher {
         if (outcome instanceof Redispatch) {
             log.debug("Re-dispatching due to RE_DISPATCH outcome");
             return dispatch(context, input, depth + 1);
+        }
+
+        if (outcome instanceof HandlerOutcome.Failure) {
+            int failures = context.getConsecutiveFailures() + 1;
+            context.setConsecutiveFailures(failures);
+            if (failures > MAX_CONSECUTIVE_FAILURES) {
+                log.warn("Max consecutive failures ({}) reached in state {}", MAX_CONSECUTIVE_FAILURES, currentState);
+                context.clear();
+                context.setCurrentState(CoreState.START);
+                return Collections.singletonList(BotResponse.builder()
+                        .uiComponent(Menu.builder()
+                                .titleNode(textService.get(MessageKey.TOO_MANY_ATTEMPTS))
+                                .build())
+                        .build());
+            }
+        } else {
+            context.setConsecutiveFailures(0);
         }
 
         ConversationState nextState = submissionFlow.getNextState(context, currentState, outcome);

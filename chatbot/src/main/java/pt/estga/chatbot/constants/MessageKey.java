@@ -8,6 +8,7 @@ public enum MessageKey {
     WELCOME("welcome", WAVE),
     WELCOME_BACK("welcome_back", WAVE),
     ERROR_GENERIC("error_generic", WARNING),
+    TOO_MANY_ATTEMPTS("too_many_attempts", WARNING),
     HELP_OPTIONS_TITLE("help_options_title"),
 
     // Submission Flow

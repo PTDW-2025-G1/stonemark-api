@@ -11,6 +11,7 @@ public class ChatbotContext {
     private String userName;
     private String verificationCode;
     private SubmissionContext submissionContext;
+    private int consecutiveFailures;
 
     public ChatbotContext() {
         this.submissionContext = new SubmissionContext();
@@ -18,5 +19,6 @@ public class ChatbotContext {
 
     public void clear() {
         this.submissionContext.clear();
+        this.consecutiveFailures = 0;
     }
 }
