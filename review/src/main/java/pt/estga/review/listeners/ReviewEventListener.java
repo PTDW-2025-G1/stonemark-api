@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
+import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
@@ -59,7 +60,7 @@ public class ReviewEventListener {
                 UUID mediaFileId = submission.getOriginalMediaFileId();
 
                 if (event.markId() != null && event.monumentId() != null) {
-                    linkReviewToOccurrence(mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
+                    linkReviewToOccurrence(submissionId, mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
                 }
             } catch (Exception e) {
                 // Listeners should not throw - log and continue
@@ -68,7 +69,7 @@ public class ReviewEventListener {
         });
     }
 
-    private void linkReviewToOccurrence(UUID mediaFileId, Long markId, Long monumentId, boolean approved) {
+    private void linkReviewToOccurrence(Long submissionId, UUID mediaFileId, Long markId, Long monumentId, boolean approved) {
         MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
                 .orElseGet(() -> {
                     ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
@@ -85,9 +86,22 @@ public class ReviewEventListener {
         if (mediaFileId == null) return;
 
         try {
-            evidenceRepository.findByFileId(mediaFileId).ifPresent(ev -> {
+            evidenceRepository.findByFileId(mediaFileId).ifPresentOrElse(ev -> {
                 ev.setOccurrence(occurrence);
                 evidenceRepository.save(ev);
+            }, () -> {
+                processingRepository.findBySubmissionId(submissionId).ifPresentOrElse(proc -> {
+                    float[] embedding = proc.getEmbedding();
+                    MarkEvidence newEvidence = MarkEvidence.builder()
+                            .fileId(mediaFileId)
+                            .occurrence(occurrence)
+                            .embedding(embedding)
+                            .build();
+                    evidenceRepository.save(newEvidence);
+                    log.info("Created new MarkEvidence {} for file {} with embedding (submission {})", newEvidence.getId(), mediaFileId, submissionId);
+                }, () ->
+                    log.warn("Cannot create MarkEvidence for file {}: no processing record found for submission {}", mediaFileId, submissionId)
+                );
             });
         } catch (Exception e) {
             log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
