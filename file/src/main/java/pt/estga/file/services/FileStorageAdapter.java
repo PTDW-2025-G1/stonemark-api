@@ -5,10 +5,13 @@ import org.springframework.stereotype.Component;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.repositories.MediaFileRepository;
+import pt.estga.file.services.staging.FileStagingService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.fileapi.StagedFileRecord;
 
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +22,7 @@ public class FileStorageAdapter implements FileStorageOperations {
     private final MediaUploadOrchestrator orchestrator;
     private final MediaFileRepository repository;
     private final MediaFileMapper mediaFileMapper;
+    private final FileStagingService stagingService;
 
     @Override
     public MediaFileDto upload(InputStream data, String originalFilename) {
@@ -27,6 +31,25 @@ public class FileStorageAdapter implements FileStorageOperations {
             return mediaFileMapper.toDto(entity);
         } catch (java.io.IOException e) {
             throw new RuntimeException("Failed to upload file", e);
+        }
+    }
+
+    @Override
+    public StagedFileRecord stage(InputStream data, String originalFilename) {
+        return stagingService.stage(data, originalFilename);
+    }
+
+    @Override
+    public MediaFileDto commit(UUID stagingId, String originalFilename) {
+        try {
+            var stagedPath = stagingService.resolveStagedPath(stagingId, originalFilename);
+            try (var in = Files.newInputStream(stagedPath)) {
+                var entity = orchestrator.orchestrateUpload(in, originalFilename);
+                stagingService.deleteStagedFile(stagingId, originalFilename);
+                return mediaFileMapper.toDto(entity);
+            }
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to commit staged file " + stagingId, e);
         }
     }
 

@@ -23,6 +23,11 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager("user-permissions");
+        cacheManager.registerCustomCache("conversations",
+                Caffeine.newBuilder()
+                        .expireAfterAccess(30, TimeUnit.MINUTES)
+                        .maximumSize(10_000)
+                        .build());
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(userPermissionsTtlMinutes, TimeUnit.MINUTES)
                 .maximumSize(userPermissionsMaxSize)

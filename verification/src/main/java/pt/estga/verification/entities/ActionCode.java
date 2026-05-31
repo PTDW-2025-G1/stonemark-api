@@ -11,6 +11,9 @@ import java.time.Instant;
  * Used to verify ownership of chatbot accounts (e.g., Telegram).
  */
 @Entity
+@Table(indexes = {
+        @Index(columnList = "expiresAt")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

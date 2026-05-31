@@ -12,7 +12,7 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +25,14 @@ public class MarkEvidenceSubmissionSubmitService {
 
     /**
      * Submits a mark evidence submission. The provided submission object already contains user and source information
-     * (if available) and will be preserved. The method stores the provided photo stream, attaches the
-     * resulting MediaFile to the submission, sets the status to SUBMITTED, persists the submission and
+     * (if available) and will be preserved. The method commits the staged file, attaches the
+     * resulting MediaFile to the submission, sets the status to RECEIVED, persists the submission and
      * publishes a MarkEvidenceSubmittedEvent after commit.
      */
     @Transactional
     public void submit(
             MarkEvidenceSubmission submission,
-            InputStream photoStream,
+            UUID stagedFileId,
             String photoFilename
     ) throws IOException {
 
@@ -40,23 +40,18 @@ public class MarkEvidenceSubmissionSubmitService {
             throw new IllegalArgumentException("Submission cannot be null");
         }
 
-        if (photoStream == null) {
-            throw new IllegalArgumentException("Submission photo is required");
+        if (stagedFileId == null) {
+            throw new IllegalArgumentException("Staged file ID is required");
         }
 
-        // Use a safe filename when none is provided
         String safeFilename = (photoFilename == null || photoFilename.isBlank()) ? "upload.jpg" : photoFilename;
 
-        var mediaFile = fileStorage.upload(photoStream, safeFilename);
+        var mediaFile = fileStorage.commit(stagedFileId, safeFilename);
         submission.setOriginalMediaFileId(mediaFile.id());
 
-        // Preserve submittedBy and submissionSource that may already be present on the submission
-
-        // Mark as submitted and persist
         submission.setStatus(SubmissionStatus.RECEIVED);
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
-        // Publish event after transaction commit
         eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
 
         log.info("Submission submitted successfully with ID: {}", saved.getId());

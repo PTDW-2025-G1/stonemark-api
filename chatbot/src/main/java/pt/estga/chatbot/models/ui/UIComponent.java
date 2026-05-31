@@ -1,5 +1,4 @@
 package pt.estga.chatbot.models.ui;
 
-public interface UIComponent {
-    // Marker interface for UI components
+public sealed interface UIComponent permits Menu, LocationRequest, PhotoItem, TextMessage {
 }

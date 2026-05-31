@@ -2,16 +2,16 @@ package pt.estga.verification.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.userapi.ChatbotAccountOperations;
-import pt.estga.userapi.UserLookupOperations;
-import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.userapi.ChatbotAccountOperations;
+import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
@@ -24,14 +24,13 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final UserLookupOperations userLookup;
     private final ChatbotAccountOperations chatbotAccountOps;
     private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
     @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
     public ResponseEntity<MessageResponseDto> verifyChatbotCode(
-            @RequestBody ChatbotVerificationRequestDto request,
+            @Valid @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
 
         Optional<String> platformUserIdOpt = verificationService.verifyAndGetPlatformUserId(request.code());
@@ -44,7 +43,6 @@ public class AccountVerificationController {
 
         String platformUserId = platformUserIdOpt.get();
         Long userId = principal.getId();
-        userLookup.findById(userId).orElseThrow();
 
         chatbotAccountOps.createOrUpdateChatbot(userId, platformUserId);
 

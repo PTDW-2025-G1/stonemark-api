@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.security.concurrent.DelegatingSecurityContextExecutor;
 import pt.estga.chatbot.services.BotEngine;
+import pt.estga.chatbot.telegram.ChatLock;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
 import pt.estga.chatbot.telegram.TelegramAdapter;
 
@@ -57,9 +58,10 @@ public class TelegramBotConfig {
     public StonemarkTelegramBot stonemarkTelegramBot(
             BotEngine conversationService,
             TelegramAdapter telegramAdapter,
-            @Qualifier("botTaskExecutor") Executor botTaskExecutor) {
+            @Qualifier("botTaskExecutor") Executor botTaskExecutor,
+            ChatLock chatLock) {
         return new StonemarkTelegramBot(botUsername, botToken, webhookPath,
-                conversationService, telegramAdapter, botTaskExecutor);
+                conversationService, telegramAdapter, botTaskExecutor, chatLock);
     }
 
     @PostConstruct

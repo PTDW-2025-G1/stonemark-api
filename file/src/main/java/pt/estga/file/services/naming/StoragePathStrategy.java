@@ -13,11 +13,15 @@ import pt.estga.file.entities.MediaFile;
 public class StoragePathStrategy {
 
     public String generatePath(MediaFile mediaFile) {
-        if (mediaFile.getFilename() == null) {
-            throw new IllegalArgumentException("MediaFile filename cannot be null");
+        return generatePath(mediaFile.getFilename());
+    }
+
+    public String generatePath(String filename) {
+        if (filename == null) {
+            throw new IllegalArgumentException("filename cannot be null");
         }
 
-        String filename = mediaFile.getFilename().replace("\\", "/");
+        filename = filename.replace("\\", "/");
 
         // Extract UUID prefix (first four chars) and split into two levels: ab/cd/filename
         String base = filename;

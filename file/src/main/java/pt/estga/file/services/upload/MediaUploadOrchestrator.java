@@ -85,10 +85,7 @@ public class MediaUploadOrchestrator {
             String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
             StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
 
-            MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
-            media = mediaMetadataService.saveMetadata(media);
-
-            String relativePath = storagePathStrategy.generatePath(media);
+            String relativePath = storagePathStrategy.generatePath(storedFilename);
 
             SaveResult result;
             try (InputStream fileIn = new FileInputStream(tempFile.toFile())) {
@@ -96,15 +93,22 @@ public class MediaUploadOrchestrator {
                 String storagePath = fileStorageService.storeFile(counting, relativePath);
                 result = new SaveResult(storagePath, counting.getCount());
             } catch (Exception e) {
-                markMediaFailed(media, "storage failed", e);
+                log.error("Storage failed for file {}", storedFilename, e);
                 throw e;
             }
 
-            media.completeUpload(actualSize, result.storagePath(), null, MediaStatus.UPLOADED);
+            // Build complete entity after successful storage — no pre-set ID so Hibernate treats it as transient
+            MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
+            media.setSize(actualSize);
+            media.setStoragePath(result.storagePath());
+            media.setStatus(MediaStatus.UPLOADED);
 
             try {
-                MediaFile saved = mediaMetadataService.saveMetadataAndPublish(
-                        media, new MediaUploadedEvent(media.getId()));
+                MediaFile saved = mediaMetadataService.saveMetadataAndPublish(media);
+                if (saved.getId() != null) {
+                    var event = new MediaUploadedEvent(saved.getId());
+                    mediaMetadataService.publishAfterCommit(event);
+                }
                 if (metrics != null) {
                     long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
                     metrics.recordUploadSuccess(actualSize, elapsed);
@@ -114,10 +118,9 @@ public class MediaUploadOrchestrator {
                 try {
                     fileStorageService.deleteFile(result.storagePath());
                 } catch (Exception ignored) {}
-                markMediaFailed(media, "failed to persist final media state", e);
                 if (metrics != null) metrics.recordUploadFailed();
                 throw new MediaPersistenceException(
-                        "Failed to persist final media state for id " + media.getId(), e);
+                        "Failed to persist media metadata for " + storedFilename, e);
             }
         } finally {
             try {
@@ -125,17 +128,6 @@ public class MediaUploadOrchestrator {
             } catch (IOException e) {
                 log.warn("Failed to delete temp file: {}", tempFile, e);
             }
-        }
-    }
-
-    private void markMediaFailed(MediaFile media, String reason, Exception cause) {
-        try {
-            if (cause != null) log.error("Marking media id {} as FAILED: {}", media.getId(), reason, cause);
-            else log.error("Marking media id {} as FAILED: {}", media.getId(), reason);
-            media.setStatus(MediaStatus.FAILED);
-            mediaMetadataService.saveMetadata(media);
-        } catch (Exception e) {
-            log.error("Failed to mark media id {} as FAILED (reason: {})", media.getId(), reason, e);
         }
     }
 

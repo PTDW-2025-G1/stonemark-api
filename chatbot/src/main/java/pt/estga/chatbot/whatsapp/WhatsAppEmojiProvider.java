@@ -2,7 +2,7 @@ package pt.estga.chatbot.whatsapp;
 
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.EmojiKey;
-import pt.estga.chatbot.services.EmojiProvider;
+import pt.estga.chatbot.services.messages.EmojiProvider;
 
 @Component("whatsappEmojiProvider")
 public class WhatsAppEmojiProvider implements EmojiProvider {

@@ -43,7 +43,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String clientIp = resolveClientIp(request);
-        Bucket bucket = resolveBucket(clientIp);
+        String path = request.getRequestURI();
+        Bucket bucket = resolveBucket(clientIp, path);
 
         ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
 
@@ -55,19 +56,38 @@ public class RateLimitFilter extends OncePerRequestFilter {
             if (retryAfterSeconds == 0) {
                 retryAfterSeconds = 1;
             }
-            log.warn("Rate limit exceeded for IP: {}", clientIp);
+            log.warn("Rate limit exceeded for IP: {}, path: {}", clientIp, path);
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.addHeader("Retry-After", String.valueOf(retryAfterSeconds));
             response.addHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(retryAfterSeconds));
         }
     }
 
-    private Bucket resolveBucket(String ip) {
-        return buckets.computeIfAbsent(ip, this::createBucket);
+    private Bucket resolveBucket(String ip, String path) {
+        String matchingPath = findMatchingPathConfig(path);
+        String key = matchingPath != null ? ip + ":" + matchingPath : ip;
+        return buckets.computeIfAbsent(key, k -> createBucket(matchingPath));
     }
 
-    private Bucket createBucket(String ip) {
-        RateLimitProperties.BandwidthConfig config = properties.getDefaultLimit();
+    private String findMatchingPathConfig(String path) {
+        Map<String, RateLimitProperties.BandwidthConfig> pathConfigs = properties.getPaths();
+        if (pathConfigs != null) {
+            for (String pattern : pathConfigs.keySet()) {
+                if (pathMatcher.match(pattern, path)) {
+                    return pattern;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Bucket createBucket(String pathPattern) {
+        RateLimitProperties.BandwidthConfig config;
+        if (pathPattern != null && properties.getPaths() != null) {
+            config = properties.getPaths().get(pathPattern);
+        } else {
+            config = properties.getDefaultLimit();
+        }
         return Bucket.builder()
                 .addLimit(Bandwidth.classic(config.getCapacity(),
                         Refill.greedy(config.getRefillTokens(),

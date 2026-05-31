@@ -1,29 +1,36 @@
 package pt.estga.chatbot.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import pt.estga.chatbot.constants.SharedCallbackData;
 import pt.estga.chatbot.context.ChatbotContext;
 import pt.estga.chatbot.context.CoreState;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
+import pt.estga.chatbot.models.Platform;
 import pt.estga.shared.models.AppPrincipal;
 import pt.estga.shared.utils.SecurityUtils;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class BotEngineImpl implements BotEngine {
 
+    private static final Set<String> SLASH_COMMANDS = Set.of("/start", "/help", "/options");
+
     private final ConversationDispatcher conversationDispatcher;
     private final CacheManager cacheManager;
-    private final AuthServiceFactory authServiceFactory;
+    private final List<AuthService> authServices;
 
     @Override
     public List<BotResponse> handleInput(BotInput input) {
@@ -62,20 +69,11 @@ public class BotEngineImpl implements BotEngine {
     private ChatbotContext getOrCreateContext(String conversationKey) {
         Cache cache = cacheManager.getCache("conversations");
         if (cache == null) {
-            // Fallback to an in-memory ChatbotContext if no cache manager is available
-            return new ChatbotContext();
+            throw new IllegalStateException("Conversation cache 'conversations' is not configured");
         }
-        // Use the Spring Cache abstraction to create or retrieve the ChatbotContext
         return cache.get(conversationKey, () -> new ChatbotContext());
     }
 
-    /**
-     * Derives a stable, non-null cache key for conversation contexts.
-     * Priority:
-     * 1. Resolved domain user id (USER:{id})
-     * 2. Platform + chat id (PLATFORM:{chatId})
-     * If neither can be derived an IllegalArgumentException is thrown.
-     */
     private String deriveConversationKey(BotInput input, String resolvedUserId) {
         if (resolvedUserId != null) {
             return "USER:" + resolvedUserId;
@@ -87,7 +85,7 @@ public class BotEngineImpl implements BotEngine {
     }
 
     private void authenticateUserIfPossible(ChatbotContext context, BotInput input) {
-        AuthService authService = authServiceFactory.getAuthService(input.getPlatform());
+        AuthService authService = resolveAuthService(input.getPlatform());
         Optional<AppPrincipal> principalOpt = authService.authenticate(input.getUserId());
         
         principalOpt.ifPresent(principal -> {
@@ -99,16 +97,16 @@ public class BotEngineImpl implements BotEngine {
         });
     }
 
-    private boolean isGlobalCommand(BotInput input) {
-        String text = input.getText();
-        String callbackData = input.getCallbackData();
+    private AuthService resolveAuthService(Platform platform) {
+        return authServices.stream()
+                .filter(s -> s.supports(platform))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No AuthService found for platform: " + platform));
+    }
 
-        boolean isStartCommand = text != null && text.startsWith("/start");
-        boolean isHelpCommand = text != null && text.startsWith("/help");
-        boolean isOptionsCommand = text != null && text.startsWith("/options");
-        boolean isBackToMenu = callbackData != null && callbackData.equals(SharedCallbackData.BACK_TO_MAIN_MENU);
-
-        return isStartCommand || isHelpCommand || isOptionsCommand || isBackToMenu;
+    private static boolean isGlobalCommand(BotInput input) {
+        return (input.getText() != null && SLASH_COMMANDS.contains(input.getText()))
+                || CallbackData.BACK_TO_MAIN_MENU.equals(input.getCallbackData());
     }
 
     private void resetContext(ChatbotContext context) {

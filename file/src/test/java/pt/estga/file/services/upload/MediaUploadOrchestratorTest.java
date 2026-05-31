@@ -11,6 +11,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
+import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.exceptions.OversizeFileException;
 import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.storage.FileStorageService;
@@ -81,14 +82,13 @@ class MediaUploadOrchestratorTest {
         String relativePath = "ab/cd/" + storedFilename;
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
-        when(storagePathStrategy.generatePath(any())).thenReturn(relativePath);
+        when(storagePathStrategy.generatePath(anyString())).thenReturn(relativePath);
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
 
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StoragePropertiesConfig.provider());
         savedMedia.setId(UUID.randomUUID());
-        when(mediaMetadataService.saveMetadata(any())).thenReturn(savedMedia);
         when(fileStorageService.storeFile(any(), eq(relativePath))).thenReturn(relativePath);
-        when(mediaMetadataService.saveMetadataAndPublish(any(), any())).thenReturn(savedMedia);
+        when(mediaMetadataService.saveMetadataAndPublish(any())).thenReturn(savedMedia);
 
         MediaFile result = orchestrator.orchestrateUpload(input, filename, content.length);
 
@@ -96,7 +96,7 @@ class MediaUploadOrchestratorTest {
         verify(metrics).recordUploadAttempt();
         verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
         verify(fileStorageService).storeFile(any(), eq(relativePath));
-        verify(mediaMetadataService).saveMetadataAndPublish(any(), any());
+        verify(mediaMetadataService).saveMetadataAndPublish(any());
     }
 
     @Test
@@ -131,7 +131,7 @@ class MediaUploadOrchestratorTest {
     }
 
     @Test
-    @DisplayName("should handle storage failure and mark as failed")
+    @DisplayName("should throw on storage failure without persisting entity")
     void shouldHandleStorageFailure() throws Exception {
         byte[] content = new byte[]{ (byte) 0xFF, (byte) 0xD8, (byte) 0xFF };
         InputStream input = new ByteArrayInputStream(content);
@@ -139,25 +139,21 @@ class MediaUploadOrchestratorTest {
         String storedFilename = "uuid.jpg";
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
-        when(storagePathStrategy.generatePath(any())).thenReturn("ab/cd/uuid.jpg");
+        when(storagePathStrategy.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
-
-        MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StoragePropertiesConfig.provider());
-        savedMedia.setId(UUID.randomUUID());
-        when(mediaMetadataService.saveMetadata(any())).thenReturn(savedMedia);
         when(fileStorageService.storeFile(any(), any())).thenThrow(new RuntimeException("Disk full"));
 
         assertThrows(RuntimeException.class,
                 () -> orchestrator.orchestrateUpload(input, filename));
 
-        verify(mediaMetadataService, atLeastOnce()).saveMetadata(argThat(m ->
-                m.getStatus() == MediaStatus.FAILED));
+        verify(mediaMetadataService, never()).saveMetadataAndPublish(any());
+        verify(mediaMetadataService, never()).publishAfterCommit(any());
     }
 
     private static class StoragePropertiesConfig {
-            static pt.estga.file.enums.StorageProvider provider() {
-                return pt.estga.file.enums.StorageProvider.LOCAL;
+        static StorageProvider provider() {
+                return StorageProvider.LOCAL;
             }
-        }
+    }
 }
 

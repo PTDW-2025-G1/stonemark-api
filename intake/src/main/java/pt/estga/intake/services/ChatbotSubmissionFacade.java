@@ -6,9 +6,8 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.userapi.UserLookupOperations;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.UUID;
 
 /**
  * Thin facade that encapsulates chatbot-specific submission orchestration:
@@ -25,7 +24,7 @@ public class ChatbotSubmissionFacade {
 
     public void submitFromChatbot(
             MarkEvidenceSubmission submission,
-            byte[] photoData,
+            UUID stagedFileId,
             String photoFilename,
             Long domainUserId,
             SubmissionSource source
@@ -38,27 +37,6 @@ public class ChatbotSubmissionFacade {
             submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
         }
 
-        submitFromChatbot(submission, new ByteArrayInputStream(photoData), photoFilename, domainUserId, source);
-    }
-
-    /**
-     * Accepts a pre-wrapped stream for callers that manage their own photo data lifecycle.
-     */
-    public void submitFromChatbot(
-            MarkEvidenceSubmission submission,
-            InputStream photoStream,
-            String photoFilename,
-            Long domainUserId,
-            SubmissionSource source
-    ) throws IOException {
-        if (domainUserId != null) {
-            submission.setSubmittedById(domainUserId);
-        }
-
-        if (submission.getSubmissionSource() == null) {
-            submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
-        }
-
-        markEvidenceSubmissionSubmitService.submit(submission, photoStream, photoFilename);
+        markEvidenceSubmissionSubmitService.submit(submission, stagedFileId, photoFilename);
     }
 }
