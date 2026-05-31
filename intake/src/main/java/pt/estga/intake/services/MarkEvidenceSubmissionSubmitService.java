@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.fileapi.FileStorageOperations;
 import pt.estga.shared.events.AfterCommitEventPublisher;
+import pt.estga.shared.events.ProcessingOutboxPort;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
@@ -12,6 +13,7 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,6 +24,7 @@ public class MarkEvidenceSubmissionSubmitService {
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final FileStorageOperations fileStorage;
     private final AfterCommitEventPublisher eventPublisher;
+    private final Optional<ProcessingOutboxPort> outboxPort;
 
     /**
      * Submits a mark evidence submission. The provided submission object already contains user and source information
@@ -52,6 +55,7 @@ public class MarkEvidenceSubmissionSubmitService {
         submission.setStatus(SubmissionStatus.RECEIVED);
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
+        outboxPort.ifPresent(port -> port.enqueue(saved.getId()));
         eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
 
         log.info("Submission submitted successfully with ID: {}", saved.getId());

@@ -222,10 +222,14 @@ public class ProcessingServiceImpl implements ProcessingService {
     }
 
     protected void setProcessingPending(UUID processingId) {
-        processingRepository.findById(processingId).ifPresent(p -> {
-            p.setStatus(ProcessingStatus.PENDING);
-            processingRepository.save(p);
-        });
+        transactionTemplate.executeWithoutResult(status ->
+            processingRepository.findById(processingId).ifPresent(p -> {
+                p.setStatus(ProcessingStatus.PENDING);
+                p.setLastRetryAt(Instant.now());
+                p.setRetryCount(p.getRetryCount() + 1);
+                processingRepository.save(p);
+            })
+        );
     }
 
     /**
@@ -233,59 +237,61 @@ public class ProcessingServiceImpl implements ProcessingService {
      * Records metrics (failure counter and processing duration).
      */
     protected void setProcessingFailed(UUID processingId, String message, boolean permanent, long startNanos) {
-        processingRepository.findById(processingId).ifPresent(p -> {
-            p.setStatus(ProcessingStatus.FAILED);
-            p.setFailedAt(Instant.now());
-            p.setErrorMessage(message);
-            processingRepository.save(p);
+        transactionTemplate.executeWithoutResult(status ->
+            processingRepository.findById(processingId).ifPresent(p -> {
+                p.setStatus(ProcessingStatus.FAILED);
+                p.setFailedAt(Instant.now());
+                p.setLastRetryAt(Instant.now());
+                p.setRetryCount(p.getRetryCount() + 1);
+                p.setPermanent(permanent);
+                p.setErrorMessage(message);
+                processingRepository.save(p);
 
-            // metrics
-            meterRegistry.counter("processing.submissions.failed", "permanent", String.valueOf(permanent)).increment();
-            long durationNanos = System.nanoTime() - startNanos;
-            meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
-            // Observability: log duration and that it failed
-            long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-            Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
-            log.info("Processing {} failed for submission {} after {} ms: {}", processingId, submissionId, durationMs, message);
-        });
+                // metrics
+                meterRegistry.counter("processing.submissions.failed", "permanent", String.valueOf(permanent)).increment();
+                long durationNanos = System.nanoTime() - startNanos;
+                meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
+                long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                log.info("Processing {} failed for submission {} after {} ms: {}", processingId, submissionId, durationMs, message);
+            })
+        );
     }
 
     /**
      * Finalize successful processing: persist embedding and suggestions, mark completed and record metrics.
      */
     protected void finalizeProcessingSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
-        processingRepository.findById(processingId).ifPresent(p -> {
-            p.setEmbedding(embedding);
-            p.setStatus(ProcessingStatus.COMPLETED);
-            p.setProcessedAt(Instant.now());
-            // remove previous suggestions to avoid duplicates on reprocessing
-            suggestionRepository.deleteByProcessingId(p.getId());
-                if (suggestions != null && !suggestions.isEmpty()) {
-                // Ensure each suggestion references the managed processing entity
-                suggestions.forEach(s -> s.setProcessing(p));
-                // Persist suggestions in batch
-                suggestions.forEach(s -> s.setId(null));
-                suggestionRepository.saveAll(suggestions);
-            }
-            // Persist normalized embedding (embedding parameter was normalized earlier in the flow)
-            float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
-            if (normalizedToSave != null) {
-                p.setEmbedding(normalizedToSave);
-            } else {
-                // fallback: save raw embedding if normalization somehow failed
+        transactionTemplate.executeWithoutResult(status ->
+            processingRepository.findById(processingId).ifPresent(p -> {
                 p.setEmbedding(embedding);
-            }
-            processingRepository.save(p);
+                p.setStatus(ProcessingStatus.COMPLETED);
+                p.setProcessedAt(Instant.now());
+                p.setRetryCount(0);
+                p.setLastRetryAt(null);
+                p.setPermanent(false);
+                suggestionRepository.deleteByProcessingId(p.getId());
+                if (suggestions != null && !suggestions.isEmpty()) {
+                    suggestions.forEach(s -> s.setProcessing(p));
+                    suggestions.forEach(s -> s.setId(null));
+                    suggestionRepository.saveAll(suggestions);
+                }
+                float[] normalizedToSave = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+                if (normalizedToSave != null) {
+                    p.setEmbedding(normalizedToSave);
+                } else {
+                    p.setEmbedding(embedding);
+                }
+                processingRepository.save(p);
 
-            // metrics
-            meterRegistry.counter("processing.submissions.success").increment();
-            long durationNanos = System.nanoTime() - startNanos;
-            meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
-            // Observability: log duration and suggestion count
-            long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-            int suggestionCount = suggestions == null ? 0 : suggestions.size();
-            Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
-            log.info("Processing {} completed for submission {} after {} ms — suggestions={}", processingId, submissionId, durationMs, suggestionCount);
-        });
+                meterRegistry.counter("processing.submissions.success").increment();
+                long durationNanos = System.nanoTime() - startNanos;
+                meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
+                long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+                int suggestionCount = suggestions == null ? 0 : suggestions.size();
+                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                log.info("Processing {} completed for submission {} after {} ms — suggestions={}", processingId, submissionId, durationMs, suggestionCount);
+            })
+        );
     }
 }

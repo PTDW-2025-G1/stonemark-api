@@ -6,5 +6,6 @@ public enum ProcessingStatus {
     COMPLETED,
     REVIEW_PENDING,
     REVIEWED,
-    FAILED
+    FAILED,
+    DISPATCHED
 }
