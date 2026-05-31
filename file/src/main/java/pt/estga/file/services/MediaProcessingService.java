@@ -1,8 +1,8 @@
 package pt.estga.file.services;
 
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.StorageProperties;
@@ -16,8 +16,6 @@ import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.storage.variant.VariantStorageService;
 import pt.estga.file.services.upload.MediaValidationService;
 
-import org.springframework.util.StringUtils;
-import java.io.IOException;
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +28,7 @@ import java.util.UUID;
  * to dedicated services to keep orchestration logic compact and testable.
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class MediaProcessingService {
 
@@ -40,26 +39,8 @@ public class MediaProcessingService {
     private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
     private final StorageProperties storageProperties;
+    private final TempFileFactory tempFileFactory;
     private final MediaMetricsService metrics;
-
-    public MediaProcessingService(
-            MediaMetadataService mediaMetadataService,
-            MediaVariantRepository mediaVariantRepository,
-            FileStorageService fileStorageService,
-            MediaValidationService mediaValidationService,
-            ImageVariantGenerator imageVariantGenerator,
-            VariantStorageService variantStorageService,
-            StorageProperties storageProperties,
-            ObjectProvider<MediaMetricsService> metricsProvider) {
-        this.mediaMetadataService = mediaMetadataService;
-        this.mediaVariantRepository = mediaVariantRepository;
-        this.fileStorageService = fileStorageService;
-        this.mediaValidationService = mediaValidationService;
-        this.imageVariantGenerator = imageVariantGenerator;
-        this.variantStorageService = variantStorageService;
-        this.storageProperties = storageProperties;
-        this.metrics = metricsProvider.getIfAvailable();
-    }
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -70,7 +51,7 @@ public class MediaProcessingService {
 
     public void process(UUID mediaFileId) {
         log.info("Starting processing for media file ID: {}", mediaFileId);
-        var timer = metrics != null ? metrics.startProcessingTimer() : null;
+        var timer = metrics.startProcessingTimer();
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
                 .orElseThrow(() -> new RuntimeException("MediaFile not found: " + mediaFileId));
@@ -80,7 +61,7 @@ public class MediaProcessingService {
             mediaFile = mediaMetadataService.saveMetadata(mediaFile);
 
             Resource resource = fileStorageService.loadFile(mediaFile.getStoragePath());
-            Path tempOriginal = createTempFile("original-", ".tmp");
+            Path tempOriginal = tempFileFactory.createTempFile("original-", ".tmp");
 
             try {
                 try (var is = resource.getInputStream()) {
@@ -120,9 +101,9 @@ public class MediaProcessingService {
                                 .build();
 
                         mediaVariantRepository.save(variant);
-                        if (metrics != null) metrics.recordVariantGenerated();
+                        metrics.recordVariantGenerated();
                     } catch (Exception e) {
-                        if (metrics != null) metrics.recordVariantFailed();
+                        metrics.recordVariantFailed();
                         throw e;
                     } finally {
                         Files.deleteIfExists(generated.file());
@@ -145,17 +126,7 @@ public class MediaProcessingService {
                 log.error("Failed to mark media as FAILED for id {}", mediaFileId, ex);
             }
         } finally {
-            if (timer != null) metrics.recordProcessingDuration(timer);
+            metrics.recordProcessingDuration(timer);
         }
-    }
-
-    private Path createTempFile(String prefix, String suffix) throws IOException {
-        String customDir = storageProperties.getTempDir();
-        if (StringUtils.hasText(customDir)) {
-            Path dir = Path.of(customDir);
-            Files.createDirectories(dir);
-            return Files.createTempFile(dir, prefix, suffix);
-        }
-        return Files.createTempFile(prefix, suffix);
     }
 }

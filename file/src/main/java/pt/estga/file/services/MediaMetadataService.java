@@ -44,7 +44,7 @@ public class MediaMetadataService {
      * to keep the connection pool from being pinned during backoff. After the final save,
      * callers should invoke {@link #publishAfterCommit(Object)} to fire any events.
      */
-    public MediaFile saveMetadataAndPublish(MediaFile mediaFile) {
+    public MediaFile saveMetadataWithRetry(MediaFile mediaFile) {
         final int maxAttempts = 3;
         int tried = 0;
         while (true) {

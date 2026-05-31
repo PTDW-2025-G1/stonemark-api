@@ -34,11 +34,7 @@ public class MediaService {
         if (fileSize <= 0) {
             throw new IllegalArgumentException("Uploaded file is empty");
         }
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
-    }
-
-    public MediaFile save(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
-        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename, fileSize);
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
     }
 
     public MediaType resolveMediaType(MediaFile mediaFile) {

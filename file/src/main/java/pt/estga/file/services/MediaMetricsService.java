@@ -4,13 +4,12 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
 
 @Service
-@ConditionalOnClass(MeterRegistry.class)
 public class MediaMetricsService {
 
     private final Counter uploadTotal;
@@ -23,7 +22,20 @@ public class MediaMetricsService {
     private final Timer uploadDuration;
     private final Timer processingDuration;
 
-    public MediaMetricsService(MeterRegistry meterRegistry) {
+    public MediaMetricsService(ObjectProvider<MeterRegistry> meterRegistryProvider) {
+        MeterRegistry meterRegistry = meterRegistryProvider.getIfAvailable();
+        if (meterRegistry == null) {
+            this.uploadTotal = null;
+            this.uploadSuccess = null;
+            this.uploadFailed = null;
+            this.uploadRejected = null;
+            this.variantGenerated = null;
+            this.variantFailed = null;
+            this.uploadSizeBytes = null;
+            this.uploadDuration = null;
+            this.processingDuration = null;
+            return;
+        }
         this.uploadTotal = Counter.builder("media.upload.total")
                 .description("Total number of upload attempts")
                 .register(meterRegistry);
@@ -58,36 +70,38 @@ public class MediaMetricsService {
     }
 
     public void recordUploadAttempt() {
-        uploadTotal.increment();
+        if (uploadTotal != null) uploadTotal.increment();
     }
 
     public void recordUploadSuccess(long sizeBytes, long durationMillis) {
-        uploadSuccess.increment();
-        uploadSizeBytes.record(sizeBytes);
-        uploadDuration.record(durationMillis, TimeUnit.MILLISECONDS);
+        if (uploadSuccess != null) {
+            uploadSuccess.increment();
+            uploadSizeBytes.record(sizeBytes);
+            uploadDuration.record(durationMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     public void recordUploadFailed() {
-        uploadFailed.increment();
+        if (uploadFailed != null) uploadFailed.increment();
     }
 
     public void recordUploadRejected() {
-        uploadRejected.increment();
+        if (uploadRejected != null) uploadRejected.increment();
     }
 
     public void recordVariantGenerated() {
-        variantGenerated.increment();
+        if (variantGenerated != null) variantGenerated.increment();
     }
 
     public void recordVariantFailed() {
-        variantFailed.increment();
+        if (variantFailed != null) variantFailed.increment();
     }
 
     public Timer.Sample startProcessingTimer() {
-        return Timer.start();
+        return processingDuration != null ? Timer.start() : null;
     }
 
     public void recordProcessingDuration(Timer.Sample sample) {
-        sample.stop(processingDuration);
+        if (sample != null && processingDuration != null) sample.stop(processingDuration);
     }
 }
