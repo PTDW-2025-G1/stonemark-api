@@ -21,7 +21,7 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
-import pt.estga.chatbot.models.text.TextNode;
+import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
@@ -216,7 +216,7 @@ public class TelegramAdapter {
         }
     }
 
-    private SendMessage renderMenu(String chatId, Menu menu, TextNode textNode) {
+    private SendMessage renderMenu(String chatId, Menu menu, RichText textNode) {
         // Render the provided textNode if it exists, otherwise fallback to the menu title
         RenderedText rendered = textNode != null
                 ? textService.render(textNode)

@@ -9,7 +9,7 @@ import pt.estga.chatbot.context.HandlerOutcome.Failure;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.TextNode;
+import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Menu;
 
 import java.util.Collections;
@@ -22,7 +22,7 @@ public class ResponseFactory {
     private final List<FeatureHandler> featureHandlers;
     private final UiTextService textService;
 
-    public static List<BotResponse> menuResponse(TextNode titleNode) {
+    public static List<BotResponse> menuResponse(RichText titleNode) {
         return Collections.singletonList(BotResponse.builder()
                 .uiComponent(Menu.builder().titleNode(titleNode).build())
                 .build());
@@ -47,7 +47,7 @@ public class ResponseFactory {
     public List<BotResponse> createErrorResponse(ChatbotContext context) {
         for (FeatureHandler handler : featureHandlers) {
             if (handler.supports(context.getCurrentState())) {
-                TextNode message = handler.failureResponse(context);
+                RichText message = handler.failureResponse(context);
                 if (message != null) {
                     return menuResponse(message);
                 }

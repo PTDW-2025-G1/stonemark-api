@@ -5,7 +5,7 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.TextNode;
+import pt.estga.chatbot.models.text.RichText;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public interface FeatureHandler {
     ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome);
     List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input);
 
-    default TextNode failureResponse(ChatbotContext context) {
+    default RichText failureResponse(ChatbotContext context) {
         return null;
     }
 }

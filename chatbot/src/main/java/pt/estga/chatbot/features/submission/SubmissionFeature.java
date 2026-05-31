@@ -15,7 +15,7 @@ import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.TextNode;
+import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
@@ -75,7 +75,7 @@ public class SubmissionFeature implements FeatureHandler {
             case AWAITING_NOTES -> createNotesResponse();
             case SUBMITTED -> createSubmissionSuccessResponse(input);
             default -> {
-                TextNode message = getEntryMessageForState(state);
+                RichText message = getEntryMessageForState(state);
                 if (message == null) {
                     log.warn("Unhandled submission state: {}, returning empty response", state);
                     yield Collections.emptyList();
@@ -86,7 +86,7 @@ public class SubmissionFeature implements FeatureHandler {
     }
 
     @Override
-    public TextNode failureResponse(ChatbotContext context) {
+    public RichText failureResponse(ChatbotContext context) {
         return switch ((SubmissionState) context.getCurrentState()) {
             case WAITING_FOR_PHOTO -> textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
             case AWAITING_LOCATION -> textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
@@ -121,7 +121,7 @@ public class SubmissionFeature implements FeatureHandler {
         return responses;
     }
 
-    private TextNode getEntryMessageForState(SubmissionState state) {
+    private RichText getEntryMessageForState(SubmissionState state) {
         return switch (state) {
             case WAITING_FOR_PHOTO -> textService.get(MessageKey.REQUEST_PHOTO_PROMPT);
             case AWAITING_LOCATION -> textService.get(MessageKey.REQUEST_LOCATION_PROMPT);

@@ -13,7 +13,7 @@ import pt.estga.chatbot.context.VerificationState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.TextNode;
+import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.services.FeatureHandler;
 import pt.estga.chatbot.services.UiTextService;
 
@@ -57,7 +57,7 @@ public class VerificationFeature implements FeatureHandler {
         return switch (state) {
             case DISPLAYING_VERIFICATION_CODE -> {
                 List<BotResponse> responses = new ArrayList<>();
-                TextNode instructions = textService.get(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS);
+                RichText instructions = textService.get(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS);
                 responses.addAll(menuResponse(instructions));
                 String code = context.getVerificationCode();
                 responses.add(BotResponse.builder()
