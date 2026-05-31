@@ -14,18 +14,19 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.review.dtos.DiscoveryContext;
-import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.processing.entities.ReviewGroup;
+import pt.estga.processing.repositories.ReviewGroupRepository;
+import pt.estga.review.dtos.AcceptGroupRequest;
+import pt.estga.review.dtos.DiscoveryContext;
+import pt.estga.review.dtos.GroupResponseDto;
+import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.processing.enums.ReviewGroupStatus;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.processors.ReviewProcessor;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.processing.repositories.ReviewGroupRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.territory.utils.GeometryUtils;
 
 import java.util.List;
 
@@ -103,7 +104,7 @@ public class ReviewService {
      * and are approved in a single transactional operation.
      */
     @Transactional
-    public void acceptGroup(Long groupId, String markTitle, String monumentName, DiscoveryContext ctx, String comment) {
+    public void acceptGroup(Long groupId, AcceptGroupRequest request) {
         ReviewGroup group = reviewGroupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("ReviewGroup " + groupId + " not found"));
 
@@ -116,12 +117,20 @@ public class ReviewService {
             throw new IllegalStateException("Group " + groupId + " has no member processing records");
         }
 
+        ReviewProcessor processor = processors.stream()
+                .filter(p -> p.getSupportedType() == ReviewType.GROUP_DISCOVERY)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No GROUP_DISCOVERY processor configured"));
+
+        DiscoveryContext ctx = buildGroupContext(request, group);
+        String comment = request.comment();
+
         for (MarkEvidenceProcessing member : members) {
             Long submissionId = member.getSubmissionId();
             MarkEvidenceSubmission submission = submissionRepository.findById(submissionId)
                     .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-            ResolutionResult resolution = resolveForGroup(markTitle, monumentName, ctx, submission);
+            ResolutionResult resolution = processor.resolve(submissionId, ctx);
 
             executor.execute(submission, ReviewDecision.APPROVED, comment, resolution,
                     member.getId(),
@@ -131,6 +140,19 @@ public class ReviewService {
         group.setGroupStatus(ReviewGroupStatus.REVIEWED);
         group.setDecision(ReviewDecision.APPROVED.getCode());
         reviewGroupRepository.save(group);
+    }
+
+    private static DiscoveryContext buildGroupContext(AcceptGroupRequest request, ReviewGroup group) {
+        org.locationtech.jts.geom.Point location = null;
+        if (group.getCentroid() != null) {
+            location = group.getCentroid();
+        }
+        return new DiscoveryContext(
+                request.markTitle(),
+                null,
+                request.monumentName(),
+                request.monumentId(),
+                location);
     }
 
     /**
@@ -165,32 +187,6 @@ public class ReviewService {
         reviewGroupRepository.save(group);
     }
 
-    private ResolutionResult resolveForGroup(String markTitle, String monumentName,
-                                              DiscoveryContext ctx, MarkEvidenceSubmission submission) {
-        if (ctx != null && ctx.existingMarkId() != null) {
-            ReviewProcessor processor = processors.stream()
-                    .filter(p -> p.getSupportedType() == ReviewType.GROUP_DISCOVERY)
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("No GROUP_DISCOVERY processor configured"));
-            return processor.resolve(submission.getId(), ctx);
-        }
-
-        DiscoveryContext groupCtx = new DiscoveryContext(
-                markTitle,
-                null,
-                monumentName,
-                null,
-                submission.getLatitude() != null && submission.getLongitude() != null
-                        ? GeometryUtils.createPoint(submission.getLatitude(), submission.getLongitude())
-                        : null
-        );
-        ReviewProcessor processor = processors.stream()
-                .filter(p -> p.getSupportedType() == ReviewType.GROUP_DISCOVERY)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No GROUP_DISCOVERY processor configured"));
-        return processor.resolve(submission.getId(), groupCtx);
-    }
-
     @Transactional(readOnly = true)
     public List<MarkSuggestionDto> getSuggestions(Long submissionId) {
         return processingRepository.findBySubmissionId(submissionId)
@@ -215,6 +211,36 @@ public class ReviewService {
     public ReviewGroup getGroup(Long groupId) {
         return reviewGroupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("ReviewGroup " + groupId + " not found"));
+    }
+
+    /**
+     * Returns a DTO representation of a ReviewGroup with its member submission IDs.
+     */
+    @Transactional(readOnly = true)
+    public GroupResponseDto getGroupDto(Long groupId) {
+        ReviewGroup group = getGroup(groupId);
+        List<MarkEvidenceProcessing> members = processingRepository.findByReviewGroupId(groupId);
+
+        List<Long> submissionIds = members.stream()
+                .map(MarkEvidenceProcessing::getSubmissionId)
+                .toList();
+
+        Double centroidLat = null;
+        Double centroidLon = null;
+        if (group.getCentroid() != null) {
+            centroidLat = group.getCentroid().getY();
+            centroidLon = group.getCentroid().getX();
+        }
+
+        return new GroupResponseDto(
+                group.getId(),
+                group.getGroupStatus(),
+                group.getMemberCount(),
+                centroidLat,
+                centroidLon,
+                group.getRadiusMeters(),
+                group.getDecision(),
+                submissionIds);
     }
 
     private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {

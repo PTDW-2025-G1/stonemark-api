@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
+import pt.estga.review.dtos.AcceptGroupRequest;
 import pt.estga.review.dtos.AcceptNewMarkRequest;
+import pt.estga.review.dtos.GroupResponseDto;
 import pt.estga.review.dtos.ReviewResponseDto;
 import pt.estga.review.dtos.SimpleReviewRequest;
 import pt.estga.review.enums.ReviewDecision;
@@ -69,5 +71,32 @@ public class ReviewController {
     @GetMapping("/{submissionId}/suggestions")
     public List<MarkSuggestionDto> getSuggestions(@PathVariable Long submissionId) {
         return reviewService.getSuggestions(submissionId);
+    }
+
+    @PostMapping("/group/{groupId}/accept")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Accept an entire review group")
+    public void acceptGroup(
+            @PathVariable Long groupId,
+            @Valid @RequestBody AcceptGroupRequest request) {
+
+        reviewService.acceptGroup(groupId, request);
+    }
+
+    @PostMapping("/group/{groupId}/reject")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Reject an entire review group")
+    public void rejectGroup(
+            @PathVariable Long groupId,
+            @RequestBody(required = false) SimpleReviewRequest request) {
+
+        var comment = request != null ? request.comment() : null;
+        reviewService.rejectGroup(groupId, comment);
+    }
+
+    @GetMapping("/group/{groupId}")
+    @Operation(summary = "Get review group details")
+    public GroupResponseDto getGroup(@PathVariable Long groupId) {
+        return reviewService.getGroupDto(groupId);
     }
 }
