@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -32,8 +31,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final BotEngine conversationService;
     private final TelegramAdapter telegramAdapter;
     private final Executor botExecutor;
-    // Map used to serialize processing per chatId to prevent concurrent dispatch races
-    private final ConcurrentMap<Long, Object> chatLocks = new ConcurrentHashMap<>();
+    private final ChatLock chatLock;
     // Idempotency guard: tracks recently processed Telegram update IDs to discard duplicate deliveries
     private final ConcurrentHashMap<Long, Long> processedUpdates = new ConcurrentHashMap<>();
     private static final long UPDATE_ID_TTL_MS = 60_000;
@@ -47,13 +45,15 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                                 String botPath,
                                 BotEngine conversationService,
                                 TelegramAdapter telegramAdapter,
-                                Executor botExecutor) {
+                                Executor botExecutor,
+                                ChatLock chatLock) {
         super(botToken);
         this.botUsername = botUsername;
         this.botPath = botPath;
         this.conversationService = conversationService;
         this.telegramAdapter = telegramAdapter;
         this.botExecutor = botExecutor;
+        this.chatLock = chatLock;
         setBotCommands();
     }
 
@@ -136,36 +136,24 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         return null;
     }
 
-    // Reusable path for webhook and internal notifications that need dispatcher-driven output.
     public void dispatchAndSend(BotInput botInput) {
         long chatId = botInput.getChatId();
 
-        // Obtain a per-chat lock object and serialize dispatch for this chat.
-        // Create or obtain a per-chat lock object without using a lambda to avoid synthetic
-        // parameter warnings from static analysis tools.
-        Object lock = chatLocks.get(chatId);
-        if (lock == null) {
-            Object newLock = new Object();
-            Object existing = chatLocks.putIfAbsent(chatId, newLock);
-            lock = existing == null ? newLock : existing;
-        }
-
         log.debug("Attempting to acquire chat lock for chatId={}", chatId);
-        synchronized (lock) {
-            log.debug("Acquired chat lock for chatId={}", chatId);
-            try {
-                List<BotResponse> botResponses = conversationService.handleInput(botInput);
-                if (botResponses != null) {
-                    log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
-                    sendBotResponses(chatId, botResponses);
-                }
-            } catch (Exception e) {
-                log.error("Error dispatching and sending bot responses", e);
-                throw e;
-            } finally {
-                log.debug("Releasing chat lock for chatId={}", chatId);
-                chatLocks.remove(chatId, lock);
+        chatLock.lock(chatId);
+        log.debug("Acquired chat lock for chatId={}", chatId);
+        try {
+            List<BotResponse> botResponses = conversationService.handleInput(botInput);
+            if (botResponses != null) {
+                log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
+                sendBotResponses(chatId, botResponses);
             }
+        } catch (Exception e) {
+            log.error("Error dispatching and sending bot responses", e);
+            throw e;
+        } finally {
+            log.debug("Releasing chat lock for chatId={}", chatId);
+            chatLock.unlock(chatId);
         }
     }
 
