@@ -1,8 +1,24 @@
 package pt.estga.chatbot.telegram;
 
-public interface ChatLock {
+import org.springframework.stereotype.Component;
 
-    void lock(long chatId);
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
-    void unlock(long chatId);
+@Component
+public class ChatLock {
+
+    private final ConcurrentHashMap<Long, ReentrantLock> locks = new ConcurrentHashMap<>();
+
+    public void lock(long chatId) {
+        ReentrantLock lock = locks.computeIfAbsent(chatId, k -> new ReentrantLock());
+        lock.lock();
+    }
+
+    public void unlock(long chatId) {
+        ReentrantLock lock = locks.get(chatId);
+        if (lock != null && lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
 }

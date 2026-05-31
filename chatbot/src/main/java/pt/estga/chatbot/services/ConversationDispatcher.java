@@ -8,7 +8,6 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.HandlerOutcome.AwaitingInput;
 import pt.estga.chatbot.context.HandlerOutcome.Redispatch;
 import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.models.BotInput;
@@ -140,7 +139,7 @@ public class ConversationDispatcher {
             HandlerOutcome outcome = handler.handle(context, autoInput);
             log.debug("Automatic handler {} returned outcome: {}", handler.getClass().getSimpleName(), outcome);
 
-            if (outcome instanceof Success || outcome instanceof AwaitingInput) break;
+            if (outcome instanceof Success) break;
 
             ConversationState nextState = submissionFlow.getNextState(context, context.getCurrentState(), outcome);
             log.debug("Automatic state transition: {} -> {} (outcome: {})", context.getCurrentState(), nextState, outcome);
