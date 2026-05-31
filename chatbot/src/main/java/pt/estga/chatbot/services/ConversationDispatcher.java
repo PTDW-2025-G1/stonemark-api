@@ -31,6 +31,13 @@ public class ConversationDispatcher {
             ResponseFactory responseFactory
     ) {
         this.handlers = handlerList.stream()
+                .peek(h -> {
+                    if (h.canHandle() == null) {
+                        throw new IllegalStateException(
+                                "Handler " + h.getClass().getName() + " returned null from canHandle()"
+                        );
+                    }
+                })
                 .collect(Collectors.toMap(
                         ConversationStateHandler::canHandle,
                         Function.identity(),
