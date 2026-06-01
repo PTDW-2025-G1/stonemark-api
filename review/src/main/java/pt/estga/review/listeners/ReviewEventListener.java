@@ -3,6 +3,8 @@ package pt.estga.review.listeners;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
@@ -16,7 +18,6 @@ import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.enums.ReviewGroupStatus;
@@ -66,12 +67,16 @@ public class ReviewEventListener {
                 if (event.markId() != null && event.monumentId() != null) {
                     linkReviewToOccurrence(submissionId, mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
                 }
-
-                checkAndCloseGroup(submissionId);
             } catch (Exception e) {
                 log.error("Post-review failure for submission {}: {}", submissionId, e.getMessage(), e);
             }
         });
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleGroupAutoClose(ReviewCompletedEvent event) {
+        checkAndCloseGroup(event.submissionId());
     }
 
     /**

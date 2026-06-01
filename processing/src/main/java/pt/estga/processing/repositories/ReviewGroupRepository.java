@@ -1,5 +1,6 @@
 package pt.estga.processing.repositories;
 
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -32,6 +33,10 @@ public interface ReviewGroupRepository extends BaseRepository<ReviewGroup, Long>
             @Param("lon") double lon,
             @Param("radiusMeters") double radiusMeters
     );
+
+    @Modifying
+    @Query(value = "SELECT pg_advisory_xact_lock(:lockKey)", nativeQuery = true)
+    void acquireAdvisoryLock(@Param("lockKey") long lockKey);
 
     Optional<ReviewGroup> findByIdAndGroupStatus(Long id, ReviewGroupStatus status);
 }

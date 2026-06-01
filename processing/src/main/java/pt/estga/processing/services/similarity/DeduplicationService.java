@@ -100,6 +100,10 @@ public class DeduplicationService {
 
         spatiallyCloseSubmissionIds.add(processing.getSubmissionId());
 
+        // Serialize group creation within a geographic grid cell to prevent concurrent
+        // transactions from creating duplicate ReviewGroups for the same location.
+        reviewGroupRepository.acquireAdvisoryLock(computeGridLockKey(lat, lon));
+
         Optional<ReviewGroup> existingGroup = reviewGroupRepository.findOpenGroupNearby(lat, lon, spatialRadiusMeters * 2);
 
         ReviewGroup group = existingGroup.orElseGet(() -> reviewGroupRepository.save(
@@ -161,5 +165,12 @@ public class DeduplicationService {
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
                 * Math.sin(dLon / 2) * Math.sin(dLon / 2);
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    private long computeGridLockKey(double lat, double lon) {
+        double cellSizeDeg = (spatialRadiusMeters * 4) / 111_320.0;
+        long latCell = (long) Math.floor(lat / cellSizeDeg);
+        long lonCell = (long) Math.floor(lon / cellSizeDeg);
+        return ((latCell & 0xFFFFFFFFL) << 32) | (lonCell & 0xFFFFFFFFL);
     }
 }

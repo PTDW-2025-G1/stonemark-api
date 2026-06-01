@@ -191,6 +191,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     p.setStatus(ProcessingStatus.PROCESSING);
                     p.setFailedAt(null);
                     p.setErrorMessage(null);
+                    p.setUpdatedAt(Instant.now());
                     return processingRepository.save(p);
                 }
 
@@ -199,6 +200,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
                         .submissionId(submission.getId())
                         .status(ProcessingStatus.PROCESSING)
+                        .updatedAt(Instant.now())
                         .build();
                 try {
                     return processingRepository.save(p);
@@ -212,6 +214,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                         existing.setStatus(ProcessingStatus.PROCESSING);
                         existing.setFailedAt(null);
                         existing.setErrorMessage(null);
+                        existing.setUpdatedAt(Instant.now());
                         return processingRepository.save(existing);
                     }).orElseThrow(() -> ex);
                 }
@@ -228,7 +231,6 @@ public class ProcessingServiceImpl implements ProcessingService {
             processingRepository.findById(processingId).ifPresent(p -> {
                 p.setStatus(ProcessingStatus.PENDING);
                 p.setLastRetryAt(Instant.now());
-                p.setRetryCount(p.getRetryCount() + 1);
                 processingRepository.save(p);
             })
         );

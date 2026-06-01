@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 
+import java.time.Instant;
 import java.util.UUID;
 import java.util.Optional;
 import java.util.List;
@@ -43,5 +44,9 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
 	List<MarkEvidenceProcessing> findRetryableByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
 
-	long countByStatusAndPermanentFalse(ProcessingStatus status);
+    long countByStatusAndPermanentFalse(ProcessingStatus status);
+
+    @Modifying
+    @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff")
+    int resetStuckProcessing(@Param("sourceStatus") ProcessingStatus sourceStatus, @Param("targetStatus") ProcessingStatus targetStatus, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
 }

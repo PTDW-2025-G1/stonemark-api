@@ -98,14 +98,14 @@ public class SpatialClusterService {
                 .validationState(ValidationState.PROVISIONAL)
                 .build());
 
+        MarkOccurrence occurrence = occurrenceRepository.save(MarkOccurrence.builder()
+                .mark(defaultMark)
+                .monument(phantom)
+                .validationState(ValidationState.PROVISIONAL)
+                .build());
+
         List<MarkEvidenceProcessing> members = processingRepository.findByReviewGroupId(group.getId());
         for (MarkEvidenceProcessing member : members) {
-            MarkOccurrence occurrence = occurrenceRepository.save(MarkOccurrence.builder()
-                    .mark(defaultMark)
-                    .monument(phantom)
-                    .validationState(ValidationState.PROVISIONAL)
-                    .build());
-
             submissionRepository.findById(member.getSubmissionId()).ifPresent(submission -> {
                 if (submission.getOriginalMediaFileId() == null) return;
 
