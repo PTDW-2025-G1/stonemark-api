@@ -47,6 +47,8 @@ public class ProcessingRetryScheduler {
                 return;
             }
 
+            collectOrphans();
+
             var retryable = processingRepository.findRetryableByStatusIn(
                     List.of(ProcessingStatus.PENDING, ProcessingStatus.FAILED));
             if (retryable == null || retryable.isEmpty()) {
@@ -113,6 +115,17 @@ public class ProcessingRetryScheduler {
                     break;
                 }
             }
+        }
+    }
+
+    private void collectOrphans() {
+        List<Long> orphaned = processingRepository.findOrphanedSubmissionIds();
+        if (orphaned.isEmpty()) return;
+
+        log.info("Dispatching {} orphaned submissions (RECEIVED without processing record)", orphaned.size());
+        for (Long submissionId : orphaned) {
+            meterRegistry.counter("processing.retry.orphan").increment();
+            asyncProcessingService.processAsync(submissionId);
         }
     }
 }

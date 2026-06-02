@@ -14,7 +14,6 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.ProcessingOutboxRepository;
 import pt.estga.processing.services.processing.AsyncProcessingService;
 
 import java.time.Instant;
@@ -26,7 +25,6 @@ public class MarkEvidenceSubmittedListener {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final ProcessingOutboxRepository outboxRepository;
     private final AsyncProcessingService asyncProcessingService;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -46,13 +44,6 @@ public class MarkEvidenceSubmittedListener {
                 .build();
         processingRepository.save(placeholder);
         log.info("Created placeholder processing {} for submission {}", placeholder.getId(), submissionId);
-
-        outboxRepository.findBySubmissionId(submissionId).ifPresentOrElse(entry -> {
-            entry.setStatus(ProcessingStatus.DISPATCHED);
-            entry.setLastRetryAt(Instant.now());
-            outboxRepository.save(entry);
-            log.info("Outbox {} for submission {} marked DISPATCHED by listener", entry.getId(), submissionId);
-        }, () -> log.warn("Outbox entry not found for submission {} — poller will retry", submissionId));
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override

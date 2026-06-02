@@ -49,4 +49,6 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
     Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") Long submissionId);
 
+    @Query(value = "SELECT s.id FROM mark_evidence_submission s WHERE s.status = 'RECEIVED' AND NOT EXISTS (SELECT 1 FROM mark_evidence_processing p WHERE p.submission_id = s.id)", nativeQuery = true)
+    List<Long> findOrphanedSubmissionIds();
 }
