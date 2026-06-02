@@ -4,28 +4,23 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
-import pt.estga.processing.config.policies.EmbeddingPolicy;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.shared.utils.VectorUtils;
 
 import java.util.Optional;
 
-/**
- * Responsible for embedding normalization and dimension checks.
- * This class is intentionally free of scoring/DB logic and does not emit metrics.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmbeddingPreprocessor {
 
-    private final EmbeddingPolicy embeddingPolicy;
-    // Configuration values
+    private final ProcessingProperties properties;
     private int expectedEmbeddingDimensionLocal;
 
     @PostConstruct
     void initLocalProperties() {
-        this.expectedEmbeddingDimensionLocal = embeddingPolicy.getDimension();
+        this.expectedEmbeddingDimensionLocal = properties.embedding().dimension();
     }
 
     /**

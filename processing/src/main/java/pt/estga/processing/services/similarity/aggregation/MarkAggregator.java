@@ -2,7 +2,7 @@ package pt.estga.processing.services.similarity.aggregation;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pt.estga.processing.config.policies.ScoringPolicy;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.enums.FanOutStrategy;
 import pt.estga.processing.models.AggregationKey;
 import pt.estga.processing.models.AggregationResult;
@@ -15,10 +15,10 @@ import java.util.*;
 @Slf4j
 public class MarkAggregator {
 
-    private final ScoringPolicy scoringPolicy;
+    private final ProcessingProperties props;
 
-    public MarkAggregator(ScoringPolicy scoringPolicy) {
-        this.scoringPolicy = scoringPolicy;
+    public MarkAggregator(ProcessingProperties props) {
+        this.props = props;
     }
 
     public AggregationResult aggregate(List<CandidateEvidence> candidates,
@@ -173,9 +173,9 @@ public class MarkAggregator {
         int perMarkContributions = 0;
         int perMarkDecayApplied = 0;
         int fanOutContributionCount = 0;
-        double decay = Math.max(0.0, scoringPolicy.getPerMarkDecay());
-        FanOutStrategy fanOutStrategy = scoringPolicy.getFanOutStrategy();
-        boolean useRankWeighting = scoringPolicy.isUseRankWeighting();
+        double decay = Math.max(0.0, props.similarity().perMarkDecay());
+        FanOutStrategy fanOutStrategy = props.similarity().fanOutStrategy();
+        boolean useRankWeighting = props.similarity().useRankWeighting();
 
         List<Long> markIds = new ArrayList<>(dedupedByMark.keySet());
         Collections.sort(markIds);

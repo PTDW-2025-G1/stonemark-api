@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.List;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.projections.ProcessingOverviewProjection;
+import pt.estga.processing.repositories.projections.RetryableProjection;
 
 public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvidenceProcessing, UUID> {
 
@@ -37,8 +38,11 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 
 	List<MarkEvidenceProcessing> findByStatusIn(List<ProcessingStatus> statuses);
 
-	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
-	List<MarkEvidenceProcessing> findRetryableByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
+    @Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
+    List<MarkEvidenceProcessing> findRetryableByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
+
+    @Query("SELECT p.id AS id, p.submissionId AS submissionId, p.retryCount AS retryCount, p.lastRetryAt AS lastRetryAt FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
+    List<RetryableProjection> findRetryableProjectionsByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
 
     long countByStatusAndPermanentFalse(ProcessingStatus status);
 

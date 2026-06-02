@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.dtos.EvidenceMarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
-import pt.estga.processing.config.policies.SimilarityPolicy;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.models.AggregationResult;
@@ -30,7 +30,7 @@ public class SimilarityService {
     private final CandidateSanitizer candidateSanitizer;
     private final MarkAggregator markAggregator;
     private final ParityChecker parityChecker;
-    private final SimilarityPolicy similarityPolicy;
+    private final ProcessingProperties properties;
     private final SuggestionBuilder suggestionBuilder;
     private boolean parityEnabledLocal;
     private int maxKLocal;
@@ -47,9 +47,9 @@ public class SimilarityService {
 
     @PostConstruct
     void initLocalPropertiesAndMaybeRunParity() {
-        this.parityEnabledLocal = similarityPolicy.isParityEnabled();
-        this.maxKLocal = similarityPolicy.getMaxK();
-        this.maxDistanceLocal = similarityPolicy.getMaxDistance();
+        this.parityEnabledLocal = properties.similarity().parityEnabled();
+        this.maxKLocal = properties.similarity().maxK();
+        this.maxDistanceLocal = properties.similarity().maxDistance();
 
         maybeRunParityCheck();
     }

@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.repositories.projections.RetryableProjection;
 import pt.estga.processing.services.processing.AsyncProcessingService;
 import pt.estga.vision.VisionClient;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -49,7 +49,7 @@ public class ProcessingRetryScheduler {
 
             collectOrphans();
 
-            var retryable = processingRepository.findRetryableByStatusIn(
+            var retryable = processingRepository.findRetryableProjectionsByStatusIn(
                     List.of(ProcessingStatus.PENDING, ProcessingStatus.FAILED));
             if (retryable == null || retryable.isEmpty()) {
                 return;
@@ -78,7 +78,7 @@ public class ProcessingRetryScheduler {
         }
     }
 
-    private boolean isBackoffElapsed(MarkEvidenceProcessing p) {
+    private boolean isBackoffElapsed(RetryableProjection p) {
         if (p.getLastRetryAt() == null) {
             return true;
         }
@@ -92,7 +92,7 @@ public class ProcessingRetryScheduler {
         return Math.min(delay, maxDelayMs);
     }
 
-    private void dispatchInBatches(List<MarkEvidenceProcessing> entries) {
+    private void dispatchInBatches(List<RetryableProjection> entries) {
         for (int i = 0; i < entries.size(); i += batchSize) {
             int end = Math.min(i + batchSize, entries.size());
             var batch = entries.subList(i, end);

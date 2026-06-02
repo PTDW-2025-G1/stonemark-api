@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.mark.entities.Mark;
+import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.processing.entities.MarkEvidenceProcessing;
-import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.DiscoveryContext;
@@ -19,7 +20,6 @@ import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
-import pt.estga.review.processors.ReviewProcessor;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
@@ -34,7 +34,7 @@ public class ReviewService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
     private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
-    private final List<ReviewProcessor> processors;
+    private final MarkRepository markRepository;
     private final ReviewExecutor executor;
 
     @Value("${review.allow-empty-review:false}")
@@ -78,12 +78,7 @@ public class ReviewService {
 
         validateState(submissionId, overview.getStatus(), suggestionRepository.countByProcessingId(overview.getId()), type);
 
-        ReviewProcessor processor = processors.stream()
-                .filter(p -> p.getSupportedType() == type)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No processor for review type: " + type));
-
-        ResolutionResult resolution = processor.resolve(submissionId, ctx);
+        ResolutionResult resolution = resolve(type, ctx);
 
         ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
         try {
@@ -108,6 +103,27 @@ public class ReviewService {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
                 .map(MarkEvidenceReview::getDecision)
                 .orElse(null);
+    }
+
+    private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
+        return switch (type) {
+            case MATCH -> {
+                Mark mark = ctx.existingMarkId() != null
+                        ? markRepository.findById(ctx.existingMarkId()).orElseThrow()
+                        : null;
+                yield new ResolutionResult(mark);
+            }
+            case DISCOVERY -> {
+                Mark mark = null;
+                if (ctx.existingMarkId() != null) {
+                    mark = markRepository.findById(ctx.existingMarkId()).orElseThrow();
+                } else if (ctx.markTitle() != null) {
+                    mark = markRepository.save(Mark.builder().title(ctx.markTitle()).build());
+                }
+                yield new ResolutionResult(mark);
+            }
+            case REJECTION -> new ResolutionResult(null);
+        };
     }
 
     private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {
