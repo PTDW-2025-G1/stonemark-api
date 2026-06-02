@@ -18,4 +18,6 @@ public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence,
 
     Optional<MarkOccurrence> findByMarkIdAndMonumentId(Long markId, Long monumentId);
 
+    Optional<MarkOccurrence> findByMarkIdAndMonumentIdIsNull(Long markId);
+
 }

@@ -28,6 +28,7 @@ public class MarkOccurrence extends BaseEntity {
     private Mark mark;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @jakarta.persistence.JoinColumn(nullable = true)
     private Monument monument;
 
     @OneToMany(mappedBy = "occurrence", cascade = CascadeType.MERGE)

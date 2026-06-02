@@ -9,7 +9,6 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
-import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.review.models.ResolutionResult;
@@ -35,17 +34,6 @@ public class ReviewExecutor {
             String comment,
             ResolutionResult resolution,
             UUID processingId) {
-        return execute(submission, decision, comment, resolution, processingId, null);
-    }
-
-    @Transactional
-    public MarkEvidenceReview execute(
-            MarkEvidenceSubmission submission,
-            ReviewDecision decision,
-            String comment,
-            ResolutionResult resolution,
-            UUID processingId,
-            ReviewGroup reviewGroup) {
 
         Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().getId() : null;
 
@@ -55,7 +43,6 @@ public class ReviewExecutor {
                 .decision(decision)
                 .reviewedAt(Instant.now())
                 .comment(comment)
-                .reviewGroup(reviewGroup)
                 .build();
 
         SecurityUtils.getCurrentUserId().ifPresent(review::setReviewedById);
@@ -69,11 +56,9 @@ public class ReviewExecutor {
                         .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
             }
         } catch (Exception ex) {
-            // metrics should not block core flow
         }
 
         Long markId = (resolution != null && resolution.mark() != null) ? resolution.mark().getId() : null;
-        Long monumentId = (resolution != null && resolution.monument() != null) ? resolution.monument().getId() : null;
 
         SubmissionStatus targetStatus = (decision == ReviewDecision.APPROVED)
                 ? SubmissionStatus.PROCESSED : SubmissionStatus.REJECTED;
@@ -83,7 +68,6 @@ public class ReviewExecutor {
                 .reviewId(saved.getId())
                 .decision(decision)
                 .markId(markId)
-                .monumentId(monumentId)
                 .resultingSubmissionStatus(targetStatus)
                 .build());
 

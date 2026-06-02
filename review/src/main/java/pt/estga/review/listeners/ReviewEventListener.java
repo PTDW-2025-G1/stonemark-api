@@ -3,8 +3,6 @@ package pt.estga.review.listeners;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.stereotype.Component;
@@ -16,20 +14,13 @@ import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.monument.Monument;
-import pt.estga.monument.MonumentRepository;
-import pt.estga.processing.entities.ReviewGroup;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.enums.ReviewGroupStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.ReviewGroupRepository;
-import pt.estga.processing.services.cluster.SpatialClusterService;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.shared.enums.ValidationState;
 
 import java.util.Optional;
-
 import java.util.UUID;
 
 @Component
@@ -37,14 +28,11 @@ import java.util.UUID;
 @Slf4j
 public class ReviewEventListener {
 
-    private final SpatialClusterService spatialClusterService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final ReviewGroupRepository reviewGroupRepository;
     private final MeterRegistry meterRegistry;
     private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkRepository markRepository;
-    private final MonumentRepository monumentRepository;
     private final MarkEvidenceRepository evidenceRepository;
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
@@ -64,10 +52,9 @@ public class ReviewEventListener {
                     log.error("Failed to mark processing REVIEWED for submission {}: {}", submissionId, ex.getMessage(), ex);
                 }
 
-                UUID mediaFileId = submission.getOriginalMediaFileId();
-
-                if (event.markId() != null && event.monumentId() != null) {
-                    linkReviewToOccurrence(submissionId, mediaFileId, event.markId(), event.monumentId(), event.decision() == ReviewDecision.APPROVED);
+                if (event.markId() != null) {
+                    UUID mediaFileId = submission.getOriginalMediaFileId();
+                    linkEvidenceToMark(submissionId, mediaFileId, event.markId(), event.decision() == ReviewDecision.APPROVED);
                 }
             } catch (Exception e) {
                 log.error("Post-review failure for submission {}: {}", submissionId, e.getMessage(), e);
@@ -75,51 +62,20 @@ public class ReviewEventListener {
         });
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleGroupAutoClose(ReviewCompletedEvent event) {
-        checkAndCloseGroup(event.submissionId());
-    }
+    private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId, boolean approved) {
+        if (mediaFileId == null) return;
 
-    /**
-     * Reaper: after an individual submission review completes, check if its parent ReviewGroup
-     * is fully reviewed. If so, close the group and publish ReviewGroupCompletedEvent.
-     */
-    private void checkAndCloseGroup(Long submissionId) {
-        processingRepository.findReviewGroupIdBySubmissionId(submissionId).ifPresent(groupId -> {
-            reviewGroupRepository.findById(groupId).ifPresent(group -> {
-                if (group.getGroupStatus() != ReviewGroupStatus.OPEN) return;
-
-                long unreviewedCount = processingRepository.countByReviewGroupIdAndStatus(
-                        group.getId(), ProcessingStatus.REVIEWED);
-
-                if (unreviewedCount >= group.getMemberCount()) {
-                    group.setGroupStatus(ReviewGroupStatus.REVIEWED);
-                    reviewGroupRepository.save(group);
-
-                    spatialClusterService.promoteIfEligible(group, true, false);
-
-                    log.info("ReviewGroup {} auto-closed — all {} members reviewed", group.getId(), group.getMemberCount());
-                }
-            });
-        });
-    }
-
-    private void linkReviewToOccurrence(Long submissionId, UUID mediaFileId, Long markId, Long monumentId, boolean approved) {
-        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
+        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentIdIsNull(markId)
                 .orElseGet(() -> {
                     ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
                     Mark mark = markRepository.findById(markId).orElseThrow(() -> new IllegalArgumentException("Mark not found"));
-                    Monument monument = monumentRepository.findById(monumentId).orElseThrow(() -> new IllegalArgumentException("Monument not found"));
 
                     return occurrenceRepository.save(MarkOccurrence.builder()
                             .mark(mark)
-                            .monument(monument)
+                            .monument(null)
                             .validationState(state)
                             .build());
                 });
-
-        if (mediaFileId == null) return;
 
         try {
             evidenceRepository.findByFileId(mediaFileId).ifPresentOrElse(ev -> {

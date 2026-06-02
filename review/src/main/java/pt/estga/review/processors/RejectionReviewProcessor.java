@@ -18,6 +18,6 @@ public class RejectionReviewProcessor implements ReviewProcessor {
 
     @Override
     public ResolutionResult resolve(Long submissionId, DiscoveryContext context) {
-        return new ResolutionResult(null, null);
+        return new ResolutionResult(null);
     }
 }

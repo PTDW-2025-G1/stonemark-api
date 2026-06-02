@@ -1,16 +1,12 @@
 package pt.estga.review.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.processing.repositories.SpatialClusterRepository;
 import pt.estga.review.dtos.ModerationDtos;
-import pt.estga.review.dtos.SpatialClusterListDto;
 import pt.estga.shared.enums.ValidationState;
 
 import java.util.List;
@@ -24,7 +20,6 @@ public class ModerationService {
     private final MarkSuggestionRepository suggestionRepository;
     private final MarkRepository markRepository;
     private final MonumentRepository monumentRepository;
-    private final SpatialClusterRepository spatialClusterRepository;
 
     public List<ModerationDtos.ProcessingDto> findProcessingByConfidence(double min, double max) {
         return suggestionRepository.findProcessingByMaxConfidenceBetween(min, max)
@@ -46,10 +41,5 @@ public class ModerationService {
                 .stream()
                 .map(m -> new ModerationDtos.MonumentDto(m.getId(), m.getName(), m.getValidationState()))
                 .collect(Collectors.toList());
-    }
-
-    public Page<SpatialClusterListDto> findSpatialClusters(Pageable pageable) {
-        return spatialClusterRepository.findActiveWithOccurrenceCount(pageable)
-                .map(SpatialClusterListDto::from);
     }
 }

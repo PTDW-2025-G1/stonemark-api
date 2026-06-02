@@ -22,10 +22,6 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 
 	List<MarkEvidenceProcessing> findBySubmissionIdIn(List<Long> submissionIds);
 
-	List<MarkEvidenceProcessing> findByReviewGroupId(Long reviewGroupId);
-
-	long countByReviewGroupIdAndStatus(Long reviewGroupId, ProcessingStatus status);
-
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
 
 	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
@@ -53,6 +49,4 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
     Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") Long submissionId);
 
-    @Query("SELECT p.reviewGroup.id FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
-    Optional<Long> findReviewGroupIdBySubmissionId(@Param("submissionId") Long submissionId);
 }

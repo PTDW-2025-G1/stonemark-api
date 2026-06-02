@@ -54,12 +54,4 @@ public class MarkEvidenceProcessing {
     @OneToMany(mappedBy = "processing")
     List<MarkSuggestion> suggestions;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "review_group_id")
-    private ReviewGroup reviewGroup;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "spatial_cluster_id")
-    private SpatialCluster spatialCluster;
-
 }
