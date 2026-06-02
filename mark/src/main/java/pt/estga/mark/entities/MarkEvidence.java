@@ -32,7 +32,7 @@ public class MarkEvidence extends BaseEntity {
     @Column
     private UUID fileId;
 
-    @Column(columnDefinition = "vector(348)")
+    @Column(columnDefinition = "vector(384)")
     private float[] embedding;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -19,6 +19,7 @@ spring:
 
 application:
   security:
+    disabled: true
     action-code:
       two-factor:
         expiration: 3600000 # 1 hour

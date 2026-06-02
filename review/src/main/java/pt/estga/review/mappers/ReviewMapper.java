@@ -9,17 +9,14 @@ public class ReviewMapper {
 
     public static ReviewResponseDto toDto(MarkEvidenceReview review) {
         if (review == null) return null;
-        String reviewerName = review.getReviewedBy() != null
-                ? review.getReviewedBy().getFirstName() + " " + review.getReviewedBy().getLastName()
-                : "System";
         return new ReviewResponseDto(
                 review.getId(),
-                review.getSubmission() != null ? review.getSubmission().getId() : null,
+                review.getSubmissionId(),
                 review.getDecision(),
-                review.getSelectedMark() != null ? review.getSelectedMark().getId() : null,
-                review.getSelectedMark() != null ? review.getSelectedMark().getTitle() : null,
-                review.getReviewedBy() != null ? review.getReviewedBy().getId() : null,
-                reviewerName,
+                review.getSelectedMarkId(),
+                null,
+                review.getReviewedById(),
+                null,
                 review.getReviewedAt(),
                 review.getComment()
         );

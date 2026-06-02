@@ -29,6 +29,26 @@ public final class VectorUtils {
     }
 
     /**
+     * Parse a Postgres pgvector literal string back to a primitive float array.
+     * Example: "[0.1,0.2,0.3]" -&gt; float[]{0.1f, 0.2f, 0.3f}
+     * Returns null for null input or empty brackets "[]".
+     */
+    public static float[] fromVectorLiteral(String literal) {
+        if (literal == null || literal.isBlank()) return null;
+        String trimmed = literal.trim();
+        if ("[]".equals(trimmed)) return null;
+        if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+            trimmed = trimmed.substring(1, trimmed.length() - 1);
+        }
+        String[] parts = trimmed.split(",");
+        float[] result = new float[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            result[i] = Float.parseFloat(parts[i].trim());
+        }
+        return result;
+    }
+
+    /**
      * Compute cosine similarity between two vectors. Returns null when inputs are invalid
      * (different lengths or zero-norm) to allow callers to skip such entries gracefully.
      */

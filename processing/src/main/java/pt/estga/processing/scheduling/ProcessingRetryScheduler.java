@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
+import pt.estga.processing.repositories.projections.RetryableProjection;
 import pt.estga.processing.services.processing.AsyncProcessingService;
 import pt.estga.vision.VisionClient;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -47,7 +47,9 @@ public class ProcessingRetryScheduler {
                 return;
             }
 
-            var retryable = processingRepository.findRetryableByStatusIn(
+            collectOrphans();
+
+            var retryable = processingRepository.findRetryableProjectionsByStatusIn(
                     List.of(ProcessingStatus.PENDING, ProcessingStatus.FAILED));
             if (retryable == null || retryable.isEmpty()) {
                 return;
@@ -76,7 +78,7 @@ public class ProcessingRetryScheduler {
         }
     }
 
-    private boolean isBackoffElapsed(MarkEvidenceProcessing p) {
+    private boolean isBackoffElapsed(RetryableProjection p) {
         if (p.getLastRetryAt() == null) {
             return true;
         }
@@ -90,13 +92,13 @@ public class ProcessingRetryScheduler {
         return Math.min(delay, maxDelayMs);
     }
 
-    private void dispatchInBatches(List<MarkEvidenceProcessing> entries) {
+    private void dispatchInBatches(List<RetryableProjection> entries) {
         for (int i = 0; i < entries.size(); i += batchSize) {
             int end = Math.min(i + batchSize, entries.size());
             var batch = entries.subList(i, end);
 
             for (var p : batch) {
-                Long submissionId = p.getSubmission() != null ? p.getSubmission().getId() : null;
+                Long submissionId = p.getSubmissionId();
                 if (submissionId == null) {
                     log.warn("Skipping processing entry {} with no submission linked", p.getId());
                     continue;
@@ -113,6 +115,17 @@ public class ProcessingRetryScheduler {
                     break;
                 }
             }
+        }
+    }
+
+    private void collectOrphans() {
+        List<Long> orphaned = processingRepository.findOrphanedSubmissionIds();
+        if (orphaned.isEmpty()) return;
+
+        log.info("Dispatching {} orphaned submissions (RECEIVED without processing record)", orphaned.size());
+        for (Long submissionId : orphaned) {
+            meterRegistry.counter("processing.retry.orphan").increment();
+            asyncProcessingService.processAsync(submissionId);
         }
     }
 }

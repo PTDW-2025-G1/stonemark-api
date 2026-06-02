@@ -3,7 +3,7 @@ package pt.estga.processing.services.similarity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
-import pt.estga.processing.config.policies.SanitizationPolicy;
+import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.models.CandidateEvidence;
 import pt.estga.processing.models.SanitizationKey;
 import pt.estga.processing.models.SanitizationResult;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CandidateSanitizer {
 
-    private final SanitizationPolicy policy;
+    private final ProcessingProperties properties;
 
     public SanitizationResult sanitize(List<MarkEvidenceDistanceDto> hits) {
         if (hits == null || hits.isEmpty()) {
@@ -31,7 +31,7 @@ public class CandidateSanitizer {
             if (raw == null || raw.isNaN()) { invalid++; continue; }
             double sim = raw;
             if (!Double.isFinite(sim)) { invalid++; continue; }
-            if (sim > policy.getMaxSimilarity() || sim < policy.getMinSimilarity()) { outOfRange++; sim = Math.max(policy.getMinSimilarity(), Math.min(policy.getMaxSimilarity(), sim)); }
+            if (sim > properties.similarity().maxSimilarity() || sim < properties.similarity().minSimilarity()) { outOfRange++; sim = Math.max(properties.similarity().minSimilarity(), Math.min(properties.similarity().maxSimilarity(), sim)); }
             UUID eid = p.id();
             Long occ = p.occurrenceId();
             candidates.add(new CandidateEvidence(eid, occ, sim));

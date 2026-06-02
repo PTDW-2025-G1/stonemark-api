@@ -28,6 +28,9 @@ public class SecurityConfig {
     @Value("${chatbot.auth.optional:true}")
     private boolean chatbotAuthOptional;
 
+    @Value("${application.security.disabled:false}")
+    private boolean securityDisabled;
+
     private static final String[] OPEN_API_ROUTES = {
             "/",
             "/v2/api-docs",
@@ -69,13 +72,17 @@ public class SecurityConfig {
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
                     auth.requestMatchers("/actuator/**").permitAll();
 
-                    if (chatbotAuthOptional) {
-                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                    if (securityDisabled) {
+                        auth.anyRequest().permitAll();
                     } else {
-                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
-                    }
+                        if (chatbotAuthOptional) {
+                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                        } else {
+                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
+                        }
 
-                    auth.anyRequest().authenticated();
+                        auth.anyRequest().authenticated();
+                    }
                 })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
