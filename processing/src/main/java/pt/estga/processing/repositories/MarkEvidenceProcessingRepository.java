@@ -49,4 +49,10 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     @Modifying
     @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff")
     int resetStuckProcessing(@Param("sourceStatus") ProcessingStatus sourceStatus, @Param("targetStatus") ProcessingStatus targetStatus, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
+
+    @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
+    Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") Long submissionId);
+
+    @Query("SELECT p.reviewGroup.id FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
+    Optional<Long> findReviewGroupIdBySubmissionId(@Param("submissionId") Long submissionId);
 }

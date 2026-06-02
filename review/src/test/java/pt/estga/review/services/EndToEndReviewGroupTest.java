@@ -100,7 +100,7 @@ class EndToEndReviewGroupTest {
     }
 
     @Test
-    void fullHappyPath_dedupCreatesGroup_acceptPromotesCluster() throws Exception {
+    void fullHappyPath_dedupCreatesGroup_acceptPromotesCluster() {
         UUID fileId1 = UUID.randomUUID();
         UUID fileId2 = UUID.randomUUID();
 

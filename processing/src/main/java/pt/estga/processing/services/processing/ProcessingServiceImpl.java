@@ -176,17 +176,27 @@ public class ProcessingServiceImpl implements ProcessingService {
     /**
      * Create a processing record or reuse an existing one.
      * Returns null when no work should be performed (idempotency - already completed or in progress).
+     * Uses a lightweight projection check first to avoid loading the float[384] embedding column
+     * when the record is already in a terminal state.
      */
     protected MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId, MarkEvidenceSubmission submission) {
+        var overview = processingRepository.findOverviewBySubmissionId(submissionId);
+        if (overview.isPresent()) {
+            ProcessingStatus status = overview.get().getStatus();
+            if (status == ProcessingStatus.COMPLETED || status == ProcessingStatus.PROCESSING) {
+                log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, status);
+                return null;
+            }
+        }
+
         return transactionTemplate.execute(status -> {
-            // Try to fetch existing record with a pessimistic lock to avoid races between concurrent processors.
             try {
                 var existingOpt = processingRepository.findBySubmissionIdForUpdate(submissionId);
                 if (existingOpt.isPresent()) {
                     MarkEvidenceProcessing p = existingOpt.get();
                     if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
                         log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
-                        return null; // signal caller to skip work
+                        return null;
                     }
                     p.setStatus(ProcessingStatus.PROCESSING);
                     p.setFailedAt(null);
@@ -195,8 +205,6 @@ public class ProcessingServiceImpl implements ProcessingService {
                     return processingRepository.save(p);
                 }
 
-                // No existing record; attempt to create one. Another concurrent inserter may produce a unique constraint
-                // violation; handle it gracefully by reading that record and deciding what to do next.
                 MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
                         .submissionId(submission.getId())
                         .status(ProcessingStatus.PROCESSING)
@@ -205,21 +213,25 @@ public class ProcessingServiceImpl implements ProcessingService {
                 try {
                     return processingRepository.save(p);
                 } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-                    log.warn("Race detected creating processing for submission {} — reading existing record", submissionId);
-                    // Read the existing record (no lock needed here; it was just created by the raced transaction).
-                    return processingRepository.findBySubmissionId(submissionId).map(existing -> {
-                        if (existing.getStatus() == ProcessingStatus.COMPLETED || existing.getStatus() == ProcessingStatus.PROCESSING) {
-                            return null;
+                    log.warn("Race detected creating processing for submission {} — reading existing record in new transaction", submissionId);
+                    return transactionTemplate.execute(status2 -> {
+                        var found = processingRepository.findBySubmissionId(submissionId);
+                        if (found.isPresent()) {
+                            var existing = found.get();
+                            if (existing.getStatus() == ProcessingStatus.COMPLETED
+                                    || existing.getStatus() == ProcessingStatus.PROCESSING) {
+                                return null;
+                            }
+                            existing.setStatus(ProcessingStatus.PROCESSING);
+                            existing.setFailedAt(null);
+                            existing.setErrorMessage(null);
+                            existing.setUpdatedAt(Instant.now());
+                            return processingRepository.save(existing);
                         }
-                        existing.setStatus(ProcessingStatus.PROCESSING);
-                        existing.setFailedAt(null);
-                        existing.setErrorMessage(null);
-                        existing.setUpdatedAt(Instant.now());
-                        return processingRepository.save(existing);
-                    }).orElseThrow(() -> ex);
+                        throw ex;
+                    });
                 }
             } catch (LockTimeoutException | LockAcquisitionException lockEx) {
-                // Lock acquisition failed — treat as a retryable condition by skipping work now; the scheduler will retry later.
                 log.warn("Could not acquire lock for submission {}: {}", submissionId, lockEx.getMessage());
                 return null;
             }

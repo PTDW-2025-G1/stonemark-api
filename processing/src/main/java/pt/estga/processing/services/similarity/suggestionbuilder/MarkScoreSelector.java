@@ -2,7 +2,7 @@ package pt.estga.processing.services.similarity.suggestionbuilder;
 
 import org.springframework.stereotype.Component;
 import pt.estga.processing.models.MarkScore;
-import pt.estga.processing.services.similarity.aggregation.AggregationResultBuilder;
+import pt.estga.processing.services.similarity.aggregation.MarkAggregator;
 
 import java.util.*;
 
@@ -29,7 +29,7 @@ public class MarkScoreSelector {
 
         List<MarkScore> out = new ArrayList<>(bestByMark.values());
         // Sort deterministically: confidence desc, markId asc
-        AggregationResultBuilder.sortDeterministically(out);
+        MarkAggregator.sortDeterministically(out);
         return Collections.unmodifiableList(out);
     }
 }

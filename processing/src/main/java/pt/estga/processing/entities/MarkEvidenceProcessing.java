@@ -48,6 +48,7 @@ public class MarkEvidenceProcessing {
 
     private Instant updatedAt;
 
+    @Column(columnDefinition = "text")
     private String errorMessage;
 
     @OneToMany(mappedBy = "processing")

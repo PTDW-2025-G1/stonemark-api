@@ -28,6 +28,8 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.shared.enums.ValidationState;
 
+import java.util.Optional;
+
 import java.util.UUID;
 
 @Component
@@ -84,21 +86,22 @@ public class ReviewEventListener {
      * is fully reviewed. If so, close the group and publish ReviewGroupCompletedEvent.
      */
     private void checkAndCloseGroup(Long submissionId) {
-        processingRepository.findBySubmissionId(submissionId).ifPresent(proc -> {
-            ReviewGroup group = proc.getReviewGroup();
-            if (group == null || group.getGroupStatus() != ReviewGroupStatus.OPEN) return;
+        processingRepository.findReviewGroupIdBySubmissionId(submissionId).ifPresent(groupId -> {
+            reviewGroupRepository.findById(groupId).ifPresent(group -> {
+                if (group.getGroupStatus() != ReviewGroupStatus.OPEN) return;
 
-            long unreviewedCount = processingRepository.countByReviewGroupIdAndStatus(
-                    group.getId(), ProcessingStatus.REVIEWED);
+                long unreviewedCount = processingRepository.countByReviewGroupIdAndStatus(
+                        group.getId(), ProcessingStatus.REVIEWED);
 
-            if (unreviewedCount >= group.getMemberCount()) {
-                group.setGroupStatus(ReviewGroupStatus.REVIEWED);
-                reviewGroupRepository.save(group);
+                if (unreviewedCount >= group.getMemberCount()) {
+                    group.setGroupStatus(ReviewGroupStatus.REVIEWED);
+                    reviewGroupRepository.save(group);
 
-                spatialClusterService.promoteIfEligible(group, true, false);
+                    spatialClusterService.promoteIfEligible(group, true, false);
 
-                log.info("ReviewGroup {} auto-closed — all {} members reviewed", group.getId(), group.getMemberCount());
-            }
+                    log.info("ReviewGroup {} auto-closed — all {} members reviewed", group.getId(), group.getMemberCount());
+                }
+            });
         });
     }
 
@@ -123,18 +126,18 @@ public class ReviewEventListener {
                 ev.setOccurrence(occurrence);
                 evidenceRepository.save(ev);
             }, () -> {
-                processingRepository.findBySubmissionId(submissionId).ifPresentOrElse(proc -> {
-                    float[] embedding = proc.getEmbedding();
-                    MarkEvidence newEvidence = MarkEvidence.builder()
-                            .fileId(mediaFileId)
-                            .occurrence(occurrence)
-                            .embedding(embedding)
-                            .build();
-                    evidenceRepository.save(newEvidence);
-                    log.info("Created new MarkEvidence {} for file {} with embedding (submission {})", newEvidence.getId(), mediaFileId, submissionId);
-                }, () ->
-                    log.warn("Cannot create MarkEvidence for file {}: no processing record found for submission {}", mediaFileId, submissionId)
-                );
+                float[] embedding = parseEmbedding(processingRepository.findEmbeddingTextBySubmissionId(submissionId));
+                if (embedding == null) {
+                    log.warn("Cannot create MarkEvidence for file {}: no embedding for submission {}", mediaFileId, submissionId);
+                    return;
+                }
+                MarkEvidence newEvidence = MarkEvidence.builder()
+                        .fileId(mediaFileId)
+                        .occurrence(occurrence)
+                        .embedding(embedding)
+                        .build();
+                evidenceRepository.save(newEvidence);
+                log.info("Created new MarkEvidence {} for file {} with embedding (submission {})", newEvidence.getId(), mediaFileId, submissionId);
             });
         } catch (Exception e) {
             log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
@@ -153,5 +156,21 @@ public class ReviewEventListener {
                 log.debug("Failed to increment review.applied metric: {}", ex.getMessage());
             }
         }
+    }
+
+    private static float[] parseEmbedding(Optional<String> text) {
+        return text.map(t -> {
+            String trimmed = t.trim();
+            if (trimmed.isEmpty() || "[]".equals(trimmed)) return null;
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                trimmed = trimmed.substring(1, trimmed.length() - 1);
+            }
+            String[] parts = trimmed.split(",");
+            float[] result = new float[parts.length];
+            for (int i = 0; i < parts.length; i++) {
+                result[i] = Float.parseFloat(parts[i].trim());
+            }
+            return result;
+        }).orElse(null);
     }
 }
