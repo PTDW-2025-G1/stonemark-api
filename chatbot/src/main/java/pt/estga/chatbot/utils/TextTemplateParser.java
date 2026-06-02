@@ -1,15 +1,18 @@
 package pt.estga.chatbot.utils;
 
 import org.springframework.stereotype.Component;
-import pt.estga.chatbot.models.text.*;
+import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RichText.Bold;
+import pt.estga.chatbot.models.text.RichText.Code;
+import pt.estga.chatbot.models.text.RichText.Group;
+import pt.estga.chatbot.models.text.RichText.Italic;
+import pt.estga.chatbot.models.text.RichText.NewLine;
+import pt.estga.chatbot.models.text.RichText.Plain;
+import pt.estga.chatbot.models.text.RichText.Placeholder;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Parses text with supported formatting tags ({b}, {i}, {code}) into a tree of TextNodes.
- * Handles UTF-16 surrogate pairs (emojis) correctly by preserving plain text sequences.
- */
 @Component
 public class TextTemplateParser {
 
@@ -21,23 +24,21 @@ public class TextTemplateParser {
             "{0}", "{1}", "{2}", "{3}", "{4}", "{5}", "{6}", "{7}", "{8}", "{9}"
     };
 
-    public TextNode parse(String input) {
-        return new Container(parseNodes(input));
+    public RichText parse(String input) {
+        return new Group(parseNodes(input));
     }
 
-    private List<TextNode> parseNodes(String input) {
-        List<TextNode> nodes = new ArrayList<>();
+    private List<RichText> parseNodes(String input) {
+        List<RichText> nodes = new ArrayList<>();
         int i = 0;
 
         while (i < input.length()) {
-            // New line
             if (input.startsWith("\n", i)) {
                 nodes.add(NewLine.INSTANCE);
                 i++;
                 continue;
             }
 
-            // Bold
             if (input.startsWith("{b}", i)) {
                 int end = input.indexOf("{/b}", i);
                 if (end == -1) throw new IllegalStateException("Unclosed {b} tag in message: " + input);
@@ -46,7 +47,6 @@ public class TextTemplateParser {
                 continue;
             }
 
-            // Italic
             if (input.startsWith("{i}", i)) {
                 int end = input.indexOf("{/i}", i);
                 if (end == -1) throw new IllegalStateException("Unclosed {i} tag in message: " + input);
@@ -55,7 +55,6 @@ public class TextTemplateParser {
                 continue;
             }
 
-            // Code (no nesting)
             if (input.startsWith("{code}", i)) {
                 int end = input.indexOf("{/code}", i);
                 if (end == -1) throw new IllegalStateException("Unclosed {code} tag in message: " + input);
@@ -64,7 +63,6 @@ public class TextTemplateParser {
                 continue;
             }
 
-            // Placeholder
             if (input.startsWith("{", i) && input.indexOf("}", i) > i + 1) {
                 int end = input.indexOf("}", i);
                 String placeholder = input.substring(i + 1, end);
@@ -74,14 +72,11 @@ public class TextTemplateParser {
                     i = end + 1;
                     continue;
                 } catch (NumberFormatException e) {
-                    // Not a numeric placeholder, treat as plain text
                 }
             }
 
-            // Plain text until next special
             int nextSpecial = findNextSpecial(input, i);
             if (nextSpecial == i) {
-                // Handle unrecognized single char
                 int codePoint = input.codePointAt(i);
                 int charCount = Character.charCount(codePoint);
                 nodes.add(new Plain(input.substring(i, i + charCount)));

@@ -33,6 +33,14 @@ public class StorageProperties {
     @Setter
     private long maxUploadSize = 10 * 1024 * 1024;
 
+    /** Custom temp directory for upload and processing temp files. Falls back to system default if blank. */
+    @Setter
+    private String tempDir = "";
+
+    /** Directory for staged files awaiting final commit. Relative to tempDir if not absolute. */
+    @Setter
+    private String stagingDir = "staging";
+
     private final Local local = new Local();
 
     @Setter

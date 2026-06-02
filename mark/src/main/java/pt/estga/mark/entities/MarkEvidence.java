@@ -1,9 +1,17 @@
 package pt.estga.mark.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.shared.entities.BaseEntity;
 
 import java.util.UUID;
@@ -21,10 +29,10 @@ public class MarkEvidence extends BaseEntity {
     @UuidGenerator
     private UUID id;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    private MediaFile file;
+    @Column
+    private UUID fileId;
 
-    @Column(columnDefinition = "vector")
+    @Column(columnDefinition = "vector(384)")
     private float[] embedding;
 
     @ManyToOne(fetch = FetchType.LAZY)

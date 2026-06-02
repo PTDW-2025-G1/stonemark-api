@@ -2,6 +2,8 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pt.estga.shared.converters.ValidationStateConverter;
+import pt.estga.shared.enums.ValidationState;
 import pt.estga.monument.Monument;
 import pt.estga.shared.entities.BaseEntity;
 
@@ -26,9 +28,15 @@ public class MarkOccurrence extends BaseEntity {
     private Mark mark;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @jakarta.persistence.JoinColumn(nullable = true)
     private Monument monument;
 
     @OneToMany(mappedBy = "occurrence", cascade = CascadeType.MERGE)
     private List<MarkEvidence> evidences;
+
+    @Builder.Default
+    @Convert(converter = ValidationStateConverter.class)
+    @Column(nullable = false)
+    private ValidationState validationState = ValidationState.PROVISIONAL;
 
 }

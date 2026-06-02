@@ -16,21 +16,16 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
-import pt.estga.user.entities.User;
-import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserCommandService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/account")
 @RequiredArgsConstructor
-@Tag(name = "User Account", description = "Self-service operations for logged-in users. Password management via Keycloak.")
+@Tag(name = "User Account", description = "Self-service operations for logged-in users.")
 @PreAuthorize("isAuthenticated()")
 public class AccountController {
 
-    private final UserCommandService userCommandService;
-    private final UserQueryService userQueryService;
-    private final UserMapper mapper;
+    private final UserService userService;
 
     @Operation(summary = "Get user profile", description = "Retrieves the profile information of the authenticated user.")
     @ApiResponses(value = {
@@ -40,10 +35,7 @@ public class AccountController {
     })
     @GetMapping("/profile")
     public ResponseEntity<UserDto> getProfileInfo(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        User user = userQueryService
-                .findByIdForProfile(principal.getId())
-                .orElseThrow();
-        return ResponseEntity.ok(mapper.toDto(user));
+        return ResponseEntity.ok(userService.getProfile(principal.getId()));
     }
 
     @Operation(summary = "Update user profile", description = "Updates the profile information of the authenticated user.")
@@ -58,9 +50,7 @@ public class AccountController {
             @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @Parameter(description = "Updated profile information", required = true)
             @Valid @RequestBody ProfileUpdateRequestDto request) {
-        User user = userQueryService.findById(principal.getId()).orElseThrow();
-        mapper.update(user, request);
-        userCommandService.update(user);
+        userService.updateProfile(principal.getId(), request);
         return ResponseEntity.ok(MessageResponseDto.success("Your profile has been updated successfully."));
     }
 
@@ -73,7 +63,28 @@ public class AccountController {
     })
     @DeleteMapping
     public ResponseEntity<MessageResponseDto> deleteAccount(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
-        userCommandService.softDeleteUser(principal.getId());
+        userService.softDeleteUser(principal.getId());
         return ResponseEntity.ok(MessageResponseDto.success("Your account has been deleted successfully."));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeDto> me(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
+        return ResponseEntity.ok(userService.getMe(principal.getId()));
+    }
+
+    @PostMapping("/password")
+    public ResponseEntity<MessageResponseDto> setPassword(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @Valid @RequestBody PasswordSetRequest request) {
+        userService.setPassword(principal.getId(), request.password());
+        return ResponseEntity.ok(MessageResponseDto.success("Password set successfully."));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<MessageResponseDto> changePassword(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(principal.getId(), request.oldPassword(), request.newPassword());
+        return ResponseEntity.ok(MessageResponseDto.success("Password changed successfully."));
     }
 }

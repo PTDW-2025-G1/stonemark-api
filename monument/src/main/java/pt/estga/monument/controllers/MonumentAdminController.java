@@ -10,10 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.estga.monument.Monument;
 import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.services.MonumentQueryService;
-import pt.estga.monument.services.MonumentCommandService;
-import pt.estga.monument.dots.MonumentDto;
-import pt.estga.monument.dots.MonumentRequestDto;
+import pt.estga.monument.services.MonumentService;
+import pt.estga.monument.dtos.MonumentDto;
+import pt.estga.monument.dtos.MonumentRequestDto;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.net.URI;
@@ -22,22 +21,20 @@ import java.net.URI;
 @RequestMapping("/api/v1/admin/monuments")
 @RequiredArgsConstructor
 @Tag(name = "Monuments Management", description = "Management endpoints for monuments.")
-@PreAuthorize("hasRole('MODERATOR')")
+@PreAuthorize("hasAuthority('MONUMENT_WRITE')")
 public class MonumentAdminController {
 
-    private final MonumentCommandService service;
-    private final MonumentQueryService queryService;
-    private final MonumentMapper mapper;
+    private final MonumentService service;
 
     @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument monument = mapper.toEntity(monumentDto);
+        Monument monument = MonumentMapper.toEntity(monumentDto);
 
-        Monument createdMonument = service.create(monument);
-        MonumentDto response = mapper.toResponseDto(createdMonument);
+        Monument createdMonument = service.save(monument);
+        MonumentDto response = MonumentMapper.toResponseDto(createdMonument);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -54,13 +51,13 @@ public class MonumentAdminController {
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument existingMonument = queryService.findById(id)
+        Monument existingMonument = service.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
-        mapper.updateEntityFromDto(monumentDto, existingMonument);
+        MonumentMapper.updateEntityFromDto(monumentDto, existingMonument);
 
-        Monument updatedMonument = service.update(existingMonument);
-        return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
+        Monument updatedMonument = service.save(existingMonument);
+        return ResponseEntity.ok(MonumentMapper.toResponseDto(updatedMonument));
     }
 
     @DeleteMapping("/{id}")

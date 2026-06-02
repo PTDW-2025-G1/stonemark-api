@@ -5,9 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -25,6 +27,9 @@ public class SecurityConfig {
 
     @Value("${chatbot.auth.optional:true}")
     private boolean chatbotAuthOptional;
+
+    @Value("${application.security.disabled:false}")
+    private boolean securityDisabled;
 
     private static final String[] OPEN_API_ROUTES = {
             "/",
@@ -46,9 +51,11 @@ public class SecurityConfig {
             "https://*.stonemark.pt"
     };
 
-    private final KeycloakJwtAuthenticationConverter keycloakJwtAuthenticationConverter;
+    private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
+    private final PermissionEnrichmentFilter permissionEnrichmentFilter;
 
     @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -65,22 +72,27 @@ public class SecurityConfig {
                     auth.requestMatchers(PUBLIC_ROUTE).permitAll();
                     auth.requestMatchers("/actuator/**").permitAll();
 
-                    if (chatbotAuthOptional) {
-                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                    if (securityDisabled) {
+                        auth.anyRequest().permitAll();
                     } else {
-                        auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
-                    }
+                        if (chatbotAuthOptional) {
+                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                        } else {
+                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
+                        }
 
-                    auth.anyRequest().authenticated();
+                        auth.anyRequest().authenticated();
+                    }
                 })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(keycloakJwtAuthenticationConverter)
+                                .jwtAuthenticationConverter(appJwtAuthenticationConverter)
                         )
                 )
+                .addFilterAfter(permissionEnrichmentFilter, BearerTokenAuthenticationFilter.class)
                 .logout(logout -> logout
                         .logoutUrl("/api/v1/auth/logout")
                         .logoutSuccessHandler(

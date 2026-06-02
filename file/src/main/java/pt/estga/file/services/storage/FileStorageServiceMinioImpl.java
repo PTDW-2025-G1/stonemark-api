@@ -1,6 +1,8 @@
 package pt.estga.file.services.storage;
 
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.MinioException;
 import io.minio.errors.MinioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,21 +29,20 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(InputStream fileStream, String filename) {
-        log.debug("Storing file with filename: {}", filename);
+    public String storeFile(InputStream fileStream, String filename, long size) {
+        log.debug("Storing file with filename: {} (size: {})", filename, size);
         if (fileStream == null) {
             log.error("Cannot store empty file stream");
             throw new FileStorageException("Cannot store empty file stream");
         }
 
         try {
-
             log.debug("Putting object with name: {}", filename);
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
                             .object(filename)
-                            .stream(fileStream, -1L, 10485760L) // Let Minio handle stream size and multipart
+                            .stream(fileStream, size, -1L)
                             .build()
             );
 
@@ -55,7 +56,6 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
 
     @Override
     public Resource loadFile(String path) {
-//        log.info("Loading file from path: {}", path);
         try {
             InputStream stream = minioClient.getObject(
                     GetObjectArgs.builder()
@@ -63,13 +63,16 @@ public class FileStorageServiceMinioImpl implements FileStorageService {
                             .object(path)
                             .build()
             );
-//            log.info("File loaded successfully from path: {}", path);
             return new InputStreamResource(stream);
+        } catch (ErrorResponseException e) {
+            if (e.response() != null && e.response().code() == 404) {
+                throw new FileNotFoundException("File not found in MinIO: " + path, e);
+            }
+            log.error("Failed to load file from MinIO with path: {}", path, e);
+            throw new FileStorageException("Failed to load file from MinIO: " + path, e);
         } catch (MinioException e) {
             log.error("Failed to load file from MinIO with path: {}", path, e);
-            // MinIO throws generic exceptions, but we can try to guess if it's not found
-            // For now, wrap in generic storage exception or check error code if needed
-            throw new FileNotFoundException("Failed to load file from MinIO: " + path, e);
+            throw new FileStorageException("Failed to load file from MinIO: " + path, e);
         }
     }
 

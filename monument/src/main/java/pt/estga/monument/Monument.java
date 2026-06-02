@@ -3,8 +3,10 @@ package pt.estga.monument;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
+import pt.estga.shared.converters.ValidationStateConverter;
 import pt.estga.shared.entities.BaseEntity;
 import pt.estga.territory.entities.AdministrativeDivision;
+import pt.estga.shared.enums.ValidationState;
 
 @Entity
 @NoArgsConstructor
@@ -18,21 +20,23 @@ public class Monument extends BaseEntity {
     @GeneratedValue
     private Long id;
 
-    @Column(unique = true)
-    private String externalId;
-
     private String name;
     private String protectionTitle;
     private String description;
     private String website;
 
-    private String street;
-    private String houseNumber;
+    private String address;
+    private String postalCode;
 
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point location;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision division;
+
+    @Builder.Default
+    @Convert(converter = ValidationStateConverter.class)
+    @Column(nullable = false)
+    private ValidationState validationState = ValidationState.VERIFIED;
 
 }

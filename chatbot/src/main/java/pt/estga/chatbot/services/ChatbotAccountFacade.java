@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.events.ChatbotAccountConnectedEventPublisher;
+import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.services.ChatbotAccountService;
-import pt.estga.user.services.UserQueryService;
 
 /**
  * Facade encapsulating the logic to link a messaging platform identity to a domain user
@@ -17,13 +17,13 @@ import pt.estga.user.services.UserQueryService;
 public class ChatbotAccountFacade {
 
     private final ChatbotAccountService chatbotAccountService;
-    private final UserQueryService userQueryService;
+    private final UserRepository userRepository;
     private final ChatbotAccountConnectedEventPublisher eventPublisher;
 
     public boolean linkPlatformIdentity(Long domainUserId, String platform, String platformUserId) {
         if (domainUserId == null) return false;
 
-        return userQueryService.findById(domainUserId).map(user -> {
+        return userRepository.findById(domainUserId).map(user -> {
             try {
                 chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
                 eventPublisher.publish(platform, platformUserId, user.getId());

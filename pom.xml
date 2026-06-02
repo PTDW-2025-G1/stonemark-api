@@ -22,24 +22,37 @@
 		<developer/>
 	</developers>
     <modules>
-        <module>boot</module>
-        <module>mark</module>
-        <module>vision</module>
-        <module>file</module>
-        <module>user</module>
-        <module>shared</module>
-        <module>intake</module>
-        <module>support</module>
-        <module>chatbot</module>
-        <module>verification</module>
-        <module>territory</module>
+        <!-- Foundation: no internal dependencies -->
+        <module>shared-core</module>
         <module>shared-web</module>
-        <module>bookmark</module>
-        <module>content-import</module>
-        <module>monument</module>
+        <module>file-api</module>
+        <module>mark-api</module>
         <module>notification</module>
-        <module>processing</module>
-        <module>review</module>
+        <module>vision</module>
+
+        <!-- Infrastructure layer -->
+        <module>shared-infra</module>       <!-- needs shared-core -->
+        <module>user-api</module>           <!-- needs file-api -->
+
+        <!-- Domain services -->
+        <module>file</module>               <!-- needs file-api, shared-web, shared-infra -->
+        <module>territory</module>          <!-- needs shared-web, shared-infra -->
+        <module>monument</module>           <!-- needs territory, shared-web, shared-infra -->
+        <module>user</module>               <!-- needs user-api, file-api, shared-web, shared-infra -->
+        <module>verification</module>       <!-- needs shared-web, shared-infra, user-api -->
+        <module>mark</module>               <!-- needs monument, file-api, vision, shared-web, shared-infra, mark-api -->
+        <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
+        <module>bookmark</module>           <!-- needs shared-web, mark-api, monument, user-api -->
+        <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
+
+
+        <!-- Higher-order services -->
+        <module>processing</module>         <!-- needs file, mark-api, intake, vision, monument -->
+        <module>review</module>             <!-- needs processing, shared-infra, mark, user -->
+        <module>chatbot</module>            <!-- needs file, user, intake, verification -->
+
+        <!-- Entry point: depends on everything -->
+        <module>boot</module>
     </modules>
     <scm>
 		<connection/>
@@ -51,8 +64,156 @@
 		<java.version>25</java.version>
         <stonemark.version>0.0.1-SNAPSHOT</stonemark.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Third-party libraries (not managed by Spring Boot BOM) -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>0.12.7</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>0.12.7</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>0.12.7</version>
+            </dependency>
+            <dependency>
+                <groupId>com.pgvector</groupId>
+                <artifactId>pgvector</artifactId>
+                <version>0.1.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>3.2.3</version>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>okhttp</artifactId>
+                <version>4.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j-core</artifactId>
+                <version>8.10.1</version>
+            </dependency>
+            <!-- Internal modules -->
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared-core</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared-infra</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>mark-api</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>user-api</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>user</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>file-api</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>shared-web</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>mark</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>monument</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>file</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>vision</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>intake</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>processing</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>review</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>chatbot</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>verification</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>support</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>territory</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>bookmark</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>notification</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <!-- Testing -->
+        <!-- Testing (universal) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -79,108 +240,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Spring Boot Core & Web -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-        <!-- Security & Auth -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.12.7</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.12.7</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.12.7</version>
-        </dependency>
-
-        <!-- Database -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!-- Source: https://mvnrepository.com/artifact/com.pgvector/pgvector -->
-        <dependency>
-            <groupId>com.pgvector</groupId>
-            <artifactId>pgvector</artifactId>
-            <version>0.1.6</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- Utilities & Tools -->
+        <!-- Build tools (universal) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.6.3</version>
-        </dependency>
-        <!-- Source: https://mvnrepository.com/artifact/org.apache.tika/tika-core -->
-        <dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>3.2.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>2.21.2</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- External APIs / Clients -->
-        <!-- Source: https://mvnrepository.com/artifact/com.squareup.okhttp3/okhttp -->
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -195,11 +258,6 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>1.6.3</version>
-                        </path>
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
@@ -217,6 +275,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.5</version>
+                <configuration>
+                    <argLine>
+                        -javaagent:${org.mockito:mockito-core:jar} -Xshare:off
+                    </argLine>
+                </configuration>
             </plugin>
 		</plugins>
 	</build>

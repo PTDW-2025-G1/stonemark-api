@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserQueryService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/public/users")
@@ -18,15 +18,14 @@ import pt.estga.user.services.UserQueryService;
 @Tag(name = "Users", description = "Public endpoints for users.")
 public class UserPublicController {
 
-    private final UserQueryService service;
-    private final UserMapper mapper;
+    private final UserService service;
 
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDto> publicGetById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
         return service.findById(id)
-                .map(mapper::toPublicDto)
+                .map(UserMapper::toPublicDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

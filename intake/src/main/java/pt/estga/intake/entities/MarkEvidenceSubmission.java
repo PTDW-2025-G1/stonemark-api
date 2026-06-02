@@ -1,14 +1,25 @@
 package pt.estga.intake.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
-import pt.estga.file.entities.MediaFile;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.user.entities.User;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(indexes = {
@@ -26,8 +37,8 @@ public class MarkEvidenceSubmission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    private MediaFile originalMediaFile;
+    @Column
+    private UUID originalMediaFileId;
 
     private Double latitude;
     private Double longitude;
@@ -40,10 +51,24 @@ public class MarkEvidenceSubmission {
     @Enumerated(EnumType.STRING)
     private SubmissionStatus status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private User submittedBy;
+    @Column
+    private Long submittedById;
 
     @CreatedDate
     private Instant submittedAt;
+
+    /**
+     * Domain method: mark submission as processed by a human reviewer.
+     */
+    public void markProcessed() {
+        this.status = SubmissionStatus.PROCESSED;
+    }
+
+    /**
+     * Domain method: mark submission as rejected by a human reviewer.
+     */
+    public void markRejected() {
+        this.status = SubmissionStatus.REJECTED;
+    }
 
 }

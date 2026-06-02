@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 @Slf4j
 public class StonemarkTelegramBot extends TelegramWebhookBot {
@@ -30,21 +31,29 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final BotEngine conversationService;
     private final TelegramAdapter telegramAdapter;
     private final Executor botExecutor;
-    // Map used to serialize processing per chatId to prevent concurrent dispatch races
-    private final ConcurrentMap<Long, Object> chatLocks = new ConcurrentHashMap<>();
+    private final ChatLock chatLock;
+    // Idempotency guard: tracks recently processed Telegram update IDs to discard duplicate deliveries
+    private final ConcurrentHashMap<Long, Long> processedUpdates = new ConcurrentHashMap<>();
+    private static final long UPDATE_ID_TTL_MS = 60_000;
+    private static final int UPDATE_ID_CACHE_MAX = 10_000;
+    // Retry configuration for transient Telegram API errors
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_BASE_DELAY_MS = 1_000;
 
     public StonemarkTelegramBot(String botUsername,
                                 String botToken,
                                 String botPath,
                                 BotEngine conversationService,
                                 TelegramAdapter telegramAdapter,
-                                Executor botExecutor) {
+                                Executor botExecutor,
+                                ChatLock chatLock) {
         super(botToken);
         this.botUsername = botUsername;
         this.botPath = botPath;
         this.conversationService = conversationService;
         this.telegramAdapter = telegramAdapter;
         this.botExecutor = botExecutor;
+        this.chatLock = chatLock;
         setBotCommands();
     }
 
@@ -66,6 +75,8 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         try {
             if (update == null) {
                 log.warn("Received null Telegram update");
+            } else if (isDuplicateUpdate(update.getUpdateId())) {
+                log.debug("Skipping duplicate updateId={}", update.getUpdateId());
             } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
                 CallbackQuery cq = update.getCallbackQuery();
                 String callbackId = cq.getId();
@@ -125,42 +136,24 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
         return null;
     }
 
-    // Reusable path for webhook and internal notifications that need dispatcher-driven output.
     public void dispatchAndSend(BotInput botInput) {
         long chatId = botInput.getChatId();
 
-        // Obtain a per-chat lock object and serialize dispatch for this chat.
-        // Create or obtain a per-chat lock object without using a lambda to avoid synthetic
-        // parameter warnings from static analysis tools.
-        Object lock = chatLocks.get(chatId);
-        if (lock == null) {
-            Object newLock = new Object();
-            Object existing = chatLocks.putIfAbsent(chatId, newLock);
-            lock = existing == null ? newLock : existing;
-        }
-
         log.debug("Attempting to acquire chat lock for chatId={}", chatId);
-        synchronized (lock) {
-            log.debug("Acquired chat lock for chatId={}", chatId);
+        chatLock.lock(chatId);
+        log.debug("Acquired chat lock for chatId={}", chatId);
+        try {
             List<BotResponse> botResponses = conversationService.handleInput(botInput);
-            if (botResponses == null) {
-                // Attempt to remove the lock to avoid unbounded map growth.
-                chatLocks.remove(chatId, lock);
-                return;
-            }
-
-            try {
+            if (botResponses != null) {
                 log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
                 sendBotResponses(chatId, botResponses);
-            } catch (Exception e) {
-                log.error("Error dispatching and sending bot responses", e);
-                throw e;
-            } finally {
-                log.debug("Releasing chat lock for chatId={}", chatId);
-                // Remove lock reference when done to keep map size bounded. Removal is conditional
-                // to avoid removing a lock instance that was replaced concurrently.
-                chatLocks.remove(chatId, lock);
             }
+        } catch (Exception e) {
+            log.error("Error dispatching and sending bot responses", e);
+            throw e;
+        } finally {
+            log.debug("Releasing chat lock for chatId={}", chatId);
+            chatLock.unlock(chatId);
         }
     }
 
@@ -172,17 +165,47 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
             }
             for (PartialBotApiMethod<?> method : methods) {
                 log.debug("Sending Telegram method {} for chatId={}", method == null ? "<null>" : method.getClass().getSimpleName(), chatId);
+                executeWithRetry(method, chatId);
+            }
+        }
+    }
+
+    private void executeWithRetry(PartialBotApiMethod<?> method, long chatId) {
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            try {
+                if (method instanceof BotApiMethod<?>) {
+                    execute((BotApiMethod<?>) method);
+                } else if (method instanceof SendPhoto) {
+                    execute((SendPhoto) method);
+                }
+                return;
+            } catch (TelegramApiException e) {
+                if (!isRetryable(e) || attempt >= MAX_RETRIES) {
+                    log.error("Failed to send Telegram response to chatId={} after {} attempt(s): {}", chatId, attempt, e.getMessage());
+                    return;
+                }
+                long delay = RETRY_BASE_DELAY_MS * (1L << (attempt - 1));
+                log.warn("Transient error sending to chatId={}, retrying in {}ms (attempt {}/{})", chatId, delay, attempt, MAX_RETRIES);
                 try {
-                    if (method instanceof BotApiMethod<?>) {
-                        execute((BotApiMethod<?>) method);
-                    } else if (method instanceof SendPhoto) {
-                        execute((SendPhoto) method);
-                    }
-                } catch (TelegramApiException e) {
-                    log.error("Error sending Telegram response", e);
+                    MILLISECONDS.sleep(delay);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
         }
+    }
+
+    static boolean isRetryable(TelegramApiException e) {
+        String msg = e.getMessage();
+        if (msg == null) return false;
+        // Rate limit, network timeout, or server error — retryable
+        if (msg.contains("429") || msg.contains("Too Many Requests")) return true;
+        if (msg.contains("502") || msg.contains("Bad Gateway")) return true;
+        if (msg.contains("503") || msg.contains("Service Unavailable")) return true;
+        return msg.contains("timed out") || msg.contains("timeout") || msg.contains("Connection reset");
     }
 
     @Override
@@ -190,4 +213,17 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     @Override
     public String getBotPath() { return botPath; }
+
+    boolean isDuplicateUpdate(long updateId) {
+        Long previous = processedUpdates.putIfAbsent(updateId, System.currentTimeMillis());
+        if (previous != null) {
+            return true;
+        }
+        // Evict stale entries when cache grows large to prevent unbounded memory growth
+        if (processedUpdates.size() > UPDATE_ID_CACHE_MAX) {
+            long cutoff = System.currentTimeMillis() - UPDATE_ID_TTL_MS;
+            processedUpdates.values().removeIf(v -> v < cutoff);
+        }
+        return false;
+    }
 }

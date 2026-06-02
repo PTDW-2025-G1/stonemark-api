@@ -1,6 +1,5 @@
 package pt.estga.file.services;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
@@ -16,17 +15,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-/**
- * Generates image variants (thumbnail, preview, optimized) and returns a temporary file path
- * with basic metadata (width, height, size). Caller is responsible for deleting the temporary file.
- */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class ImageVariantGenerator {
 
+    private final TempFileFactory tempFileFactory;
+
+    public ImageVariantGenerator(TempFileFactory tempFileFactory) {
+        this.tempFileFactory = tempFileFactory;
+    }
+
     public VariantResult generate(Path originalFile, MediaVariantType type) throws IOException {
-        Path temp = Files.createTempFile("variant-", ".webp");
+        Path temp = tempFileFactory.createTempFile("variant-", ".webp");
 
         try {
             Thumbnails.Builder<File> builder = Thumbnails.of(originalFile.toFile());

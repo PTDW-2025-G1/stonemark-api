@@ -3,33 +3,32 @@ package pt.estga.support.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.services.ContactRequestQueryService;
-import pt.estga.support.services.ContactRequestCommandService;
-import pt.estga.sharedweb.models.PagedRequest;
+import pt.estga.support.services.ContactRequestService;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")
 @RequiredArgsConstructor
 @Tag(name = "Admin Contact Requests", description = "Admin endpoints for contact requests.")
-@PreAuthorize("hasRole('MODERATOR')")
+@PreAuthorize("hasAuthority('CONTACT_MANAGE')")
 public class ContactRequestAdminController {
 
-    private final ContactRequestQueryService queryService;
-    private final ContactRequestCommandService service;
+    private final ContactRequestService service;
 
-    @PostMapping("/search")
-    public ResponseEntity<Page<ContactRequest>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(queryService.search(request));
+    @GetMapping
+    public ResponseEntity<Page<ContactRequest>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ContactRequest> getById(@PathVariable Long id) {
-        return queryService.findById(id)
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

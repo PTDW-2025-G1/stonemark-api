@@ -1,9 +1,12 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 200
 
 spring:
   profiles:
-    include: chatbot, notification, file, security, processing
+    include: chatbot, notification, file, security, processing, review
   servlet:
     multipart:
       max-file-size: 50MB
@@ -14,7 +17,8 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
+      connection-timeout: 10000
   jpa:
     hibernate:
       ddl-auto: update
@@ -51,6 +55,28 @@ application:
 
 user:
   delete-after-days: 30
+
+cache:
+  user-permissions:
+    ttl-minutes: 15
+    max-size: 1000
+
+rate-limit:
+  enabled: true
+  exclude-paths:
+    - /actuator
+    - /actuator/**
+  default:
+    capacity: 100
+    refill-tokens: 100
+    refill-period: 1
+    refill-unit: MINUTES
+  paths:
+    /api/v1/account/verification/chatbot:
+      capacity: 10
+      refill-tokens: 10
+      refill-period: 1
+      refill-unit: MINUTES
 
 management:
   endpoints:

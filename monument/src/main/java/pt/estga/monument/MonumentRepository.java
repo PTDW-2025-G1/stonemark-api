@@ -8,9 +8,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.shared.enums.EntityStatus;
+import pt.estga.shared.enums.ValidationState;
 import pt.estga.shared.repositories.BaseRepository;
 
-import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaSpecificationExecutor<Monument> {
@@ -22,7 +23,7 @@ public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaS
         return findByDivisionIdAndStatus(divisionId, pageable, EntityStatus.ACTIVE);
     }
 
-    Optional<Monument> findByExternalId(String externalId);
+    List<Monument> findByValidationState(ValidationState state);
 
     @Query(value = "SELECT * FROM monument m WHERE ST_Within(m.location, ST_GeomFromGeoJSON(:geoJson))", nativeQuery = true)
     Page<Monument> findByPolygon(@Param("geoJson") String geoJson, Pageable pageable);

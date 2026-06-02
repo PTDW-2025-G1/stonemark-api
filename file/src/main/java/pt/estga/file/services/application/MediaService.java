@@ -3,16 +3,21 @@ package pt.estga.file.services.application;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaContentService;
+import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.sharedweb.exceptions.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,16 +28,24 @@ public class MediaService {
 
     private final MediaUploadOrchestrator uploadOrchestrator;
     private final MediaMetadataService mediaMetadataService;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
 
-    /**
-     * Deprecated: use MediaUploadOrchestrator.orchestrateUpload instead. Kept for
-     * backward compatibility and delegates to the orchestrator.
-     */
-    @Deprecated
     @Transactional
-    public MediaFile save(InputStream fileStream, String originalFilename) throws IOException {
+    public MediaFile upload(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
+        if (fileSize <= 0) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
         return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
+    }
+
+    public MediaType resolveMediaType(MediaFile mediaFile) {
+        return MediaTypeFactory.getMediaType(mediaFile.getOriginalFilename())
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+    }
+
+    public String buildDownloadFilename(MediaFile mediaFile) {
+        String extension = StringUtils.getFilenameExtension(mediaFile.getOriginalFilename());
+        return "stonemark-" + mediaFile.getId() + (extension != null ? "." + extension : "");
     }
 
     public Resource loadFileById(UUID fileId) {
@@ -46,10 +59,38 @@ public class MediaService {
         if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
             throw new FileNotFoundException("Media file has no storage path");
         }
-        return mediaContentService.loadContent(mediaFile.getStoragePath());
+        return fileStorageService.loadFile(mediaFile.getStoragePath());
     }
 
     public Optional<MediaFile> findById(UUID id) {
         return mediaMetadataService.findById(id);
+    }
+
+    @Transactional
+    public void deleteMedia(UUID id) {
+        MediaFile mediaFile = mediaMetadataService.findById(id)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
+
+        List<String> variantPaths = List.copyOf(mediaFile.getVariants()).stream()
+                .map(MediaVariant::getStoragePath)
+                .toList();
+        String mainPath = mediaFile.getStoragePath();
+
+        mediaMetadataService.deleteById(id);
+
+        for (String path : variantPaths) {
+            try {
+                fileStorageService.deleteFile(path);
+            } catch (Exception e) {
+                log.warn("Failed to delete variant file for media {}: {}", id, e.getMessage());
+            }
+        }
+        if (StringUtils.hasText(mainPath)) {
+            try {
+                fileStorageService.deleteFile(mainPath);
+            } catch (Exception e) {
+                log.warn("Failed to delete main file for media {}: {}", id, e.getMessage());
+            }
+        }
     }
 }

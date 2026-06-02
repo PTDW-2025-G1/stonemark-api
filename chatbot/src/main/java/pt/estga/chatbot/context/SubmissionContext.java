@@ -1,23 +1,20 @@
 package pt.estga.chatbot.context;
 
-import lombok.Data;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
+import lombok.Getter;
+import lombok.Setter;
 import pt.estga.intake.enums.SubmissionSource;
 
-import java.util.List;
+import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 public class SubmissionContext {
-    private MarkEvidenceSubmission submission;
-
-    // Temporary data stored during chatbot flow (only submitted at the end)
-    private byte[] photoData;
+    private UUID stagedFileId;
     private String photoFilename;
     private SubmissionSource submissionSource;
 
     public void clear() {
-        this.submission = null;
-        this.photoData = null;
+        this.stagedFileId = null;
         this.photoFilename = null;
         this.submissionSource = null;
     }

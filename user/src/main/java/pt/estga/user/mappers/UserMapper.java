@@ -1,25 +1,65 @@
 package pt.estga.user.mappers;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 
-@Mapper(componentModel = "spring")
-public interface UserMapper {
+import java.util.Set;
+import java.util.stream.Collectors;
 
-    UserDto toDto(User user);
+public class UserMapper {
 
-    UserPublicDto toPublicDto(User user);
+    private UserMapper() {}
 
-    User toEntity(UserDto dto);
+    public static UserDto toDto(User user) {
+        if (user == null) return null;
+        Set<String> roleNames = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
+        return new UserDto(
+                user.getId(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUsername(),
+                user.getEmail(),
+                null,
+                roleNames,
+                user.getCreatedAt()
+        );
+    }
 
-    void update(@MappingTarget User user, ProfileUpdateRequestDto dto);
+    public static UserPublicDto toPublicDto(User user) {
+        if (user == null) return null;
+        return new UserPublicDto(
+                user.getId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                null
+        );
+    }
 
-    void updateFromDto(UserDto dto, @MappingTarget User user);
+    public static void update(User source, User target) {
+        if (source == null || target == null) return;
+        target.setFirstName(source.getFirstName());
+        target.setLastName(source.getLastName());
+        target.setUsername(source.getUsername());
+        target.setEmail(source.getEmail());
+    }
 
-    void update(User source, @MappingTarget User target);
+    public static void update(User user, ProfileUpdateRequestDto dto) {
+        if (user == null || dto == null) return;
+        user.setFirstName(dto.firstName());
+        user.setLastName(dto.lastName());
+    }
 
+    public static void updateFromDto(UserDto dto, User user) {
+        if (dto == null || user == null) return;
+        user.setFirstName(dto.firstName());
+        user.setLastName(dto.lastName());
+        user.setUsername(dto.username());
+        user.setEmail(dto.email());
+    }
 }

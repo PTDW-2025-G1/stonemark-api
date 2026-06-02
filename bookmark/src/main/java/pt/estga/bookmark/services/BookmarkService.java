@@ -1,76 +1,72 @@
 package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.bookmark.dto.BookmarkContent;
 import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
-import pt.estga.bookmark.entities.MarkBookmark;
-import pt.estga.bookmark.entities.MarkEvidenceBookmark;
-import pt.estga.bookmark.entities.MarkOccurrenceBookmark;
-import pt.estga.bookmark.entities.MonumentBookmark;
-import pt.estga.bookmark.repositories.MarkBookmarkRepository;
-import pt.estga.bookmark.repositories.MarkEvidenceBookmarkRepository;
-import pt.estga.bookmark.repositories.MarkOccurrenceBookmarkRepository;
-import pt.estga.bookmark.repositories.MonumentBookmarkRepository;
-import pt.estga.bookmark.repositories.BaseBookmarkRepository;
+import pt.estga.bookmark.entities.Bookmark;
+import pt.estga.bookmark.repositories.BookmarkRepository;
 import pt.estga.sharedweb.exceptions.DuplicateResourceException;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.user.entities.User;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.userapi.UserLookupOperations;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class BookmarkService {
 
-	private final BookmarkQueryService queryService;
-	private final MonumentBookmarkRepository monumentRepo;
-	private final MarkBookmarkRepository markRepo;
-	private final MarkOccurrenceBookmarkRepository markOccurrenceRepo;
-	private final MarkEvidenceBookmarkRepository markEvidenceRepo;
-    private final BaseBookmarkRepository baseBookmarkRepo;
-	private final UserRepository userRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final BookmarkContentResolver contentResolver;
+    private final UserLookupOperations userLookup;
 
-	@Transactional
-	public BookmarkResponse create(Long userId, BookmarkCreateRequest request) {
-		if (queryService.existsByUserAndTarget(userId, request.targetType(), request.targetId())) {
-			throw new DuplicateResourceException("Bookmark already exists");
-		}
+    public Page<BookmarkResponse> listByUser(Long userId, Pageable pageable) {
+        Page<Bookmark> page = bookmarkRepository.findAllByCreatedById(userId, pageable);
+        Map<UUID, BookmarkContent> contentMap = contentResolver.resolve(page.getContent());
+        return page.map(b -> toResponse(b, contentMap.get(b.getId())));
+    }
 
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    @Transactional
+    public BookmarkResponse create(Long userId, BookmarkCreateRequest request) {
+        if (bookmarkRepository.existsByCreatedByIdAndTargetTypeAndTargetId(
+                userId, request.targetType(), request.targetId())) {
+            throw new DuplicateResourceException("Bookmark already exists");
+        }
+        userLookup.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-		switch (request.targetType()) {
-			case MONUMENT -> {
-				MonumentBookmark b = MonumentBookmark.builder().createdBy(user).build();
-				// The caller is expected to set relationship references before saving if needed
-				monumentRepo.save(b);
-				return queryService.listByUser(userId).stream().filter(r -> r.id().equals(b.getId())).findFirst().orElseThrow();
-			}
-			case MARK -> {
-				MarkBookmark b = MarkBookmark.builder().createdBy(user).build();
-				markRepo.save(b);
-				return queryService.listByUser(userId).stream().filter(r -> r.id().equals(b.getId())).findFirst().orElseThrow();
-			}
-			case MARK_OCCURRENCE -> {
-				MarkOccurrenceBookmark b = MarkOccurrenceBookmark.builder().createdBy(user).build();
-				markOccurrenceRepo.save(b);
-				return queryService.listByUser(userId).stream().filter(r -> r.id().equals(b.getId())).findFirst().orElseThrow();
-			}
-			case MARK_EVIDENCE -> {
-				MarkEvidenceBookmark b = MarkEvidenceBookmark.builder().createdBy(user).build();
-				markEvidenceRepo.save(b);
-				return queryService.listByUser(userId).stream().filter(r -> r.id().equals(b.getId())).findFirst().orElseThrow();
-			}
-			default -> throw new IllegalArgumentException("Unsupported bookmark type");
-		}
-	}
+        Bookmark bookmark = Bookmark.builder()
+                .createdById(userId)
+                .targetType(request.targetType())
+                .targetId(request.targetId())
+                .build();
 
-	@Transactional
-	public void delete(Long userId, UUID bookmarkId) {
-		baseBookmarkRepo.findByIdAndCreatedById(bookmarkId, userId)
-				.ifPresent(baseBookmarkRepo::delete);
-	}
+        Bookmark saved = bookmarkRepository.save(bookmark);
+        BookmarkContent content = resolveSingle(saved);
+        return toResponse(saved, content);
+    }
+
+    @Transactional
+    public void delete(Long userId, UUID bookmarkId) {
+        bookmarkRepository.findByIdAndCreatedById(bookmarkId, userId)
+                .ifPresent(bookmarkRepository::delete);
+    }
+
+    private BookmarkContent resolveSingle(Bookmark bookmark) {
+        Map<UUID, BookmarkContent> map = contentResolver.resolve(List.of(bookmark));
+        return map.get(bookmark.getId());
+    }
+
+    private static BookmarkResponse toResponse(Bookmark b, BookmarkContent content) {
+        return new BookmarkResponse(b.getId(), b.getTargetType(), b.getTargetId(), b.getCreatedAt(), content);
+    }
 }

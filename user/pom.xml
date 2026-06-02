@@ -21,8 +21,13 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>file</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>user-api</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>file-api</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
@@ -33,6 +38,11 @@
             <groupId>pt.estga</groupId>
             <artifactId>shared-web</artifactId>
             <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>shared-infra</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
     </dependencies>
 

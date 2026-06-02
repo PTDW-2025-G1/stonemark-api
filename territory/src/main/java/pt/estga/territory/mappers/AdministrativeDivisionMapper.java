@@ -1,34 +1,26 @@
 package pt.estga.territory.mappers;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
-import pt.estga.territory.dtos.AdministrativeDivisionRequestDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
-public interface AdministrativeDivisionMapper {
+public class AdministrativeDivisionMapper {
 
-    @Mapping(target = "parentId", source = "parent.id")
-    AdministrativeDivisionDto toDto(AdministrativeDivision entity);
+    private AdministrativeDivisionMapper() {}
 
-    List<AdministrativeDivisionDto> toDtoList(List<AdministrativeDivision> entities);
+    public static AdministrativeDivisionDto toDto(AdministrativeDivision entity) {
+        if (entity == null) return null;
+        return new AdministrativeDivisionDto(
+                entity.getId(),
+                entity.getName(),
+                entity.getParent() != null ? entity.getParent().getId() : null,
+                null
+        );
+    }
 
-    void update(AdministrativeDivision source, @MappingTarget AdministrativeDivision target);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "geometry", ignore = true)
-    @Mapping(target = "parent", ignore = true)
-    @Mapping(target = "country", ignore = true)
-    AdministrativeDivision toEntityFromRequest(AdministrativeDivisionRequestDto dto);
-
-    @org.mapstruct.BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "geometry", ignore = true)
-    @Mapping(target = "parent", ignore = true)
-    @Mapping(target = "country", ignore = true)
-    void updateFromRequest(AdministrativeDivisionRequestDto dto, @MappingTarget AdministrativeDivision entity);
+    public static List<AdministrativeDivisionDto> toDtoList(List<AdministrativeDivision> entities) {
+        if (entities == null) return List.of();
+        return entities.stream().map(AdministrativeDivisionMapper::toDto).toList();
+    }
 }

@@ -3,9 +3,18 @@ package pt.estga.chatbot.telegram;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import pt.estga.chatbot.models.text.*;
-import pt.estga.chatbot.services.EmojiProvider;
-import pt.estga.chatbot.services.TextRenderer;
+import pt.estga.chatbot.models.text.RenderedText;
+import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RichText.Bold;
+import pt.estga.chatbot.models.text.RichText.Code;
+import pt.estga.chatbot.models.text.RichText.Emoji;
+import pt.estga.chatbot.models.text.RichText.Group;
+import pt.estga.chatbot.models.text.RichText.Italic;
+import pt.estga.chatbot.models.text.RichText.NewLine;
+import pt.estga.chatbot.models.text.RichText.Plain;
+import pt.estga.chatbot.models.text.RichText.Placeholder;
+import pt.estga.chatbot.services.messages.EmojiProvider;
+import pt.estga.chatbot.services.messages.TextRenderer;
 
 import java.util.List;
 
@@ -20,7 +29,7 @@ public class TelegramRenderer implements TextRenderer {
     }
 
     @Override
-    public RenderedText render(TextNode node) {
+    public RenderedText render(RichText node) {
         boolean hasFormatting = containsFormatting(node);
         String text = renderNode(node, hasFormatting);
 
@@ -28,7 +37,7 @@ public class TelegramRenderer implements TextRenderer {
         return new RenderedText(text, parseMode);
     }
 
-    private String renderNode(TextNode node, boolean escapeContent) {
+    private String renderNode(RichText node, boolean escapeContent) {
         return switch (node) {
             case Plain p -> escapeContent ? escape(p.text()) : p.text();
             case Bold b -> "*" + renderChildren(b.children(), escapeContent) + "*";
@@ -37,36 +46,30 @@ public class TelegramRenderer implements TextRenderer {
             case Emoji e -> emojiProvider.render(e.key());
             case Placeholder p -> "{" + p.index() + "}";
             case NewLine ignored -> "\n";
-            case Container c -> renderChildren(c.children(), escapeContent);
+            case Group c -> renderChildren(c.children(), escapeContent);
             default -> throw new IllegalStateException("Unexpected value: " + node);
         };
     }
 
-    private boolean containsFormatting(TextNode node) {
+    private boolean containsFormatting(RichText node) {
         if (node instanceof Bold || node instanceof Italic || node instanceof Code) {
             return true;
-        } else if (node instanceof Container(List<TextNode> children)) {
-            for (TextNode child : children) {
+        } else if (node instanceof Group(List<RichText> children)) {
+            for (RichText child : children) {
                 if (containsFormatting(child)) return true;
             }
         }
         return false;
     }
 
-    private String renderChildren(Iterable<TextNode> children, boolean escapeContent) {
+    private String renderChildren(Iterable<RichText> children, boolean escapeContent) {
         StringBuilder sb = new StringBuilder();
-        for (TextNode child : children) {
+        for (RichText child : children) {
             sb.append(renderNode(child, escapeContent));
         }
         return sb.toString();
     }
 
-    /**
-     * Escapes characters for MarkdownV2.
-     * This method iterates over the string character by character to ensure that
-     * surrogate pairs (e.g. emojis) are preserved correctly and not accidentally
-     * matched or broken.
-     */
     private String escape(String text) {
         if (text == null) return "";
         StringBuilder sb = new StringBuilder();

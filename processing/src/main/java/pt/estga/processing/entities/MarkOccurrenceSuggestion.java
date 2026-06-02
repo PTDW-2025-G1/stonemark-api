@@ -5,7 +5,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import lombok.*;
-import pt.estga.monument.Monument;
 
 @Entity
 @NoArgsConstructor
@@ -22,8 +21,7 @@ public class MarkOccurrenceSuggestion {
     @ManyToOne
     private MarkSuggestion suggestion;
 
-    @ManyToOne
-    private Monument monument;
+    private Long monumentId;
 
     private double distanceScore;
 }

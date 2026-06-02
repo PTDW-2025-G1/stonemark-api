@@ -2,17 +2,16 @@ package pt.estga.verification.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import pt.estga.shared.events.AfterCommitEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.shared.events.AfterCommitEventPublisher;
 import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.user.entities.User;
-import pt.estga.user.services.ChatbotAccountService;
-import pt.estga.user.services.UserQueryService;
-import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.userapi.ChatbotAccountOperations;
+import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
@@ -25,14 +24,13 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final UserQueryService userQueryService;
-    private final ChatbotAccountService chatbotAccountService;
+    private final ChatbotAccountOperations chatbotAccountOps;
     private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
     @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
     public ResponseEntity<MessageResponseDto> verifyChatbotCode(
-            @RequestBody ChatbotVerificationRequestDto request,
+            @Valid @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
 
         Optional<String> platformUserIdOpt = verificationService.verifyAndGetPlatformUserId(request.code());
@@ -44,13 +42,11 @@ public class AccountVerificationController {
         }
 
         String platformUserId = platformUserIdOpt.get();
-        User user = userQueryService.findById(principal.getId()).orElseThrow();
+        Long userId = principal.getId();
 
-        // Create or update chatbot identity (platform-agnostic)
-        chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
+        chatbotAccountOps.createOrUpdateChatbot(userId, platformUserId);
 
-        // Publish event for chatbot to handle notification, platform set to TELEGRAM for now
-        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, user.getId()));
+        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, userId));
 
         return ResponseEntity.ok(
                 MessageResponseDto.success("Messaging account linked successfully")

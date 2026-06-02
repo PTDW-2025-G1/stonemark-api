@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
-import pt.estga.user.services.UserQueryService;
+import pt.estga.userapi.UserLookupOperations;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Thin facade that encapsulates chatbot-specific submission orchestration:
@@ -19,23 +20,23 @@ import java.io.IOException;
 public class ChatbotSubmissionFacade {
 
     private final MarkEvidenceSubmissionSubmitService markEvidenceSubmissionSubmitService;
-    private final UserQueryService userQueryService;
+    private final UserLookupOperations userLookup;
 
     public void submitFromChatbot(
             MarkEvidenceSubmission submission,
-            byte[] photoData,
+            UUID stagedFileId,
             String photoFilename,
             Long domainUserId,
             SubmissionSource source
     ) throws IOException {
         if (domainUserId != null) {
-            userQueryService.findById(domainUserId).ifPresent(submission::setSubmittedBy);
+            submission.setSubmittedById(domainUserId);
         }
 
         if (submission.getSubmissionSource() == null) {
             submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
         }
 
-        markEvidenceSubmissionSubmitService.submit(submission, photoData, photoFilename);
+        markEvidenceSubmissionSubmitService.submit(submission, stagedFileId, photoFilename);
     }
 }

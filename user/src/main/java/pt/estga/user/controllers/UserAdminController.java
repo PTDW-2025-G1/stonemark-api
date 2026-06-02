@@ -9,23 +9,22 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.sharedweb.models.PagedRequest;
 import pt.estga.user.dtos.UserDto;
-import pt.estga.user.services.UserQueryService;
-import pt.estga.user.services.UserCommandService;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "User Management", description = "Endpoints for managing users (Admin).")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('USER_MANAGE')")
 public class UserAdminController {
 
-    private final UserCommandService service;
-    private final UserQueryService queryService;
+    private final UserService service;
 
     @Operation(summary = "Search users", description = "Searches for users based on dynamic filters.")
     @ApiResponses(value = {
@@ -33,9 +32,9 @@ public class UserAdminController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = Page.class)))
     })
-    @PostMapping("/search")
-    public ResponseEntity<Page<UserDto>> search(@RequestBody PagedRequest request) {
-        return ResponseEntity.ok(queryService.search(request));
+    @GetMapping
+    public ResponseEntity<Page<UserDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID.")
@@ -49,7 +48,7 @@ public class UserAdminController {
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return queryService.findDtoById(id)
+        return service.findDtoById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

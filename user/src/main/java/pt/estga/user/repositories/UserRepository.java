@@ -14,11 +14,19 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
 
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByKeycloakSub(String keycloakSub);
+    Optional<User> findByUsername(String username);
+
+    Optional<User> findByGoogleSub(String googleSub);
 
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForProfile(@Param("id") Long id);
 
     boolean existsByUsername(String username);
+
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roles r " +
+           "LEFT JOIN FETCH r.permissions " +
+           "WHERE u.id = :id")
+    Optional<User> findByIdWithRolesAndPermissions(@Param("id") Long id);
 
 }

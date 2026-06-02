@@ -2,11 +2,13 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import pt.estga.shared.converters.ValidationStateConverter;
 import pt.estga.shared.entities.BaseEntity;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import pt.estga.shared.enums.ValidationState;
 
 @Entity
 @NoArgsConstructor
@@ -34,5 +36,10 @@ public class Mark extends BaseEntity {
 
     @OneToMany(mappedBy = "mark")
     private List<MarkOccurrence> occurrences;
+
+    @Builder.Default
+    @Convert(converter = ValidationStateConverter.class)
+    @Column(nullable = false)
+    private ValidationState validationState = ValidationState.PROVISIONAL;
 
 }

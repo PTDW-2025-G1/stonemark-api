@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
@@ -12,8 +13,9 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
-import pt.estga.file.services.upload.MediaValidationService;
+import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.storage.variant.VariantStorageService;
+import pt.estga.file.services.upload.MediaValidationService;
 
 import javax.imageio.ImageIO;
 import java.nio.file.Files;
@@ -33,11 +35,13 @@ public class MediaProcessingService {
 
     private final MediaMetadataService mediaMetadataService;
     private final MediaVariantRepository mediaVariantRepository;
-    private final MediaContentService mediaContentService;
+    private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
     private final ImageVariantGenerator imageVariantGenerator;
     private final VariantStorageService variantStorageService;
     private final StorageProperties storageProperties;
+    private final TempFileFactory tempFileFactory;
+    private final MediaMetricsService metrics;
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -46,18 +50,24 @@ public class MediaProcessingService {
         }
     }
 
-    public void process(UUID mediaFileId) {
-        log.info("Starting processing for media file ID: {}", mediaFileId);
+    public void process(UUID mediaFileId, MediaVariantType... variantTypes) {
+        List<MediaVariantType> types = List.of(variantTypes);
+        if (types.isEmpty()) {
+            log.debug("No variant types requested for media {} — skipping", mediaFileId);
+            return;
+        }
+        log.info("Starting processing for media file ID: {} (types: {})", mediaFileId, types);
+        var timer = metrics.startProcessingTimer();
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
                 .orElseThrow(() -> new RuntimeException("MediaFile not found: " + mediaFileId));
 
         try {
             mediaFile.setStatus(MediaStatus.PROCESSING);
-            mediaMetadataService.saveMetadata(mediaFile);
+            mediaFile = mediaMetadataService.saveMetadata(mediaFile);
 
-            Resource resource = mediaContentService.loadContent(mediaFile.getStoragePath());
-            Path tempOriginal = Files.createTempFile("original-", ".tmp");
+            Resource resource = fileStorageService.loadFile(mediaFile.getStoragePath());
+            Path tempOriginal = tempFileFactory.createTempFile("original-", ".tmp");
 
             try {
                 try (var is = resource.getInputStream()) {
@@ -67,17 +77,11 @@ public class MediaProcessingService {
                 if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
-                    mediaMetadataService.saveMetadata(mediaFile);
+                    mediaFile = mediaMetadataService.saveMetadata(mediaFile);
                     return;
                 }
 
-                List<MediaVariantType> variants = List.of(
-                        MediaVariantType.THUMBNAIL,
-                        MediaVariantType.PREVIEW,
-                        MediaVariantType.OPTIMIZED
-                );
-
-                for (MediaVariantType type : variants) {
+                for (MediaVariantType type : types) {
                     if (mediaVariantRepository.existsByMediaFileAndType(mediaFile, type)) {
                         log.debug("Variant {} exists for media {}, skipping.", type, mediaFile.getId());
                         continue;
@@ -97,13 +101,21 @@ public class MediaProcessingService {
                                 .build();
 
                         mediaVariantRepository.save(variant);
+                        metrics.recordVariantGenerated();
+                    } catch (DataIntegrityViolationException e) {
+                        log.warn("Variant {} already persisted for media {} by concurrent processor — skipping",
+                                type, mediaFile.getId());
+                        metrics.recordVariantGenerated();
+                    } catch (Exception e) {
+                        metrics.recordVariantFailed();
+                        throw e;
                     } finally {
                         Files.deleteIfExists(generated.file());
                     }
                 }
 
                 mediaFile.setStatus(MediaStatus.READY);
-                mediaMetadataService.saveMetadata(mediaFile);
+                mediaFile = mediaMetadataService.saveMetadata(mediaFile);
                 log.info("Processing completed for media file ID: {}", mediaFileId);
             } finally {
                 Files.deleteIfExists(tempOriginal);
@@ -117,6 +129,8 @@ public class MediaProcessingService {
             } catch (Exception ex) {
                 log.error("Failed to mark media as FAILED for id {}", mediaFileId, ex);
             }
+        } finally {
+            metrics.recordProcessingDuration(timer);
         }
     }
 }

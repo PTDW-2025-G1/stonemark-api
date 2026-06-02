@@ -3,30 +3,29 @@ package pt.estga.chatbot.features.core;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.config.ChatbotAuthProperties;
-import pt.estga.chatbot.constants.EmojiKey;
-import pt.estga.chatbot.features.submission.SubmissionCallbackData;
+import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.BotInput;
+import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.Menu;
-import pt.estga.chatbot.features.verification.VerificationCallbackData;
 import pt.estga.chatbot.services.AuthService;
-import pt.estga.chatbot.services.AuthServiceFactory;
-import pt.estga.chatbot.services.UiTextService;
+import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Component
 @RequiredArgsConstructor
 public class MainMenuFactory {
 
-    private final AuthServiceFactory authServiceFactory;
+    private final List<AuthService> authServices;
     private final UiTextService textService;
     private final ChatbotAuthProperties chatbotAuthProperties;
 
     public Menu create(BotInput input) {
-        AuthService authService = authServiceFactory.getAuthService(input.getPlatform());
+        AuthService authService = resolveAuthService(input.getPlatform());
         boolean isAuthenticated = authService.isAuthenticated(input.getUserId());
 
         List<List<Button>> buttonRows = new ArrayList<>();
@@ -36,7 +35,7 @@ public class MainMenuFactory {
             buttonRows.add(List.of(
                     Button.builder()
                             .textNode(textService.get(MessageKey.PROPOSE_MARK_BTN))
-                            .callbackData(SubmissionCallbackData.START_SUBMISSION)
+                            .callbackData(CallbackData.START_SUBMISSION)
                             .build()
             ));
         }
@@ -44,8 +43,8 @@ public class MainMenuFactory {
         if (!isAuthenticated) {
             buttonRows.add(List.of(
                     Button.builder()
-                            .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN, EmojiKey.KEY))
-                            .callbackData(VerificationCallbackData.START_VERIFICATION)
+                            .textNode(textService.get(MessageKey.CONNECT_ACCOUNT_BTN))
+                            .callbackData(CallbackData.START_VERIFICATION)
                             .build()
             ));
         }
@@ -54,5 +53,12 @@ public class MainMenuFactory {
                 .titleNode(textService.get(MessageKey.HELP_OPTIONS_TITLE))
                 .buttons(buttonRows)
                 .build();
+    }
+
+    private AuthService resolveAuthService(Platform platform) {
+        return authServices.stream()
+                .filter(s -> s.supports(platform))
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException("No AuthService found for platform: " + platform));
     }
 }
