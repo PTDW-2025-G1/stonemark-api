@@ -4,10 +4,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +20,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.enums.SubmissionStatus;
+import pt.estga.territory.entities.AdministrativeDivision;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -56,6 +60,10 @@ public class MarkEvidenceSubmission {
 
     @CreatedDate
     private Instant submittedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "division_id")
+    private AdministrativeDivision division;
 
     /**
      * Domain method: mark submission as processed by a human reviewer.
