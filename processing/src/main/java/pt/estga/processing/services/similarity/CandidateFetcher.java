@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.dtos.EvidenceMarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
-import pt.estga.markapi.MarkService;
+import pt.estga.markapi.MarkEvidenceQueryService;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,13 +13,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CandidateFetcher {
 
-    private final MarkService markService;
+    private final MarkEvidenceQueryService markEvidenceQueryService;
 
     public List<MarkEvidenceDistanceDto> fetchCandidates(String vector, int safeK, double maxDistance) {
-        return markService.findTopKSimilar(vector, safeK, maxDistance);
+        return markEvidenceQueryService.findTopKSimilar(vector, safeK, maxDistance);
     }
 
     public List<EvidenceMarkDto> fetchMarksByEvidenceIds(List<UUID> ids) {
-        return markService.findMarksByEvidenceIds(ids);
+        return markEvidenceQueryService.findMarksByEvidenceIds(ids);
     }
 }

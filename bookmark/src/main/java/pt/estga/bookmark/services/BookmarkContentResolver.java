@@ -6,6 +6,7 @@ import pt.estga.bookmark.dto.*;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.markapi.MarkEvidenceQueryService;
 import pt.estga.markapi.MarkService;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentMapper;
@@ -22,6 +23,7 @@ public class BookmarkContentResolver {
 
     private final MonumentRepository monumentRepository;
     private final MarkService markService;
+    private final MarkEvidenceQueryService markEvidenceQueryService;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
         if (bookmarks.isEmpty()) {
@@ -73,7 +75,7 @@ public class BookmarkContentResolver {
         List<UUID> ids = bookmarks.stream()
                 .map(b -> UUID.fromString(b.getTargetId()))
                 .toList();
-        Map<UUID, MarkEvidenceDto> evidenceMap = markService.findEvidenceByIdIn(ids).stream()
+        Map<UUID, MarkEvidenceDto> evidenceMap = markEvidenceQueryService.findEvidenceByIdIn(ids).stream()
                 .collect(Collectors.toMap(MarkEvidenceDto::id, Function.identity()));
         for (Bookmark b : bookmarks) {
             MarkEvidenceDto dto = evidenceMap.get(UUID.fromString(b.getTargetId()));
