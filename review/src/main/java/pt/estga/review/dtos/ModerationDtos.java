@@ -11,6 +11,4 @@ public final class ModerationDtos {
 
     public record MarkDto(Long id, String title, ValidationState validationState) {}
 
-    public record MonumentDto(Long id, String name, ValidationState validationState) {}
-
 }
