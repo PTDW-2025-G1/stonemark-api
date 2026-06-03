@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
+import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 
 import java.util.Optional;
@@ -27,28 +28,10 @@ public class SubmissionQueryService {
             }
             return cb.equal(root.get("status"), status);
         };
-        return submissionRepository.findAll(spec, pageable).map(this::toDto);
+        return submissionRepository.findAll(spec, pageable).map(SubmissionMapper::toDto);
     }
 
     public Optional<SubmissionDto> findById(Long id) {
-        return submissionRepository.findById(id).map(this::toDto);
-    }
-
-    private SubmissionDto toDto(MarkEvidenceSubmission s) {
-        String divisionName = s.getDivision() != null ? s.getDivision().getName() : null;
-        Long divisionId = s.getDivision() != null ? s.getDivision().getId() : null;
-        return new SubmissionDto(
-                s.getId(),
-                s.getStatus(),
-                s.getSubmissionSource(),
-                s.getSubmittedAt(),
-                s.getLatitude(),
-                s.getLongitude(),
-                s.getUserNotes(),
-                s.getOriginalMediaFileId(),
-                s.getSubmittedById(),
-                divisionId,
-                divisionName
-        );
+        return submissionRepository.findById(id).map(SubmissionMapper::toDto);
     }
 }
