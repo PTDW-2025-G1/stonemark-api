@@ -5,6 +5,6 @@ import java.util.UUID;
 public record MarkUpdateDto(
         String title,
         String description,
-        UUID goldenExampleId,
+        UUID exemplarId,
         Boolean active
 ) { }

@@ -11,13 +11,13 @@ public class MarkMapper {
 
     public static MarkDto toDto(Mark mark) {
         if (mark == null) return null;
-        MarkEvidence golden = mark.getGoldenExample();
+        MarkEvidence exemplar = mark.getExemplar();
         return new MarkDto(
                 mark.getId(),
                 mark.getTitle(),
                 mark.getDescription(),
-                golden != null ? golden.getEmbedding() : null,
-                golden != null ? golden.getFileId() : null,
+                exemplar != null ? exemplar.getEmbedding() : null,
+                exemplar != null ? exemplar.getFileId() : null,
                 mark.getStatus() == EntityStatus.ACTIVE
         );
     }

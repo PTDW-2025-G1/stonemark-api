@@ -38,10 +38,10 @@ public class MarkService {
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
         mark.setTitle(dto.title());
         mark.setDescription(dto.description());
-        if (dto.goldenExampleId() != null) {
-            MarkEvidence golden = evidenceRepository.findById(dto.goldenExampleId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Evidence with id " + dto.goldenExampleId() + " not found"));
-            mark.setGoldenExample(golden);
+        if (dto.exemplarId() != null) {
+            MarkEvidence exemplar = evidenceRepository.findById(dto.exemplarId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Evidence with id " + dto.exemplarId() + " not found"));
+            mark.setExemplar(exemplar);
         }
         if (dto.active() != null) {
             if (dto.active()) {
@@ -61,13 +61,13 @@ public class MarkService {
     }
 
     private MarkDto toDto(Mark mark) {
-        MarkEvidence golden = mark.getGoldenExample();
+        MarkEvidence exemplar = mark.getExemplar();
         return new MarkDto(
                 mark.getId(),
                 mark.getTitle(),
                 mark.getDescription(),
-                golden != null ? golden.getEmbedding() : null,
-                golden != null ? golden.getFileId() : null,
+                exemplar != null ? exemplar.getEmbedding() : null,
+                exemplar != null ? exemplar.getFileId() : null,
                 mark.getStatus() == EntityStatus.ACTIVE
         );
     }

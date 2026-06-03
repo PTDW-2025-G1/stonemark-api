@@ -28,8 +28,8 @@ public class Mark extends BaseEntity {
     private List<MarkOccurrence> occurrences;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "golden_example_id")
-    private MarkEvidence goldenExample;
+    @JoinColumn(name = "exemplar_id")
+    private MarkEvidence exemplar;
 
     @Builder.Default
     @Convert(converter = ValidationStateConverter.class)
