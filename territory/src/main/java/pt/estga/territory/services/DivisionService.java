@@ -5,7 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.shared.jpa.SpecBuilder;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.territory.dtos.DivisionFilter;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
@@ -26,9 +28,17 @@ public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
 
-	public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
-		return repository.findAll(pageable).map(AdministrativeDivisionMapper::toDto);
-	}
+public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable).map(AdministrativeDivisionMapper::toDto);
+    }
+
+    public Page<AdministrativeDivisionDto> search(DivisionFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<AdministrativeDivision>()
+                .like("name", filter.name())
+                .eq("parent.id", filter.parentId())
+                .isNull("parent", filter.rootOnly());
+        return repository.findAll(sb.build(), pageable).map(AdministrativeDivisionMapper::toDto);
+    }
 
 	public Optional<AdministrativeDivision> findById(Long id) {
 		return repository.findById(id);

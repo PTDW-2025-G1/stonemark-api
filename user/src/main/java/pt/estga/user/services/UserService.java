@@ -6,10 +6,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.shared.jpa.SpecBuilder;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.dtos.UserFilter;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.repositories.ChatbotAccountRepository;
@@ -29,6 +31,14 @@ public class UserService {
 
     public Page<UserDto> findAll(Pageable pageable) {
         return repository.findAll(pageable).map(UserMapper::toDto);
+    }
+
+    public Page<UserDto> search(UserFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<User>()
+                .like("username", filter.username())
+                .like("email", filter.email())
+                .isTrue("enabled", filter.enabled());
+        return repository.findAll(sb.build(), pageable).map(UserMapper::toDto);
     }
 
     public Optional<User> findById(Long id) {

@@ -5,8 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.monument.dtos.MonumentFilter;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentRepository;
+import pt.estga.shared.jpa.SpecBuilder;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 import java.util.Optional;
@@ -24,6 +26,13 @@ public class MonumentService {
 
     public Page<Monument> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    public Page<Monument> search(MonumentFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<Monument>()
+                .eq("division.id", filter.divisionId())
+                .like("name", filter.name());
+        return repository.findAll(sb.build(), pageable);
     }
 
     public Page<Monument> findByPolygon(String geoJson, Pageable pageable) {
