@@ -1,0 +1,36 @@
+package pt.estga.mark.controllers;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.mark.services.MarkOccurrenceService;
+
+@RestController
+@RequestMapping("/api/v1/admin/occurrences")
+@RequiredArgsConstructor
+@Tag(name = "Mark Occurrences Management", description = "Management endpoints for mark occurrences.")
+public class MarkOccurrenceController {
+
+    private final MarkOccurrenceService service;
+
+    @GetMapping
+    public ResponseEntity<Page<MarkOccurrenceDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(service.findAll(pageable));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MarkOccurrenceDto> findById(@PathVariable Long id) {
+        return ResponseEntity.ok(service.findById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+}

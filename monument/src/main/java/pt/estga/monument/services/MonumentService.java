@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.monument.Monument;
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 

@@ -1,10 +1,10 @@
 package pt.estga.mark.dtos;
 
-public record MarkDto(
-        Long id,
+import java.util.UUID;
+
+public record MarkUpdateDto(
         String title,
         String description,
-        float[] embedding,
-        Long coverId,
+        UUID exemplarId,
         Boolean active
 ) { }

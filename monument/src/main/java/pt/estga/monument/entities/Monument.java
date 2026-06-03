@@ -1,4 +1,4 @@
-package pt.estga.monument;
+package pt.estga.monument.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,10 +33,5 @@ public class Monument extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     private AdministrativeDivision division;
-
-    @Builder.Default
-    @Convert(converter = ValidationStateConverter.class)
-    @Column(nullable = false)
-    private ValidationState validationState = ValidationState.VERIFIED;
 
 }

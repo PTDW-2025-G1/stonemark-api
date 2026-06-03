@@ -6,11 +6,11 @@ import pt.estga.bookmark.dto.*;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.mark.dtos.MarkEvidenceDto;
-import pt.estga.markapi.MarkService;
-import pt.estga.monument.Monument;
-import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.MonumentRepository;
-import pt.estga.monument.dtos.MonumentDto;
+import pt.estga.mark.mappers.MarkMapper;
+import pt.estga.mark.mappers.MarkOccurrenceMapper;
+import pt.estga.mark.repositories.MarkOccurrenceRepository;
+import pt.estga.mark.repositories.MarkRepository;
+import pt.estga.markapi.MarkEvidenceQueryService;
 
 import java.util.*;
 import java.util.function.Function;
@@ -20,8 +20,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookmarkContentResolver {
 
-    private final MonumentRepository monumentRepository;
-    private final MarkService markService;
+    private final MarkRepository markRepository;
+    private final MarkOccurrenceRepository occurrenceRepository;
+    private final MarkEvidenceQueryService markEvidenceQueryService;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
         if (bookmarks.isEmpty()) {
@@ -32,7 +33,6 @@ public class BookmarkContentResolver {
                 .collect(Collectors.groupingBy(Bookmark::getTargetType));
         grouped.forEach((type, group) -> {
             switch (type) {
-                case MONUMENT -> resolveMonuments(group, result);
                 case MARK -> resolveMarks(group, result);
                 case MARK_OCCURRENCE -> resolveOccurrences(group, result);
                 case MARK_EVIDENCE -> resolveEvidences(group, result);
@@ -41,30 +41,18 @@ public class BookmarkContentResolver {
         return result;
     }
 
-    private void resolveMonuments(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
-        List<Long> ids = bookmarks.stream()
-                .map(b -> Long.parseLong(b.getTargetId()))
-                .toList();
-        Map<Long, MonumentDto> monumentMap = monumentRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Monument::getId, MonumentMapper::toResponseDto));
-        for (Bookmark b : bookmarks) {
-            MonumentDto dto = monumentMap.get(Long.parseLong(b.getTargetId()));
-            if (dto != null) {
-                result.put(b.getId(), new MonumentBookmarkContent(dto));
-            }
-        }
-    }
-
     private void resolveMarks(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            markService.findMarkById(Long.parseLong(b.getTargetId()))
+            markRepository.findById(Long.parseLong(b.getTargetId()))
+                    .map(MarkMapper::toDto)
                     .ifPresent(dto -> result.put(b.getId(), new MarkBookmarkContent(dto)));
         }
     }
 
     private void resolveOccurrences(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            markService.findOccurrenceById(Long.parseLong(b.getTargetId()))
+            occurrenceRepository.findById(Long.parseLong(b.getTargetId()))
+                    .map(MarkOccurrenceMapper::toDto)
                     .ifPresent(dto -> result.put(b.getId(), new MarkOccurrenceBookmarkContent(dto)));
         }
     }
@@ -73,7 +61,7 @@ public class BookmarkContentResolver {
         List<UUID> ids = bookmarks.stream()
                 .map(b -> UUID.fromString(b.getTargetId()))
                 .toList();
-        Map<UUID, MarkEvidenceDto> evidenceMap = markService.findEvidenceByIdIn(ids).stream()
+        Map<UUID, MarkEvidenceDto> evidenceMap = markEvidenceQueryService.findEvidenceByIdIn(ids).stream()
                 .collect(Collectors.toMap(MarkEvidenceDto::id, Function.identity()));
         for (Bookmark b : bookmarks) {
             MarkEvidenceDto dto = evidenceMap.get(UUID.fromString(b.getTargetId()));

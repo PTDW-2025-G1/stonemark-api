@@ -71,14 +71,14 @@ public class UserAdminController {
 
     @Operation(summary = "Delete a user", description = "Deletes a user by their ID.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteById(
+    public ResponseEntity<Void> deleteById(
             @Parameter(description = "ID of the user to be deleted", required = true)
             @PathVariable Long id) {
         service.deleteById(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

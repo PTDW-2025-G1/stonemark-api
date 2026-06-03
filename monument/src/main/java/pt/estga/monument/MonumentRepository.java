@@ -1,5 +1,6 @@
 package pt.estga.monument;
 
+import pt.estga.monument.entities.Monument;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -8,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.shared.enums.EntityStatus;
-import pt.estga.shared.enums.ValidationState;
 import pt.estga.shared.repositories.BaseRepository;
 
 import java.util.List;
@@ -22,8 +22,6 @@ public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaS
     default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable) {
         return findByDivisionIdAndStatus(divisionId, pageable, EntityStatus.ACTIVE);
     }
-
-    List<Monument> findByValidationState(ValidationState state);
 
     @Query(value = "SELECT * FROM monument m WHERE ST_Within(m.location, ST_GeomFromGeoJSON(:geoJson))", nativeQuery = true)
     Page<Monument> findByPolygon(@Param("geoJson") String geoJson, Pageable pageable);

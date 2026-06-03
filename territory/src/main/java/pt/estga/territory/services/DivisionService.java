@@ -63,9 +63,13 @@ public class DivisionService {
 		return repository.findAllByParentIsNull();
 	}
 
-	public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
-		return repository.findByCoordinates(latitude, longitude);
-	}
+    public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
+        return repository.findByCoordinates(latitude, longitude);
+    }
+
+    public Optional<AdministrativeDivision> findLowestContainingDivision(double latitude, double longitude) {
+        return repository.findLowestContainingDivision(latitude, longitude);
+    }
 }
 
 
