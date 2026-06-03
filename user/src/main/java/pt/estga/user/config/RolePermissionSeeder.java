@@ -51,6 +51,10 @@ public class RolePermissionSeeder {
                 .name("OCCURRENCE_MANAGE").description("Manage mark occurrences").build());
         Permission suggestionsRead = permissionRepository.save(Permission.builder()
                 .name("SUGGESTIONS_READ").description("View processing suggestions").build());
+        Permission submissionsManage = permissionRepository.save(Permission.builder()
+                .name("SUBMISSIONS_MANAGE").description("Manage evidence submissions").build());
+        Permission processingView = permissionRepository.save(Permission.builder()
+                .name("PROCESSING_VIEW").description("View processing status").build());
         Permission reviewSubmit = permissionRepository.save(Permission.builder()
                 .name("REVIEW_SUBMIT").description("Submit review suggestions").build());
         Permission reviewModerate = permissionRepository.save(Permission.builder()
@@ -65,14 +69,16 @@ public class RolePermissionSeeder {
         Map<String, Set<Permission>> rolePermissions = Map.of(
                 "USER", Set.of(userRead, userWrite, monumentRead, chatbotUse),
                 "REVIEWER", Set.of(userRead, userWrite, monumentRead, chatbotUse,
-                        reviewSubmit, reviewModerate, suggestionsRead),
+                        reviewSubmit, reviewModerate, suggestionsRead, processingView),
                 "MODERATOR", Set.of(userRead, userWrite, monumentRead, chatbotUse,
                         reviewSubmit, reviewModerate,
                         monumentWrite, contactManage, importData,
-                        marksManage, evidenceManage, occurrenceManage, suggestionsRead),
+                        marksManage, evidenceManage, occurrenceManage, suggestionsRead,
+                        submissionsManage, processingView),
                 "ADMIN", Set.of(userRead, userWrite, userManage,
                         monumentRead, monumentWrite,
                         marksManage, evidenceManage, occurrenceManage, suggestionsRead,
+                        submissionsManage, processingView,
                         reviewSubmit, reviewModerate,
                         contactManage, importData,
                         chatbotUse)

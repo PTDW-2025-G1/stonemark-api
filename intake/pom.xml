@@ -46,6 +46,11 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>shared-web</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>territory</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
