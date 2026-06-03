@@ -55,6 +55,8 @@ public class RolePermissionSeeder {
                 .name("SUBMISSIONS_MANAGE").description("Manage evidence submissions").build());
         Permission processingView = permissionRepository.save(Permission.builder()
                 .name("PROCESSING_VIEW").description("View processing status").build());
+        Permission processingManage = permissionRepository.save(Permission.builder()
+                .name("PROCESSING_MANAGE").description("Trigger and manage processing").build());
         Permission reviewSubmit = permissionRepository.save(Permission.builder()
                 .name("REVIEW_SUBMIT").description("Submit review suggestions").build());
         Permission reviewModerate = permissionRepository.save(Permission.builder()
@@ -74,11 +76,11 @@ public class RolePermissionSeeder {
                         reviewSubmit, reviewModerate,
                         monumentWrite, contactManage, importData,
                         marksManage, evidenceManage, occurrenceManage, suggestionsRead,
-                        submissionsManage, processingView),
+                        submissionsManage, processingView, processingManage),
                 "ADMIN", Set.of(userRead, userWrite, userManage,
                         monumentRead, monumentWrite,
                         marksManage, evidenceManage, occurrenceManage, suggestionsRead,
-                        submissionsManage, processingView,
+                        submissionsManage, processingView, processingManage,
                         reviewSubmit, reviewModerate,
                         contactManage, importData,
                         chatbotUse)

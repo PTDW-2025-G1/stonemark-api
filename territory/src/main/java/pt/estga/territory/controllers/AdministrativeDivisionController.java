@@ -64,4 +64,15 @@ public class AdministrativeDivisionController {
     ) {
         return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findByCoordinates(latitude, longitude)));
     }
+
+    @GetMapping("/coordinates/lowest")
+    public ResponseEntity<AdministrativeDivisionDto> getLowestDivisionByCoordinates(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return service.findLowestContainingDivision(latitude, longitude)
+                .map(AdministrativeDivisionMapper::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
