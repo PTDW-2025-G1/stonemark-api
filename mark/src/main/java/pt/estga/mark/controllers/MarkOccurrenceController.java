@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.mark.services.MarkOccurrenceService;
@@ -14,6 +15,7 @@ import pt.estga.mark.services.MarkOccurrenceService;
 @RequestMapping("/api/v1/admin/occurrences")
 @RequiredArgsConstructor
 @Tag(name = "Mark Occurrences Management", description = "Management endpoints for mark occurrences.")
+@PreAuthorize("hasAuthority('OCCURRENCE_MANAGE')")
 public class MarkOccurrenceController {
 
     private final MarkOccurrenceService service;

@@ -3,6 +3,7 @@ package pt.estga.processing.controllers;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.services.processing.SuggestionQueryService;
@@ -13,6 +14,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/processing/submission")
 @RequiredArgsConstructor
 @Tag(name = "Processing Suggestions", description = "Suggestions for a processing submission.")
+@PreAuthorize("hasAuthority('SUGGESTIONS_READ')")
 public class ProcessingSuggestionsController {
 
     private final SuggestionQueryService suggestionQueryService;

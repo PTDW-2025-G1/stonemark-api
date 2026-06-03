@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
@@ -16,6 +17,7 @@ import pt.estga.mark.services.MarkService;
 @RequestMapping("/api/v1/admin/marks")
 @RequiredArgsConstructor
 @Tag(name = "Marks Management", description = "Management endpoints for marks.")
+@PreAuthorize("hasAuthority('MARKS_MANAGE')")
 public class MarkController {
 
     private final MarkService service;
