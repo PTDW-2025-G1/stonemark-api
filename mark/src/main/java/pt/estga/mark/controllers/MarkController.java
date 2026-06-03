@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
-import pt.estga.markapi.MarkService;
+import pt.estga.mark.services.MarkService;
 
 @RestController
 @RequestMapping("/api/v1/admin/marks")

@@ -9,7 +9,6 @@ import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.markapi.MarkService;
 import pt.estga.shared.enums.EntityStatus;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 

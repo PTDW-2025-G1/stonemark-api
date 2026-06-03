@@ -1,4 +1,4 @@
-package pt.estga.markapi;
+package pt.estga.mark.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
