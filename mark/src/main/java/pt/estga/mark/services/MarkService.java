@@ -9,9 +9,9 @@ import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.shared.enums.EntityStatus;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 
 @Service
@@ -23,12 +23,12 @@ public class MarkService {
     private final MarkEvidenceRepository evidenceRepository;
 
     public Page<MarkDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(this::toDto);
+        return repository.findAll(pageable).map(MarkMapper::toDto);
     }
 
     public MarkDto findById(Long id) {
         return repository.findById(id)
-                .map(this::toDto)
+                .map(MarkMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
     }
 
@@ -50,7 +50,7 @@ public class MarkService {
                 mark.deactivate();
             }
         }
-        return toDto(repository.save(mark));
+        return MarkMapper.toDto(repository.save(mark));
     }
 
     @Transactional
@@ -58,17 +58,5 @@ public class MarkService {
         Mark mark = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
         repository.softDelete(mark);
-    }
-
-    private MarkDto toDto(Mark mark) {
-        MarkEvidence exemplar = mark.getExemplar();
-        return new MarkDto(
-                mark.getId(),
-                mark.getTitle(),
-                mark.getDescription(),
-                exemplar != null ? exemplar.getEmbedding() : null,
-                exemplar != null ? exemplar.getFileId() : null,
-                mark.getStatus() == EntityStatus.ACTIVE
-        );
     }
 }
