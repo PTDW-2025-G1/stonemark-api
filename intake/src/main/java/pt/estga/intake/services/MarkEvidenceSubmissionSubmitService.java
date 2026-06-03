@@ -30,7 +30,7 @@ public class MarkEvidenceSubmissionSubmitService {
             MarkEvidenceSubmission submission,
             UUID stagedFileId,
             String photoFilename
-    ) throws IOException {
+    ) {
 
         if (submission == null) {
             throw new IllegalArgumentException("Submission cannot be null");
