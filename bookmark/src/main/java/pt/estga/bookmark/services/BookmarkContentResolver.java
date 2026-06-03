@@ -7,7 +7,7 @@ import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.markapi.MarkService;
-import pt.estga.monument.Monument;
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.monument.dtos.MonumentDto;

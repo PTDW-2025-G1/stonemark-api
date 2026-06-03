@@ -11,7 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import pt.estga.monument.Monument;
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.sharedweb.exceptions.GlobalExceptionHandler;

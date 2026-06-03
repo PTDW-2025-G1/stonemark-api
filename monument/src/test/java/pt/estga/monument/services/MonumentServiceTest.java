@@ -9,7 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import pt.estga.monument.Monument;
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentRepository;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 

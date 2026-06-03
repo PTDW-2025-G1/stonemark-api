@@ -1,5 +1,6 @@
 package pt.estga.monument;
 
+import pt.estga.monument.entities.Monument;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;

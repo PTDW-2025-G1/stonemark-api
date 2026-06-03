@@ -1,5 +1,6 @@
 package pt.estga.monument;
 
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;

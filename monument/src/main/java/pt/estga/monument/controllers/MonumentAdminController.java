@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import pt.estga.monument.Monument;
+import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;

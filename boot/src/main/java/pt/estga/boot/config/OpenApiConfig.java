@@ -18,6 +18,7 @@ public class OpenApiConfig {
     private String baseUrl;
 
     @Bean
+    @SuppressWarnings("deprecation")
     public GroupedOpenApi account() {
         return GroupedOpenApi.builder()
                 .group("Account")
@@ -26,6 +27,7 @@ public class OpenApiConfig {
     }
 
     @Bean
+    @SuppressWarnings("deprecation")
     public GroupedOpenApi publicRoutes() {
         return GroupedOpenApi.builder()
                 .group("Public routes")
@@ -34,6 +36,7 @@ public class OpenApiConfig {
     }
 
     @Bean
+    @SuppressWarnings("deprecation")
     public GroupedOpenApi adminRoutes() {
         return GroupedOpenApi.builder()
                 .group("Admin routes")

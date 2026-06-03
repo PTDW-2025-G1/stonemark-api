@@ -1,4 +1,4 @@
-package pt.estga.monument;
+package pt.estga.monument.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
