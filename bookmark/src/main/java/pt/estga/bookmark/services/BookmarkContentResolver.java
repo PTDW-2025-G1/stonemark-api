@@ -11,10 +11,6 @@ import pt.estga.mark.mappers.MarkOccurrenceMapper;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.markapi.MarkEvidenceQueryService;
-import pt.estga.monument.entities.Monument;
-import pt.estga.monument.MonumentMapper;
-import pt.estga.monument.MonumentRepository;
-import pt.estga.monument.dtos.MonumentDto;
 
 import java.util.*;
 import java.util.function.Function;
@@ -24,7 +20,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookmarkContentResolver {
 
-    private final MonumentRepository monumentRepository;
     private final MarkRepository markRepository;
     private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkEvidenceQueryService markEvidenceQueryService;
@@ -38,27 +33,12 @@ public class BookmarkContentResolver {
                 .collect(Collectors.groupingBy(Bookmark::getTargetType));
         grouped.forEach((type, group) -> {
             switch (type) {
-                case MONUMENT -> resolveMonuments(group, result);
                 case MARK -> resolveMarks(group, result);
                 case MARK_OCCURRENCE -> resolveOccurrences(group, result);
                 case MARK_EVIDENCE -> resolveEvidences(group, result);
             }
         });
         return result;
-    }
-
-    private void resolveMonuments(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
-        List<Long> ids = bookmarks.stream()
-                .map(b -> Long.parseLong(b.getTargetId()))
-                .toList();
-        Map<Long, MonumentDto> monumentMap = monumentRepository.findAllById(ids).stream()
-                .collect(Collectors.toMap(Monument::getId, MonumentMapper::toResponseDto));
-        for (Bookmark b : bookmarks) {
-            MonumentDto dto = monumentMap.get(Long.parseLong(b.getTargetId()));
-            if (dto != null) {
-                result.put(b.getId(), new MonumentBookmarkContent(dto));
-            }
-        }
     }
 
     private void resolveMarks(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
