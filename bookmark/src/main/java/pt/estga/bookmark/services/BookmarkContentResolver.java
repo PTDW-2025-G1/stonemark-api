@@ -6,8 +6,11 @@ import pt.estga.bookmark.dto.*;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.mark.mappers.MarkMapper;
+import pt.estga.mark.mappers.MarkOccurrenceMapper;
+import pt.estga.mark.repositories.MarkOccurrenceRepository;
+import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.markapi.MarkEvidenceQueryService;
-import pt.estga.markapi.MarkService;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.MonumentRepository;
@@ -22,7 +25,8 @@ import java.util.stream.Collectors;
 public class BookmarkContentResolver {
 
     private final MonumentRepository monumentRepository;
-    private final MarkService markService;
+    private final MarkRepository markRepository;
+    private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkEvidenceQueryService markEvidenceQueryService;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
@@ -59,14 +63,16 @@ public class BookmarkContentResolver {
 
     private void resolveMarks(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            markService.findMarkById(Long.parseLong(b.getTargetId()))
+            markRepository.findById(Long.parseLong(b.getTargetId()))
+                    .map(MarkMapper::toDto)
                     .ifPresent(dto -> result.put(b.getId(), new MarkBookmarkContent(dto)));
         }
     }
 
     private void resolveOccurrences(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            markService.findOccurrenceById(Long.parseLong(b.getTargetId()))
+            occurrenceRepository.findById(Long.parseLong(b.getTargetId()))
+                    .map(MarkOccurrenceMapper::toDto)
                     .ifPresent(dto -> result.put(b.getId(), new MarkOccurrenceBookmarkContent(dto)));
         }
     }
