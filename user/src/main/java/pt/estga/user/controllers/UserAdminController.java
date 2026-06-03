@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.dtos.UserFilter;
 import pt.estga.user.services.UserService;
 
 @RestController
@@ -33,8 +34,13 @@ public class UserAdminController {
                             schema = @Schema(implementation = Page.class)))
     })
     @GetMapping
-    public ResponseEntity<Page<UserDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+    public ResponseEntity<Page<UserDto>> findAll(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Boolean enabled) {
+        UserFilter filter = new UserFilter(username, email, enabled);
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID.")

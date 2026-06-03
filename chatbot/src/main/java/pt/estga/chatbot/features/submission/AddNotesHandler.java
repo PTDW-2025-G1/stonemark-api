@@ -12,7 +12,7 @@ import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.Menu;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.services.ChatbotSubmissionFacade;
+import pt.estga.intake.services.SubmissionFacade;
 
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 public class AddNotesHandler implements ConversationStateHandler {
 
-    private final ChatbotSubmissionFacade submitFacade;
+    private final SubmissionFacade submissionFacade;
     private final UiTextService textService;
 
     @Override
@@ -39,7 +39,7 @@ public class AddNotesHandler implements ConversationStateHandler {
         }
 
         try {
-            submitFacade.submitFromChatbot(
+            submissionFacade.submitStaged(
                     markEvidenceSubmission,
                     context.getSubmissionContext().getStagedFileId(),
                     context.getSubmissionContext().getPhotoFilename(),

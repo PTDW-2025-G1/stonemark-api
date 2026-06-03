@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.monument.MonumentMapper;
+import pt.estga.monument.dtos.MonumentFilter;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
@@ -35,9 +36,12 @@ public class MonumentController {
 
     @GetMapping
     public ResponseEntity<Page<MonumentListDto>> findAll(
-            @PageableDefault(size = 20) Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) Long divisionId,
+            @RequestParam(required = false) String name
     ) {
-        return ResponseEntity.ok(service.findAll(pageable).map(MonumentMapper::toListDto));
+        MonumentFilter filter = new MonumentFilter(divisionId, name);
+        return ResponseEntity.ok(service.search(filter, pageable).map(MonumentMapper::toListDto));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)

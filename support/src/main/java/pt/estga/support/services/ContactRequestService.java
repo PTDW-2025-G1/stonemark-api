@@ -5,8 +5,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.shared.jpa.SpecBuilder;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.support.dtos.ContactRequestDto;
+import pt.estga.support.dtos.ContactRequestFilter;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.mappers.ContactRequestMapper;
@@ -36,6 +38,14 @@ public class ContactRequestService {
 
     public Page<ContactRequest> findAll(Pageable pageable) {
         return repository.findAll(pageable);
+    }
+
+    public Page<ContactRequest> search(ContactRequestFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<ContactRequest>()
+                .eq("status", filter.status())
+                .like("name", filter.name())
+                .like("email", filter.email());
+        return repository.findAll(sb.build(), pageable);
     }
 
     @Transactional

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.services.MarkEvidenceService;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/evidences")
 @RequiredArgsConstructor
 @Tag(name = "Mark Evidences Management", description = "Management endpoints for mark evidences.")
+@PreAuthorize("hasAuthority('EVIDENCE_MANAGE')")
 public class MarkEvidenceController {
 
     private final MarkEvidenceService service;

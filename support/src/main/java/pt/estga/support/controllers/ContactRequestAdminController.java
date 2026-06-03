@@ -8,6 +8,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.support.dtos.ContactRequestFilter;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
 import pt.estga.support.services.ContactRequestService;
@@ -22,8 +23,13 @@ public class ContactRequestAdminController {
     private final ContactRequestService service;
 
     @GetMapping
-    public ResponseEntity<Page<ContactRequest>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+    public ResponseEntity<Page<ContactRequest>> findAll(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) ContactStatus status,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String email) {
+        ContactRequestFilter filter = new ContactRequestFilter(status, name, email);
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @GetMapping("/{id}")

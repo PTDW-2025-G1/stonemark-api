@@ -8,6 +8,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.territory.dtos.DivisionFilter;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import pt.estga.territory.services.DivisionService;
 
@@ -27,8 +28,13 @@ public class AdministrativeDivisionController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<AdministrativeDivisionDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+    public ResponseEntity<Page<AdministrativeDivisionDto>> findAll(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long parentId,
+            @RequestParam(required = false) Boolean rootOnly) {
+        DivisionFilter filter = new DivisionFilter(name, parentId, rootOnly);
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @GetMapping("/{id}")
@@ -63,5 +69,16 @@ public class AdministrativeDivisionController {
             @RequestParam double longitude
     ) {
         return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findByCoordinates(latitude, longitude)));
+    }
+
+    @GetMapping("/coordinates/lowest")
+    public ResponseEntity<AdministrativeDivisionDto> getLowestDivisionByCoordinates(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return service.findLowestContainingDivision(latitude, longitude)
+                .map(AdministrativeDivisionMapper::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

@@ -43,6 +43,20 @@ public class RolePermissionSeeder {
                 .name("MONUMENT_READ").description("View monuments").build());
         Permission monumentWrite = permissionRepository.save(Permission.builder()
                 .name("MONUMENT_WRITE").description("Create and edit monuments").build());
+        Permission marksManage = permissionRepository.save(Permission.builder()
+                .name("MARKS_MANAGE").description("Manage mason marks").build());
+        Permission evidenceManage = permissionRepository.save(Permission.builder()
+                .name("EVIDENCE_MANAGE").description("Manage mark evidence").build());
+        Permission occurrenceManage = permissionRepository.save(Permission.builder()
+                .name("OCCURRENCE_MANAGE").description("Manage mark occurrences").build());
+        Permission suggestionsRead = permissionRepository.save(Permission.builder()
+                .name("SUGGESTIONS_READ").description("View processing suggestions").build());
+        Permission submissionsManage = permissionRepository.save(Permission.builder()
+                .name("SUBMISSIONS_MANAGE").description("Manage evidence submissions").build());
+        Permission processingView = permissionRepository.save(Permission.builder()
+                .name("PROCESSING_VIEW").description("View processing status").build());
+        Permission processingManage = permissionRepository.save(Permission.builder()
+                .name("PROCESSING_MANAGE").description("Trigger and manage processing").build());
         Permission reviewSubmit = permissionRepository.save(Permission.builder()
                 .name("REVIEW_SUBMIT").description("Submit review suggestions").build());
         Permission reviewModerate = permissionRepository.save(Permission.builder()
@@ -57,12 +71,16 @@ public class RolePermissionSeeder {
         Map<String, Set<Permission>> rolePermissions = Map.of(
                 "USER", Set.of(userRead, userWrite, monumentRead, chatbotUse),
                 "REVIEWER", Set.of(userRead, userWrite, monumentRead, chatbotUse,
-                        reviewSubmit, reviewModerate),
+                        reviewSubmit, reviewModerate, suggestionsRead, processingView),
                 "MODERATOR", Set.of(userRead, userWrite, monumentRead, chatbotUse,
                         reviewSubmit, reviewModerate,
-                        monumentWrite, contactManage, importData),
+                        monumentWrite, contactManage, importData,
+                        marksManage, evidenceManage, occurrenceManage, suggestionsRead,
+                        submissionsManage, processingView, processingManage),
                 "ADMIN", Set.of(userRead, userWrite, userManage,
                         monumentRead, monumentWrite,
+                        marksManage, evidenceManage, occurrenceManage, suggestionsRead,
+                        submissionsManage, processingView, processingManage,
                         reviewSubmit, reviewModerate,
                         contactManage, importData,
                         chatbotUse)
