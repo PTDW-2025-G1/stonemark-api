@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pt.estga.sharedcore.enums.EntityStatus;
-import pt.estga.shared.repositories.BaseRepository;
+import pt.estga.sharedinfra.repositories.BaseRepository;
 
 @Repository
 public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaSpecificationExecutor<Monument> {

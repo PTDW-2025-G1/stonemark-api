@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
-import pt.estga.shared.entities.BaseEntity;
+import pt.estga.sharedinfra.entities.BaseEntity;
 
 import java.util.UUID;
 

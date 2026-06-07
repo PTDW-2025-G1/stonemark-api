@@ -6,7 +6,7 @@ import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
-import pt.estga.shared.repositories.BaseRepository;
+import pt.estga.sharedinfra.repositories.BaseRepository;
 
 import java.util.List;
 import java.util.Optional;

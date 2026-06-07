@@ -1,4 +1,4 @@
-package pt.estga.shared.models;
+package pt.estga.sharedinfra.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

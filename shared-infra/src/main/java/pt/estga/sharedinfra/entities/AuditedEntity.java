@@ -1,4 +1,4 @@
-package pt.estga.shared.entities;
+package pt.estga.sharedinfra.entities;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -11,7 +11,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import pt.estga.shared.models.AuditActor;
+import pt.estga.sharedinfra.models.AuditActor;
 
 import java.time.Instant;
 

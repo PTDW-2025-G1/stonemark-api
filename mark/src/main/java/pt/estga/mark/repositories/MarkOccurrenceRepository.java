@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.shared.repositories.BaseRepository;
+import pt.estga.sharedinfra.repositories.BaseRepository;
 
 import java.util.Optional;
 
