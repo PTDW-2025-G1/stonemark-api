@@ -7,13 +7,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.shared.models.AppPrincipal;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commoncore.models.AppPrincipal;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
 import java.util.Collection;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service

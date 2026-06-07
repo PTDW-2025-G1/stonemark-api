@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
-import pt.estga.shared.utils.VectorUtils;
+import pt.estga.commoncore.utils.VectorUtils;
 
 import java.util.Optional;
 

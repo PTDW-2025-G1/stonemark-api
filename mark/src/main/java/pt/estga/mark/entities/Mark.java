@@ -2,9 +2,9 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.shared.converters.ValidationStateConverter;
-import pt.estga.shared.entities.BaseEntity;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.commoninfra.converters.ValidationStateConverter;
+import pt.estga.commoninfra.entities.BaseEntity;
+import pt.estga.commoncore.enums.ValidationState;
 
 import java.util.List;
 

@@ -7,7 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.notification.models.Email;
 import pt.estga.notification.services.EmailService;
-import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.commonweb.dtos.MessageResponseDto;
 
 import java.util.Map;
 

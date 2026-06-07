@@ -16,7 +16,7 @@ import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
+import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.FileInputStream;
 import java.io.IOException;

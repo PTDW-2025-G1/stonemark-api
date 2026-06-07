@@ -16,6 +16,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.commoncore.utils.VectorUtils;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaMetadataService;
@@ -132,7 +133,7 @@ public class ProcessingServiceImpl implements ProcessingService {
 
                     // Normalize embedding before use and persistence. Store unit-length vectors in DB
                     // to make DB-side similarity semantics explicit and robust.
-                    float[] normalized = pt.estga.shared.utils.VectorUtils.normalize(embedding);
+                    float[] normalized = VectorUtils.normalize(embedding);
                     if (normalized == null) {
                         setProcessingFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
                         return;

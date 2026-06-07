@@ -6,12 +6,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.MonumentRepository;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.Optional;

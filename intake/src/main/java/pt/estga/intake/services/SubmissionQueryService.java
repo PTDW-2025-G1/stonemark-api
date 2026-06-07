@@ -11,7 +11,7 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.shared.jpa.SpecBuilder;
+import pt.estga.commoninfra.jpa.SpecBuilder;
 
 import java.util.Optional;
 

@@ -21,12 +21,12 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared</artifactId>
+            <artifactId>common-infra</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-web</artifactId>
+            <artifactId>common-web</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>

@@ -25,7 +25,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-web</artifactId>
+            <artifactId>common-web</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
@@ -40,12 +40,12 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared</artifactId>
+            <artifactId>common-core</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-infra</artifactId>
+            <artifactId>common-infra</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
     </dependencies>

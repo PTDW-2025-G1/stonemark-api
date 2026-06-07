@@ -6,7 +6,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.AuthService;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.commoncore.models.AppPrincipal;
 import pt.estga.user.enums.ChatbotPlatform;
 import pt.estga.user.services.ChatbotAccountService;
 

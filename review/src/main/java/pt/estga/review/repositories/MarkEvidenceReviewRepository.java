@@ -2,7 +2,7 @@ package pt.estga.review.repositories;
 
 import org.springframework.stereotype.Repository;
 import pt.estga.review.entities.MarkEvidenceReview;
-import pt.estga.shared.repositories.BaseRepository;
+import pt.estga.commoninfra.repositories.BaseRepository;
 
 import java.util.Optional;
 

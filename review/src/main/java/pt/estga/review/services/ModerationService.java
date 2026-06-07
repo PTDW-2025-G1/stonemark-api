@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.ModerationDtos;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.commoncore.enums.ValidationState;
 
 import java.util.List;
 import java.util.stream.Collectors;

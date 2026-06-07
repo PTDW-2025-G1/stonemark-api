@@ -9,7 +9,7 @@ import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.mappers.MarkEvidenceMapper;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 import java.util.UUID;
 

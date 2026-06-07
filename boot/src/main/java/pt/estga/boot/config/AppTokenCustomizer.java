@@ -3,7 +3,7 @@ package pt.estga.boot.config;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.stereotype.Component;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.commoncore.models.AppPrincipal;
 
 @Component
 public class AppTokenCustomizer implements OAuth2TokenCustomizer<JwtEncodingContext> {

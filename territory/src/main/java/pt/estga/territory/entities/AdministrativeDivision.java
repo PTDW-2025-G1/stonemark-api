@@ -3,7 +3,7 @@ package pt.estga.territory.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Geometry;
-import pt.estga.shared.entities.BaseEntity;
+import pt.estga.commoninfra.entities.BaseEntity;
 
 @Entity
 @NoArgsConstructor
