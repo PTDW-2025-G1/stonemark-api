@@ -3,7 +3,7 @@ package pt.estga.mark.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.commoninfra.converters.ValidationStateConverter;
-import pt.estga.sharedcore.enums.ValidationState;
+import pt.estga.commoncore.enums.ValidationState;
 import pt.estga.monument.entities.Monument;
 import pt.estga.commoninfra.entities.BaseEntity;
 

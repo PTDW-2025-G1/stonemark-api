@@ -11,7 +11,7 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.sharedcore.utils.SecurityUtils;
+import pt.estga.commoncore.utils.SecurityUtils;
 
 import java.io.IOException;
 import java.util.UUID;

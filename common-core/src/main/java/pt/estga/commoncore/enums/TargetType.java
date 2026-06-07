@@ -1,4 +1,4 @@
-package pt.estga.sharedcore.enums;
+package pt.estga.commoncore.enums;
 
 public enum TargetType {
     MARK,

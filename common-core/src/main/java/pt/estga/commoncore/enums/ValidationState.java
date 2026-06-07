@@ -1,4 +1,4 @@
-package pt.estga.sharedcore.enums;
+package pt.estga.commoncore.enums;
 
 /**
  * Centralized validation state used across multiple modules.

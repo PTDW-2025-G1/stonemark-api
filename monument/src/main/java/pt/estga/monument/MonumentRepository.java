@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pt.estga.sharedcore.enums.EntityStatus;
+import pt.estga.commoncore.enums.EntityStatus;
 import pt.estga.commoninfra.repositories.BaseRepository;
 
 @Repository

@@ -4,7 +4,7 @@ import pt.estga.monument.entities.Monument;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
-import pt.estga.sharedcore.enums.EntityStatus;
+import pt.estga.commoncore.enums.EntityStatus;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.utils.GeometryUtils;

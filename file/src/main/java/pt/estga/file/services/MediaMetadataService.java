@@ -8,7 +8,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedcore.events.AfterCommitEventPublisher;
+import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.enums.MediaStatus;

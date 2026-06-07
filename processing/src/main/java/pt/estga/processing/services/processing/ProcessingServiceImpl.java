@@ -16,7 +16,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.sharedcore.utils.VectorUtils;
+import pt.estga.commoncore.utils.VectorUtils;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaMetadataService;

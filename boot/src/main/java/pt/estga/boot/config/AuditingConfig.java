@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import pt.estga.commoninfra.models.AuditActor;
-import pt.estga.sharedcore.utils.SecurityUtils;
+import pt.estga.commoncore.utils.SecurityUtils;
 
 @Configuration
 @EnableJpaAuditing(auditorAwareRef = "auditorAware")

@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedcore.models.AppPrincipal;
+import pt.estga.commoncore.models.AppPrincipal;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
