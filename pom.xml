@@ -24,7 +24,7 @@
     <modules>
         <!-- Foundation: no internal dependencies -->
         <module>common-core</module>
-        <module>shared-web</module>
+        <module>common-web</module>
         <module>file-api</module>
         <module>mark-api</module>
         <module>notification</module>
@@ -141,7 +141,7 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>shared-web</artifactId>
+                <artifactId>common-web</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
