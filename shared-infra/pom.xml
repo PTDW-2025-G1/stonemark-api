@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-core</artifactId>
+            <artifactId>common-core</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

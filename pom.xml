@@ -23,7 +23,7 @@
 	</developers>
     <modules>
         <!-- Foundation: no internal dependencies -->
-        <module>shared-core</module>
+        <module>common-core</module>
         <module>shared-web</module>
         <module>file-api</module>
         <module>mark-api</module>
@@ -106,7 +106,7 @@
             <!-- Internal modules -->
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>shared-core</artifactId>
+                <artifactId>common-core</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
@@ -116,7 +116,7 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>shared-core</artifactId>
+                <artifactId>common-core</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
