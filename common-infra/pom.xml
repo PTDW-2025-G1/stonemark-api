@@ -9,7 +9,7 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>shared-infra</artifactId>
+    <artifactId>common-infra</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>

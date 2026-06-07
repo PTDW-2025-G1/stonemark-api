@@ -31,7 +31,7 @@
         <module>vision</module>
 
         <!-- Infrastructure layer -->
-        <module>shared-infra</module>       <!-- needs shared-core -->
+        <module>common-infra</module>       <!-- needs shared-core -->
         <module>user-api</module>           <!-- needs file-api -->
 
         <!-- Domain services -->
@@ -111,7 +111,7 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>shared-infra</artifactId>
+                <artifactId>common-infra</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

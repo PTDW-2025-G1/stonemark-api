@@ -31,7 +31,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-infra</artifactId>
+            <artifactId>common-infra</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
