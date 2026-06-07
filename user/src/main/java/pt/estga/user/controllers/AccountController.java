@@ -14,7 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.sharedcore.interfaces.AuthenticatedPrincipal;
-import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.commonweb.dtos.MessageResponseDto;
 import pt.estga.user.dtos.*;
 import pt.estga.user.services.UserService;
 

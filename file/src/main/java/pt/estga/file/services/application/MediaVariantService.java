@@ -10,7 +10,7 @@ import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.sharedweb.exceptions.FileNotFoundException;
+import pt.estga.commonweb.exceptions.FileNotFoundException;
 
 import java.util.UUID;
 

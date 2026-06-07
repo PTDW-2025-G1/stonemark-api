@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.dtos;
+package pt.estga.commonweb.dtos;
 
 /**
  * DTO for conveying an operation outcome and a human-readable message.

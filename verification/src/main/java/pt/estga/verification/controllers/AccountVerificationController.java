@@ -9,7 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.sharedcore.events.AfterCommitEventPublisher;
 import pt.estga.sharedcore.interfaces.AuthenticatedPrincipal;
-import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.commonweb.dtos.MessageResponseDto;
 import pt.estga.userapi.ChatbotAccountOperations;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;

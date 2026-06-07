@@ -13,7 +13,7 @@ import pt.estga.monument.MonumentMapper;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 import java.net.URI;
 

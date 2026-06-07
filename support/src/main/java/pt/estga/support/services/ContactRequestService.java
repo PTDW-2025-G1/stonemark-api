@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.commoninfra.jpa.SpecBuilder;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.support.dtos.ContactRequestDto;
 import pt.estga.support.dtos.ContactRequestFilter;
 import pt.estga.support.entities.ContactRequest;

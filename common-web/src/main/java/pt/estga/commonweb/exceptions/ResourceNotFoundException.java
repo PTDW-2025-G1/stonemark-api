@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.exceptions;
+package pt.estga.commonweb.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

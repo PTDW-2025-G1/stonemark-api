@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.repositories.MarkRepository;
@@ -21,7 +20,7 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 import java.util.List;
 

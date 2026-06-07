@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.core.io.Resource;
 import pt.estga.file.config.StorageProperties;
-import pt.estga.sharedweb.exceptions.FileNotFoundException;
-import pt.estga.sharedweb.exceptions.FileStorageException;
+import pt.estga.commonweb.exceptions.FileNotFoundException;
+import pt.estga.commonweb.exceptions.FileStorageException;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;

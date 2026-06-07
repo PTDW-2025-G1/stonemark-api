@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.config;
+package pt.estga.commonweb.config;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;

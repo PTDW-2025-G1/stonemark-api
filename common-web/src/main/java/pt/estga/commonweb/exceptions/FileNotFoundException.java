@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.exceptions;
+package pt.estga.commonweb.exceptions;
 
 public class FileNotFoundException extends FileStorageException {
     public FileNotFoundException(String message) {

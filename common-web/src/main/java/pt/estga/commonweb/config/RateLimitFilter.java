@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.config;
+package pt.estga.commonweb.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;

@@ -9,7 +9,7 @@ import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.mappers.MarkOccurrenceMapper;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor

@@ -16,11 +16,10 @@ import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.sharedweb.exceptions.UnsupportedFileTypeException;
+import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 

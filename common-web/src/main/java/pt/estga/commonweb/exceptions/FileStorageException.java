@@ -1,4 +1,4 @@
-package pt.estga.sharedweb.exceptions;
+package pt.estga.commonweb.exceptions;
 
 public class FileStorageException extends RuntimeException {
     public FileStorageException(String message) {

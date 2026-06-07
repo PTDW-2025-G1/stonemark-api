@@ -7,7 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.commoninfra.jpa.SpecBuilder;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
