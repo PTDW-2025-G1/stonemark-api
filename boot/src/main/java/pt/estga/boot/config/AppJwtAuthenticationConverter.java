@@ -5,7 +5,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.sharedcore.models.AppPrincipal;
 
 import java.util.Collections;
 

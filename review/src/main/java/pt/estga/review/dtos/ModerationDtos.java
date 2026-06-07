@@ -1,7 +1,7 @@
 package pt.estga.review.dtos;
 
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.sharedcore.enums.ValidationState;
 
 import java.util.UUID;
 

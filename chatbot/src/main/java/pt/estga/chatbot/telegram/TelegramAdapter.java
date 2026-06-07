@@ -30,7 +30,7 @@ import pt.estga.chatbot.models.ui.TextMessage;
 import pt.estga.chatbot.models.ui.UIComponent;
 import pt.estga.chatbot.telegram.services.TelegramFileService;
 import pt.estga.chatbot.telegram.services.TelegramTextService;
-import pt.estga.shared.models.Location;
+import pt.estga.sharedcore.models.Location;
 
 import java.io.File;
 import java.io.IOException;

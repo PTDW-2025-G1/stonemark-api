@@ -1,4 +1,4 @@
-package pt.estga.shared.utils;
+package pt.estga.sharedcore.utils;
 
 import org.junit.jupiter.api.Test;
 

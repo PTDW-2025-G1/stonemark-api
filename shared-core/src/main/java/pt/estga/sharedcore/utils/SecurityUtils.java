@@ -1,10 +1,10 @@
-package pt.estga.shared.utils;
+package pt.estga.sharedcore.utils;
 
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import pt.estga.shared.interfaces.AuthenticatedPrincipal;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.sharedcore.interfaces.AuthenticatedPrincipal;
+import pt.estga.sharedcore.models.AppPrincipal;
 
 import java.util.Optional;
 

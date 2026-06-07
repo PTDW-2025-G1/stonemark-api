@@ -3,7 +3,7 @@ package pt.estga.mark.mappers;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.entities.Mark;
 import pt.estga.mark.entities.MarkEvidence;
-import pt.estga.shared.enums.EntityStatus;
+import pt.estga.sharedcore.enums.EntityStatus;
 
 public class MarkMapper {
 

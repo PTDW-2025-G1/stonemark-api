@@ -1,4 +1,4 @@
-package pt.estga.shared.utils;
+package pt.estga.sharedcore.utils;
 
 import java.util.Map;
 

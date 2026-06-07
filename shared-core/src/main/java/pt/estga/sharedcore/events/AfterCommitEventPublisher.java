@@ -1,4 +1,4 @@
-package pt.estga.shared.events;
+package pt.estga.sharedcore.events;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

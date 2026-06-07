@@ -1,10 +1,10 @@
-package pt.estga.shared.models;
+package pt.estga.sharedcore.models;
 
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import pt.estga.shared.interfaces.AuthenticatedPrincipal;
+import pt.estga.sharedcore.interfaces.AuthenticatedPrincipal;
 
 import java.util.Collection;
 

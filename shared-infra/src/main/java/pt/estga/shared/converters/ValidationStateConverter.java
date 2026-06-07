@@ -2,7 +2,7 @@ package pt.estga.shared.converters;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.sharedcore.enums.ValidationState;
 
 /**
  * Persists {@link ValidationState} as its ordinal integer value.

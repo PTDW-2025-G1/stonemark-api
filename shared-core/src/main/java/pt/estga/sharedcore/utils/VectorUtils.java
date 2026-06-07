@@ -1,4 +1,4 @@
-package pt.estga.shared.utils;
+package pt.estga.sharedcore.utils;
 
 /**
  * Utility helpers for working with vector data representations.

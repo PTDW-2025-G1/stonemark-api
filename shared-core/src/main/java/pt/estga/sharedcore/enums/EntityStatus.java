@@ -1,4 +1,4 @@
-package pt.estga.shared.enums;
+package pt.estga.sharedcore.enums;
 
 public enum EntityStatus {
     ACTIVE,

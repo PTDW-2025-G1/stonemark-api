@@ -3,10 +3,8 @@ package pt.estga.monument.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
-import pt.estga.shared.converters.ValidationStateConverter;
 import pt.estga.shared.entities.BaseEntity;
 import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.shared.enums.ValidationState;
 
 @Entity
 @NoArgsConstructor

@@ -1,4 +1,4 @@
-package pt.estga.shared.models;
+package pt.estga.sharedcore.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

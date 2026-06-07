@@ -1,7 +1,7 @@
 package pt.estga.chatbot.services;
 
 import pt.estga.chatbot.models.Platform;
-import pt.estga.shared.models.AppPrincipal;
+import pt.estga.sharedcore.models.AppPrincipal;
 
 import java.util.Optional;
 

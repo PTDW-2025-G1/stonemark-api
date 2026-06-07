@@ -1,4 +1,4 @@
-package pt.estga.shared.security;
+package pt.estga.sharedcore.security;
 
 public final class Permissions {
 

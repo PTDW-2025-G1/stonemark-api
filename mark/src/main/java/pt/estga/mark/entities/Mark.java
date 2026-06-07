@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.shared.converters.ValidationStateConverter;
 import pt.estga.shared.entities.BaseEntity;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.sharedcore.enums.ValidationState;
 
 import java.util.List;
 

@@ -7,7 +7,7 @@ import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.markapi.MarkEvidenceQueryService;
 import pt.estga.processing.config.ProcessingProperties;
-import pt.estga.shared.utils.VectorUtils;
+import pt.estga.sharedcore.utils.VectorUtils;
 
 import java.util.List;
 import java.util.Map;

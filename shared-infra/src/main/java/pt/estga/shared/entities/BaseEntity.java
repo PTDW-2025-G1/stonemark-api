@@ -5,7 +5,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
-import pt.estga.shared.enums.EntityStatus;
+import pt.estga.sharedcore.enums.EntityStatus;
 
 import java.time.Instant;
 
