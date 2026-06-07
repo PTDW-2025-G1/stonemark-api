@@ -1,4 +1,4 @@
-package pt.estga.sharedinfra.converters;
+package pt.estga.commoninfra.converters;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;

@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedinfra.jpa.SpecBuilder;
+import pt.estga.commoninfra.jpa.SpecBuilder;
 import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;

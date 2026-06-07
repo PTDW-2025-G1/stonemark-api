@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pt.estga.sharedinfra.repositories.BaseRepository;
+import pt.estga.commoninfra.repositories.BaseRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;

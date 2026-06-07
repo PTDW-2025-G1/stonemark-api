@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedinfra.jpa.SpecBuilder;
+import pt.estga.commoninfra.jpa.SpecBuilder;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
 import pt.estga.territory.dtos.DivisionFilter;
 import pt.estga.territory.entities.AdministrativeDivision;

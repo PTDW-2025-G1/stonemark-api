@@ -1,8 +1,8 @@
-package pt.estga.sharedinfra.repositories;
+package pt.estga.commoninfra.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-import pt.estga.sharedinfra.entities.BaseEntity;
+import pt.estga.commoninfra.entities.BaseEntity;
 
 @NoRepositoryBean
 public interface BaseRepository<T, ID> extends JpaRepository<T, ID> {

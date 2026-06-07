@@ -2,7 +2,7 @@ package pt.estga.user.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.sharedinfra.entities.BaseEntity;
+import pt.estga.commoninfra.entities.BaseEntity;
 
 import java.io.Serial;
 import java.io.Serializable;

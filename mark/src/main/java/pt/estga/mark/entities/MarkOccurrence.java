@@ -2,10 +2,10 @@ package pt.estga.mark.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.sharedinfra.converters.ValidationStateConverter;
+import pt.estga.commoninfra.converters.ValidationStateConverter;
 import pt.estga.sharedcore.enums.ValidationState;
 import pt.estga.monument.entities.Monument;
-import pt.estga.sharedinfra.entities.BaseEntity;
+import pt.estga.commoninfra.entities.BaseEntity;
 
 import java.util.List;
 

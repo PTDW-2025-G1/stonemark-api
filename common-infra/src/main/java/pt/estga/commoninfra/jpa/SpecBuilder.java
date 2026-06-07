@@ -1,4 +1,4 @@
-package pt.estga.sharedinfra.jpa;
+package pt.estga.commoninfra.jpa;
 
 import org.springframework.data.jpa.domain.Specification;
 

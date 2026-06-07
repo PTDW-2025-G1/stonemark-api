@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
 import lombok.*;
-import pt.estga.sharedinfra.entities.BaseEntity;
+import pt.estga.commoninfra.entities.BaseEntity;
 
 @Entity
 @NoArgsConstructor

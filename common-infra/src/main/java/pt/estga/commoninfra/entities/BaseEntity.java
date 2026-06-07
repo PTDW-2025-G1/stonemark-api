@@ -1,4 +1,4 @@
-package pt.estga.sharedinfra.entities;
+package pt.estga.commoninfra.entities;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
