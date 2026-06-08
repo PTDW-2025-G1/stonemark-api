@@ -13,9 +13,12 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.web.client.RestTemplate;
 
+import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
 
 @Configuration
@@ -23,6 +26,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class ApplicationConfig {
 
+    private final RSAPublicKey jwtPublicKey;
     private final JWKSource<SecurityContext> jwkSource;
 
     @Bean
@@ -37,7 +41,12 @@ public class ApplicationConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSource(jwkSource).build();
+        return NimbusJwtDecoder.withPublicKey(jwtPublicKey).build();
+    }
+
+    @Bean
+    public JwtEncoder jwtEncoder() {
+        return new NimbusJwtEncoder(jwkSource);
     }
 
     @Bean

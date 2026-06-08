@@ -49,14 +49,6 @@ public class UserService {
         return repository.findById(id).map(UserMapper::toDto);
     }
 
-    public Optional<User> findByEmail(String email) {
-        return repository.findByEmail(email);
-    }
-
-    public Optional<User> findByIdForProfile(Long id) {
-        return repository.findByIdForProfile(id);
-    }
-
     public boolean existsByUsername(String username) {
         return repository.existsByUsername(username);
     }
