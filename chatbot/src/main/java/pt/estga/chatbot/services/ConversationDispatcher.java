@@ -70,7 +70,6 @@ public class ConversationDispatcher {
         }
 
         ConversationState currentState = context.getCurrentState();
-        log.debug("Dispatching state: {} with input type: {} (depth: {})", currentState, input.getType(), depth);
 
         ConversationStateHandler handler = handlers.get(currentState);
 
@@ -79,14 +78,9 @@ public class ConversationDispatcher {
             return createErrorResponse(context);
         }
 
-        log.debug("Executing handler: {} for state: {}", handler.getClass().getSimpleName(), currentState);
-
         HandlerOutcome outcome = handler.handle(context, input);
 
-        log.debug("Handler {} returned outcome: {}", handler.getClass().getSimpleName(), outcome);
-
         if (outcome instanceof Redispatch) {
-            log.debug("Re-dispatching due to RE_DISPATCH outcome");
             return dispatch(context, input, depth + 1);
         }
 
@@ -108,7 +102,6 @@ public class ConversationDispatcher {
         }
 
         ConversationState nextState = handler.getNextState(context, currentState, outcome, input);
-        log.debug("State transition: {} -> {} (outcome: {})", currentState, nextState, outcome);
         ConversationState previousState = context.getCurrentState();
         context.setCurrentState(nextState);
 
@@ -131,18 +124,15 @@ public class ConversationDispatcher {
             ConversationStateHandler handler = handlers.get(context.getCurrentState());
             if (handler == null || !handler.isAutomatic()) break;
 
-            log.debug("Executing automatic handler: {} for state: {}", handler.getClass().getSimpleName(), context.getCurrentState());
             BotInput autoInput = BotInput.builder()
                     .userId(input.getUserId())
                     .platform(input.getPlatform())
                     .build();
             HandlerOutcome outcome = handler.handle(context, autoInput);
-            log.debug("Automatic handler {} returned outcome: {}", handler.getClass().getSimpleName(), outcome);
 
             if (outcome instanceof Success) break;
 
             ConversationState nextState = handler.getNextState(context, context.getCurrentState(), outcome, autoInput);
-            log.debug("Automatic state transition: {} -> {} (outcome: {})", context.getCurrentState(), nextState, outcome);
             context.setCurrentState(nextState);
         }
     }

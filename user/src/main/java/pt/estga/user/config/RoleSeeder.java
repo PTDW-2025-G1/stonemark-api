@@ -31,13 +31,10 @@ public class RoleSeeder {
         log.info("Seeding roles");
 
         for (String name : ROLE_NAMES) {
-            Role role = roleRepository.save(Role.builder()
+            roleRepository.save(Role.builder()
                     .name(name)
                     .description("Pre-defined " + name.toLowerCase() + " role")
                     .build());
-            log.info("Seeded role: {}", role.getName());
         }
-
-        log.info("Role seeding complete");
     }
 }
