@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.boot.config.GoogleTokenVerifier;
 import pt.estga.boot.config.JwtService;
 import pt.estga.boot.dtos.AuthResponse;
-import pt.estga.user.entities.Permission;
 import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.RoleRepository;
@@ -135,22 +134,20 @@ public class AuthService {
     }
 
     private AuthResponse buildAuthResponse(User user) {
-        User userWithRoles = userRepository.findByIdWithRolesAndPermissions(user.getId())
+        User userWithRoles = userRepository.findByIdWithRoles(user.getId())
                 .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
 
-        Set<String> permissions = userWithRoles.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(Permission::getName)
+        Set<String> roles = userWithRoles.getRoles().stream()
+                .map(Role::getName)
                 .collect(Collectors.toSet());
 
-        String highestRole = userWithRoles.getRoles().stream()
-                .map(Role::getName)
+        String highestRole = roles.stream()
                 .filter(name -> name.equals("ADMIN") || name.equals("MODERATOR") || name.equals("USER"))
                 .findFirst()
                 .orElse("USER");
 
         return new AuthResponse(
-                jwtService.generateAccessToken(userWithRoles, permissions),
+                jwtService.generateAccessToken(userWithRoles, roles),
                 jwtService.generateRefreshToken(userWithRoles),
                 highestRole,
                 userWithRoles.getId()

@@ -38,12 +38,12 @@ public class AppJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
 
     @SuppressWarnings("unchecked")
     private static Collection<SimpleGrantedAuthority> extractAuthorities(Jwt jwt) {
-        List<String> permissions = jwt.getClaim("permissions");
-        if (permissions == null || permissions.isEmpty()) {
+        List<String> roles = jwt.getClaim("roles");
+        if (roles == null || roles.isEmpty()) {
             return Set.of();
         }
-        return permissions.stream()
-                .map(SimpleGrantedAuthority::new)
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -24,9 +24,8 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
     boolean existsByUsername(String username);
 
     @Query("SELECT DISTINCT u FROM User u " +
-           "LEFT JOIN FETCH u.roles r " +
-           "LEFT JOIN FETCH r.permissions " +
+           "LEFT JOIN FETCH u.roles " +
            "WHERE u.id = :id")
-    Optional<User> findByIdWithRolesAndPermissions(@Param("id") Long id);
+    Optional<User> findByIdWithRoles(@Param("id") Long id);
 
 }

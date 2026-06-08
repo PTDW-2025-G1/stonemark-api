@@ -14,7 +14,7 @@ import pt.estga.commonweb.dtos.MessageResponseDto;
 @RequestMapping("/api/v1/admin/processing")
 @RequiredArgsConstructor
 @Tag(name = "Processing", description = "Endpoints for checking and managing processing of submissions.")
-@PreAuthorize("hasAnyAuthority('PROCESSING_VIEW', 'PROCESSING_MANAGE')")
+@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
 public class ProcessingController {
 
     private final ProcessingStatusQueryService processingStatusQueryService;
@@ -27,7 +27,7 @@ public class ProcessingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasAuthority('PROCESSING_MANAGE')")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
     @PostMapping("/submission/{submissionId}/reprocess")
     public ResponseEntity<MessageResponseDto> reprocess(@PathVariable Long submissionId) {
         asyncProcessingService.processAsync(submissionId);

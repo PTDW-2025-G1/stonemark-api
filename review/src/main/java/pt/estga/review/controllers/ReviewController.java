@@ -22,7 +22,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
 @Tag(name = "Review", description = "Review submissions and manage mark suggestions")
-@PreAuthorize("hasAuthority('REVIEW_MODERATE')")
+@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
 public class ReviewController {
 
     private final ReviewService reviewService;

@@ -23,7 +23,7 @@ public class JwtService {
     private static final long ACCESS_TOKEN_TTL_SECONDS = 3600;
     private static final long REFRESH_TOKEN_TTL_SECONDS = 14 * 24 * 3600;
 
-    public String generateAccessToken(User user, Set<String> permissions) {
+    public String generateAccessToken(User user, Set<String> roles) {
         Instant now = Instant.now();
         JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .issuer("stonemark-api")
@@ -34,8 +34,8 @@ public class JwtService {
                 .expiresAt(now.plusSeconds(ACCESS_TOKEN_TTL_SECONDS))
                 .id(UUID.randomUUID().toString());
 
-        if (permissions != null && !permissions.isEmpty()) {
-            builder.claim("permissions", permissions);
+        if (roles != null && !roles.isEmpty()) {
+            builder.claim("roles", roles);
         }
 
         return jwtEncoder.encode(JwtEncoderParameters.from(builder.build())).getTokenValue();
