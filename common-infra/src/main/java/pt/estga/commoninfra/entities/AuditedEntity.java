@@ -11,7 +11,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import pt.estga.commoninfra.models.AuditActor;
 
 import java.time.Instant;
 
@@ -28,21 +27,13 @@ public abstract class AuditedEntity {
     protected Instant createdAt;
 
     @CreatedBy
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "id", column = @Column(name = "created_by_id", updatable = false)),
-            @AttributeOverride(name = "identifier", column = @Column(name = "created_by_identifier", updatable = false))
-    })
-    protected AuditActor createdBy;
+    @Column(name = "created_by_id", updatable = false)
+    protected Long createdBy;
 
     @LastModifiedDate
     protected Instant lastModifiedAt;
 
     @LastModifiedBy
-    @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "id", column = @Column(name = "modified_by_id")),
-            @AttributeOverride(name = "identifier", column = @Column(name = "modified_by_identifier"))
-    })
-    protected AuditActor modifiedBy;
+    @Column(name = "modified_by_id")
+    protected Long modifiedBy;
 }

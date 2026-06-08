@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import pt.estga.user.entities.User;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -22,18 +23,22 @@ public class JwtService {
     private static final long ACCESS_TOKEN_TTL_SECONDS = 3600;
     private static final long REFRESH_TOKEN_TTL_SECONDS = 14 * 24 * 3600;
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(User user, Set<String> permissions) {
         Instant now = Instant.now();
-        JwtClaimsSet claims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .issuer("stonemark-api")
                 .subject(String.valueOf(user.getId()))
                 .claim("preferred_username", user.getUsername())
                 .claim("token_version", user.getTokenVersion())
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(ACCESS_TOKEN_TTL_SECONDS))
-                .id(UUID.randomUUID().toString())
-                .build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+                .id(UUID.randomUUID().toString());
+
+        if (permissions != null && !permissions.isEmpty()) {
+            builder.claim("permissions", permissions);
+        }
+
+        return jwtEncoder.encode(JwtEncoderParameters.from(builder.build())).getTokenValue();
     }
 
     public String generateRefreshToken(User user) {

@@ -8,10 +8,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import pt.estga.user.entities.Permission;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -29,8 +32,16 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             User user = userRepository.findByGoogleSub(googleSub).orElse(null);
 
             if (user != null) {
-                String accessToken = jwtService.generateAccessToken(user);
-                String refreshToken = jwtService.generateRefreshToken(user);
+                User userWithRoles = userRepository.findByIdWithRolesAndPermissions(user.getId())
+                        .orElse(user);
+
+                Set<String> permissions = userWithRoles.getRoles().stream()
+                        .flatMap(role -> role.getPermissions().stream())
+                        .map(Permission::getName)
+                        .collect(Collectors.toSet());
+
+                String accessToken = jwtService.generateAccessToken(userWithRoles, permissions);
+                String refreshToken = jwtService.generateRefreshToken(userWithRoles);
 
                 String redirectUrl = getDefaultTargetUrl();
                 if (redirectUrl == null || redirectUrl.isBlank()) {

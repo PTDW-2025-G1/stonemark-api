@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import pt.estga.commoninfra.models.AuditActor;
 import pt.estga.commoncore.utils.SecurityUtils;
 
 @Configuration
@@ -12,11 +11,8 @@ import pt.estga.commoncore.utils.SecurityUtils;
 public class AuditingConfig {
 
     @Bean
-    AuditorAware<AuditActor> auditorAware() {
+    AuditorAware<Long> auditorAware() {
         return () -> SecurityUtils.currentPrincipal()
-                .map(p -> new AuditActor(
-                        p.getId(),
-                        p.getIdentifier()
-                ));
+                .map(p -> p.getId());
     }
 }

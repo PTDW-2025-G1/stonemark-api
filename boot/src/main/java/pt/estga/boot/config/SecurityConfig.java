@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -51,7 +50,6 @@ public class SecurityConfig {
     };
 
     private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
-    private final PermissionEnrichmentFilter permissionEnrichmentFilter;
     private final GoogleOAuth2UserService googleOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
@@ -98,8 +96,7 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(appJwtAuthenticationConverter)
                         )
-                )
-                .addFilterAfter(permissionEnrichmentFilter, BearerTokenAuthenticationFilter.class);
+                );
 
         return http.build();
     }
