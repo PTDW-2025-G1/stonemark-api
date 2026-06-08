@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.commoncore.interfaces.AuthenticatedPrincipal;
 import pt.estga.commonweb.dtos.MessageResponseDto;
-import pt.estga.userapi.ChatbotAccountOperations;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.services.ChatbotAccountService;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
 import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
@@ -24,7 +26,8 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final ChatbotAccountOperations chatbotAccountOps;
+    private final ChatbotAccountService chatbotAccountService;
+    private final UserRepository userRepository;
     private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
@@ -44,7 +47,10 @@ public class AccountVerificationController {
         String platformUserId = platformUserIdOpt.get();
         Long userId = principal.getId();
 
-        chatbotAccountOps.createOrUpdateChatbot(userId, platformUserId);
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+
+        chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
 
         eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, userId));
 
