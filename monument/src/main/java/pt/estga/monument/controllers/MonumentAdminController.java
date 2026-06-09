@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.mappers.MonumentMapper;
+import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
@@ -25,6 +26,7 @@ import java.net.URI;
 public class MonumentAdminController {
 
     private final MonumentService service;
+    private final MonumentRepository repository;
 
     @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
@@ -33,7 +35,7 @@ public class MonumentAdminController {
     ) {
         Monument monument = MonumentMapper.toEntity(monumentDto);
 
-        Monument createdMonument = service.save(monument);
+        Monument createdMonument = repository.save(monument);
         MonumentDto response = MonumentMapper.toResponseDto(createdMonument);
 
         URI location = ServletUriComponentsBuilder
@@ -51,12 +53,12 @@ public class MonumentAdminController {
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument existingMonument = service.findById(id)
+        Monument existingMonument = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
         MonumentMapper.updateEntityFromDto(monumentDto, existingMonument);
 
-        Monument updatedMonument = service.save(existingMonument);
+        Monument updatedMonument = repository.save(existingMonument);
         return ResponseEntity.ok(MonumentMapper.toResponseDto(updatedMonument));
     }
 
