@@ -8,24 +8,16 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.dtos.SubmissionFilter;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.commoninfra.jpa.SpecBuilder;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SubmissionQueryService {
+public class SubmissionService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
-
-    public Page<SubmissionDto> findAll(Pageable pageable, SubmissionStatus status) {
-        SubmissionFilter filter = new SubmissionFilter(status, null, null, null, null, null);
-        return search(filter, pageable);
-    }
 
     public Page<SubmissionDto> search(SubmissionFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<MarkEvidenceSubmission>()
@@ -36,9 +28,5 @@ public class SubmissionQueryService {
                 .afterOrEqual("submittedAt", filter.submittedAfter())
                 .beforeOrEqual("submittedAt", filter.submittedBefore());
         return submissionRepository.findAll(sb.build(), pageable).map(SubmissionMapper::toDto);
-    }
-
-    public Optional<SubmissionDto> findById(Long id) {
-        return submissionRepository.findById(id).map(SubmissionMapper::toDto);
     }
 }

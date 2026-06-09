@@ -12,7 +12,9 @@ import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.dtos.SubmissionFilter;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.intake.services.SubmissionQueryService;
+import pt.estga.intake.mappers.SubmissionMapper;
+import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.intake.services.SubmissionService;
 
 import java.time.Instant;
 
@@ -23,7 +25,8 @@ import java.time.Instant;
 @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
 public class SubmissionAdminController {
 
-    private final SubmissionQueryService submissionQueryService;
+    private final SubmissionService submissionService;
+    private final MarkEvidenceSubmissionRepository submissionRepository;
 
     @GetMapping
     public ResponseEntity<Page<SubmissionDto>> findAll(
@@ -35,12 +38,13 @@ public class SubmissionAdminController {
             @RequestParam(required = false) Instant submittedBefore,
             @RequestParam(required = false) Long divisionId) {
         SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore, divisionId);
-        return ResponseEntity.ok(submissionQueryService.search(filter, pageable));
+        return ResponseEntity.ok(submissionService.search(filter, pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SubmissionDto> findById(@PathVariable Long id) {
-        return submissionQueryService.findById(id)
+        return submissionRepository.findById(id)
+                .map(SubmissionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

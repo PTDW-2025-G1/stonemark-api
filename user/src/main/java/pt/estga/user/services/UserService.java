@@ -28,7 +28,7 @@ public class UserService {
 
     public Page<UserDto> search(UserFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<User>()
-                .like("username", filter.username()) // Todo: probably change field to UserFilter.field
+                .like("username", filter.username())
                 .like("email", filter.email())
                 .isTrue("enabled", filter.enabled());
         return repository.findAll(sb.build(), pageable).map(UserMapper::toDto);
@@ -42,8 +42,7 @@ public class UserService {
         User existing = repository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + user.getId() + " not found"));
         UserMapper.update(user, existing);
-        User saved = repository.save(existing);
-        return saved;
+        return repository.save(existing);
     }
 
     @Transactional
