@@ -15,7 +15,6 @@ import pt.estga.support.mappers.ContactRequestMapper;
 import pt.estga.support.repositories.ContactRequestRepository;
 
 import java.time.Instant;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +29,6 @@ public class ContactRequestService {
         contact.setStatus(ContactStatus.PENDING);
         contact.setCreatedAt(Instant.now());
         return repository.save(contact);
-    }
-
-    public Optional<ContactRequest> findById(Long id) {
-        return repository.findById(id);
-    }
-
-    public Page<ContactRequest> findAll(Pageable pageable) {
-        return repository.findAll(pageable);
     }
 
     public Page<ContactRequest> search(ContactRequestFilter filter, Pageable pageable) {
