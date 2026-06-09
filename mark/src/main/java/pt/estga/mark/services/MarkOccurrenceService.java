@@ -1,8 +1,6 @@
 package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
@@ -17,10 +15,6 @@ import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 public class MarkOccurrenceService {
 
     private final MarkOccurrenceRepository repository;
-
-    public Page<MarkOccurrenceDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(MarkOccurrenceMapper::toDto);
-    }
 
     public MarkOccurrenceDto findById(Long id) {
         return repository.findById(id)

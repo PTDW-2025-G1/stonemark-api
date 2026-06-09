@@ -36,6 +36,4 @@ public class AuthenticationService {
                 .build();
     }
 
-    public void invalidateCache(Long userId) {
-    }
 }

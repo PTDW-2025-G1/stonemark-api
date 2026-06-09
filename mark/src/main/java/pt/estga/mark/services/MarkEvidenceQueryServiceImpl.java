@@ -50,10 +50,4 @@ public class MarkEvidenceQueryServiceImpl implements MarkEvidenceQueryService {
                 .toList();
     }
 
-    @Override
-    public List<MarkEvidenceDto> findEvidenceByIdIn(List<UUID> ids) {
-        return evidenceRepository.findAllById(ids).stream()
-                .map(MarkEvidenceMapper::toDto)
-                .toList();
-    }
 }

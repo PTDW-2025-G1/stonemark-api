@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.services.UserService;
+import pt.estga.user.repositories.UserRepository;
 
 @RestController
 @RequestMapping("/api/v1/public/users")
@@ -18,13 +18,13 @@ import pt.estga.user.services.UserService;
 @Tag(name = "Users", description = "Public endpoints for users.")
 public class UserPublicController {
 
-    private final UserService service;
+    private final UserRepository repository;
 
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDto> publicGetById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return service.findById(id)
+        return repository.findById(id)
                 .map(UserMapper::toPublicDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -38,6 +38,6 @@ public class UserPublicController {
     public ResponseEntity<Boolean> existsByUsername(
             @Parameter(description = "Username to check for existence", required = true)
             @RequestParam String username) {
-        return ResponseEntity.ok(service.existsByUsername(username));
+        return ResponseEntity.ok(repository.existsByUsername(username));
     }
 }

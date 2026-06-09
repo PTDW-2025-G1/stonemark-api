@@ -1,8 +1,6 @@
 package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.dtos.MarkDto;
@@ -21,10 +19,6 @@ public class MarkService {
 
     private final MarkRepository repository;
     private final MarkEvidenceRepository evidenceRepository;
-
-    public Page<MarkDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(MarkMapper::toDto);
-    }
 
     public MarkDto findById(Long id) {
         return repository.findById(id)

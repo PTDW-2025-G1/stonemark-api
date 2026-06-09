@@ -7,7 +7,7 @@ import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.services.AuthService;
 import pt.estga.commoncore.models.AppPrincipal;
 import pt.estga.user.enums.ChatbotPlatform;
-import pt.estga.user.services.ChatbotAccountService;
+import pt.estga.user.repositories.ChatbotAccountRepository;
 
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -16,16 +16,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class WhatsAppAuthService implements AuthService {
 
-    private final ChatbotAccountService chatbotAccountService;
+    private final ChatbotAccountRepository chatbotAccountRepository;
 
     @Override
     public boolean isAuthenticated(String platformUserId) {
-        return chatbotAccountService.findByProviderAndValue(ChatbotPlatform.WHATSAPP, platformUserId).isPresent();
+        return chatbotAccountRepository.findByChatbotPlatformAndValue(ChatbotPlatform.WHATSAPP, platformUserId).isPresent();
     }
 
     @Override
     public Optional<AppPrincipal> authenticate(String platformUserId) {
-        return chatbotAccountService.findByProviderAndValue(ChatbotPlatform.WHATSAPP, platformUserId)
+        return chatbotAccountRepository.findByChatbotPlatformAndValue(ChatbotPlatform.WHATSAPP, platformUserId)
                 .map(userIdentity -> {
                     var user = userIdentity.getUser();
                     return AppPrincipal.builder()
