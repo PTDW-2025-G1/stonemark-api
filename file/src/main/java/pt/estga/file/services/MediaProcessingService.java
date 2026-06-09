@@ -1,5 +1,7 @@
 package pt.estga.file.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +43,7 @@ public class MediaProcessingService {
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
     private final TempFileFactory tempFileFactory;
-    private final MediaMetricsService metrics;
+    private final MeterRegistry meterRegistry;
 
     @PostConstruct
     public void verifyWebpSupport() {
@@ -57,7 +59,7 @@ public class MediaProcessingService {
             return;
         }
         log.info("Starting processing for media file ID: {} (types: {})", mediaFileId, types);
-        var timer = metrics.startProcessingTimer();
+        var timer = Timer.start(meterRegistry);
 
         MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
                 .orElseThrow(() -> new RuntimeException("MediaFile not found: " + mediaFileId));
@@ -106,13 +108,13 @@ public class MediaProcessingService {
                                 .build();
 
                         mediaVariantRepository.save(variant);
-                        metrics.recordVariantGenerated();
+                        meterRegistry.counter("media.variant.generated").increment();
                     } catch (DataIntegrityViolationException e) {
                         log.warn("Variant {} already persisted for media {} by concurrent processor — skipping",
                                 type, mediaFile.getId());
-                        metrics.recordVariantGenerated();
+                        meterRegistry.counter("media.variant.generated").increment();
                     } catch (Exception e) {
-                        metrics.recordVariantFailed();
+                        meterRegistry.counter("media.variant.failed").increment();
                         throw e;
                     } finally {
                         Files.deleteIfExists(generated.file());
@@ -135,7 +137,7 @@ public class MediaProcessingService {
                 log.error("Failed to mark media as FAILED for id {}", mediaFileId, ex);
             }
         } finally {
-            metrics.recordProcessingDuration(timer);
+            timer.stop(meterRegistry.timer("media.processing.duration"));
         }
     }
 }

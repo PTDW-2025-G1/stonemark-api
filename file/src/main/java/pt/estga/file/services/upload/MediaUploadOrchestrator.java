@@ -10,8 +10,8 @@ import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
+import io.micrometer.core.instrument.MeterRegistry;
 import pt.estga.file.services.MediaMetadataService;
-import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -35,11 +36,11 @@ public class MediaUploadOrchestrator {
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
     private final TempFileFactory tempFileFactory;
-    private final MediaMetricsService metrics;
+    private final MeterRegistry meterRegistry;
 
     public MediaFile orchestrateUpload(InputStream input, String originalFilename) throws IOException {
         long startNanos = System.nanoTime();
-        metrics.recordUploadAttempt();
+        meterRegistry.counter("media.upload.total").increment();
 
         Path tempFile = tempFileFactory.createTempFile("upload-", ".tmp");
         try {
@@ -47,14 +48,14 @@ public class MediaUploadOrchestrator {
             long actualSize = Files.size(tempFile);
 
             if (actualSize > storageProperties.getMaxUploadSize()) {
-                metrics.recordUploadRejected();
+                meterRegistry.counter("media.upload.rejected").increment();
                 throw new OversizeFileException(
                         "Uploaded file exceeds maximum allowed size of " + storageProperties.getMaxUploadSize() + " bytes");
             }
 
             Set<String> allowedTypes = Set.copyOf(storageProperties.getAllowedMimeTypes());
             if (!mediaValidationService.isAllowedImage(tempFile, allowedTypes)) {
-                metrics.recordUploadRejected();
+                meterRegistry.counter("media.upload.rejected").increment();
                 throw new UnsupportedFileTypeException(
                         "File type is not allowed. Supported types: " + String.join(", ", allowedTypes));
             }
@@ -82,13 +83,15 @@ public class MediaUploadOrchestrator {
                     mediaMetadataService.publishAfterCommit(event);
                 }
                 long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
-                metrics.recordUploadSuccess(actualSize, elapsed);
+                meterRegistry.counter("media.upload.success").increment();
+                meterRegistry.summary("media.upload.size.bytes").record(actualSize);
+                meterRegistry.timer("media.upload.duration").record(elapsed, TimeUnit.MILLISECONDS);
                 return saved;
             } catch (Exception e) {
                 try {
                     fileStorageService.deleteFile(storagePath);
                 } catch (Exception ignored) {}
-                metrics.recordUploadFailed();
+                meterRegistry.counter("media.upload.failed").increment();
                 throw new MediaPersistenceException(
                         "Failed to persist media metadata for " + storedFilename, e);
             }

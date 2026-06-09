@@ -1,5 +1,6 @@
 package pt.estga.file.services.upload;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +12,6 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.exceptions.OversizeFileException;
 import pt.estga.file.services.MediaMetadataService;
-import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
@@ -38,10 +38,9 @@ class MediaUploadOrchestratorTest {
     @Mock
     private FileNamingService fileNamingService;
     @Mock
-    private MediaMetricsService metrics;
-    @Mock
     private TempFileFactory tempFileFactory;
 
+    private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private StorageProperties storageProperties;
     private MediaUploadOrchestrator orchestrator;
 
@@ -61,7 +60,7 @@ class MediaUploadOrchestratorTest {
                 fileNamingService,
                 storageProperties,
                 tempFileFactory,
-                metrics
+                meterRegistry
         );
     }
 
@@ -86,8 +85,8 @@ class MediaUploadOrchestratorTest {
         MediaFile result = orchestrator.orchestrateUpload(input, filename);
 
         assertNotNull(result);
-        verify(metrics).recordUploadAttempt();
-        verify(metrics).recordUploadSuccess(eq((long) content.length), anyLong());
+        assertEquals(1.0, meterRegistry.counter("media.upload.total").count());
+        assertEquals(1.0, meterRegistry.counter("media.upload.success").count());
         verify(fileStorageService).storeFile(any(), eq(relativePath), anyLong());
         verify(mediaMetadataService).saveMetadataWithRetry(any());
     }
@@ -101,8 +100,8 @@ class MediaUploadOrchestratorTest {
         assertThrows(OversizeFileException.class,
                 () -> orchestrator.orchestrateUpload(input, "large.jpg"));
 
-        verify(metrics).recordUploadAttempt();
-        verify(metrics).recordUploadRejected();
+        assertEquals(1.0, meterRegistry.counter("media.upload.total").count());
+        assertEquals(1.0, meterRegistry.counter("media.upload.rejected").count());
         verifyNoInteractions(fileStorageService);
         verifyNoInteractions(mediaValidationService);
     }
@@ -118,8 +117,8 @@ class MediaUploadOrchestratorTest {
         assertThrows(UnsupportedFileTypeException.class,
                 () -> orchestrator.orchestrateUpload(input, "test.txt"));
 
-        verify(metrics).recordUploadAttempt();
-        verify(metrics).recordUploadRejected();
+        assertEquals(1.0, meterRegistry.counter("media.upload.total").count());
+        assertEquals(1.0, meterRegistry.counter("media.upload.rejected").count());
         verify(fileStorageService, never()).storeFile(any(), any(), anyLong());
     }
 
@@ -143,4 +142,3 @@ class MediaUploadOrchestratorTest {
         verify(mediaMetadataService, never()).publishAfterCommit(any());
     }
 }
-
