@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.mark.mappers.MarkOccurrenceMapper;
+import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.services.MarkOccurrenceService;
 
 @RestController
@@ -19,10 +21,11 @@ import pt.estga.mark.services.MarkOccurrenceService;
 public class MarkOccurrenceController {
 
     private final MarkOccurrenceService service;
+    private final MarkOccurrenceRepository repository;
 
     @GetMapping
     public ResponseEntity<Page<MarkOccurrenceDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(repository.findAll(pageable).map(MarkOccurrenceMapper::toDto));
     }
 
     @GetMapping("/{id}")

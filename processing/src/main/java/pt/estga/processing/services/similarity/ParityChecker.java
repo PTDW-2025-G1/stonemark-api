@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.mark.mappers.MarkEvidenceMapper;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.markapi.MarkEvidenceQueryService;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.commoncore.utils.VectorUtils;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 public class ParityChecker {
 
     private final MarkEvidenceQueryService markEvidenceQueryService;
+    private final MarkEvidenceRepository markEvidenceRepository;
     private final ProcessingProperties properties;
     private boolean parityAsyncLocal;
     private int paritySampleSizeLocal;
@@ -58,7 +61,9 @@ public class ParityChecker {
             if (hits == null || hits.isEmpty()) continue;
             List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceDto::id).filter(id -> !id.equals(ev.id())).distinct().toList();
             if (hitIds.isEmpty()) continue;
-            List<MarkEvidenceDto> fetched = markEvidenceQueryService.findEvidenceByIdIn(hitIds);
+            List<MarkEvidenceDto> fetched = markEvidenceRepository.findAllById(hitIds).stream()
+                    .map(MarkEvidenceMapper::toDto)
+                    .toList();
             Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
                     MarkEvidenceDto::id,
                     MarkEvidenceDto::embedding

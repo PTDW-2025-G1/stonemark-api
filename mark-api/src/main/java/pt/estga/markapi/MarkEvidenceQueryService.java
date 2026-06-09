@@ -17,6 +17,4 @@ public interface MarkEvidenceQueryService {
     List<EvidenceMarkDto> findMarksByEvidenceIds(List<UUID> evidenceIds);
 
     List<MarkEvidenceDto> findEvidenceWithEmbeddings(int limit);
-
-    List<MarkEvidenceDto> findEvidenceByIdIn(List<UUID> ids);
 }

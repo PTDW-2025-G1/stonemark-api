@@ -11,6 +11,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
+import pt.estga.mark.mappers.MarkMapper;
+import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.mark.services.MarkService;
 
 @RestController
@@ -21,10 +23,11 @@ import pt.estga.mark.services.MarkService;
 public class MarkController {
 
     private final MarkService service;
+    private final MarkRepository repository;
 
     @GetMapping
     public ResponseEntity<Page<MarkDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(repository.findAll(pageable).map(MarkMapper::toDto));
     }
 
     @GetMapping("/{id}")

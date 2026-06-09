@@ -6,11 +6,12 @@ import pt.estga.bookmark.dto.*;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.mark.mappers.MarkEvidenceMapper;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.mappers.MarkOccurrenceMapper;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.markapi.MarkEvidenceQueryService;
 
 import java.util.*;
 import java.util.function.Function;
@@ -22,7 +23,7 @@ public class BookmarkContentResolver {
 
     private final MarkRepository markRepository;
     private final MarkOccurrenceRepository occurrenceRepository;
-    private final MarkEvidenceQueryService markEvidenceQueryService;
+    private final MarkEvidenceRepository evidenceRepository;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
         if (bookmarks.isEmpty()) {
@@ -61,7 +62,8 @@ public class BookmarkContentResolver {
         List<UUID> ids = bookmarks.stream()
                 .map(b -> UUID.fromString(b.getTargetId()))
                 .toList();
-        Map<UUID, MarkEvidenceDto> evidenceMap = markEvidenceQueryService.findEvidenceByIdIn(ids).stream()
+        Map<UUID, MarkEvidenceDto> evidenceMap = evidenceRepository.findAllById(ids).stream()
+                .map(MarkEvidenceMapper::toDto)
                 .collect(Collectors.toMap(MarkEvidenceDto::id, Function.identity()));
         for (Bookmark b : bookmarks) {
             MarkEvidenceDto dto = evidenceMap.get(UUID.fromString(b.getTargetId()));

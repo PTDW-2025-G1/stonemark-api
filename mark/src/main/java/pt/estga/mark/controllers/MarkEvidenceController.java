@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkEvidenceDto;
+import pt.estga.mark.mappers.MarkEvidenceMapper;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.services.MarkEvidenceService;
 
 import java.util.UUID;
@@ -21,10 +23,11 @@ import java.util.UUID;
 public class MarkEvidenceController {
 
     private final MarkEvidenceService service;
+    private final MarkEvidenceRepository repository;
 
     @GetMapping
     public ResponseEntity<Page<MarkEvidenceDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+        return ResponseEntity.ok(repository.findAll(pageable).map(MarkEvidenceMapper::toDto));
     }
 
     @GetMapping("/{id}")
