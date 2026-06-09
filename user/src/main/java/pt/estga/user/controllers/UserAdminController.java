@@ -16,6 +16,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.dtos.UserFilter;
+import pt.estga.user.mappers.UserMapper;
+import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.services.UserService;
 
 @RestController
@@ -26,6 +28,7 @@ import pt.estga.user.services.UserService;
 public class UserAdminController {
 
     private final UserService service;
+    private final UserRepository repository;
 
     @Operation(summary = "Search users", description = "Searches for users based on dynamic filters.")
     @ApiResponses(value = {
@@ -54,7 +57,8 @@ public class UserAdminController {
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return service.findDtoById(id)
+        return repository.findById(id)
+                .map(UserMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -84,7 +88,7 @@ public class UserAdminController {
     public ResponseEntity<Void> deleteById(
             @Parameter(description = "ID of the user to be deleted", required = true)
             @PathVariable Long id) {
-        service.deleteById(id);
+        repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }
