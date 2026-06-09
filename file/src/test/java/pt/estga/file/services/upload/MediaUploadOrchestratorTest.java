@@ -16,7 +16,6 @@ import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.exceptions.OversizeFileException;
 import pt.estga.file.repositories.MediaFileRepository;
-import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
 
@@ -37,11 +36,7 @@ class MediaUploadOrchestratorTest {
     @Mock
     private FileStorageService fileStorageService;
     @Mock
-    private MediaValidationService mediaValidationService;
-    @Mock
     private FileNamingService fileNamingService;
-    @Mock
-    private TempFileFactory tempFileFactory;
     @Mock
     private AfterCommitEventPublisher eventPublisher;
     @Mock
@@ -59,17 +54,13 @@ class MediaUploadOrchestratorTest {
         storageProperties.setMaxUploadSize(10 * 1024 * 1024);
         storageProperties.setAllowedMimeTypes(List.of("image/jpeg", "image/png"));
 
-        when(tempFileFactory.createTempFile(anyString(), anyString()))
-                .thenAnswer(inv -> java.nio.file.Files.createTempFile("test-upload-", ".tmp"));
         lenient().when(ptm.getTransaction(any())).thenReturn(transactionStatus);
 
         orchestrator = new MediaUploadOrchestrator(
                 mediaFileRepository,
                 fileStorageService,
-                mediaValidationService,
                 fileNamingService,
                 storageProperties,
-                tempFileFactory,
                 meterRegistry,
                 eventPublisher,
                 ptm
@@ -88,7 +79,6 @@ class MediaUploadOrchestratorTest {
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
         when(fileNamingService.generatePath(anyString())).thenReturn(relativePath);
-        when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
 
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StorageProvider.LOCAL);
         savedMedia.setId(UUID.randomUUID());
@@ -117,7 +107,6 @@ class MediaUploadOrchestratorTest {
         assertEquals(1.0, meterRegistry.counter("media.upload.total").count());
         assertEquals(1.0, meterRegistry.counter("media.upload.rejected").count());
         verifyNoInteractions(fileStorageService);
-        verifyNoInteractions(mediaValidationService);
     }
 
     @Test
@@ -125,8 +114,6 @@ class MediaUploadOrchestratorTest {
     void shouldRejectUnsupportedMimeType() throws Exception {
         byte[] content = "plain text".getBytes();
         InputStream input = new ByteArrayInputStream(content);
-
-        when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(false);
 
         assertThrows(UnsupportedFileTypeException.class,
                 () -> orchestrator.orchestrateUpload(input, "test.txt"));
@@ -146,7 +133,6 @@ class MediaUploadOrchestratorTest {
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
         when(fileNamingService.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
-        when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
         when(fileStorageService.storeFile(any(), any(), anyLong())).thenThrow(new RuntimeException("Disk full"));
 
         assertThrows(RuntimeException.class,

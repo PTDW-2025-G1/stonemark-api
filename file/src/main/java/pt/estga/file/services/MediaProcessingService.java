@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Timer;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -19,32 +20,28 @@ import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.file.services.upload.MediaValidationService;
 
 import javax.imageio.ImageIO;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Orchestrates media processing. Delegates validation, variant generation and storage
- * to dedicated services to keep orchestration logic compact and testable.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MediaProcessingService {
 
+    private static final Tika TIKA = new Tika();
+
     private final MediaFileRepository mediaFileRepository;
     private final MediaVariantRepository mediaVariantRepository;
     private final FileStorageService fileStorageService;
-    private final MediaValidationService mediaValidationService;
     private final ImageVariantGenerator imageVariantGenerator;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
-    private final TempFileFactory tempFileFactory;
     private final MeterRegistry meterRegistry;
 
     @PostConstruct
@@ -72,14 +69,14 @@ public class MediaProcessingService {
             mediaFile = mediaFileRepository.save(mediaFile);
 
             Resource resource = fileStorageService.loadFile(mediaFile.getStoragePath());
-            Path tempOriginal = tempFileFactory.createTempFile("original-", ".tmp");
+            Path tempOriginal = createTempFile("original-", ".tmp");
 
             try {
                 try (var is = resource.getInputStream()) {
                     Files.copy(is, tempOriginal, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                 }
 
-                if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
+                if (!isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
                     mediaFile = mediaFileRepository.save(mediaFile);
@@ -142,5 +139,21 @@ public class MediaProcessingService {
         } finally {
             timer.stop(meterRegistry.timer("media.processing.duration"));
         }
+    }
+
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String dir = storageProperties.getTempDir();
+        if (dir != null && !dir.isEmpty()) {
+            Path dirPath = Path.of(dir);
+            Files.createDirectories(dirPath);
+            return Files.createTempFile(dirPath, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
+    }
+
+    private static boolean isAllowedImage(Path file, Set<String> allowedMimeTypes) throws IOException {
+        String mime = TIKA.detect(file);
+        log.debug("Detected MIME type {} for file {}", mime, file);
+        return mime != null && allowedMimeTypes.contains(mime);
     }
 }

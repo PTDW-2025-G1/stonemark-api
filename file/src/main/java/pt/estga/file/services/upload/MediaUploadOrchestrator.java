@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -20,7 +21,6 @@ import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
 import pt.estga.file.repositories.MediaFileRepository;
-import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
 
@@ -37,12 +37,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class MediaUploadOrchestrator {
 
+    private static final Tika TIKA = new Tika();
+
     private final MediaFileRepository mediaFileRepository;
     private final FileStorageService fileStorageService;
-    private final MediaValidationService mediaValidationService;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
-    private final TempFileFactory tempFileFactory;
     private final MeterRegistry meterRegistry;
     private final AfterCommitEventPublisher eventPublisher;
     private final PlatformTransactionManager ptm;
@@ -59,7 +59,7 @@ public class MediaUploadOrchestrator {
         long startNanos = System.nanoTime();
         meterRegistry.counter("media.upload.total").increment();
 
-        Path tempFile = tempFileFactory.createTempFile("upload-", ".tmp");
+        Path tempFile = createTempFile("upload-", ".tmp");
         try {
             Files.copy(input, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             long actualSize = Files.size(tempFile);
@@ -71,7 +71,7 @@ public class MediaUploadOrchestrator {
             }
 
             Set<String> allowedTypes = Set.copyOf(storageProperties.getAllowedMimeTypes());
-            if (!mediaValidationService.isAllowedImage(tempFile, allowedTypes)) {
+            if (!isAllowedImage(tempFile, allowedTypes)) {
                 meterRegistry.counter("media.upload.rejected").increment();
                 throw new UnsupportedFileTypeException(
                         "File type is not allowed. Supported types: " + String.join(", ", allowedTypes));
@@ -118,6 +118,22 @@ public class MediaUploadOrchestrator {
                 log.warn("Failed to delete temp file: {}", tempFile, e);
             }
         }
+    }
+
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String dir = storageProperties.getTempDir();
+        if (dir != null && !dir.isEmpty()) {
+            Path dirPath = Path.of(dir);
+            Files.createDirectories(dirPath);
+            return Files.createTempFile(dirPath, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
+    }
+
+    private static boolean isAllowedImage(Path file, Set<String> allowedMimeTypes) throws IOException {
+        String mime = TIKA.detect(file);
+        log.debug("Detected MIME type {} for file {}", mime, file);
+        return mime != null && allowedMimeTypes.contains(mime);
     }
 
     private MediaFile saveWithRetry(MediaFile mediaFile) {
