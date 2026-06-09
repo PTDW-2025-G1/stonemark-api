@@ -1,8 +1,10 @@
 package pt.estga.file.services;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
+import pt.estga.file.config.StorageProperties;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 
@@ -16,17 +18,14 @@ import java.nio.file.Path;
 import java.util.Iterator;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class ImageVariantGenerator {
 
-    private final TempFileFactory tempFileFactory;
-
-    public ImageVariantGenerator(TempFileFactory tempFileFactory) {
-        this.tempFileFactory = tempFileFactory;
-    }
+    private final StorageProperties storageProperties;
 
     public VariantResult generate(Path originalFile, MediaVariantType type) throws IOException {
-        Path temp = tempFileFactory.createTempFile("variant-", ".webp");
+        Path temp = createTempFile("variant-", ".webp");
 
         try {
             Thumbnails.Builder<File> builder = Thumbnails.of(originalFile.toFile());
@@ -60,5 +59,14 @@ public class ImageVariantGenerator {
             throw e;
         }
     }
-}
 
+    private Path createTempFile(String prefix, String suffix) throws IOException {
+        String dir = storageProperties.getTempDir();
+        if (dir != null && !dir.isEmpty()) {
+            Path dirPath = Path.of(dir);
+            Files.createDirectories(dirPath);
+            return Files.createTempFile(dirPath, prefix, suffix);
+        }
+        return Files.createTempFile(prefix, suffix);
+    }
+}

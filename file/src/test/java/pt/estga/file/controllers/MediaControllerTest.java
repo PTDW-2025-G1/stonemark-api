@@ -9,8 +9,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.application.MediaService;
-import pt.estga.file.services.application.MediaVariantService;
+import pt.estga.file.services.MediaService;
+import pt.estga.file.services.MediaVariantService;
 import pt.estga.commonweb.exceptions.FileNotFoundException;
 import pt.estga.commonweb.exceptions.GlobalExceptionHandler;
 

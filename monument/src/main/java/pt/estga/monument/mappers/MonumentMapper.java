@@ -1,4 +1,4 @@
-package pt.estga.monument;
+package pt.estga.monument.mappers;
 
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.dtos.MonumentDto;

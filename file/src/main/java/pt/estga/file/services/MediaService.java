@@ -1,4 +1,4 @@
-package pt.estga.file.services.application;
+package pt.estga.file.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
-import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.commonweb.exceptions.FileNotFoundException;
@@ -27,7 +27,7 @@ import java.util.UUID;
 public class MediaService {
 
     private final MediaUploadOrchestrator uploadOrchestrator;
-    private final MediaMetadataService mediaMetadataService;
+    private final MediaFileRepository mediaFileRepository;
     private final FileStorageService fileStorageService;
 
     @Transactional
@@ -50,7 +50,7 @@ public class MediaService {
 
     public Resource loadFileById(UUID fileId) {
         log.debug("Loading file with ID: {}", fileId);
-        MediaFile mediaFile = mediaMetadataService.findById(fileId)
+        MediaFile mediaFile = mediaFileRepository.findById(fileId)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
         return loadFile(mediaFile);
     }
@@ -63,12 +63,12 @@ public class MediaService {
     }
 
     public Optional<MediaFile> findById(UUID id) {
-        return mediaMetadataService.findById(id);
+        return mediaFileRepository.findById(id);
     }
 
     @Transactional
     public void deleteMedia(UUID id) {
-        MediaFile mediaFile = mediaMetadataService.findById(id)
+        MediaFile mediaFile = mediaFileRepository.findById(id)
                 .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
 
         List<String> variantPaths = List.copyOf(mediaFile.getVariants()).stream()
@@ -76,7 +76,7 @@ public class MediaService {
                 .toList();
         String mainPath = mediaFile.getStoragePath();
 
-        mediaMetadataService.deleteById(id);
+        mediaFileRepository.deleteById(id);
 
         for (String path : variantPaths) {
             try {
