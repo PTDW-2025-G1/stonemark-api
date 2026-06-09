@@ -14,7 +14,6 @@ import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
-import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
@@ -35,7 +34,6 @@ public class MediaUploadOrchestrator {
     private final MediaValidationService mediaValidationService;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
-    private final StoragePathStrategy storagePathStrategy;
     private final TempFileFactory tempFileFactory;
     private final MediaMetricsService metrics;
 
@@ -64,7 +62,7 @@ public class MediaUploadOrchestrator {
             String storedFilename = fileNamingService.generateStoredFilename(originalFilename);
             StorageProvider provider = StorageProvider.valueOf(storageProperties.getProvider().toUpperCase());
 
-            String relativePath = storagePathStrategy.generatePath(storedFilename);
+            String relativePath = fileNamingService.generatePath(storedFilename);
 
             String storagePath;
             try (InputStream fileIn = new FileInputStream(tempFile.toFile())) {

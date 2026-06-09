@@ -13,8 +13,8 @@ import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
 import pt.estga.file.repositories.MediaVariantRepository;
+import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.file.services.storage.variant.VariantStorageService;
 import pt.estga.file.services.upload.MediaValidationService;
 
 import javax.imageio.ImageIO;
@@ -38,7 +38,7 @@ public class MediaProcessingService {
     private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
     private final ImageVariantGenerator imageVariantGenerator;
-    private final VariantStorageService variantStorageService;
+    private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
     private final TempFileFactory tempFileFactory;
     private final MediaMetricsService metrics;
@@ -89,7 +89,12 @@ public class MediaProcessingService {
 
                     VariantResult generated = imageVariantGenerator.generate(tempOriginal, type);
                     try {
-                        String storagePath = variantStorageService.storeVariant(mediaFile, generated, type);
+                        String prefixPath = fileNamingService.generatePath(mediaFile);
+                        String variantPath = String.format("%s/derived/%s.webp", prefixPath, type.name().toLowerCase());
+                        String storagePath;
+                        try (java.io.InputStream is = Files.newInputStream(generated.file())) {
+                            storagePath = fileStorageService.storeFile(is, variantPath, generated.size());
+                        }
 
                         var variant = MediaVariant.builder()
                                 .mediaFile(mediaFile)

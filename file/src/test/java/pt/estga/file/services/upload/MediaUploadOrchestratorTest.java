@@ -14,7 +14,6 @@ import pt.estga.file.services.MediaMetadataService;
 import pt.estga.file.services.MediaMetricsService;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
-import pt.estga.file.services.naming.StoragePathStrategy;
 import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
@@ -39,8 +38,6 @@ class MediaUploadOrchestratorTest {
     @Mock
     private FileNamingService fileNamingService;
     @Mock
-    private StoragePathStrategy storagePathStrategy;
-    @Mock
     private MediaMetricsService metrics;
     @Mock
     private TempFileFactory tempFileFactory;
@@ -63,7 +60,6 @@ class MediaUploadOrchestratorTest {
                 mediaValidationService,
                 fileNamingService,
                 storageProperties,
-                storagePathStrategy,
                 tempFileFactory,
                 metrics
         );
@@ -79,7 +75,7 @@ class MediaUploadOrchestratorTest {
         String relativePath = "ab/cd/" + storedFilename;
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
-        when(storagePathStrategy.generatePath(anyString())).thenReturn(relativePath);
+        when(fileNamingService.generatePath(anyString())).thenReturn(relativePath);
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
 
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StorageProvider.LOCAL);
@@ -136,7 +132,7 @@ class MediaUploadOrchestratorTest {
         String storedFilename = "uuid.jpg";
 
         when(fileNamingService.generateStoredFilename(filename)).thenReturn(storedFilename);
-        when(storagePathStrategy.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
+        when(fileNamingService.generatePath(anyString())).thenReturn("ab/cd/uuid.jpg");
         when(mediaValidationService.isAllowedImage(any(), anySet())).thenReturn(true);
         when(fileStorageService.storeFile(any(), any(), anyLong())).thenThrow(new RuntimeException("Disk full"));
 

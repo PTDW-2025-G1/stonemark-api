@@ -20,8 +20,8 @@ import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.mappers.MediaFileMapper;
-import pt.estga.file.services.application.MediaService;
-import pt.estga.file.services.application.MediaVariantService;
+import pt.estga.file.services.MediaService;
+import pt.estga.file.services.MediaVariantService;
 
 import java.io.IOException;
 import java.util.UUID;
