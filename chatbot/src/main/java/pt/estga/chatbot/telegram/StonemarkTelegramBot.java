@@ -71,38 +71,25 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
 
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        log.debug("onWebhookUpdateReceived invoked for updateId={}", update == null ? "<null>" : update.getUpdateId());
         try {
             if (update == null) {
                 log.warn("Received null Telegram update");
             } else if (isDuplicateUpdate(update.getUpdateId())) {
-                log.debug("Skipping duplicate updateId={}", update.getUpdateId());
             } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
                 CallbackQuery cq = update.getCallbackQuery();
                 String callbackId = cq.getId();
-                String data = cq.getData();
-                Integer messageId = cq.getMessage() != null ? cq.getMessage().getMessageId() : null;
-                Long fromId = cq.getFrom() != null ? cq.getFrom().getId() : null;
-                log.debug("Received callback query id={} data={} from={} messageId={}", callbackId, data, fromId, messageId);
 
-                // Acknowledge callback right away to stop the Telegram client spinner. Failure to ack
-                // can make the client appear to hang even if server-side processing later runs.
                 try {
                     AnswerCallbackQuery ack = new AnswerCallbackQuery(callbackId);
                     ack.setText("");
                     execute(ack);
-                    log.debug("Sent AnswerCallbackQuery ack for id={}", callbackId);
                 } catch (TelegramApiException e) {
                     String msg = e.getMessage();
                     if (msg != null && msg.contains("query is too old")) {
-                        // Known Telegram condition: callback query expired on client side; not actionable.
-                        log.debug("AnswerCallbackQuery not sent because query is too old for id={}", cq.getId());
                     } else {
                         log.warn("Failed to send AnswerCallbackQuery ack for id={}", cq.getId(), e);
                     }
                 }
-            } else {
-                log.debug("Received update: {}", update.getUpdateId());
             }
         } catch (Exception e) {
             log.error("Error during synchronous webhook handling", e);
@@ -119,10 +106,7 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                 }
                 BotInput botInput = telegramAdapter.toBotInput(update);
                 if (botInput != null) {
-                    log.debug("Dispatching bot input for chatId={}", botInput.getChatId());
                     dispatchAndSend(botInput);
-                } else {
-                    log.debug("telegramAdapter.toBotInput returned null for updateId={}", update == null ? "<null>" : update.getUpdateId());
                 }
             } catch (Exception e) {
                 log.error("Error processing Telegram update asynchronously", e);
@@ -139,20 +123,16 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     public void dispatchAndSend(BotInput botInput) {
         long chatId = botInput.getChatId();
 
-        log.debug("Attempting to acquire chat lock for chatId={}", chatId);
         chatLock.lock(chatId);
-        log.debug("Acquired chat lock for chatId={}", chatId);
         try {
             List<BotResponse> botResponses = conversationService.handleInput(botInput);
             if (botResponses != null) {
-                log.debug("Dispatching {} responses for chatId={}", botResponses.size(), chatId);
                 sendBotResponses(chatId, botResponses);
             }
         } catch (Exception e) {
             log.error("Error dispatching and sending bot responses", e);
             throw e;
         } finally {
-            log.debug("Releasing chat lock for chatId={}", chatId);
             chatLock.unlock(chatId);
         }
     }
@@ -164,7 +144,6 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                 continue;
             }
             for (PartialBotApiMethod<?> method : methods) {
-                log.debug("Sending Telegram method {} for chatId={}", method == null ? "<null>" : method.getClass().getSimpleName(), chatId);
                 executeWithRetry(method, chatId);
             }
         }

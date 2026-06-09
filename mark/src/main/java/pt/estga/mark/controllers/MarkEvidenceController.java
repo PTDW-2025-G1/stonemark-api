@@ -17,7 +17,7 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/evidences")
 @RequiredArgsConstructor
 @Tag(name = "Mark Evidences Management", description = "Management endpoints for mark evidences.")
-@PreAuthorize("hasAuthority('EVIDENCE_MANAGE')")
+@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
 public class MarkEvidenceController {
 
     private final MarkEvidenceService service;

@@ -21,7 +21,7 @@ import java.net.URI;
 @RequestMapping("/api/v1/admin/monuments")
 @RequiredArgsConstructor
 @Tag(name = "Monuments Management", description = "Management endpoints for monuments.")
-@PreAuthorize("hasAuthority('MONUMENT_WRITE')")
+@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
 public class MonumentAdminController {
 
     private final MonumentService service;

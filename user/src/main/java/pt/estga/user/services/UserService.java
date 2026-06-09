@@ -35,7 +35,7 @@ public class UserService {
 
     public Page<UserDto> search(UserFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<User>()
-                .like("username", filter.username())
+                .like("username", filter.username()) // Todo: probably change field to UserFilter.field
                 .like("email", filter.email())
                 .isTrue("enabled", filter.enabled());
         return repository.findAll(sb.build(), pageable).map(UserMapper::toDto);
@@ -47,14 +47,6 @@ public class UserService {
 
     public Optional<UserDto> findDtoById(Long id) {
         return repository.findById(id).map(UserMapper::toDto);
-    }
-
-    public Optional<User> findByEmail(String email) {
-        return repository.findByEmail(email);
-    }
-
-    public Optional<User> findByIdForProfile(Long id) {
-        return repository.findByIdForProfile(id);
     }
 
     public boolean existsByUsername(String username) {

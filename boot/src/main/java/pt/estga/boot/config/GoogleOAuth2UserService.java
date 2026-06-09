@@ -3,6 +3,7 @@ package pt.estga.boot.config;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -91,8 +92,7 @@ public class GoogleOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
     private static OAuth2User mapToPrincipal(User user, Map<String, Object> attributes) {
         List<GrantedAuthority> authorities = user.getRoles().stream()
-                .flatMap(role -> role.getPermissions().stream())
-                .map(permission -> (GrantedAuthority) permission::getName)
+                .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.getName()))
                 .toList();
 
         return new DefaultOAuth2User(authorities, attributes, user.getUsername());
