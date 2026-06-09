@@ -28,25 +28,13 @@ public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
 
-public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(AdministrativeDivisionMapper::toDto);
-    }
-
-    public Page<AdministrativeDivisionDto> search(DivisionFilter filter, Pageable pageable) {
+	public Page<AdministrativeDivisionDto> search(DivisionFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<AdministrativeDivision>()
                 .like("name", filter.name())
                 .eq("parent.id", filter.parentId())
                 .isNull("parent", filter.rootOnly());
         return repository.findAll(sb.build(), pageable).map(AdministrativeDivisionMapper::toDto);
     }
-
-	public Optional<AdministrativeDivision> findById(Long id) {
-		return repository.findById(id);
-	}
-
-	public List<AdministrativeDivision> findChildren(Long parentId) {
-		return repository.findByParentId(parentId);
-	}
 
 	public Optional<AdministrativeDivision> findParent(Long childId) {
 		return repository.findById(childId).map(AdministrativeDivision::getParent);
@@ -69,17 +57,6 @@ public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
 		return ancestors;
 	}
 
-	public List<AdministrativeDivision> findRoots() {
-		return repository.findAllByParentIsNull();
-	}
-
-    public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
-        return repository.findByCoordinates(latitude, longitude);
-    }
-
-    public Optional<AdministrativeDivision> findLowestContainingDivision(double latitude, double longitude) {
-        return repository.findLowestContainingDivision(latitude, longitude);
-    }
 }
 
 
