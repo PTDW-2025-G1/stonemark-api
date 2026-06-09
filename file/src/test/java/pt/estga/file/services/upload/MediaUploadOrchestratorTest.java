@@ -7,15 +7,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import pt.estga.commoncore.events.AfterCommitEventPublisher;
+import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -30,7 +33,7 @@ import static org.mockito.Mockito.*;
 class MediaUploadOrchestratorTest {
 
     @Mock
-    private MediaMetadataService mediaMetadataService;
+    private MediaFileRepository mediaFileRepository;
     @Mock
     private FileStorageService fileStorageService;
     @Mock
@@ -39,6 +42,12 @@ class MediaUploadOrchestratorTest {
     private FileNamingService fileNamingService;
     @Mock
     private TempFileFactory tempFileFactory;
+    @Mock
+    private AfterCommitEventPublisher eventPublisher;
+    @Mock
+    private PlatformTransactionManager ptm;
+    @Mock
+    private TransactionStatus transactionStatus;
 
     private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private StorageProperties storageProperties;
@@ -52,16 +61,20 @@ class MediaUploadOrchestratorTest {
 
         when(tempFileFactory.createTempFile(anyString(), anyString()))
                 .thenAnswer(inv -> java.nio.file.Files.createTempFile("test-upload-", ".tmp"));
+        lenient().when(ptm.getTransaction(any())).thenReturn(transactionStatus);
 
         orchestrator = new MediaUploadOrchestrator(
-                mediaMetadataService,
+                mediaFileRepository,
                 fileStorageService,
                 mediaValidationService,
                 fileNamingService,
                 storageProperties,
                 tempFileFactory,
-                meterRegistry
+                meterRegistry,
+                eventPublisher,
+                ptm
         );
+        orchestrator.init();
     }
 
     @Test
@@ -80,7 +93,7 @@ class MediaUploadOrchestratorTest {
         MediaFile savedMedia = MediaFile.createForProcessing(storedFilename, filename, StorageProvider.LOCAL);
         savedMedia.setId(UUID.randomUUID());
         when(fileStorageService.storeFile(any(), eq(relativePath), anyLong())).thenReturn(relativePath);
-        when(mediaMetadataService.saveMetadataWithRetry(any())).thenReturn(savedMedia);
+        when(mediaFileRepository.save(any())).thenReturn(savedMedia);
 
         MediaFile result = orchestrator.orchestrateUpload(input, filename);
 
@@ -88,7 +101,8 @@ class MediaUploadOrchestratorTest {
         assertEquals(1.0, meterRegistry.counter("media.upload.total").count());
         assertEquals(1.0, meterRegistry.counter("media.upload.success").count());
         verify(fileStorageService).storeFile(any(), eq(relativePath), anyLong());
-        verify(mediaMetadataService).saveMetadataWithRetry(any());
+        verify(mediaFileRepository).save(any());
+        verify(eventPublisher).publish(any());
     }
 
     @Test
@@ -138,7 +152,7 @@ class MediaUploadOrchestratorTest {
         assertThrows(RuntimeException.class,
                 () -> orchestrator.orchestrateUpload(input, filename));
 
-        verify(mediaMetadataService, never()).saveMetadataWithRetry(any());
-        verify(mediaMetadataService, never()).publishAfterCommit(any());
+        verify(mediaFileRepository, never()).save(any());
+        verify(eventPublisher, never()).publish(any());
     }
 }

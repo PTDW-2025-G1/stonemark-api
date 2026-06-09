@@ -19,7 +19,7 @@ import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.commoncore.utils.VectorUtils;
 import pt.estga.vision.VisionClient;
 import pt.estga.file.entities.MediaFile;
-import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.storage.FileStorageService;
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -42,7 +42,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
     private final FileStorageService fileStorageService;
-    private final MediaMetadataService mediaMetadataService;
+    private final MediaFileRepository mediaFileRepository;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
     private final PlatformTransactionManager transactionManager;
@@ -94,7 +94,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     setProcessingFailed(processing.getId(), "No original media file available", true, startNanos);
                     return;
                 }
-                MediaFile mediaFile = mediaMetadataService.findById(mediaFileId).orElse(null);
+                MediaFile mediaFile = mediaFileRepository.findById(mediaFileId).orElse(null);
                 if (mediaFile == null) {
                     setProcessingFailed(processing.getId(), "Original media file not found: " + mediaFileId, true, startNanos);
                     return;

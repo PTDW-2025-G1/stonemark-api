@@ -8,12 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
 import pt.estga.file.models.VariantResult;
+import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.repositories.MediaVariantRepository;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
@@ -35,7 +37,7 @@ import java.util.UUID;
 @Slf4j
 public class MediaProcessingService {
 
-    private final MediaMetadataService mediaMetadataService;
+    private final MediaFileRepository mediaFileRepository;
     private final MediaVariantRepository mediaVariantRepository;
     private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
@@ -52,6 +54,7 @@ public class MediaProcessingService {
         }
     }
 
+    @Transactional
     public void process(UUID mediaFileId, MediaVariantType... variantTypes) {
         List<MediaVariantType> types = List.of(variantTypes);
         if (types.isEmpty()) {
@@ -61,12 +64,12 @@ public class MediaProcessingService {
         log.info("Starting processing for media file ID: {} (types: {})", mediaFileId, types);
         var timer = Timer.start(meterRegistry);
 
-        MediaFile mediaFile = mediaMetadataService.findById(mediaFileId)
+        MediaFile mediaFile = mediaFileRepository.findById(mediaFileId)
                 .orElseThrow(() -> new RuntimeException("MediaFile not found: " + mediaFileId));
 
         try {
             mediaFile.setStatus(MediaStatus.PROCESSING);
-            mediaFile = mediaMetadataService.saveMetadata(mediaFile);
+            mediaFile = mediaFileRepository.save(mediaFile);
 
             Resource resource = fileStorageService.loadFile(mediaFile.getStoragePath());
             Path tempOriginal = tempFileFactory.createTempFile("original-", ".tmp");
@@ -79,7 +82,7 @@ public class MediaProcessingService {
                 if (!mediaValidationService.isAllowedImage(tempOriginal, Set.copyOf(storageProperties.getAllowedMimeTypes()))) {
                     log.warn("File {} is not a supported image, skipping variant generation.", mediaFile.getOriginalFilename());
                     mediaFile.setStatus(MediaStatus.READY);
-                    mediaFile = mediaMetadataService.saveMetadata(mediaFile);
+                    mediaFile = mediaFileRepository.save(mediaFile);
                     return;
                 }
 
@@ -122,7 +125,7 @@ public class MediaProcessingService {
                 }
 
                 mediaFile.setStatus(MediaStatus.READY);
-                mediaFile = mediaMetadataService.saveMetadata(mediaFile);
+                mediaFile = mediaFileRepository.save(mediaFile);
                 log.info("Processing completed for media file ID: {}", mediaFileId);
             } finally {
                 Files.deleteIfExists(tempOriginal);
@@ -132,7 +135,7 @@ public class MediaProcessingService {
             log.error("Processing failed for media file ID: {}", mediaFileId, e);
             try {
                 mediaFile.setStatus(MediaStatus.FAILED);
-                mediaMetadataService.saveMetadata(mediaFile);
+                mediaFileRepository.save(mediaFile);
             } catch (Exception ex) {
                 log.error("Failed to mark media as FAILED for id {}", mediaFileId, ex);
             }

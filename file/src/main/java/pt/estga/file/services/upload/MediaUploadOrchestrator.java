@@ -1,8 +1,17 @@
 package pt.estga.file.services.upload;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import pt.estga.commoncore.events.AfterCommitEventPublisher;
+import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 import pt.estga.file.config.StorageProperties;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.enums.MediaStatus;
@@ -10,12 +19,10 @@ import pt.estga.file.enums.StorageProvider;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import io.micrometer.core.instrument.MeterRegistry;
-import pt.estga.file.services.MediaMetadataService;
+import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.TempFileFactory;
 import pt.estga.file.services.naming.FileNamingService;
 import pt.estga.file.services.storage.FileStorageService;
-import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,13 +37,23 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class MediaUploadOrchestrator {
 
-    private final MediaMetadataService mediaMetadataService;
+    private final MediaFileRepository mediaFileRepository;
     private final FileStorageService fileStorageService;
     private final MediaValidationService mediaValidationService;
     private final FileNamingService fileNamingService;
     private final StorageProperties storageProperties;
     private final TempFileFactory tempFileFactory;
     private final MeterRegistry meterRegistry;
+    private final AfterCommitEventPublisher eventPublisher;
+    private final PlatformTransactionManager ptm;
+
+    private TransactionTemplate requiresNewTemplate;
+
+    @PostConstruct
+    void init() {
+        this.requiresNewTemplate = new TransactionTemplate(ptm);
+        this.requiresNewTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
 
     public MediaFile orchestrateUpload(InputStream input, String originalFilename) throws IOException {
         long startNanos = System.nanoTime();
@@ -77,10 +94,9 @@ public class MediaUploadOrchestrator {
             media.completeUpload(actualSize, storagePath, null, MediaStatus.UPLOADED);
 
             try {
-                MediaFile saved = mediaMetadataService.saveMetadataWithRetry(media);
+                MediaFile saved = saveWithRetry(media);
                 if (saved.getId() != null) {
-                    var event = new MediaUploadedEvent(saved.getId());
-                    mediaMetadataService.publishAfterCommit(event);
+                    eventPublisher.publish(new MediaUploadedEvent(saved.getId()));
                 }
                 long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
                 meterRegistry.counter("media.upload.success").increment();
@@ -100,6 +116,32 @@ public class MediaUploadOrchestrator {
                 Files.deleteIfExists(tempFile);
             } catch (IOException e) {
                 log.warn("Failed to delete temp file: {}", tempFile, e);
+            }
+        }
+    }
+
+    private MediaFile saveWithRetry(MediaFile mediaFile) {
+        final int maxAttempts = 3;
+        int tried = 0;
+        while (true) {
+            try {
+                return requiresNewTemplate.execute(status -> mediaFileRepository.save(mediaFile));
+            } catch (DataIntegrityViolationException e) {
+                throw e;
+            } catch (DataAccessException e) {
+                tried++;
+                if (tried >= maxAttempts) {
+                    throw e;
+                }
+                log.warn("Transient error saving media metadata for id {} - retry {}/{}",
+                        mediaFile.getId(), tried, maxAttempts, e);
+                try {
+                    long backoff = (long) (250L * tried * (0.5 + Math.random()));
+                    TimeUnit.MILLISECONDS.sleep(backoff);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while retrying metadata save", ie);
+                }
             }
         }
     }
