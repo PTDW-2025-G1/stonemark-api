@@ -1,4 +1,4 @@
-package pt.estga.monument;
+package pt.estga.monument.repositories;
 
 import pt.estga.monument.entities.Monument;
 import org.springframework.data.domain.Page;
