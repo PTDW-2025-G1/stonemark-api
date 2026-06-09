@@ -21,10 +21,6 @@ public class ChatbotAccountService {
     private final ChatbotAccountRepository chatbotAccountRepository;
     private final UserRepository userRepository;
 
-    public Optional<ChatbotAccount> findByProviderAndValue(ChatbotPlatform chatbotPlatform, String value) {
-        return chatbotAccountRepository.findByChatbotPlatformAndValue(chatbotPlatform, value);
-    }
-
     @Transactional
     public ChatbotAccount createAndAssociate(User user, ChatbotPlatform chatbotPlatform, String identityValue) {
         // Verify that the user doesn't have an identity with the given chatbotPlatform yet
@@ -62,7 +58,4 @@ public class ChatbotAccountService {
         }
     }
 
-    public void delete(ChatbotAccount chatbotAccount) {
-        chatbotAccountRepository.delete(chatbotAccount);
-    }
 }
