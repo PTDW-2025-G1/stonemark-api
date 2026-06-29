@@ -1,6 +1,6 @@
 package pt.estga.monument.dtos;
 
 public record MonumentFilter(
-        Long divisionId,
+        String divisionCode,
         String name
 ) {}

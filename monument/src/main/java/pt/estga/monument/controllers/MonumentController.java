@@ -25,13 +25,14 @@ public class MonumentController {
 
     private final MonumentService service;
     private final MonumentRepository repository;
+    private final MonumentMapper mapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<MonumentDto> getMonumentById(
             @PathVariable Long id
     ) {
         return repository.findById(id)
-                .map(MonumentMapper::toResponseDto)
+                .map(mapper::toResponseDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -39,11 +40,11 @@ public class MonumentController {
     @GetMapping
     public ResponseEntity<Page<MonumentListDto>> findAll(
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) Long divisionId,
+            @RequestParam(required = false) String divisionCode,
             @RequestParam(required = false) String name
     ) {
-        MonumentFilter filter = new MonumentFilter(divisionId, name);
-        return ResponseEntity.ok(service.search(filter, pageable).map(MonumentMapper::toListDto));
+        MonumentFilter filter = new MonumentFilter(divisionCode, name);
+        return ResponseEntity.ok(service.search(filter, pageable).map(mapper::toListDto));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -51,14 +52,14 @@ public class MonumentController {
             @Valid @RequestBody PolygonSearchRequest request,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(repository.findByPolygon(request.geoJson(), pageable).map(MonumentMapper::toListDto));
+        return ResponseEntity.ok(repository.findByPolygon(request.geoJson(), pageable).map(mapper::toListDto));
     }
 
-    @GetMapping("/division/{id}")
+    @GetMapping("/division/{code}")
     public ResponseEntity<Page<MonumentListDto>> getMonumentsByDivision(
-            @PathVariable Long id,
+            @PathVariable String code,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(repository.findByDivisionId(id, pageable).map(MonumentMapper::toListDto));
+        return ResponseEntity.ok(repository.findByDivisionCode(code, pageable).map(mapper::toListDto));
     }
 }

@@ -1,10 +1,10 @@
 package pt.estga.monument.dtos;
 
-import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.commoncore.models.DivisionRef;
 
 public record MonumentListDto(
         Long id,
         String name,
-        AdministrativeDivisionDto division,
+        DivisionRef division,
         Boolean active
 ) { }

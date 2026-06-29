@@ -1,27 +1,24 @@
 package pt.estga.monument.mappers;
 
-import pt.estga.monument.entities.Monument;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import pt.estga.commoncore.enums.EntityStatus;
+import pt.estga.commoncore.interfaces.DivisionLookupClient;
+import pt.estga.commoncore.models.DivisionRef;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
-import pt.estga.commoncore.enums.EntityStatus;
-import pt.estga.territory.dtos.AdministrativeDivisionDto;
-import pt.estga.territory.entities.AdministrativeDivision;
-import pt.estga.territory.utils.GeometryUtils;
+import pt.estga.monument.entities.Monument;
+import pt.estga.monument.utils.GeometryUtils;
 
+@Component
+@RequiredArgsConstructor
 public class MonumentMapper {
 
-    private MonumentMapper() {}
+    private final DivisionLookupClient divisionLookupClient;
 
-    public static MonumentDto toResponseDto(Monument monument) {
+    public MonumentDto toResponseDto(Monument monument) {
         if (monument == null) return null;
-        AdministrativeDivisionDto divisionDto = null;
-        if (monument.getDivision() != null) {
-            divisionDto = AdministrativeDivisionDto.builder()
-                    .id(monument.getDivision().getId())
-                    .name(monument.getDivision().getName())
-                    .build();
-        }
         return new MonumentDto(
                 monument.getId(),
                 monument.getName(),
@@ -32,31 +29,24 @@ public class MonumentMapper {
                 monument.getLocation() != null ? monument.getLocation().getX() : null,
                 monument.getAddress(),
                 monument.getPostalCode(),
-                divisionDto,
+                toDivisionRef(monument.getDivisionCode()),
                 monument.getCreatedAt(),
                 monument.getLastModifiedAt(),
                 monument.getStatus() == EntityStatus.ACTIVE
         );
     }
 
-    public static MonumentListDto toListDto(Monument monument) {
+    public MonumentListDto toListDto(Monument monument) {
         if (monument == null) return null;
-        AdministrativeDivisionDto divisionDto = null;
-        if (monument.getDivision() != null) {
-            divisionDto = AdministrativeDivisionDto.builder()
-                    .id(monument.getDivision().getId())
-                    .name(monument.getDivision().getName())
-                    .build();
-        }
         return new MonumentListDto(
                 monument.getId(),
                 monument.getName(),
-                divisionDto,
+                toDivisionRef(monument.getDivisionCode()),
                 monument.getStatus() == EntityStatus.ACTIVE
         );
     }
 
-    public static Monument toEntity(MonumentRequestDto dto) {
+    public Monument toEntity(MonumentRequestDto dto) {
         if (dto == null) return null;
         Monument monument = new Monument();
         monument.setName(dto.name());
@@ -66,16 +56,14 @@ public class MonumentMapper {
         monument.setLocation(GeometryUtils.createPoint(dto.latitude(), dto.longitude()));
         monument.setAddress(dto.address());
         monument.setPostalCode(dto.postalCode());
-        if (dto.divisionId() != null) {
-            monument.setDivision(AdministrativeDivision.builder().id(dto.divisionId()).build());
-        }
+        monument.setDivisionCode(dto.divisionCode());
         if (dto.active() != null && !dto.active()) {
             monument.deactivate();
         }
         return monument;
     }
 
-    public static void updateEntityFromDto(MonumentRequestDto dto, Monument entity) {
+    public void updateEntityFromDto(MonumentRequestDto dto, Monument entity) {
         if (dto == null || entity == null) return;
         entity.setName(dto.name());
         entity.setDescription(dto.description());
@@ -84,11 +72,7 @@ public class MonumentMapper {
         entity.setLocation(GeometryUtils.createPoint(dto.latitude(), dto.longitude()));
         entity.setAddress(dto.address());
         entity.setPostalCode(dto.postalCode());
-        if (dto.divisionId() != null) {
-            entity.setDivision(AdministrativeDivision.builder().id(dto.divisionId()).build());
-        } else {
-            entity.setDivision(null);
-        }
+        entity.setDivisionCode(dto.divisionCode());
         if (dto.active() != null) {
             if (dto.active()) {
                 entity.activate();
@@ -96,5 +80,13 @@ public class MonumentMapper {
                 entity.deactivate();
             }
         }
+    }
+
+    private DivisionRef toDivisionRef(String code) {
+        if (code == null || code.isBlank()) return null;
+        String name = divisionLookupClient.findByCode(code)
+                .map(DivisionRef::name)
+                .orElse(null);
+        return new DivisionRef(code, name);
     }
 }

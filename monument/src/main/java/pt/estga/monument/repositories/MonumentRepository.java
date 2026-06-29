@@ -3,7 +3,6 @@ package pt.estga.monument.repositories;
 import pt.estga.monument.entities.Monument;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,11 +13,10 @@ import pt.estga.commoninfra.repositories.BaseRepository;
 @Repository
 public interface MonumentRepository extends BaseRepository<Monument, Long>, JpaSpecificationExecutor<Monument> {
 
-    @EntityGraph(attributePaths = {"division"})
-    Page<Monument> findByDivisionIdAndStatus(Long divisionId, Pageable pageable, EntityStatus status);
+    Page<Monument> findByDivisionCodeAndStatus(String divisionCode, Pageable pageable, EntityStatus status);
 
-    default Page<Monument> findByDivisionId(Long divisionId, Pageable pageable) {
-        return findByDivisionIdAndStatus(divisionId, pageable, EntityStatus.ACTIVE);
+    default Page<Monument> findByDivisionCode(String divisionCode, Pageable pageable) {
+        return findByDivisionCodeAndStatus(divisionCode, pageable, EntityStatus.ACTIVE);
     }
 
     @Query(value = "SELECT * FROM monument m WHERE ST_Within(m.location, ST_GeomFromGeoJSON(:geoJson))", nativeQuery = true)

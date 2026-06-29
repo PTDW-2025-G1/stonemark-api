@@ -27,16 +27,17 @@ public class MonumentAdminController {
 
     private final MonumentService service;
     private final MonumentRepository repository;
+    private final MonumentMapper mapper;
 
     @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument monument = MonumentMapper.toEntity(monumentDto);
+        Monument monument = mapper.toEntity(monumentDto);
 
         Monument createdMonument = repository.save(monument);
-        MonumentDto response = MonumentMapper.toResponseDto(createdMonument);
+        MonumentDto response = mapper.toResponseDto(createdMonument);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -56,10 +57,10 @@ public class MonumentAdminController {
         Monument existingMonument = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
 
-        MonumentMapper.updateEntityFromDto(monumentDto, existingMonument);
+        mapper.updateEntityFromDto(monumentDto, existingMonument);
 
         Monument updatedMonument = repository.save(existingMonument);
-        return ResponseEntity.ok(MonumentMapper.toResponseDto(updatedMonument));
+        return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
     }
 
     @DeleteMapping("/{id}")
