@@ -78,11 +78,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>territory</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>verification</artifactId>
             <version>${stonemark.version}</version>
         </dependency>

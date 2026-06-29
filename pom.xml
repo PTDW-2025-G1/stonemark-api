@@ -36,8 +36,7 @@
 
         <!-- Domain services -->
         <module>file</module>               <!-- needs file-api, shared-web, shared-infra -->
-        <module>territory</module>          <!-- needs shared-web, shared-infra -->
-        <module>monument</module>           <!-- needs territory, shared-web, shared-infra -->
+        <module>monument</module>           <!-- needs shared-core, shared-web, shared-infra -->
         <module>user</module>               <!-- needs user-api, file-api, shared-web, shared-infra -->
         <module>verification</module>       <!-- needs shared-web, shared-infra, user-api -->
         <module>mark</module>               <!-- needs monument, file-api, vision, shared-web, shared-infra, mark-api -->
@@ -177,11 +176,6 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>support</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>territory</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
