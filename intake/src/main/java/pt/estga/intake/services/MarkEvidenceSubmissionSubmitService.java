@@ -9,7 +9,7 @@ import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.territory.repositories.AdministrativeDivisionRepository;
+import pt.estga.commoncore.interfaces.DivisionLookupClient;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -22,7 +22,7 @@ public class MarkEvidenceSubmissionSubmitService {
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final FileStorageOperations fileStorage;
     private final AfterCommitEventPublisher eventPublisher;
-    private final AdministrativeDivisionRepository administrativeDivisionRepository;
+    private final DivisionLookupClient divisionLookupClient;
 
     @Transactional
     public void submit(
@@ -56,7 +56,7 @@ public class MarkEvidenceSubmissionSubmitService {
 
     private void tagDivision(MarkEvidenceSubmission submission) {
         if (submission.getLatitude() == null || submission.getLongitude() == null) return;
-        administrativeDivisionRepository.findLowestContainingDivision(submission.getLatitude(), submission.getLongitude())
-                .ifPresent(submission::setDivision);
+        divisionLookupClient.resolveByCoordinates(submission.getLatitude(), submission.getLongitude())
+                .ifPresent(division -> submission.setDivisionCode(division.code()));
     }
 }

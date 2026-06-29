@@ -27,6 +27,7 @@ public class SubmissionAdminController {
 
     private final SubmissionService submissionService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final SubmissionMapper submissionMapper;
 
     @GetMapping
     public ResponseEntity<Page<SubmissionDto>> findAll(
@@ -36,15 +37,15 @@ public class SubmissionAdminController {
             @RequestParam(required = false) Long submittedById,
             @RequestParam(required = false) Instant submittedAfter,
             @RequestParam(required = false) Instant submittedBefore,
-            @RequestParam(required = false) Long divisionId) {
-        SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore, divisionId);
+            @RequestParam(required = false) String divisionCode) {
+        SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore, divisionCode);
         return ResponseEntity.ok(submissionService.search(filter, pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<SubmissionDto> findById(@PathVariable Long id) {
         return submissionRepository.findById(id)
-                .map(SubmissionMapper::toDto)
+                .map(submissionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

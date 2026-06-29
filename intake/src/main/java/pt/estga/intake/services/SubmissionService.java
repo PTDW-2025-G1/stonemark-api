@@ -18,15 +18,16 @@ import pt.estga.commoninfra.jpa.SpecBuilder;
 public class SubmissionService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final SubmissionMapper submissionMapper;
 
     public Page<SubmissionDto> search(SubmissionFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<MarkEvidenceSubmission>()
                 .eq("status", filter.status())
                 .eq("submissionSource", filter.source())
                 .eq("submittedById", filter.submittedById())
-                .eq("division.id", filter.divisionId())
+                .eq("divisionCode", filter.divisionCode())
                 .afterOrEqual("submittedAt", filter.submittedAfter())
                 .beforeOrEqual("submittedAt", filter.submittedBefore());
-        return submissionRepository.findAll(sb.build(), pageable).map(SubmissionMapper::toDto);
+        return submissionRepository.findAll(sb.build(), pageable).map(submissionMapper::toDto);
     }
 }
