@@ -3,7 +3,7 @@ package pt.estga.chatbot.whatsapp;
 import lombok.extern.slf4j.Slf4j;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.shared.models.Location;
+import pt.estga.commoncore.models.Location;
 
 @Slf4j
 public class WhatsAppMapper {

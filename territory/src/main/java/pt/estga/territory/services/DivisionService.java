@@ -5,7 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.commoninfra.jpa.SpecBuilder;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.territory.dtos.DivisionFilter;
 import pt.estga.territory.entities.AdministrativeDivision;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
 import pt.estga.territory.repositories.AdministrativeDivisionRepository;
@@ -26,17 +28,13 @@ public class DivisionService {
 	
   	private final AdministrativeDivisionRepository repository;
 
-	public Page<AdministrativeDivisionDto> findAll(Pageable pageable) {
-		return repository.findAll(pageable).map(AdministrativeDivisionMapper::toDto);
-	}
-
-	public Optional<AdministrativeDivision> findById(Long id) {
-		return repository.findById(id);
-	}
-
-	public List<AdministrativeDivision> findChildren(Long parentId) {
-		return repository.findByParentId(parentId);
-	}
+	public Page<AdministrativeDivisionDto> search(DivisionFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<AdministrativeDivision>()
+                .like("name", filter.name())
+                .eq("parent.id", filter.parentId())
+                .isNull("parent", filter.rootOnly());
+        return repository.findAll(sb.build(), pageable).map(AdministrativeDivisionMapper::toDto);
+    }
 
 	public Optional<AdministrativeDivision> findParent(Long childId) {
 		return repository.findById(childId).map(AdministrativeDivision::getParent);
@@ -59,13 +57,6 @@ public class DivisionService {
 		return ancestors;
 	}
 
-	public List<AdministrativeDivision> findRoots() {
-		return repository.findAllByParentIsNull();
-	}
-
-	public List<AdministrativeDivision> findByCoordinates(double latitude, double longitude) {
-		return repository.findByCoordinates(latitude, longitude);
-	}
 }
 
 

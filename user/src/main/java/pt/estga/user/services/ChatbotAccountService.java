@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.entities.ChatbotAccount;
 import pt.estga.user.enums.ChatbotPlatform;
@@ -20,10 +20,6 @@ public class ChatbotAccountService {
 
     private final ChatbotAccountRepository chatbotAccountRepository;
     private final UserRepository userRepository;
-
-    public Optional<ChatbotAccount> findByProviderAndValue(ChatbotPlatform chatbotPlatform, String value) {
-        return chatbotAccountRepository.findByChatbotPlatformAndValue(chatbotPlatform, value);
-    }
 
     @Transactional
     public ChatbotAccount createAndAssociate(User user, ChatbotPlatform chatbotPlatform, String identityValue) {
@@ -62,7 +58,4 @@ public class ChatbotAccountService {
         }
     }
 
-    public void delete(ChatbotAccount chatbotAccount) {
-        chatbotAccountRepository.delete(chatbotAccount);
-    }
 }

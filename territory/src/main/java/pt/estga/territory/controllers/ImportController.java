@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.commonweb.dtos.MessageResponseDto;
 import pt.estga.territory.services.DivisionImportService;
 
 import java.io.InputStream;
@@ -16,7 +16,7 @@ import java.io.InputStream;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/admin")
-@PreAuthorize("hasAuthority('IMPORT_DATA')")
+@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
 @RequiredArgsConstructor
 @Tag(name = "Imports", description = "Endpoints for importing data.")
 public class ImportController {

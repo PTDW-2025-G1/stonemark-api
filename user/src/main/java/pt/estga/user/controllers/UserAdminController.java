@@ -15,16 +15,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.dtos.UserFilter;
+import pt.estga.user.mappers.UserMapper;
+import pt.estga.user.repositories.UserRepository;
 import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
 @Tag(name = "User Management", description = "Endpoints for managing users (Admin).")
-@PreAuthorize("hasAuthority('USER_MANAGE')")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
 
     private final UserService service;
+    private final UserRepository repository;
 
     @Operation(summary = "Search users", description = "Searches for users based on dynamic filters.")
     @ApiResponses(value = {
@@ -33,8 +37,13 @@ public class UserAdminController {
                             schema = @Schema(implementation = Page.class)))
     })
     @GetMapping
-    public ResponseEntity<Page<UserDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+    public ResponseEntity<Page<UserDto>> findAll(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Boolean enabled) {
+        UserFilter filter = new UserFilter(username, email, enabled);
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @Operation(summary = "Get user by ID", description = "Retrieves a specific user by their ID.")
@@ -48,7 +57,8 @@ public class UserAdminController {
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return service.findDtoById(id)
+        return repository.findById(id)
+                .map(UserMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -71,14 +81,14 @@ public class UserAdminController {
 
     @Operation(summary = "Delete a user", description = "Deletes a user by their ID.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User deleted successfully"),
+            @ApiResponse(responseCode = "204", description = "User deleted successfully"),
             @ApiResponse(responseCode = "404", description = "User not found")
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteById(
+    public ResponseEntity<Void> deleteById(
             @Parameter(description = "ID of the user to be deleted", required = true)
             @PathVariable Long id) {
-        service.deleteById(id);
-        return ResponseEntity.ok().build();
+        repository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

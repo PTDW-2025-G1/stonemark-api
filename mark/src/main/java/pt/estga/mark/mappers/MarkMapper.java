@@ -2,7 +2,8 @@ package pt.estga.mark.mappers;
 
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.entities.Mark;
-import pt.estga.shared.enums.EntityStatus;
+import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.commoncore.enums.EntityStatus;
 
 public class MarkMapper {
 
@@ -10,12 +11,13 @@ public class MarkMapper {
 
     public static MarkDto toDto(Mark mark) {
         if (mark == null) return null;
+        MarkEvidence exemplar = mark.getExemplar();
         return new MarkDto(
                 mark.getId(),
                 mark.getTitle(),
                 mark.getDescription(),
-                null,
-                null,
+                exemplar != null ? exemplar.getEmbedding() : null,
+                exemplar != null ? exemplar.getFileId() : null,
                 mark.getStatus() == EntityStatus.ACTIVE
         );
     }

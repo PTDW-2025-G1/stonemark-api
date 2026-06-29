@@ -2,7 +2,7 @@ package pt.estga.mark.mappers;
 
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.shared.enums.EntityStatus;
+import pt.estga.commoncore.enums.EntityStatus;
 
 public class MarkOccurrenceMapper {
 
@@ -15,7 +15,7 @@ public class MarkOccurrenceMapper {
                 entity.getMark() != null ? entity.getMark().getId() : null,
                 entity.getMonument() != null ? entity.getMonument().getId() : null,
                 entity.getMark() != null ? MarkMapper.toDto(entity.getMark()) : null,
-                null,
+                entity.getCreatedAt(),
                 entity.getStatus() == EntityStatus.ACTIVE
         );
     }

@@ -13,8 +13,8 @@ import pt.estga.chatbot.constants.CallbackData;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.shared.models.AppPrincipal;
-import pt.estga.shared.utils.SecurityUtils;
+import pt.estga.commoncore.models.AppPrincipal;
+import pt.estga.commoncore.utils.SecurityUtils;
 
 import java.util.List;
 import java.util.NoSuchElementException;

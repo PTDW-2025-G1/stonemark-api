@@ -6,16 +6,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
+import pt.estga.commoninfra.jpa.SpecBuilder;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
+import pt.estga.user.dtos.UserFilter;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.repositories.UserRepository;
-
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,36 +24,14 @@ public class UserService {
 
     private final UserRepository repository;
     private final ChatbotAccountRepository chatbotAccountRepository;
-    private final AuthenticationService authenticationService;
     private final PasswordEncoder passwordEncoder;
 
-    public Page<UserDto> findAll(Pageable pageable) {
-        return repository.findAll(pageable).map(UserMapper::toDto);
-    }
-
-    public Optional<User> findById(Long id) {
-        return repository.findById(id);
-    }
-
-    public Optional<UserDto> findDtoById(Long id) {
-        return repository.findById(id).map(UserMapper::toDto);
-    }
-
-    public Optional<User> findByEmail(String email) {
-        return repository.findByEmail(email);
-    }
-
-    public Optional<User> findByIdForProfile(Long id) {
-        return repository.findByIdForProfile(id);
-    }
-
-    public boolean existsByUsername(String username) {
-        return repository.existsByUsername(username);
-    }
-
-    @Transactional
-    public User create(User user) {
-        return repository.save(user);
+    public Page<UserDto> search(UserFilter filter, Pageable pageable) {
+        var sb = new SpecBuilder<User>()
+                .like("username", filter.username())
+                .like("email", filter.email())
+                .isTrue("enabled", filter.enabled());
+        return repository.findAll(sb.build(), pageable).map(UserMapper::toDto);
     }
 
     @Transactional
@@ -64,9 +42,7 @@ public class UserService {
         User existing = repository.findById(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + user.getId() + " not found"));
         UserMapper.update(user, existing);
-        User saved = repository.save(existing);
-        authenticationService.invalidateCache(saved.getId());
-        return saved;
+        return repository.save(existing);
     }
 
     @Transactional
@@ -78,13 +54,7 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
         UserMapper.updateFromDto(dto, existing);
         User saved = repository.save(existing);
-        authenticationService.invalidateCache(saved.getId());
         return UserMapper.toDto(saved);
-    }
-
-    @Transactional
-    public void deleteById(Long id) {
-        repository.deleteById(id);
     }
 
     @Transactional
@@ -122,7 +92,6 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         UserMapper.update(user, request);
         repository.save(user);
-        authenticationService.invalidateCache(user.getId());
     }
 
     @Transactional

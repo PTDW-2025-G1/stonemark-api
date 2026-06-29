@@ -8,7 +8,9 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.territory.dtos.DivisionFilter;
 import pt.estga.territory.mappers.AdministrativeDivisionMapper;
+import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 import pt.estga.territory.services.DivisionService;
 
 import java.util.List;
@@ -20,20 +22,26 @@ import java.util.List;
 public class AdministrativeDivisionController {
 
     private final DivisionService service;
+    private final AdministrativeDivisionRepository repository;
 
     @GetMapping("/roots")
     public ResponseEntity<List<AdministrativeDivisionDto>> getRoots() {
-        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findRoots()));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(repository.findAllByParentIsNull()));
     }
 
     @GetMapping
-    public ResponseEntity<Page<AdministrativeDivisionDto>> findAll(@PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(service.findAll(pageable));
+    public ResponseEntity<Page<AdministrativeDivisionDto>> findAll(
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Long parentId,
+            @RequestParam(required = false) Boolean rootOnly) {
+        DivisionFilter filter = new DivisionFilter(name, parentId, rootOnly);
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<AdministrativeDivisionDto> getById(@PathVariable Long id) {
-        return service.findById(id)
+        return repository.findById(id)
                 .map(AdministrativeDivisionMapper::toDto)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -41,7 +49,7 @@ public class AdministrativeDivisionController {
 
     @GetMapping("/{id}/children")
     public ResponseEntity<List<AdministrativeDivisionDto>> getChildren(@PathVariable Long id) {
-        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findChildren(id)));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(repository.findByParentId(id)));
     }
 
     @GetMapping("/{id}/parent")
@@ -62,6 +70,17 @@ public class AdministrativeDivisionController {
             @RequestParam double latitude,
             @RequestParam double longitude
     ) {
-        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(service.findByCoordinates(latitude, longitude)));
+        return ResponseEntity.ok(AdministrativeDivisionMapper.toDtoList(repository.findByCoordinates(latitude, longitude)));
+    }
+
+    @GetMapping("/coordinates/lowest")
+    public ResponseEntity<AdministrativeDivisionDto> getLowestDivisionByCoordinates(
+            @RequestParam double latitude,
+            @RequestParam double longitude
+    ) {
+        return repository.findLowestContainingDivision(latitude, longitude)
+                .map(AdministrativeDivisionMapper::toDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 }

@@ -13,7 +13,7 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.shared.utils.SecurityUtils;
+import pt.estga.commoncore.utils.SecurityUtils;
 
 import java.time.Instant;
 import java.util.UUID;

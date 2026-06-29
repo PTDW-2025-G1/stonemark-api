@@ -4,14 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import pt.estga.fileapi.FileStorageOperations;
-import pt.estga.shared.events.AfterCommitEventPublisher;
+import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.territory.repositories.AdministrativeDivisionRepository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.util.UUID;
 
 @Service
@@ -22,13 +22,14 @@ public class MarkEvidenceSubmissionSubmitService {
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final FileStorageOperations fileStorage;
     private final AfterCommitEventPublisher eventPublisher;
+    private final AdministrativeDivisionRepository administrativeDivisionRepository;
 
     @Transactional
     public void submit(
             MarkEvidenceSubmission submission,
             UUID stagedFileId,
             String photoFilename
-    ) throws IOException {
+    ) {
 
         if (submission == null) {
             throw new IllegalArgumentException("Submission cannot be null");
@@ -43,11 +44,19 @@ public class MarkEvidenceSubmissionSubmitService {
         var mediaFile = fileStorage.commit(stagedFileId, safeFilename);
         submission.setOriginalMediaFileId(mediaFile.id());
 
+        tagDivision(submission);
+
         submission.setStatus(SubmissionStatus.RECEIVED);
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
         eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
 
         log.info("Submission submitted successfully with ID: {}", saved.getId());
+    }
+
+    private void tagDivision(MarkEvidenceSubmission submission) {
+        if (submission.getLatitude() == null || submission.getLongitude() == null) return;
+        administrativeDivisionRepository.findLowestContainingDivision(submission.getLatitude(), submission.getLongitude())
+                .ifPresent(submission::setDivision);
     }
 }

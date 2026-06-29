@@ -1,0 +1,96 @@
+package pt.estga.file.services;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import pt.estga.file.entities.MediaFile;
+import pt.estga.file.entities.MediaVariant;
+import pt.estga.file.repositories.MediaFileRepository;
+import pt.estga.file.services.storage.FileStorageService;
+import pt.estga.file.services.upload.MediaUploadOrchestrator;
+import pt.estga.commonweb.exceptions.FileNotFoundException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class MediaService {
+
+    private final MediaUploadOrchestrator uploadOrchestrator;
+    private final MediaFileRepository mediaFileRepository;
+    private final FileStorageService fileStorageService;
+
+    @Transactional
+    public MediaFile upload(InputStream fileStream, String originalFilename, long fileSize) throws IOException {
+        if (fileSize <= 0) {
+            throw new IllegalArgumentException("Uploaded file is empty");
+        }
+        return uploadOrchestrator.orchestrateUpload(fileStream, originalFilename);
+    }
+
+    public MediaType resolveMediaType(MediaFile mediaFile) {
+        return MediaTypeFactory.getMediaType(mediaFile.getOriginalFilename())
+                .orElse(MediaType.APPLICATION_OCTET_STREAM);
+    }
+
+    public String buildDownloadFilename(MediaFile mediaFile) {
+        String extension = StringUtils.getFilenameExtension(mediaFile.getOriginalFilename());
+        return "stonemark-" + mediaFile.getId() + (extension != null ? "." + extension : "");
+    }
+
+    public Resource loadFileById(UUID fileId) {
+        log.debug("Loading file with ID: {}", fileId);
+        MediaFile mediaFile = mediaFileRepository.findById(fileId)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + fileId));
+        return loadFile(mediaFile);
+    }
+
+    public Resource loadFile(MediaFile mediaFile) {
+        if (mediaFile.getStoragePath() == null || mediaFile.getStoragePath().isEmpty()) {
+            throw new FileNotFoundException("Media file has no storage path");
+        }
+        return fileStorageService.loadFile(mediaFile.getStoragePath());
+    }
+
+    public Optional<MediaFile> findById(UUID id) {
+        return mediaFileRepository.findById(id);
+    }
+
+    @Transactional
+    public void deleteMedia(UUID id) {
+        MediaFile mediaFile = mediaFileRepository.findById(id)
+                .orElseThrow(() -> new FileNotFoundException("MediaFile not found with id: " + id));
+
+        List<String> variantPaths = List.copyOf(mediaFile.getVariants()).stream()
+                .map(MediaVariant::getStoragePath)
+                .toList();
+        String mainPath = mediaFile.getStoragePath();
+
+        mediaFileRepository.deleteById(id);
+
+        for (String path : variantPaths) {
+            try {
+                fileStorageService.deleteFile(path);
+            } catch (Exception e) {
+                log.warn("Failed to delete variant file for media {}: {}", id, e.getMessage());
+            }
+        }
+        if (StringUtils.hasText(mainPath)) {
+            try {
+                fileStorageService.deleteFile(mainPath);
+            } catch (Exception e) {
+                log.warn("Failed to delete main file for media {}: {}", id, e.getMessage());
+            }
+        }
+    }
+}

@@ -18,7 +18,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.events.ReviewCompletedEvent;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.commoncore.enums.ValidationState;
 
 import java.util.Optional;
 import java.util.UUID;

@@ -4,10 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.monument.MonumentRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.ModerationDtos;
-import pt.estga.shared.enums.ValidationState;
+import pt.estga.commoncore.enums.ValidationState;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +18,6 @@ public class ModerationService {
 
     private final MarkSuggestionRepository suggestionRepository;
     private final MarkRepository markRepository;
-    private final MonumentRepository monumentRepository;
 
     public List<ModerationDtos.ProcessingDto> findProcessingByConfidence(double min, double max) {
         return suggestionRepository.findProcessingByMaxConfidenceBetween(min, max)
@@ -33,13 +31,6 @@ public class ModerationService {
         return markRepository.findByValidationState(ValidationState.PROVISIONAL)
                 .stream()
                 .map(m -> new ModerationDtos.MarkDto(m.getId(), m.getTitle(), m.getValidationState()))
-                .collect(Collectors.toList());
-    }
-
-    public List<ModerationDtos.MonumentDto> findProvisionalMonuments() {
-        return monumentRepository.findByValidationState(ValidationState.PROVISIONAL)
-                .stream()
-                .map(m -> new ModerationDtos.MonumentDto(m.getId(), m.getName(), m.getValidationState()))
                 .collect(Collectors.toList());
     }
 }

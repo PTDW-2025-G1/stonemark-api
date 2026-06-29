@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pt.estga.shared.repositories.BaseRepository;
+import pt.estga.commoninfra.repositories.BaseRepository;
 import pt.estga.user.entities.User;
 
 import java.util.Optional;
@@ -24,9 +24,8 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
     boolean existsByUsername(String username);
 
     @Query("SELECT DISTINCT u FROM User u " +
-           "LEFT JOIN FETCH u.roles r " +
-           "LEFT JOIN FETCH r.permissions " +
+           "LEFT JOIN FETCH u.roles " +
            "WHERE u.id = :id")
-    Optional<User> findByIdWithRolesAndPermissions(@Param("id") Long id);
+    Optional<User> findByIdWithRoles(@Param("id") Long id);
 
 }

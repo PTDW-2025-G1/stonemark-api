@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
@@ -21,53 +22,53 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
 @Tag(name = "Review", description = "Review submissions and manage mark suggestions")
-@PreAuthorize("hasAuthority('REVIEW_MODERATE')")
+@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
 public class ReviewController {
 
     private final ReviewService reviewService;
 
     @PostMapping("/{submissionId}/accept")
-    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Accept an existing mark suggestion")
-    public ReviewResponseDto acceptSuggestion(
+    public ResponseEntity<ReviewResponseDto> acceptSuggestion(
             @PathVariable Long submissionId,
             @RequestParam Long markId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
-        return ReviewMapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ReviewMapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment)));
     }
 
     @PostMapping("/{submissionId}/accept-as-new")
-    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new mark and accept the submission")
-    public ReviewResponseDto acceptAsNew(
+    public ResponseEntity<ReviewResponseDto> acceptAsNew(
             @PathVariable Long submissionId,
             @Valid @RequestBody AcceptNewMarkRequest request) {
 
-        return ReviewMapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ReviewMapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment())));
     }
 
     @PostMapping("/{submissionId}/reject")
-    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Reject all suggestions for this submission")
-    public ReviewResponseDto rejectAll(
+    public ResponseEntity<ReviewResponseDto> rejectAll(
             @PathVariable Long submissionId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
-        return ReviewMapper.toDto(reviewService.rejectAll(submissionId, comment));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ReviewMapper.toDto(reviewService.rejectAll(submissionId, comment)));
     }
 
     @GetMapping("/{submissionId}")
-    public ReviewDecision getReviewStatus(@PathVariable Long submissionId) {
+    public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
         ReviewDecision status = reviewService.getReviewStatus(submissionId);
-        if (status == null) throw new pt.estga.sharedweb.exceptions.ResourceNotFoundException("Review not found");
-        return status;
+        if (status == null) throw new pt.estga.commonweb.exceptions.ResourceNotFoundException("Review not found");
+        return ResponseEntity.ok(status);
     }
 
     @GetMapping("/{submissionId}/suggestions")
-    public List<MarkSuggestionDto> getSuggestions(@PathVariable Long submissionId) {
-        return reviewService.getSuggestions(submissionId);
+    public ResponseEntity<List<MarkSuggestionDto>> getSuggestions(@PathVariable Long submissionId) {
+        return ResponseEntity.ok(reviewService.getSuggestions(submissionId));
     }
 }

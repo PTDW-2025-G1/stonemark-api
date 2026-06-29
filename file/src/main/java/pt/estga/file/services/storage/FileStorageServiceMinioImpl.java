@@ -3,15 +3,14 @@ package pt.estga.file.services.storage;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
-import io.minio.errors.MinioException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.MinioProperties;
-import pt.estga.sharedweb.exceptions.FileNotFoundException;
-import pt.estga.sharedweb.exceptions.FileStorageException;
+import pt.estga.commonweb.exceptions.FileNotFoundException;
+import pt.estga.commonweb.exceptions.FileStorageException;
 
 import java.io.InputStream;
 

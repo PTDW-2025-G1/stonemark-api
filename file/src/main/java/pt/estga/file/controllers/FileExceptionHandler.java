@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.sharedweb.dtos.MessageResponseDto;
+import pt.estga.commonweb.dtos.MessageResponseDto;
 
 @Slf4j
 @ControllerAdvice(basePackageClasses = MediaController.class)

@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ImageVariantGeneratorTest {
 
-    private final ImageVariantGenerator generator = new ImageVariantGenerator(new TempFileFactory(new StorageProperties()));
+    private final ImageVariantGenerator generator = new ImageVariantGenerator(new StorageProperties());
 
     @TempDir
     static Path tempDir;

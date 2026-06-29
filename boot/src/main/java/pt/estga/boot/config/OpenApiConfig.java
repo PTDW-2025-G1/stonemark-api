@@ -42,6 +42,14 @@ public class OpenApiConfig {
     }
 
     @Bean
+    public GroupedOpenApi allEndpoints() {
+        return GroupedOpenApi.builder()
+                .group("All Endpoints")
+                .pathsToMatch("/api/v1/**", "/actuator/**", "/")
+                .build();
+    }
+
+    @Bean
     public OpenAPI securedOpenAPI() {
         return new OpenAPI()
                 .addServersItem(new Server().url(baseUrl))

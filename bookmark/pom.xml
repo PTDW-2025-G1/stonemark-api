@@ -21,12 +21,12 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared</artifactId>
+            <artifactId>common-infra</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>shared-web</artifactId>
+            <artifactId>common-web</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -36,12 +36,17 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>monument</artifactId>
+            <artifactId>mark</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>user-api</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>user</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
     </dependencies>

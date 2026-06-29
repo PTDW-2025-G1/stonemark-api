@@ -2,6 +2,7 @@ package pt.estga.review.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,25 +16,20 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/moderation")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('REVIEW_MODERATE')")
+@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
 public class ModerationController {
 
     private final ModerationService moderationService;
 
     @GetMapping("/processing-by-confidence")
-    public List<ModerationDtos.ProcessingDto> processingByConfidence(
+    public ResponseEntity<List<ModerationDtos.ProcessingDto>> processingByConfidence(
             @RequestParam double min,
             @RequestParam double max) {
-        return moderationService.findProcessingByConfidence(min, max);
+        return ResponseEntity.ok(moderationService.findProcessingByConfidence(min, max));
     }
 
     @GetMapping("/discovery/marks")
-    public List<ModerationDtos.MarkDto> provisionalMarks() {
-        return moderationService.findProvisionalMarks();
-    }
-
-    @GetMapping("/discovery/monuments")
-    public List<ModerationDtos.MonumentDto> provisionalMonuments() {
-        return moderationService.findProvisionalMonuments();
+    public ResponseEntity<List<ModerationDtos.MarkDto>> provisionalMarks() {
+        return ResponseEntity.ok(moderationService.findProvisionalMarks());
     }
 }

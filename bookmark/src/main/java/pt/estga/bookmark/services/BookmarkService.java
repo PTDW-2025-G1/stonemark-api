@@ -11,9 +11,9 @@ import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.repositories.BookmarkRepository;
-import pt.estga.sharedweb.exceptions.DuplicateResourceException;
-import pt.estga.sharedweb.exceptions.ResourceNotFoundException;
-import pt.estga.userapi.UserLookupOperations;
+import pt.estga.commonweb.exceptions.DuplicateResourceException;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.user.repositories.UserRepository;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkContentResolver contentResolver;
-    private final UserLookupOperations userLookup;
+    private final UserRepository userRepository;
 
     public Page<BookmarkResponse> listByUser(Long userId, Pageable pageable) {
         Page<Bookmark> page = bookmarkRepository.findAllByCreatedById(userId, pageable);
@@ -41,8 +41,9 @@ public class BookmarkService {
                 userId, request.targetType(), request.targetId())) {
             throw new DuplicateResourceException("Bookmark already exists");
         }
-        userLookup.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found");
+        }
 
         Bookmark bookmark = Bookmark.builder()
                 .createdById(userId)

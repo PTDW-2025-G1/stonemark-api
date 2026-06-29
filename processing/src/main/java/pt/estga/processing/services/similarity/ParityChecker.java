@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
-import pt.estga.markapi.MarkService;
+import pt.estga.mark.mappers.MarkEvidenceMapper;
+import pt.estga.mark.repositories.MarkEvidenceRepository;
+import pt.estga.markapi.MarkEvidenceQueryService;
 import pt.estga.processing.config.ProcessingProperties;
-import pt.estga.shared.utils.VectorUtils;
+import pt.estga.commoncore.utils.VectorUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ParityChecker {
 
-    private final MarkService markService;
+    private final MarkEvidenceQueryService markEvidenceQueryService;
+    private final MarkEvidenceRepository markEvidenceRepository;
     private final ProcessingProperties properties;
     private boolean parityAsyncLocal;
     private int paritySampleSizeLocal;
@@ -48,17 +51,19 @@ public class ParityChecker {
     }
 
     public void run() {
-        List<MarkEvidenceDto> sample = markService.findEvidenceWithEmbeddings(Math.max(1, paritySampleSizeLocal));
+        List<MarkEvidenceDto> sample = markEvidenceQueryService.findEvidenceWithEmbeddings(Math.max(1, paritySampleSizeLocal));
         if (sample == null || sample.isEmpty()) return;
         for (var ev : sample) {
             float[] emb = ev.embedding();
             if (emb == null || emb.length == 0) continue;
             String vec = VectorUtils.toVectorLiteral(emb);
-            List<MarkEvidenceDistanceDto> hits = markService.findTopKSimilar(vec, 5);
+            List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(vec, 5);
             if (hits == null || hits.isEmpty()) continue;
             List<UUID> hitIds = hits.stream().map(MarkEvidenceDistanceDto::id).filter(id -> !id.equals(ev.id())).distinct().toList();
             if (hitIds.isEmpty()) continue;
-            List<MarkEvidenceDto> fetched = markService.findEvidenceByIdIn(hitIds);
+            List<MarkEvidenceDto> fetched = markEvidenceRepository.findAllById(hitIds).stream()
+                    .map(MarkEvidenceMapper::toDto)
+                    .toList();
             Map<UUID, float[]> fetchedById = fetched.stream().collect(Collectors.toMap(
                     MarkEvidenceDto::id,
                     MarkEvidenceDto::embedding
