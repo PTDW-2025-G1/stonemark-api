@@ -15,4 +15,10 @@ public interface MarkQueryService {
     Optional<MarkOccurrenceDto> findOccurrenceById(Long id);
 
     List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
+
+    MarkDto createMark(String title);
+
+    MarkOccurrenceDto findOrCreateOccurrence(Long markId, boolean approved);
+
+    void linkFileToOccurrence(UUID fileId, Long occurrenceId, float[] embedding);
 }

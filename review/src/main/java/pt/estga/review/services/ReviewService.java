@@ -7,17 +7,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.commoncore.enums.ValidationState;
 import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.mark.entities.Mark;
-import pt.estga.mark.entities.MarkEvidence;
-import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.mark.repositories.MarkOccurrenceRepository;
-import pt.estga.mark.repositories.MarkRepository;
+import pt.estga.mark.api.MarkQueryService;
+import pt.estga.mark.dtos.MarkDto;
+import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -44,9 +40,7 @@ public class ReviewService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
     private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
-    private final MarkRepository markRepository;
-    private final MarkOccurrenceRepository occurrenceRepository;
-    private final MarkEvidenceRepository evidenceRepository;
+    private final MarkQueryService markQueryService;
     private final ReviewExecutor executor;
     private final MeterRegistry meterRegistry;
 
@@ -122,17 +116,17 @@ public class ReviewService {
     private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
         return switch (type) {
             case MATCH -> {
-                Mark mark = ctx.existingMarkId() != null
-                        ? markRepository.findById(ctx.existingMarkId()).orElseThrow()
+                MarkDto mark = ctx.existingMarkId() != null
+                        ? markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow()
                         : null;
                 yield new ResolutionResult(mark);
             }
             case DISCOVERY -> {
-                Mark mark = null;
+                MarkDto mark = null;
                 if (ctx.existingMarkId() != null) {
-                    mark = markRepository.findById(ctx.existingMarkId()).orElseThrow();
+                    mark = markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow();
                 } else if (ctx.markTitle() != null) {
-                    mark = markRepository.save(Mark.builder().title(ctx.markTitle()).build());
+                    mark = markQueryService.createMark(ctx.markTitle());
                 }
                 yield new ResolutionResult(mark);
             }
@@ -179,46 +173,27 @@ public class ReviewService {
 
         if (resolution != null && resolution.mark() != null) {
             UUID mediaFileId = submission.getOriginalMediaFileId();
-            linkEvidenceToMark(submissionId, mediaFileId, resolution.mark().getId(), decision == ReviewDecision.APPROVED);
+            linkEvidenceToMark(submissionId, mediaFileId, resolution.mark().id(), decision == ReviewDecision.APPROVED);
         }
     }
 
     private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId, boolean approved) {
         if (mediaFileId == null) return;
 
-        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentIdIsNull(markId)
-                .orElseGet(() -> {
-                    ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
-                    Mark mark = markRepository.findById(markId)
-                            .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
-                    return occurrenceRepository.save(MarkOccurrence.builder()
-                            .mark(mark)
-                            .monumentId(null)
-                            .validationState(state)
-                            .build());
-                });
-
         try {
-            evidenceRepository.findByFileId(mediaFileId).ifPresentOrElse(ev -> {
-                ev.setOccurrence(occurrence);
-                evidenceRepository.save(ev);
-            }, () -> {
-                float[] embedding = parseEmbedding(
-                        processingRepository.findEmbeddingTextBySubmissionId(submissionId));
-                if (embedding == null) {
-                    log.warn("Cannot create MarkEvidence for file {}: no embedding for submission {}",
-                            mediaFileId, submissionId);
-                    return;
-                }
-                MarkEvidence newEvidence = MarkEvidence.builder()
-                        .fileId(mediaFileId)
-                        .occurrence(occurrence)
-                        .embedding(embedding)
-                        .build();
-                evidenceRepository.save(newEvidence);
-                log.info("Created new MarkEvidence {} for file {} (submission {})",
-                        newEvidence.getId(), mediaFileId, submissionId);
-            });
+            MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, approved);
+
+            float[] embedding = parseEmbedding(
+                    processingRepository.findEmbeddingTextBySubmissionId(submissionId));
+            if (embedding == null) {
+                log.warn("Cannot create MarkEvidence for file {}: no embedding for submission {}",
+                        mediaFileId, submissionId);
+                return;
+            }
+
+            markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
+            log.info("Linked evidence file {} to occurrence {} (submission {})",
+                    mediaFileId, occurrence.id(), submissionId);
         } catch (Exception e) {
             log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
         }

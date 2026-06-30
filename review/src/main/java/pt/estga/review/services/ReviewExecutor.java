@@ -33,7 +33,7 @@ public class ReviewExecutor {
             ResolutionResult resolution,
             UUID processingId) {
 
-        Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().getId() : null;
+        Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().id() : null;
 
         MarkEvidenceReview review = MarkEvidenceReview.builder()
                 .submissionId(submission.getId())
