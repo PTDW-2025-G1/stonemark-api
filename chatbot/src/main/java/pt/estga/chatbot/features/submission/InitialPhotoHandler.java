@@ -8,8 +8,7 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.chatbot.models.text.RichText;
-import pt.estga.chatbot.services.messages.ResponseFactory;
+import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -29,7 +28,7 @@ public class InitialPhotoHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         if (input.getType() != BotInput.InputType.PHOTO || input.getFileData() == null) {
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
         MarkEvidenceSubmission submission = context.getSubmission();
@@ -47,10 +46,10 @@ public class InitialPhotoHandler implements ConversationStateHandler {
             log.debug("Staged photo {} as {}", input.getFileName(), staged.id());
         } catch (Exception e) {
             log.error("Failed to stage photo from chat {}", input.getChatId(), e);
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
-        return new HandlerOutcome.Success();
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override
@@ -60,7 +59,7 @@ public class InitialPhotoHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
         return SubmissionState.AWAITING_LOCATION;
@@ -68,22 +67,10 @@ public class InitialPhotoHandler implements ConversationStateHandler {
 
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
-        return ResponseFactory.menuResponse(textService.get(MessageKey.REQUEST_PHOTO_PROMPT));
-    }
-
-    @Override
-    public RichText failureResponse(ChatbotContext context) {
-        return textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
+        return BotResponse.menuResponse(textService.get(MessageKey.REQUEST_PHOTO_PROMPT));
     }
 
     private SubmissionSource mapPlatformToSubmissionSource(Platform platform) {
-        if (platform == null) {
-            return SubmissionSource.OTHER;
-        }
-        return switch (platform) {
-            case TELEGRAM -> SubmissionSource.TELEGRAM_BOT;
-            case WHATSAPP -> SubmissionSource.WHATSAPP;
-            default -> SubmissionSource.OTHER;
-        };
+        return platform == Platform.TELEGRAM ? SubmissionSource.TELEGRAM_BOT : SubmissionSource.OTHER;
     }
 }

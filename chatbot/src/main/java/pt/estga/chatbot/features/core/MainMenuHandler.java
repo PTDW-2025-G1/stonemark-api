@@ -24,18 +24,18 @@ public class MainMenuHandler implements ConversationStateHandler {
         String callbackData = input.getCallbackData();
 
         if (callbackData == null) {
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
         if (callbackData.equals(CallbackData.START_SUBMISSION)) {
-            return new HandlerOutcome.Success();
+            return HandlerOutcome.SUCCESS;
         }
 
         if (callbackData.equals(CallbackData.START_VERIFICATION)) {
-            return new HandlerOutcome.Success();
+            return HandlerOutcome.SUCCESS;
         }
 
-        return new HandlerOutcome.Failure();
+        return HandlerOutcome.FAILURE;
     }
 
     @Override
@@ -45,7 +45,7 @@ public class MainMenuHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
 

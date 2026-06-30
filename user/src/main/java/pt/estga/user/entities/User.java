@@ -62,6 +62,9 @@ public class User extends BaseEntity implements Serializable {
 
     private Instant lastLoginAt;
 
+    @Column(unique = true)
+    private String telegramChatId;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -1,12 +1,12 @@
 package pt.estga.chatbot.telegram;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
@@ -15,13 +15,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class TelegramBotWebhook {
 
     private final StonemarkTelegramBot telegramBot;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("${telegram.bot.webhook-path}")
-    public ResponseEntity<Void> handleUpdate(HttpServletRequest request, @RequestBody(required = false) Update update) {
+    public ResponseEntity<Void> handleUpdate(@RequestBody String body) {
         try {
-            if (update == null) {
-                log.debug("Received null Telegram update");
-            } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
+            Update update = objectMapper.readValue(body, Update.class);
+
+            if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
                 log.debug("Received Telegram callback query id={}", update.getCallbackQuery().getId());
             } else if (update.hasMessage() && update.getMessage() != null) {
                 log.debug("Received Telegram message updateId={} chatId={}", update.getUpdateId(), update.getMessage().getChatId());
@@ -31,29 +32,13 @@ public class TelegramBotWebhook {
 
             log.trace("Full Update payload: {}", update);
 
-            // If the filter pre-dispatched the Update, avoid double-processing but still return OK
-            Object dispatched = request.getAttribute("BOT_DISPATCHED");
-            if (Boolean.TRUE.equals(dispatched)) {
-                log.debug("Skipping controller dispatch because filter already dispatched the Update");
-                return ResponseEntity.ok().build();
-            }
-
-            // Call bot processing asynchronously/synchronously as implemented in StonemarkTelegramBot
-            try {
-                telegramBot.onWebhookUpdateReceived(update);
-                // Mark request as dispatched so the filter fallback does not double-dispatch.
-                request.setAttribute("BOT_DISPATCHED", Boolean.TRUE);
-            } catch (Exception e) {
-                // Log but do not fail the HTTP response, as processing is asynchronous.
-                log.error("Error invoking bot processing", e);
-            }
+            telegramBot.onWebhookUpdateReceived(update);
 
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Error processing Telegram update in controller", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } finally {
-            // Clear security context set by previous filters/threads to avoid leaking authentication into other processing.
             SecurityContextHolder.clearContext();
         }
     }

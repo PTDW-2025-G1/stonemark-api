@@ -36,13 +36,11 @@ class StonemarkTelegramBotTest {
     private BotEngine botEngine;
     private TelegramAdapter telegramAdapter;
     private Executor botExecutor;
-    private ChatLock chatLock;
 
     @BeforeEach
     void setUp() {
         botEngine = mock(BotEngine.class);
         telegramAdapter = mock(TelegramAdapter.class);
-        chatLock = new ChatLock();
         botExecutor = Runnable::run;
     }
 
@@ -166,7 +164,7 @@ class StonemarkTelegramBotTest {
     void shouldRetryOnTransientErrors() {
         AtomicInteger attempts = new AtomicInteger(0);
         StonemarkTelegramBot bot = new FailingBot("testBot", "fake-token", "test-path",
-                botEngine, telegramAdapter, botExecutor, chatLock,
+                botEngine, telegramAdapter, botExecutor,
                 () -> attempts.incrementAndGet() < 2,
                 new TelegramApiException("429 Too Many Requests"));
 
@@ -188,7 +186,7 @@ class StonemarkTelegramBotTest {
     void shouldGiveUpAfterMaxRetries() {
         AtomicInteger attempts = new AtomicInteger(0);
         StonemarkTelegramBot bot = new FailingBot("testBot", "fake-token", "test-path",
-                botEngine, telegramAdapter, botExecutor, chatLock,
+                botEngine, telegramAdapter, botExecutor,
                 () -> { attempts.incrementAndGet(); return true; },
                 new TelegramApiException("502 Bad Gateway"));
 
@@ -249,7 +247,7 @@ class StonemarkTelegramBotTest {
 
     private CollectingBot createCollectingBot() {
         return new CollectingBot("testBot", "fake-token", "test-path",
-                botEngine, telegramAdapter, botExecutor, chatLock);
+                botEngine, telegramAdapter, botExecutor);
     }
 
     private static Update createTextUpdate(long updateId, long chatId, String text) {
@@ -289,9 +287,9 @@ class StonemarkTelegramBotTest {
 
         CollectingBot(String botUsername, String botToken, String botPath,
                       BotEngine conversationService, TelegramAdapter telegramAdapter,
-                      Executor botExecutor, ChatLock chatLock) {
+                      Executor botExecutor) {
             super(botUsername, botToken, botPath, conversationService,
-                    telegramAdapter, botExecutor, chatLock);
+                    telegramAdapter, botExecutor);
         }
 
         List<BotApiMethod<?>> getExecutedMethods() {
@@ -313,10 +311,10 @@ class StonemarkTelegramBotTest {
 
         FailingBot(String botUsername, String botToken, String botPath,
                    BotEngine conversationService, TelegramAdapter telegramAdapter,
-                   Executor botExecutor, ChatLock chatLock,
+                   Executor botExecutor,
                    BooleanSupplier shouldFail, TelegramApiException exception) {
             super(botUsername, botToken, botPath, conversationService,
-                    telegramAdapter, botExecutor, chatLock);
+                    telegramAdapter, botExecutor);
             this.shouldFail = shouldFail;
             this.exception = exception;
         }

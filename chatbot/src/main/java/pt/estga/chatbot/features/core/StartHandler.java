@@ -20,7 +20,7 @@ public class StartHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         context.setCurrentState(CoreState.MAIN_MENU);
-        return new HandlerOutcome.Success();
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override
@@ -30,7 +30,7 @@ public class StartHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
         return CoreState.MAIN_MENU;

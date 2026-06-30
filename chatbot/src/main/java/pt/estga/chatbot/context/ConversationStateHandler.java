@@ -2,7 +2,6 @@ package pt.estga.chatbot.context;
 
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.RichText;
 
 import java.util.List;
 
@@ -18,9 +17,5 @@ public interface ConversationStateHandler {
 
     default boolean isAutomatic() {
         return false;
-    }
-
-    default RichText failureResponse(ChatbotContext context) {
-        return null;
     }
 }

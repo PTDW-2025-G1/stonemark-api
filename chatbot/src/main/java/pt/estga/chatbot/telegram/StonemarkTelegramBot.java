@@ -31,7 +31,6 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     private final BotEngine conversationService;
     private final TelegramAdapter telegramAdapter;
     private final Executor botExecutor;
-    private final ChatLock chatLock;
     // Idempotency guard: tracks recently processed Telegram update IDs to discard duplicate deliveries
     private final ConcurrentHashMap<Long, Long> processedUpdates = new ConcurrentHashMap<>();
     private static final long UPDATE_ID_TTL_MS = 60_000;
@@ -45,15 +44,13 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
                                 String botPath,
                                 BotEngine conversationService,
                                 TelegramAdapter telegramAdapter,
-                                Executor botExecutor,
-                                ChatLock chatLock) {
+                                Executor botExecutor) {
         super(botToken);
         this.botUsername = botUsername;
         this.botPath = botPath;
         this.conversationService = conversationService;
         this.telegramAdapter = telegramAdapter;
         this.botExecutor = botExecutor;
-        this.chatLock = chatLock;
         setBotCommands();
     }
 
@@ -123,17 +120,9 @@ public class StonemarkTelegramBot extends TelegramWebhookBot {
     public void dispatchAndSend(BotInput botInput) {
         long chatId = botInput.getChatId();
 
-        chatLock.lock(chatId);
-        try {
-            List<BotResponse> botResponses = conversationService.handleInput(botInput);
-            if (botResponses != null) {
-                sendBotResponses(chatId, botResponses);
-            }
-        } catch (Exception e) {
-            log.error("Error dispatching and sending bot responses", e);
-            throw e;
-        } finally {
-            chatLock.unlock(chatId);
+        List<BotResponse> botResponses = conversationService.handleInput(botInput);
+        if (botResponses != null) {
+            sendBotResponses(chatId, botResponses);
         }
     }
 

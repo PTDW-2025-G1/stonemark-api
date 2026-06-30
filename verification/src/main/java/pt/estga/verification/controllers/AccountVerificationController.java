@@ -6,15 +6,13 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.commoncore.interfaces.AuthenticatedPrincipal;
 import pt.estga.commonweb.dtos.MessageResponseDto;
 import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 import pt.estga.user.repositories.UserRepository;
-import pt.estga.user.services.ChatbotAccountService;
 import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
-import pt.estga.verification.events.ChatbotAccountConnectedEvent;
 import pt.estga.verification.services.ChatbotVerificationService;
 
 import java.util.Optional;
@@ -26,12 +24,11 @@ import java.util.Optional;
 public class AccountVerificationController {
 
     private final ChatbotVerificationService verificationService;
-    private final ChatbotAccountService chatbotAccountService;
     private final UserRepository userRepository;
-    private final AfterCommitEventPublisher eventPublisher;
 
     @PostMapping("/verification/chatbot")
-    @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the messaging account to current authenticated user")
+    @Operation(summary = "Verify Chatbot code", description = "Verifies code from chatbot and links the Telegram account to current authenticated user")
+    @Transactional
     public ResponseEntity<MessageResponseDto> verifyChatbotCode(
             @Valid @RequestBody ChatbotVerificationRequestDto request,
             @AuthenticationPrincipal AuthenticatedPrincipal principal) {
@@ -50,12 +47,11 @@ public class AccountVerificationController {
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
-        chatbotAccountService.createOrUpdateChatbot(user, platformUserId);
-
-        eventPublisher.publish(new ChatbotAccountConnectedEvent(this, "TELEGRAM", platformUserId, userId));
+        user.setTelegramChatId(platformUserId);
+        userRepository.save(user);
 
         return ResponseEntity.ok(
-                MessageResponseDto.success("Messaging account linked successfully")
+                MessageResponseDto.success("Telegram account linked successfully")
         );
     }
 }
