@@ -11,6 +11,7 @@ import pt.estga.file.services.upload.MediaUploadOrchestrator;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.file.api.StagedFileRecord;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Optional;
@@ -23,6 +24,7 @@ public class FileStorageAdapter implements FileStorageOperations {
     private final MediaUploadOrchestrator orchestrator;
     private final MediaFileRepository repository;
     private final FileStagingService stagingService;
+    private final MediaService mediaService;
 
     @Override
     @Transactional
@@ -58,5 +60,21 @@ public class FileStorageAdapter implements FileStorageOperations {
     @Override
     public Optional<MediaFileDto> findById(UUID id) {
         return repository.findById(id).map(MediaFileMapper::toDto);
+    }
+
+    @Override
+    public boolean existsById(UUID id) {
+        return repository.existsById(id);
+    }
+
+    @Override
+    public Optional<InputStream> openStream(UUID id) {
+        return repository.findById(id).map(mediaFile -> {
+            try {
+                return mediaService.loadFile(mediaFile).getInputStream();
+            } catch (IOException e) {
+                throw new pt.estga.commonweb.exceptions.FileStorageException("Failed to open stream for file " + id, e);
+            }
+        });
     }
 }

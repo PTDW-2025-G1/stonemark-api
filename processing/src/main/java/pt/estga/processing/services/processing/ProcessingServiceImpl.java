@@ -18,9 +18,7 @@ import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.commoncore.utils.VectorUtils;
 import pt.estga.vision.VisionClient;
-import pt.estga.file.entities.MediaFile;
-import pt.estga.file.repositories.MediaFileRepository;
-import pt.estga.file.services.storage.FileStorageService;
+import pt.estga.file.api.FileStorageOperations;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
@@ -41,8 +39,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
-    private final FileStorageService fileStorageService;
-    private final MediaFileRepository mediaFileRepository;
+    private final FileStorageOperations fileStorage;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
     private final PlatformTransactionManager transactionManager;
@@ -94,8 +91,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     setProcessingFailed(processing.getId(), "No original media file available", true, startNanos);
                     return;
                 }
-                MediaFile mediaFile = mediaFileRepository.findById(mediaFileId).orElse(null);
-                if (mediaFile == null) {
+                if (!fileStorage.existsById(mediaFileId)) {
                     setProcessingFailed(processing.getId(), "Original media file not found: " + mediaFileId, true, startNanos);
                     return;
                 }
@@ -121,8 +117,10 @@ public class ProcessingServiceImpl implements ProcessingService {
                     }
 
                     float[] embedding;
-                    try (InputStream in = fileStorageService.loadFile(mediaFile.getStoragePath()).getInputStream()) {
-                        var detection = visionClient.detectMark(in, mediaFile.getOriginalFilename());
+                    try (InputStream in = fileStorage.openStream(mediaFileId)
+                            .orElseThrow(() -> new IllegalStateException("Media file " + mediaFileId + " not found for streaming"))) {
+                        var detection = visionClient.detectMark(in,
+                                fileStorage.findById(mediaFileId).map(mf -> mf.originalFilename()).orElse("unknown"));
                         embedding = detection.embedding();
                     }
 

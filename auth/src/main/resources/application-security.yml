@@ -1,0 +1,27 @@
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: profile, email
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+application:
+  security:
+    disabled: true
+    action-code:
+      two-factor:
+        expiration: 3600000 # 1 hour
+      device-verification:
+        expiration: 2592000000 # 30 days
+      chatbot-verification:
+        expiration: 900000 # 15 minutes

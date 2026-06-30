@@ -2,18 +2,19 @@ package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pt.estga.bookmark.dto.*;
+import pt.estga.bookmark.dto.BookmarkContent;
+import pt.estga.bookmark.dto.MarkBookmarkContent;
+import pt.estga.bookmark.dto.MarkEvidenceBookmarkContent;
+import pt.estga.bookmark.dto.MarkOccurrenceBookmarkContent;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.enums.BookmarkTargetType;
+import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkEvidenceDto;
-import pt.estga.mark.mappers.MarkEvidenceMapper;
-import pt.estga.mark.mappers.MarkMapper;
-import pt.estga.mark.mappers.MarkOccurrenceMapper;
-import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.mark.repositories.MarkOccurrenceRepository;
-import pt.estga.mark.repositories.MarkRepository;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -21,9 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BookmarkContentResolver {
 
-    private final MarkRepository markRepository;
-    private final MarkOccurrenceRepository occurrenceRepository;
-    private final MarkEvidenceRepository evidenceRepository;
+    private final MarkQueryService markQueryService;
 
     public Map<UUID, BookmarkContent> resolve(List<Bookmark> bookmarks) {
         if (bookmarks.isEmpty()) {
@@ -44,16 +43,14 @@ public class BookmarkContentResolver {
 
     private void resolveMarks(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            markRepository.findById(Long.parseLong(b.getTargetId()))
-                    .map(MarkMapper::toDto)
+            markQueryService.findMarkById(Long.parseLong(b.getTargetId()))
                     .ifPresent(dto -> result.put(b.getId(), new MarkBookmarkContent(dto)));
         }
     }
 
     private void resolveOccurrences(List<Bookmark> bookmarks, Map<UUID, BookmarkContent> result) {
         for (Bookmark b : bookmarks) {
-            occurrenceRepository.findById(Long.parseLong(b.getTargetId()))
-                    .map(MarkOccurrenceMapper::toDto)
+            markQueryService.findOccurrenceById(Long.parseLong(b.getTargetId()))
                     .ifPresent(dto -> result.put(b.getId(), new MarkOccurrenceBookmarkContent(dto)));
         }
     }
@@ -62,8 +59,7 @@ public class BookmarkContentResolver {
         List<UUID> ids = bookmarks.stream()
                 .map(b -> UUID.fromString(b.getTargetId()))
                 .toList();
-        Map<UUID, MarkEvidenceDto> evidenceMap = evidenceRepository.findAllById(ids).stream()
-                .map(MarkEvidenceMapper::toDto)
+        Map<UUID, MarkEvidenceDto> evidenceMap = markQueryService.findEvidenceByIds(ids).stream()
                 .collect(Collectors.toMap(MarkEvidenceDto::id, Function.identity()));
         for (Bookmark b : bookmarks) {
             MarkEvidenceDto dto = evidenceMap.get(UUID.fromString(b.getTargetId()));

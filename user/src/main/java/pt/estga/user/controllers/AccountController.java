@@ -71,20 +71,4 @@ public class AccountController {
     public ResponseEntity<MeDto> me(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
         return ResponseEntity.ok(userService.getMe(principal.getId()));
     }
-
-    @PostMapping("/password")
-    public ResponseEntity<MessageResponseDto> setPassword(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @Valid @RequestBody PasswordSetRequest request) {
-        userService.setPassword(principal.getId(), request.password());
-        return ResponseEntity.ok(MessageResponseDto.success("Password set successfully."));
-    }
-
-    @PutMapping("/password")
-    public ResponseEntity<MessageResponseDto> changePassword(
-            @AuthenticationPrincipal AuthenticatedPrincipal principal,
-            @Valid @RequestBody PasswordChangeRequest request) {
-        userService.changePassword(principal.getId(), request.oldPassword(), request.newPassword());
-        return ResponseEntity.ok(MessageResponseDto.success("Password changed successfully."));
-    }
 }

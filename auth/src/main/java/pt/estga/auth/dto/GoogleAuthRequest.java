@@ -1,4 +1,4 @@
-package pt.estga.dtos;
+package pt.estga.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 

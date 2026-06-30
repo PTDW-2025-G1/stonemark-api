@@ -1,4 +1,4 @@
-package pt.estga.config;
+package pt.estga.auth.config;
 
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;

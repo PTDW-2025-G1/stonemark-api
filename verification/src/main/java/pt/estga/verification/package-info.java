@@ -1,2 +1,2 @@
-@org.springframework.modulith.ApplicationModule(displayName = "Verification")
+@org.springframework.modulith.ApplicationModule(displayName = "Verification", allowedDependencies = {"user"})
 package pt.estga.verification;

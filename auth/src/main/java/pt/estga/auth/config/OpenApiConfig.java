@@ -1,4 +1,4 @@
-package pt.estga.config;
+package pt.estga.auth.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
