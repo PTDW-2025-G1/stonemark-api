@@ -9,7 +9,6 @@ import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RichText;
-import pt.estga.chatbot.services.messages.ResponseFactory;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.services.ChatbotVerificationService;
@@ -36,7 +35,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
 
         log.debug("Generated verification code for platform user: {}", platformUserId);
 
-        return new HandlerOutcome.Success();
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override
@@ -51,7 +50,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
         return CoreState.START;
@@ -61,7 +60,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         List<BotResponse> responses = new ArrayList<>();
         RichText instructions = textService.get(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS);
-        responses.addAll(ResponseFactory.menuResponse(instructions));
+        responses.addAll(BotResponse.menuResponse(instructions));
         String code = context.getVerificationCode();
         responses.add(BotResponse.builder()
                 .textNode(textService.get(MessageKey.CONNECT_MESSENGER_CODE, code))

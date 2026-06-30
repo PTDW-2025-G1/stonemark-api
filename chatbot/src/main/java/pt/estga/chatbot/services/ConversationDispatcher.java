@@ -8,13 +8,10 @@ import pt.estga.chatbot.context.ConversationState;
 import pt.estga.chatbot.context.ConversationStateHandler;
 import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.context.HandlerOutcome;
-import pt.estga.chatbot.context.HandlerOutcome.Redispatch;
-import pt.estga.chatbot.context.HandlerOutcome.Success;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Menu;
-import pt.estga.chatbot.services.messages.ResponseFactory;
 import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.ArrayList;
@@ -80,11 +77,11 @@ public class ConversationDispatcher {
 
         HandlerOutcome outcome = handler.handle(context, input);
 
-        if (outcome instanceof Redispatch) {
+        if (outcome == HandlerOutcome.REDISPATCH) {
             return dispatch(context, input, depth + 1);
         }
 
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             int failures = context.getConsecutiveFailures() + 1;
             context.setConsecutiveFailures(failures);
             if (failures > MAX_CONSECUTIVE_FAILURES) {
@@ -130,7 +127,7 @@ public class ConversationDispatcher {
                     .build();
             HandlerOutcome outcome = handler.handle(context, autoInput);
 
-            if (outcome instanceof Success) break;
+            if (outcome == HandlerOutcome.SUCCESS) break;
 
             ConversationState nextState = handler.getNextState(context, context.getCurrentState(), outcome, autoInput);
             context.setCurrentState(nextState);
@@ -142,9 +139,9 @@ public class ConversationDispatcher {
         if (handler != null) {
             RichText message = handler.failureResponse(context);
             if (message != null) {
-                return ResponseFactory.menuResponse(message);
+                return BotResponse.menuResponse(message);
             }
         }
-        return ResponseFactory.menuResponse(textService.get(MessageKey.ERROR_GENERIC));
+        return BotResponse.menuResponse(textService.get(MessageKey.ERROR_GENERIC));
     }
 }

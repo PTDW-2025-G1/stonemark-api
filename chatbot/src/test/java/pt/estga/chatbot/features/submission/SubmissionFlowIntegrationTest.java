@@ -27,23 +27,23 @@ class SubmissionFlowIntegrationTest {
         ChatbotContext context = new ChatbotContext();
 
         ConversationState state = new SubmissionStartHandler()
-                .getNextState(context, SubmissionState.SUBMISSION_STATE, new HandlerOutcome.Success(), EMPTY_INPUT);
+                .getNextState(context, SubmissionState.SUBMISSION_STATE, HandlerOutcome.SUCCESS, EMPTY_INPUT);
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
 
         state = new InitialPhotoHandler(fileStorage, textService)
-                .getNextState(context, state, new HandlerOutcome.Success(), EMPTY_INPUT);
+                .getNextState(context, state, HandlerOutcome.SUCCESS, EMPTY_INPUT);
         assertEquals(SubmissionState.AWAITING_LOCATION, state);
 
         state = new InitialLocationHandler(textService)
-                .getNextState(context, state, new HandlerOutcome.Success(), EMPTY_INPUT);
+                .getNextState(context, state, HandlerOutcome.SUCCESS, EMPTY_INPUT);
         assertEquals(SubmissionState.AWAITING_NOTES, state);
 
         state = new AddNotesHandler(null, textService)
-                .getNextState(context, state, new HandlerOutcome.Success(), EMPTY_INPUT);
+                .getNextState(context, state, HandlerOutcome.SUCCESS, EMPTY_INPUT);
         assertEquals(SubmissionState.SUBMITTED, state);
 
         state = new SubmittedHandler(textService, menuFactory)
-                .getNextState(context, state, new HandlerOutcome.Success(), EMPTY_INPUT);
+                .getNextState(context, state, HandlerOutcome.SUCCESS, EMPTY_INPUT);
         assertEquals(CoreState.MAIN_MENU, state);
     }
 
@@ -53,7 +53,7 @@ class SubmissionFlowIntegrationTest {
                 mock(FileStorageOperations.class), mock(UiTextService.class));
         ChatbotContext context = new ChatbotContext();
 
-        ConversationState state = handler.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, new HandlerOutcome.Failure(), EMPTY_INPUT);
+        ConversationState state = handler.getNextState(context, SubmissionState.WAITING_FOR_PHOTO, HandlerOutcome.FAILURE, EMPTY_INPUT);
 
         assertEquals(SubmissionState.WAITING_FOR_PHOTO, state);
     }

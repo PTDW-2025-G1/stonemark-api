@@ -7,7 +7,6 @@ import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.services.messages.ResponseFactory;
 import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.ArrayList;
@@ -22,7 +21,7 @@ public class SubmittedHandler implements ConversationStateHandler {
 
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
-        return new HandlerOutcome.Success();
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override
@@ -38,7 +37,7 @@ public class SubmittedHandler implements ConversationStateHandler {
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         List<BotResponse> responses = new ArrayList<>();
-        responses.addAll(ResponseFactory.menuResponse(textService.get(MessageKey.SUBMISSION_SUCCESS)));
+        responses.addAll(BotResponse.menuResponse(textService.get(MessageKey.SUBMISSION_SUCCESS)));
         responses.add(BotResponse.builder().uiComponent(mainMenuFactory.create(input)).build());
         return responses;
     }

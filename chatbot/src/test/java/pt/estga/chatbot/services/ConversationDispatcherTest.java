@@ -66,8 +66,8 @@ class ConversationDispatcherTest {
 
     @Test
     void shouldDispatchToCorrectHandlerAndTransitionState() {
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
-        when(startHandler.getNextState(context, CoreState.START, new HandlerOutcome.Success(), input))
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
+        when(startHandler.getNextState(context, CoreState.START, HandlerOutcome.SUCCESS, input))
                 .thenReturn(CoreState.MAIN_MENU);
 
         List<BotResponse> expected = List.of(BotResponse.builder().build());
@@ -87,10 +87,10 @@ class ConversationDispatcherTest {
     void shouldRedispatchWhenHandlerReturnsRedispatch() {
         doAnswer(inv -> {
             context.setCurrentState(CoreState.MAIN_MENU);
-            return new HandlerOutcome.Redispatch();
+            return HandlerOutcome.REDISPATCH;
         }).when(startHandler).handle(context, input);
 
-        when(mainMenuHandler.handle(any(), any())).thenReturn(new HandlerOutcome.Success());
+        when(mainMenuHandler.handle(any(), any())).thenReturn(HandlerOutcome.SUCCESS);
         when(mainMenuHandler.getNextState(any(), any(), any(), any())).thenReturn(CoreState.MAIN_MENU);
 
         List<BotResponse> expected = List.of(BotResponse.builder().build());
@@ -107,8 +107,8 @@ class ConversationDispatcherTest {
 
     @Test
     void shouldIncrementFailureCountOnFailureAndStayInState() {
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Failure());
-        when(startHandler.getNextState(context, CoreState.START, new HandlerOutcome.Failure(), input))
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.FAILURE);
+        when(startHandler.getNextState(context, CoreState.START, HandlerOutcome.FAILURE, input))
                 .thenReturn(CoreState.START);
         when(startHandler.createResponse(any(), any(), any())).thenReturn(List.of());
 
@@ -125,7 +125,7 @@ class ConversationDispatcherTest {
     void shouldResetFailureCountAfterSuccess() {
         context.setConsecutiveFailures(2);
 
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
         when(startHandler.getNextState(any(), any(), any(), any())).thenReturn(CoreState.MAIN_MENU);
         when(mainMenuHandler.createResponse(any(), any(), any())).thenReturn(List.of());
 
@@ -141,7 +141,7 @@ class ConversationDispatcherTest {
     void shouldResetToStartAfterMaxConsecutiveFailures() {
         context.setConsecutiveFailures(3);
 
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Failure());
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.FAILURE);
 
         ConversationDispatcher dispatcher = new ConversationDispatcher(
                 List.of(startHandler), textService);
@@ -157,7 +157,7 @@ class ConversationDispatcherTest {
     @Test
     void shouldReturnErrorResponseWhenMaxDepthExceeded() {
         ConversationStateHandler endlessHandler = mockHandler(CoreState.START);
-        when(endlessHandler.handle(any(), any())).thenReturn(new HandlerOutcome.Redispatch());
+        when(endlessHandler.handle(any(), any())).thenReturn(HandlerOutcome.REDISPATCH);
 
         ConversationDispatcher dispatcher = new ConversationDispatcher(
                 List.of(endlessHandler), textService);
@@ -183,10 +183,10 @@ class ConversationDispatcherTest {
     void shouldExecuteAutomaticHandlersInLoop() {
         ConversationStateHandler autoHandler = mockHandler(SubmissionState.SUBMISSION_STATE);
         when(autoHandler.isAutomatic()).thenReturn(true);
-        when(autoHandler.handle(any(), any())).thenReturn(new HandlerOutcome.Success());
+        when(autoHandler.handle(any(), any())).thenReturn(HandlerOutcome.SUCCESS);
 
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
-        when(startHandler.getNextState(context, CoreState.START, new HandlerOutcome.Success(), input))
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
+        when(startHandler.getNextState(context, CoreState.START, HandlerOutcome.SUCCESS, input))
                 .thenReturn(SubmissionState.SUBMISSION_STATE);
 
         ConversationDispatcher dispatcher = new ConversationDispatcher(
@@ -200,8 +200,8 @@ class ConversationDispatcherTest {
 
     @Test
     void shouldStopAutomaticHandlerLoopWhenNotAutomatic() {
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
-        when(startHandler.getNextState(context, CoreState.START, new HandlerOutcome.Success(), input))
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
+        when(startHandler.getNextState(context, CoreState.START, HandlerOutcome.SUCCESS, input))
                 .thenReturn(CoreState.MAIN_MENU);
         when(mainMenuHandler.isAutomatic()).thenReturn(false);
         when(mainMenuHandler.createResponse(any(), any(), any())).thenReturn(List.of());
@@ -217,7 +217,7 @@ class ConversationDispatcherTest {
     @Test
     void shouldReturnEmptyWhenResponseHandlerIsNull() {
         ConversationStateHandler orphanedHandler = mockHandler(CoreState.START);
-        when(orphanedHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
+        when(orphanedHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
         when(orphanedHandler.getNextState(any(), any(), any(), any()))
                 .thenReturn(SubmissionState.AWAITING_LOCATION);
 
@@ -255,8 +255,8 @@ class ConversationDispatcherTest {
 
     @Test
     void shouldRollbackStateOnResponseError() {
-        when(startHandler.handle(context, input)).thenReturn(new HandlerOutcome.Success());
-        when(startHandler.getNextState(context, CoreState.START, new HandlerOutcome.Success(), input))
+        when(startHandler.handle(context, input)).thenReturn(HandlerOutcome.SUCCESS);
+        when(startHandler.getNextState(context, CoreState.START, HandlerOutcome.SUCCESS, input))
                 .thenReturn(CoreState.MAIN_MENU);
         when(mainMenuHandler.createResponse(any(), any(), any()))
                 .thenThrow(new RuntimeException("response failure"));

@@ -23,18 +23,18 @@ public class InitialLocationHandler implements ConversationStateHandler {
     @Override
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         if (input.getLocation() == null) {
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
         MarkEvidenceSubmission submission = context.getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
         markEvidenceSubmission.setLatitude(input.getLocation().getLatitude());
         markEvidenceSubmission.setLongitude(input.getLocation().getLongitude());
 
-        return new HandlerOutcome.Success();
+        return HandlerOutcome.SUCCESS;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class InitialLocationHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
         return SubmissionState.AWAITING_NOTES;

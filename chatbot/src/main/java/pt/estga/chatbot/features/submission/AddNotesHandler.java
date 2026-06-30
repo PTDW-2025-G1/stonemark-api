@@ -29,7 +29,7 @@ public class AddNotesHandler implements ConversationStateHandler {
     public HandlerOutcome handle(ChatbotContext context, BotInput input) {
         MarkEvidenceSubmission submission = context.getSubmission();
         if (!(submission instanceof MarkEvidenceSubmission markEvidenceSubmission)) {
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
 
         if (input.getCallbackData() == null || !input.getCallbackData().equals(CallbackData.SKIP_NOTES)) {
@@ -49,10 +49,10 @@ public class AddNotesHandler implements ConversationStateHandler {
 
             context.clear();
 
-            return new HandlerOutcome.Success();
+            return HandlerOutcome.SUCCESS;
         } catch (Exception e) {
             log.error("Failed to submit submission from chatbot", e);
-            return new HandlerOutcome.Failure();
+            return HandlerOutcome.FAILURE;
         }
     }
 
@@ -63,7 +63,7 @@ public class AddNotesHandler implements ConversationStateHandler {
 
     @Override
     public ConversationState getNextState(ChatbotContext context, ConversationState currentState, HandlerOutcome outcome, BotInput input) {
-        if (outcome instanceof HandlerOutcome.Failure) {
+        if (outcome == HandlerOutcome.FAILURE) {
             return currentState;
         }
         return SubmissionState.SUBMITTED;
