@@ -1,5 +1,6 @@
 package pt.estga.chatbot.telegram;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +15,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class TelegramBotWebhook {
 
     private final StonemarkTelegramBot telegramBot;
+    private final ObjectMapper objectMapper;
 
     @PostMapping("${telegram.bot.webhook-path}")
-    public ResponseEntity<Void> handleUpdate(@RequestBody(required = false) Update update) {
+    public ResponseEntity<Void> handleUpdate(@RequestBody String body) {
         try {
-            if (update == null) {
-                log.debug("Received null Telegram update");
-            } else if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
+            Update update = objectMapper.readValue(body, Update.class);
+
+            if (update.hasCallbackQuery() && update.getCallbackQuery() != null) {
                 log.debug("Received Telegram callback query id={}", update.getCallbackQuery().getId());
             } else if (update.hasMessage() && update.getMessage() != null) {
                 log.debug("Received Telegram message updateId={} chatId={}", update.getUpdateId(), update.getMessage().getChatId());

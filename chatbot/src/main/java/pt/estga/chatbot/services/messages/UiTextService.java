@@ -23,6 +23,8 @@ public class UiTextService {
     private static final Pattern ITALIC = Pattern.compile("\\{i}(.*?)\\{/i}");
     private static final Pattern CODE = Pattern.compile("\\{code}(.*?)\\{/code}");
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{(\\d)}");
+    private static final Pattern HAS_FORMATTING = Pattern.compile("\\{[/]?[binc]");
+    private static final String ESCAPE_CHARS = "\\_*[]()~`>#+-=|}{.!";
 
     private final MessageSource messageSource;
     private final TelegramEmojiProvider emojiProvider;
@@ -45,8 +47,10 @@ public class UiTextService {
 
     public RenderedText get(String key, Object... args) {
         String raw = messageSource.getMessage(key, null, LocaleContextHolder.getLocale());
-        String processed = processTemplate(raw, args);
-        return RenderedText.markdownV2(processed);
+        if (HAS_FORMATTING.matcher(raw).find()) {
+            return RenderedText.markdownV2(processFormatted(raw, args));
+        }
+        return RenderedText.plain(processPlain(raw, args));
     }
 
     public String raw(String key) {
@@ -74,25 +78,55 @@ public class UiTextService {
         return result;
     }
 
-    private String processTemplate(String raw, Object[] args) {
-        String result = raw;
-        result = result.replace("\\n", "\n");
-        result = replaceTags(result, CODE, "``", "`");
-        result = replaceTags(result, BOLD, "__", "*");
-        result = replaceTags(result, ITALIC, "//", "_");
+    private String processPlain(String raw, Object[] args) {
+        return replacePlaceholders(raw.replace("\\n", "\n"), args);
+    }
+
+    private String processFormatted(String raw, Object[] args) {
+        String result = raw.replace("\\n", "\n");
+        result = replaceTags(result, CODE, "\u0002", "\u0003");
+        result = replaceTags(result, BOLD, "\u0004", "\u0005");
+        result = replaceTags(result, ITALIC, "\u0006", "\u0007");
         result = replacePlaceholders(result, args);
-        result = result.replace("``", "`");
-        result = result.replace("__", "*");
-        result = result.replace("//", "_");
+        result = escapeV2Content(result);
+        result = result.replace("\u0002", "`");
+        result = result.replace("\u0003", "`");
+        result = result.replace("\u0004", "*");
+        result = result.replace("\u0005", "*");
+        result = result.replace("\u0006", "_");
+        result = result.replace("\u0007", "_");
         return result;
+    }
+
+    private String escapeV2Content(String text) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '\u0002') {
+                sb.append(c);
+                while (++i < text.length() && text.charAt(i) != '\u0003') {
+                    char inner = text.charAt(i);
+                    if (inner == '\\') sb.append("\\\\");
+                    else if (inner == '`') sb.append("\\`");
+                    else sb.append(inner);
+                }
+                if (i < text.length()) sb.append(text.charAt(i));
+            } else if (c == '\u0004' || c == '\u0005' || c == '\u0006' || c == '\u0007') {
+                sb.append(c);
+            } else if (ESCAPE_CHARS.indexOf(c) >= 0) {
+                sb.append('\\').append(c);
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 
     private String replaceTags(String input, Pattern pattern, String tempOpen, String realTag) {
         Matcher m = pattern.matcher(input);
         StringBuffer sb = new StringBuffer();
-        String open = tempOpen.isEmpty() ? realTag : tempOpen;
         while (m.find()) {
-            m.appendReplacement(sb, open + Matcher.quoteReplacement(m.group(1)) + realTag);
+            m.appendReplacement(sb, tempOpen + Matcher.quoteReplacement(m.group(1)) + realTag);
         }
         m.appendTail(sb);
         return sb.toString();
@@ -101,7 +135,7 @@ public class UiTextService {
     private String replacePlaceholders(String input, Object[] args) {
         if (args == null || args.length == 0) return input;
         Matcher m = PLACEHOLDER.matcher(input);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (m.find()) {
             int idx = Integer.parseInt(m.group(1));
             Object replacement = idx < args.length ? args[idx] : "{missing}";
