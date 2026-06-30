@@ -41,7 +41,7 @@
         <module>verification</module>       <!-- needs shared-web, shared-infra, user-api -->
         <module>mark</module>               <!-- needs monument, file-api, vision, shared-web, shared-infra, mark-api -->
         <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
-        <module>bookmark</module>           <!-- needs shared-web, mark-api, monument, user-api -->
+        <module>bookmark</module>           <!-- needs shared-web, mark-api, user-api -->
         <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
 
 

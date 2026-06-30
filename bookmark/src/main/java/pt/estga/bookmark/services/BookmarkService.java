@@ -13,7 +13,7 @@ import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.repositories.BookmarkRepository;
 import pt.estga.commonweb.exceptions.DuplicateResourceException;
 import pt.estga.commonweb.exceptions.ResourceNotFoundException;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.api.UserQueryService;
 
 import java.util.List;
 import java.util.Map;
@@ -27,7 +27,7 @@ public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
     private final BookmarkContentResolver contentResolver;
-    private final UserRepository userRepository;
+    private final UserQueryService userQueryService;
 
     public Page<BookmarkResponse> listByUser(Long userId, Pageable pageable) {
         Page<Bookmark> page = bookmarkRepository.findAllByCreatedById(userId, pageable);
@@ -41,7 +41,7 @@ public class BookmarkService {
                 userId, request.targetType(), request.targetId())) {
             throw new DuplicateResourceException("Bookmark already exists");
         }
-        if (!userRepository.existsById(userId)) {
+        if (!userQueryService.existsById(userId)) {
             throw new ResourceNotFoundException("User not found");
         }
 
