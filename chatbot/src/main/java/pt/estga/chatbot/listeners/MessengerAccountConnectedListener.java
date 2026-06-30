@@ -2,8 +2,7 @@ package pt.estga.chatbot.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.models.Platform;
@@ -20,8 +19,7 @@ public class MessengerAccountConnectedListener {
 
     private final List<MessengerNotificationService> notificationServices;
 
-    @EventListener
-    @Async
+    @ApplicationModuleListener
     public void handleMessengerAccountConnected(ChatbotAccountConnectedEvent event) {
         log.info("Messenger account connected event received for user: {}, platform: {}, recipientId: {}",
                 event.getUserId(), event.getPlatform(), event.getRecipientId());
