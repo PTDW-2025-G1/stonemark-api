@@ -95,7 +95,7 @@ management:
       show-details: always
       group:
         readiness:
-          include: [readinessState, vision, telegram, whatsapp, db]
+          include: [readinessState, vision, telegram, db]
         liveness:
           include: [livenessState]
       validate-group-membership: false

@@ -77,13 +77,6 @@ public class InitialPhotoHandler implements ConversationStateHandler {
     }
 
     private SubmissionSource mapPlatformToSubmissionSource(Platform platform) {
-        if (platform == null) {
-            return SubmissionSource.OTHER;
-        }
-        return switch (platform) {
-            case TELEGRAM -> SubmissionSource.TELEGRAM_BOT;
-            case WHATSAPP -> SubmissionSource.WHATSAPP;
-            default -> SubmissionSource.OTHER;
-        };
+        return platform == Platform.TELEGRAM ? SubmissionSource.TELEGRAM_BOT : SubmissionSource.OTHER;
     }
 }

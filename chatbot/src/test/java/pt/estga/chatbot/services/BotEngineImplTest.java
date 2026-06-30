@@ -171,37 +171,6 @@ class BotEngineImplTest {
     }
 
     @Test
-    void shouldResolveAuthServiceByPlatform() {
-        AuthService telegramAuth = mock(AuthService.class);
-        lenient().when(telegramAuth.supports(any())).thenReturn(false);
-        lenient().when(telegramAuth.authenticate(any())).thenReturn(Optional.empty());
-
-        AuthService whatsappAuth = mock(AuthService.class);
-        lenient().when(whatsappAuth.supports(any())).thenReturn(false);
-        lenient().when(whatsappAuth.supports(Platform.WHATSAPP)).thenReturn(true);
-
-        engine = new BotEngineImpl(conversationDispatcher, cacheManager,
-                List.of(telegramAuth, whatsappAuth));
-
-        securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(Optional.of(1L));
-
-        BotInput input = BotInput.builder()
-                .userId("wa_123")
-                .platform(Platform.WHATSAPP)
-                .chatId(1L)
-                .type(BotInput.InputType.TEXT)
-                .text("hello")
-                .build();
-
-        when(conversationDispatcher.dispatch(any(), any())).thenReturn(List.of());
-
-        engine.handleInput(input);
-
-        verify(whatsappAuth).authenticate("wa_123");
-        verify(telegramAuth, never()).authenticate(any());
-    }
-
-    @Test
     void shouldNotOverrideExistingDomainUserId() {
         securityUtilsMock.when(SecurityUtils::getCurrentUserId).thenReturn(Optional.of(42L));
         context.setDomainUserId(99L);
