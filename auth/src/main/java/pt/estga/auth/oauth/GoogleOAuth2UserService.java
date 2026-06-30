@@ -1,4 +1,4 @@
-package pt.estga.config;
+package pt.estga.auth.oauth;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

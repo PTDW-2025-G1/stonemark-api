@@ -1,4 +1,4 @@
-package pt.estga.config;
+package pt.estga.auth.config;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -68,7 +68,7 @@ public class RsaKeyConfig {
     }
 
     private void generateAndLogKeyPair() {
-        log.warn("JWT_PRIVATE_KEY / JWT_PUBLIC_KEY not set — generating ephemeral key pair");
+        log.warn("JWT_PRIVATE_KEY / JWT_PUBLIC_KEY not set -- generating ephemeral key pair");
         try {
             KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
             gen.initialize(2048);

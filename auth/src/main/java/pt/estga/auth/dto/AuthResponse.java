@@ -1,4 +1,4 @@
-package pt.estga.dtos;
+package pt.estga.auth.dto;
 
 public record AuthResponse(
         String accessToken,

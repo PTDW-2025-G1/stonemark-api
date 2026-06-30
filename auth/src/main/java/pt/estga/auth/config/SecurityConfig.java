@@ -1,4 +1,4 @@
-package pt.estga.config;
+package pt.estga.auth.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import pt.estga.auth.oauth.GoogleOAuth2UserService;
+import pt.estga.auth.oauth.OAuth2LoginSuccessHandler;
 
 import java.util.List;
 

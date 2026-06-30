@@ -1,4 +1,4 @@
-package pt.estga.services;
+package pt.estga.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -6,9 +6,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.config.GoogleTokenVerifier;
-import pt.estga.config.JwtService;
-import pt.estga.dtos.AuthResponse;
+import pt.estga.auth.config.JwtService;
+import pt.estga.auth.dto.AuthResponse;
+import pt.estga.auth.oauth.GoogleTokenVerifier;
 import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.RoleRepository;

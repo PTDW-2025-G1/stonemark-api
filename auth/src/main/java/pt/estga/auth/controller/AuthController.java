@@ -1,4 +1,4 @@
-package pt.estga;
+package pt.estga.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pt.estga.dtos.AuthResponse;
-import pt.estga.dtos.GoogleAuthRequest;
-import pt.estga.dtos.LoginRequest;
-import pt.estga.dtos.RefreshTokenRequest;
-import pt.estga.services.AuthService;
+import pt.estga.auth.dto.AuthResponse;
+import pt.estga.auth.dto.GoogleAuthRequest;
+import pt.estga.auth.dto.LoginRequest;
+import pt.estga.auth.dto.RefreshTokenRequest;
+import pt.estga.auth.service.AuthService;
 
 @RestController
 @RequestMapping("/api/v1/auth")
