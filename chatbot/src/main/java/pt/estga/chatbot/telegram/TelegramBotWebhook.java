@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @RestController
@@ -17,7 +16,7 @@ public class TelegramBotWebhook {
     private final StonemarkTelegramBot telegramBot;
 
     @PostMapping("${telegram.bot.webhook-path}")
-    public ResponseEntity<Void> handleUpdate(HttpServletRequest request, @RequestBody(required = false) Update update) {
+    public ResponseEntity<Void> handleUpdate(@RequestBody(required = false) Update update) {
         try {
             if (update == null) {
                 log.debug("Received null Telegram update");
@@ -31,29 +30,13 @@ public class TelegramBotWebhook {
 
             log.trace("Full Update payload: {}", update);
 
-            // If the filter pre-dispatched the Update, avoid double-processing but still return OK
-            Object dispatched = request.getAttribute("BOT_DISPATCHED");
-            if (Boolean.TRUE.equals(dispatched)) {
-                log.debug("Skipping controller dispatch because filter already dispatched the Update");
-                return ResponseEntity.ok().build();
-            }
-
-            // Call bot processing asynchronously/synchronously as implemented in StonemarkTelegramBot
-            try {
-                telegramBot.onWebhookUpdateReceived(update);
-                // Mark request as dispatched so the filter fallback does not double-dispatch.
-                request.setAttribute("BOT_DISPATCHED", Boolean.TRUE);
-            } catch (Exception e) {
-                // Log but do not fail the HTTP response, as processing is asynchronous.
-                log.error("Error invoking bot processing", e);
-            }
+            telegramBot.onWebhookUpdateReceived(update);
 
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             log.error("Error processing Telegram update in controller", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } finally {
-            // Clear security context set by previous filters/threads to avoid leaking authentication into other processing.
             SecurityContextHolder.clearContext();
         }
     }
