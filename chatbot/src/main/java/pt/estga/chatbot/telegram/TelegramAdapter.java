@@ -29,7 +29,6 @@ import pt.estga.chatbot.models.ui.PhotoItem;
 import pt.estga.chatbot.models.ui.TextMessage;
 import pt.estga.chatbot.models.ui.UIComponent;
 import pt.estga.chatbot.telegram.services.TelegramFileService;
-import pt.estga.chatbot.telegram.services.TelegramTextService;
 import pt.estga.commoncore.models.Location;
 
 import java.io.File;
@@ -48,7 +47,7 @@ public class TelegramAdapter {
     private static final String IMAGE_MIME_TYPE_PREFIX = "image/";
 
     private final TelegramFileService fileService;
-    private final TelegramTextService textService;
+    private final TelegramRenderer textService;
 
     public BotInput toBotInput(Update update) {
         log.debug("Converting Update to BotInput: {}", update);

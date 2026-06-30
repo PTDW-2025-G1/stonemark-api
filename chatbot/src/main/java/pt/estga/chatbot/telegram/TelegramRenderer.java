@@ -12,14 +12,13 @@ import pt.estga.chatbot.models.text.RichText.Italic;
 import pt.estga.chatbot.models.text.RichText.NewLine;
 import pt.estga.chatbot.models.text.RichText.Plain;
 import pt.estga.chatbot.models.text.RichText.Placeholder;
-import pt.estga.chatbot.services.messages.TextRenderer;
 import pt.estga.chatbot.telegram.services.TelegramEmojiProvider;
 
 import java.util.List;
 
 @Component
 @Slf4j
-public class TelegramRenderer implements TextRenderer {
+public class TelegramRenderer {
 
     private final TelegramEmojiProvider emojiProvider;
 
@@ -27,7 +26,6 @@ public class TelegramRenderer implements TextRenderer {
         this.emojiProvider = emojiProvider;
     }
 
-    @Override
     public RenderedText render(RichText node) {
         boolean hasFormatting = containsFormatting(node);
         String text = renderNode(node, hasFormatting);

@@ -14,39 +14,30 @@ import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
-import pt.estga.chatbot.telegram.services.TelegramTextService;
+import pt.estga.chatbot.telegram.TelegramRenderer;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TelegramNotificationService implements MessengerNotificationService {
+public class TelegramNotificationService {
 
     private final StonemarkTelegramBot telegramBot;
     private final UiTextService uiTextService;
-    private final TelegramTextService telegramTextService;
+    private final TelegramRenderer renderer;
 
-    @Override
-    public boolean supports(Platform platform) {
-        return Platform.TELEGRAM.equals(platform);
-    }
-
-    @Override
     public void sendNotification(String recipientId, Message message) {
         send(recipientId, uiTextService.get(message));
     }
 
-    @Override
     public void sendNotification(String recipientId, MessageKey messageKey, Object... args) {
         send(recipientId, uiTextService.get(messageKey, args));
     }
 
-    @Override
     public void sendNotificationWithMenu(String recipientId, Message message) {
         sendNotification(recipientId, message);
         sendMenu(recipientId);
     }
 
-    @Override
     public void sendNotificationWithMenu(String recipientId, MessageKey messageKey, Object... args) {
         sendNotification(recipientId, messageKey, args);
         sendMenu(recipientId);
@@ -66,7 +57,7 @@ public class TelegramNotificationService implements MessengerNotificationService
     }
 
     private void send(String recipientId, RichText textNode) {
-        send(recipientId, telegramTextService.render(textNode));
+        send(recipientId, renderer.render(textNode));
     }
 
     private void sendMenu(String recipientId) {

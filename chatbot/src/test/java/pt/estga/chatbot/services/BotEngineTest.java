@@ -17,6 +17,7 @@ import pt.estga.chatbot.context.CoreState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
+import pt.estga.chatbot.telegram.services.TelegramAuthService;
 import pt.estga.commoncore.models.AppPrincipal;
 import pt.estga.commoncore.utils.SecurityUtils;
 
@@ -26,15 +27,12 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class BotEngineImplTest {
+class BotEngineTest {
 
     @Mock
     private ConversationDispatcher conversationDispatcher;
@@ -46,10 +44,10 @@ class BotEngineImplTest {
     private Cache cache;
 
     @Mock
-    private AuthService authService;
+    private TelegramAuthService telegramAuthService;
 
     private MockedStatic<SecurityUtils> securityUtilsMock;
-    private BotEngineImpl engine;
+    private BotEngine engine;
     private ChatbotContext context;
 
     @BeforeEach
@@ -61,9 +59,7 @@ class BotEngineImplTest {
         context = new ChatbotContext();
         lenient().when(cache.get(any(String.class), ArgumentMatchers.<java.util.concurrent.Callable<ChatbotContext>>any())).thenReturn(context);
 
-        lenient().when(authService.supports(any())).thenReturn(true);
-
-        engine = new BotEngineImpl(conversationDispatcher, cacheManager, List.of(authService));
+        engine = new BotEngine(conversationDispatcher, cacheManager, telegramAuthService);
     }
 
     @AfterEach
@@ -153,7 +149,7 @@ class BotEngineImplTest {
                 .identifier("testuser")
                 .build();
 
-        when(authService.authenticate("telegram_123")).thenReturn(Optional.of(principal));
+        when(telegramAuthService.authenticate("telegram_123")).thenReturn(Optional.of(principal));
 
         BotInput input = BotInput.builder()
                 .userId("telegram_123")
