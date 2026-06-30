@@ -13,23 +13,11 @@ public class TelegramEmojiProvider {
             case CAMERA -> "📷";
             case LOCATION -> "📍";
             case PAPERCLIP -> "📎";
-            case TRASH -> "🗑️";
-            case SEARCH -> "🔍";
-            case NEW -> "🆕";
             case MEMO -> "📝";
-            case MONUMENT -> "🏛️";
-            case REFRESH -> "🔄";
-            case BACK -> "🔙";
             case TADA -> "🎉";
             case CHECK -> "✅";
-            case CROSS -> "❌";
-            case LOCK -> "🔒";
             case KEY -> "🔑";
-            case PHONE -> "📱";
-            case NUMBERS -> "🔢";
             case ARROW_RIGHT -> "➡️";
-            case THINKING -> "🤔";
-            case HOURGLASS -> "⏳";
         };
     }
 }
