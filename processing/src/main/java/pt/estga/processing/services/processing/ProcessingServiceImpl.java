@@ -41,31 +41,22 @@ public class ProcessingServiceImpl implements ProcessingService {
     @Value("${processing.vision.acquire-timeout-ms:10000}")
     private long visionAcquireTimeoutMs;
 
-    private final Semaphore visionSemaphore = new Semaphore(Math.max(1, 4));
+    private volatile Semaphore visionSemaphore;
 
-    {
-        visionSemaphore.release(visionSemaphore.availablePermits());
-        // reseed on construction; @Value not yet injected, so init in first call
-    }
-
-    private volatile boolean semaphoreInitialized;
-
-    private void ensureSemaphoreInitialized() {
-        if (!semaphoreInitialized) {
+    private Semaphore getVisionSemaphore() {
+        if (visionSemaphore == null) {
             synchronized (this) {
-                if (!semaphoreInitialized) {
-                    this.visionSemaphore.drainPermits();
-                    this.visionSemaphore.release(Math.max(1, visionMaxConcurrency));
-                    semaphoreInitialized = true;
+                if (visionSemaphore == null) {
+                    visionSemaphore = new Semaphore(Math.max(1, visionMaxConcurrency));
                 }
             }
         }
+        return visionSemaphore;
     }
 
     @Override
     public void processSubmission(Long submissionId) {
         submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
-            ensureSemaphoreInitialized();
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();
             try {
@@ -94,7 +85,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                 boolean acquired = false;
                 try {
                     try {
-                        acquired = visionSemaphore.tryAcquire(visionAcquireTimeoutMs, TimeUnit.MILLISECONDS);
+                        acquired = getVisionSemaphore().tryAcquire(visionAcquireTimeoutMs, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
                         log.warn("Interrupted waiting for vision permit, deferring processing {}", submissionId);
@@ -132,7 +123,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     processing.setEmbedding(normalized);
                 } finally {
                     if (acquired) {
-                        visionSemaphore.release();
+                        getVisionSemaphore().release();
                     }
                 }
 

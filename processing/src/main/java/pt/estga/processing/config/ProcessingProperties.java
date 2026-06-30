@@ -3,7 +3,7 @@ package pt.estga.processing.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "processing")
-public record ProcessingProperties(Similarity similarity, Embedding embedding) {
+public record ProcessingProperties(Similarity similarity) {
 
     public record Similarity(int maxK, double minScore) {
         public Similarity {
@@ -17,6 +17,4 @@ public record ProcessingProperties(Similarity similarity, Embedding embedding) {
             return Math.max(0.0, 1.0 - minScore);
         }
     }
-
-    public record Embedding(int dimension) {}
 }

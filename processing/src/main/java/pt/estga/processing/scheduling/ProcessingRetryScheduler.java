@@ -122,10 +122,22 @@ public class ProcessingRetryScheduler {
         List<Long> orphaned = processingRepository.findOrphanedSubmissionIds();
         if (orphaned.isEmpty()) return;
 
-        log.info("Dispatching {} orphaned submissions (RECEIVED without processing record)", orphaned.size());
-        for (Long submissionId : orphaned) {
-            meterRegistry.counter("processing.retry.orphan").increment();
-            asyncProcessingService.processAsync(submissionId);
+        int total = orphaned.size();
+        log.info("Dispatching {} orphaned submissions in batches of {}", total, batchSize);
+        for (int i = 0; i < total; i += batchSize) {
+            int end = Math.min(i + batchSize, total);
+            for (int j = i; j < end; j++) {
+                meterRegistry.counter("processing.retry.orphan").increment();
+                asyncProcessingService.processAsync(orphaned.get(j));
+            }
+            if (end < total) {
+                try {
+                    Thread.sleep(batchPauseMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
     }
 }

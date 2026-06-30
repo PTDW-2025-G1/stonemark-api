@@ -141,7 +141,7 @@ public class ReviewService {
     }
 
     private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {
-        if (status != ProcessingStatus.COMPLETED && status != ProcessingStatus.REVIEW_PENDING) {
+        if (status != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
         if (reviewType != ReviewType.DISCOVERY && !allowEmptyReview && count == 0) {

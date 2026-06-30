@@ -31,25 +31,37 @@ public class MarkEvidenceSubmittedListener {
         Long submissionId = event.submissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
-        if (processingRepository.existsBySubmissionId(submissionId)) {
-            return;
+        boolean needsDispatch = false;
+
+        var existing = processingRepository.findBySubmissionId(submissionId);
+        if (existing.isPresent()) {
+            var p = existing.get();
+            if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
+                log.debug("Submission {} already {} — skipping", submissionId, p.getStatus());
+                return;
+            }
+            log.info("Submission {} exists as {} — re-dispatching", submissionId, p.getStatus());
+            needsDispatch = true;
+        } else {
+            MarkEvidenceProcessing placeholder = MarkEvidenceProcessing.builder()
+                    .submissionId(submissionId)
+                    .status(ProcessingStatus.PENDING)
+                    .updatedAt(Instant.now())
+                    .build();
+            processingRepository.save(placeholder);
+            log.info("Created placeholder processing {} for submission {}", placeholder.getId(), submissionId);
+            needsDispatch = true;
         }
 
-        MarkEvidenceProcessing placeholder = MarkEvidenceProcessing.builder()
-                .submissionId(submissionId)
-                .status(ProcessingStatus.PENDING)
-                .updatedAt(Instant.now())
-                .build();
-        processingRepository.save(placeholder);
-        log.info("Created placeholder processing {} for submission {}", placeholder.getId(), submissionId);
-
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
-                    asyncProcessingService.processAsync(submission.getId());
-                }, () -> log.warn("Submission {} not found for processing dispatch", submissionId));
-            }
-        });
+        if (needsDispatch) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
+                        asyncProcessingService.processAsync(submission.getId());
+                    }, () -> log.warn("Submission {} not found for processing dispatch", submissionId));
+                }
+            });
+        }
     }
 }

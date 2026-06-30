@@ -2,6 +2,7 @@ package pt.estga.review.services;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -15,6 +16,7 @@ import pt.estga.commoncore.utils.SecurityUtils;
 import java.time.Instant;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ReviewExecutor {
@@ -52,6 +54,7 @@ public class ReviewExecutor {
                         .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
             }
         } catch (Exception ex) {
+            log.debug("Failed to record review metrics: {}", ex.getMessage());
         }
 
         return saved;
