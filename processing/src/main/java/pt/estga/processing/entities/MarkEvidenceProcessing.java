@@ -48,6 +48,8 @@ public class MarkEvidenceProcessing {
 
     private Instant updatedAt;
 
+    private Instant processingStartedAt;
+
     @Column(columnDefinition = "text")
     private String errorMessage;
 

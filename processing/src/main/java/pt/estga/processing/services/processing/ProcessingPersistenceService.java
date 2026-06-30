@@ -62,6 +62,7 @@ public class ProcessingPersistenceService {
                 p.setFailedAt(null);
                 p.setErrorMessage(null);
                 p.setUpdatedAt(Instant.now());
+                p.setProcessingStartedAt(Instant.now());
                 return processingRepository.save(p);
             }
 
@@ -69,6 +70,7 @@ public class ProcessingPersistenceService {
                     .submissionId(submissionId)
                     .status(ProcessingStatus.PROCESSING)
                     .updatedAt(Instant.now())
+                    .processingStartedAt(Instant.now())
                     .build();
             try {
                 return processingRepository.save(p);
@@ -95,6 +97,7 @@ public class ProcessingPersistenceService {
             existing.setFailedAt(null);
             existing.setErrorMessage(null);
             existing.setUpdatedAt(Instant.now());
+            existing.setProcessingStartedAt(Instant.now());
             return processingRepository.save(existing);
         }
         throw new IllegalStateException("Race handling failed for submission " + submissionId);
@@ -129,30 +132,39 @@ public class ProcessingPersistenceService {
     }
 
     @Transactional
-    public void finalizeSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
-        processingRepository.findById(processingId).ifPresent(p -> {
-            p.setEmbedding(embedding);
-            p.setProcessedAt(Instant.now());
-            p.setRetryCount(0);
-            p.setLastRetryAt(null);
-            p.setPermanent(false);
-            p.setStatus(ProcessingStatus.COMPLETED);
+    public boolean finalizeSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
+        var opt = processingRepository.findById(processingId);
+        if (opt.isEmpty()) return false;
 
-            suggestionRepository.deleteByProcessingId(p.getId());
-            if (suggestions != null && !suggestions.isEmpty()) {
-                suggestions.forEach(s -> s.setProcessing(p));
-                suggestions.forEach(s -> s.setId(null));
-                suggestionRepository.saveAll(suggestions);
-            }
-            processingRepository.save(p);
+        var p = opt.get();
+        if (p.getStatus() != ProcessingStatus.PROCESSING) {
+            log.warn("Processing {} not in PROCESSING state (actual={}), discarding stale completion",
+                    processingId, p.getStatus());
+            return false;
+        }
 
-            meterRegistry.counter("processing.submissions.success").increment();
-            long durationNanos = System.nanoTime() - startNanos;
-            meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
-            long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-            int suggestionCount = suggestions == null ? 0 : suggestions.size();
-            log.info("Processing {} completed for submission {} after {} ms — suggestions={}",
-                    processingId, p.getSubmissionId(), durationMs, suggestionCount);
-        });
+        p.setEmbedding(embedding);
+        p.setProcessedAt(Instant.now());
+        p.setRetryCount(0);
+        p.setLastRetryAt(null);
+        p.setPermanent(false);
+        p.setStatus(ProcessingStatus.COMPLETED);
+
+        suggestionRepository.deleteByProcessingId(p.getId());
+        if (suggestions != null && !suggestions.isEmpty()) {
+            suggestions.forEach(s -> s.setProcessing(p));
+            suggestions.forEach(s -> s.setId(null));
+            suggestionRepository.saveAll(suggestions);
+        }
+        processingRepository.save(p);
+
+        meterRegistry.counter("processing.submissions.success").increment();
+        long durationNanos = System.nanoTime() - startNanos;
+        meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
+        long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
+        int suggestionCount = suggestions == null ? 0 : suggestions.size();
+        log.info("Processing {} completed for submission {} after {} ms — suggestions={}",
+                processingId, p.getSubmissionId(), durationMs, suggestionCount);
+        return true;
     }
 }
