@@ -53,6 +53,7 @@
         <!-- Entry point: depends on everything -->
         <module>application</module>
         <module>auth</module>
+        <module>intake-api</module>
     </modules>
     <scm>
 		<connection/>
@@ -121,6 +122,11 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>mark-api</artifactId>
+                <version>${stonemark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>pt.estga</groupId>
+                <artifactId>intake-api</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

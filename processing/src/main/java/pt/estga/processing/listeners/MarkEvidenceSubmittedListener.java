@@ -28,7 +28,7 @@ public class MarkEvidenceSubmittedListener {
     @Transactional
     @ApplicationModuleListener
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
-        Long submissionId = event.getSubmissionId();
+        Long submissionId = event.submissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
         if (processingRepository.existsBySubmissionId(submissionId)) {

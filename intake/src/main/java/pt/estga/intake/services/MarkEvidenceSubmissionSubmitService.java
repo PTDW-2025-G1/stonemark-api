@@ -49,7 +49,7 @@ public class MarkEvidenceSubmissionSubmitService {
         submission.setStatus(SubmissionStatus.RECEIVED);
         MarkEvidenceSubmission saved = submissionRepository.save(submission);
 
-        eventPublisher.publish(new MarkEvidenceSubmittedEvent(this, saved.getId()));
+        eventPublisher.publish(new MarkEvidenceSubmittedEvent(saved.getId()));
 
         log.info("Submission submitted successfully with ID: {}", saved.getId());
     }

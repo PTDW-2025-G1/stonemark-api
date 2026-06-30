@@ -21,6 +21,11 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>intake-api</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>common-infra</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
