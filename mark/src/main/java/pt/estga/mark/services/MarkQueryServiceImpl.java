@@ -3,10 +3,14 @@ package pt.estga.mark.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.commoncore.enums.ValidationState;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.mark.entities.Mark;
+import pt.estga.mark.entities.MarkEvidence;
+import pt.estga.mark.entities.MarkOccurrence;
 import pt.estga.mark.mappers.MarkEvidenceMapper;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.mappers.MarkOccurrenceMapper;
@@ -42,5 +46,48 @@ public class MarkQueryServiceImpl implements MarkQueryService {
         return evidenceRepository.findAllById(ids).stream()
                 .map(MarkEvidenceMapper::toDto)
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public MarkDto createMark(String title) {
+        Mark mark = markRepository.save(Mark.builder().title(title).build());
+        return MarkMapper.toDto(mark);
+    }
+
+    @Override
+    @Transactional
+    public MarkOccurrenceDto findOrCreateOccurrence(Long markId, boolean approved) {
+        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentIdIsNull(markId)
+                .orElseGet(() -> {
+                    ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
+                    Mark mark = markRepository.findById(markId)
+                            .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
+                    return occurrenceRepository.save(MarkOccurrence.builder()
+                            .mark(mark)
+                            .monumentId(null)
+                            .validationState(state)
+                            .build());
+                });
+        return MarkOccurrenceMapper.toDto(occurrence);
+    }
+
+    @Override
+    @Transactional
+    public void linkFileToOccurrence(UUID fileId, Long occurrenceId, float[] embedding) {
+        MarkOccurrence occurrence = occurrenceRepository.findById(occurrenceId)
+                .orElseThrow(() -> new IllegalArgumentException("Occurrence not found: " + occurrenceId));
+
+        evidenceRepository.findByFileId(fileId).ifPresentOrElse(ev -> {
+            ev.setOccurrence(occurrence);
+            evidenceRepository.save(ev);
+        }, () -> {
+            MarkEvidence newEvidence = MarkEvidence.builder()
+                    .fileId(fileId)
+                    .occurrence(occurrence)
+                    .embedding(embedding)
+                    .build();
+            evidenceRepository.save(newEvidence);
+        });
     }
 }

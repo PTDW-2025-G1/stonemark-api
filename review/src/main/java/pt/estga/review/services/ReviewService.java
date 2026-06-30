@@ -1,17 +1,23 @@
 package pt.estga.review.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.intake.entities.MarkEvidenceSubmission;
+import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.mark.entities.Mark;
-import pt.estga.mark.repositories.MarkRepository;
+import pt.estga.mark.api.MarkQueryService;
+import pt.estga.mark.dtos.MarkDto;
+import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.processing.mappers.MarkSuggestionMapper;
+import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
+import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.DiscoveryContext;
@@ -20,9 +26,10 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -33,8 +40,9 @@ public class ReviewService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
     private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
-    private final MarkRepository markRepository;
+    private final MarkQueryService markQueryService;
     private final ReviewExecutor executor;
+    private final MeterRegistry meterRegistry;
 
     @Value("${review.allow-empty-review:false}")
     private boolean allowEmptyReview;
@@ -81,7 +89,9 @@ public class ReviewService {
 
         ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
         try {
-            return executor.execute(submission, decision, comment, resolution, overview.getId());
+            MarkEvidenceReview review = executor.execute(submission, decision, comment, resolution, overview.getId());
+            applyReviewSideEffects(submission, decision, resolution);
+            return review;
         } catch (DataIntegrityViolationException dive) {
             throw new IllegalStateException("Submission " + submissionId + " already reviewed", dive);
         }
@@ -98,26 +108,25 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public ReviewDecision getReviewStatus(Long submissionId) {
+    public Optional<ReviewDecision> getReviewStatus(Long submissionId) {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
-                .map(MarkEvidenceReview::getDecision)
-                .orElse(null);
+                .map(MarkEvidenceReview::getDecision);
     }
 
     private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
         return switch (type) {
             case MATCH -> {
-                Mark mark = ctx.existingMarkId() != null
-                        ? markRepository.findById(ctx.existingMarkId()).orElseThrow()
+                MarkDto mark = ctx.existingMarkId() != null
+                        ? markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow()
                         : null;
                 yield new ResolutionResult(mark);
             }
             case DISCOVERY -> {
-                Mark mark = null;
+                MarkDto mark = null;
                 if (ctx.existingMarkId() != null) {
-                    mark = markRepository.findById(ctx.existingMarkId()).orElseThrow();
+                    mark = markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow();
                 } else if (ctx.markTitle() != null) {
-                    mark = markRepository.save(Mark.builder().title(ctx.markTitle()).build());
+                    mark = markQueryService.createMark(ctx.markTitle());
                 }
                 yield new ResolutionResult(mark);
             }
@@ -126,7 +135,7 @@ public class ReviewService {
     }
 
     private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {
-        if (status != ProcessingStatus.COMPLETED && status != ProcessingStatus.REVIEW_PENDING) {
+        if (status != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
         if (reviewType != ReviewType.DISCOVERY && !allowEmptyReview && count == 0) {
@@ -135,5 +144,74 @@ public class ReviewService {
         if (markEvidenceReviewRepository.existsBySubmissionId(submissionId)) {
             throw new IllegalStateException("Submission already reviewed.");
         }
+    }
+
+    private void applyReviewSideEffects(MarkEvidenceSubmission submission, ReviewDecision decision, ResolutionResult resolution) {
+        Long submissionId = submission.getId();
+        SubmissionStatus targetStatus = decision == ReviewDecision.APPROVED
+                ? SubmissionStatus.PROCESSED : SubmissionStatus.REJECTED;
+
+        if (submission.getStatus() != targetStatus) {
+            if (targetStatus == SubmissionStatus.PROCESSED) submission.markProcessed();
+            else submission.markRejected();
+            submissionRepository.save(submission);
+            try {
+                meterRegistry.counter("review.applied", "decision", decision.name()).increment();
+            } catch (Exception ex) {
+                log.debug("Failed to increment review.applied metric: {}", ex.getMessage());
+            }
+        }
+
+        try {
+            int updated = processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
+            if (updated > 0) {
+                log.info("Processing marked REVIEWED for submission {}", submissionId);
+            }
+        } catch (Exception ex) {
+            log.error("Failed to mark processing REVIEWED for submission {}: {}", submissionId, ex.getMessage(), ex);
+        }
+
+        if (resolution != null && resolution.mark() != null) {
+            UUID mediaFileId = submission.getOriginalMediaFileId();
+            linkEvidenceToMark(submissionId, mediaFileId, resolution.mark().id(), decision == ReviewDecision.APPROVED);
+        }
+    }
+
+    private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId, boolean approved) {
+        if (mediaFileId == null) return;
+
+        try {
+            MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, approved);
+
+            float[] embedding = parseEmbedding(
+                    processingRepository.findEmbeddingTextBySubmissionId(submissionId));
+            if (embedding == null) {
+                log.warn("Cannot create MarkEvidence for file {}: no embedding for submission {}",
+                        mediaFileId, submissionId);
+                return;
+            }
+
+            markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
+            log.info("Linked evidence file {} to occurrence {} (submission {})",
+                    mediaFileId, occurrence.id(), submissionId);
+        } catch (Exception e) {
+            log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
+        }
+    }
+
+    private static float[] parseEmbedding(Optional<String> text) {
+        return text.map(t -> {
+            String trimmed = t.trim();
+            if (trimmed.isEmpty() || "[]".equals(trimmed)) return null;
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                trimmed = trimmed.substring(1, trimmed.length() - 1);
+            }
+            String[] parts = trimmed.split(",");
+            float[] result = new float[parts.length];
+            for (int i = 0; i < parts.length; i++) {
+                result[i] = Float.parseFloat(parts[i].trim());
+            }
+            return result;
+        }).orElse(null);
     }
 }

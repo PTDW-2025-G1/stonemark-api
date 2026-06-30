@@ -1,51 +1,37 @@
 # Scoring Contract
 
-This document defines the authoritative scoring contract for the processing aggregation
-pipeline. Tests and implementation must adhere to these rules. Changes to the implementation
-must update this contract first.
+The `SimilarityService` produces mark suggestions from a Vision embedding using pgvector cosine similarity.
 
-Contract summary
+## Pipeline (simplified)
 
-- Contribution
-  - A contribution is a single CandidateEvidence (evidenceId, occurrenceId, similarity)
-    expanded to a mark via the mark mapping (one evidence may map to multiple marks).
-  - Similarity values are clamped to [0.0, 1.0] before any weighting or decay.
+1. Convert embedding to pgvector literal string
+2. Query `MarkEvidenceQueryService.findTopKSimilar(vector, k, maxDistance)` — pgvector cosine similarity
+3. Filter results: reject null, NaN, Infinity values
+4. Fetch mark associations: `findMarksByEvidenceIds(evidenceIds)`
+5. Group by `markId`, sum similarity contributions
+6. Sort by summed confidence descending, then by `markId` ascending (tiebreaker)
+7. Limit to top `k` results
+8. Create `MarkSuggestion` entities with confidence quantized to 6 decimal places
 
-- Deduplication
-  - Deduplication happens before scoring and before applying fan-out scaling.
-  - Duplicate key = (evidenceId, occurrenceId, markId). When multiple entries share the same
-    key, the one with strictly greater similarity wins. If similarity is equal, the first-seen
-    entry (input order) wins. The duplicate counter increments for each removed entry.
+## Scoring Formula
 
-- Fan-out
-  - Fan-out (N) for an evidence is the number of distinct marks it contributes to after
-    deduplication.
-  - When FanOutStrategy.SPLIT is used, each contribution from an evidence is scaled by 1/N.
-  - When FanOutStrategy.FULL is used, contributions are not scaled.
+```
+For each evidence hit with similarity S:
+  confidence[markId] += S
 
-- Decay and Rank Weighting
-  - Within a mark group, contributions are sorted deterministically and assigned a rank index
-    starting at 0. A per-mark decay factor is applied: perMarkMultiplier = perMarkDecay ^ rankIndex.
-  - Rank weighting multiplies similarity by (1 / (1 + rankIndex)) when enabled.
+confidence is summed directly — no decay, fan-out, or rank weighting.
+```
 
-- Scoring Formula
-  - For a contribution with similarity S, rank index i, per-mark decay D, fan-out scale F:
-      simClamped = clamp(S, 0.0, 1.0)
-      rankWeight = useRankWeighting ? 1.0 / (1.0 + i) : 1.0
-      perMarkMultiplier = D ^ i
-      contribution = simClamped * rankWeight * perMarkMultiplier * F
-  - We accumulate contributions per mark using compensated summation (Kahan) to compute
-    rawScores and weightSums (weightSums accumulates perMarkMultiplier * F).
-  - Final confidence per mark = quantize( clamp( rawScore / weightSum, 0.0, 1.0 ) )
-    where quantize rounds to 1e-6 units.
+## Invariants
 
-- Telemetry / Counters
-  - duplicates: number of duplicate entries removed during deduplication.
-  - fanOutContributionCount: number of processed contributions (after dedup) for which
-    the evidence had fanOut > 1. This is counted per processed contribution (i.e., one per mark).
-  - weightAnomalies: number of marks with weightSum <= 1e-12.
+- Output is sorted: confidence descending, then markId ascending
+- Confidence is clamped to [0.0, 1.0] and quantized to 1e-6
+- Empty or missing embedding → empty result list
+- No valid hits after filtering → empty result list
+- `maxDistance = 1.0 - minScore` (configured via `processing.similarity.minScore`)
 
-Notes
-- Ordering is deterministic but not semantically meaningful beyond tie-breaking. Tests should assert
-  business invariants (top-K ordering, dedup correctness, fan-out correctness) and avoid relying on
-  implementation-only ordering unless explicitly documented here.
+## Determinism
+
+- `LinkedHashMap` for mark group iteration (insertion order from evidence ID list)
+- `Map.Entry.comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey())` for sorting
+- Confidence quantization to 6 decimal places ensures stable comparisons

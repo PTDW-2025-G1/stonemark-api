@@ -1,34 +1,26 @@
 package pt.estga.processing.services.processing;
 
-import jakarta.persistence.LockTimeoutException;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.LockAcquisitionException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import pt.estga.commoncore.utils.VectorUtils;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import java.util.UUID;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
-import pt.estga.commoncore.utils.VectorUtils;
 import pt.estga.vision.VisionClient;
-import pt.estga.file.api.FileStorageOperations;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Value;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -37,13 +29,11 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final MarkEvidenceProcessingRepository processingRepository;
-    private final MarkSuggestionRepository suggestionRepository;
     private final VisionClient visionClient;
     private final FileStorageOperations fileStorage;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
-    private final PlatformTransactionManager transactionManager;
-    private TransactionTemplate transactionTemplate;
+    private final ProcessingPersistenceService persistence;
 
     @Value("${processing.vision.max-concurrency:4}")
     private int visionMaxConcurrency;
@@ -51,12 +41,17 @@ public class ProcessingServiceImpl implements ProcessingService {
     @Value("${processing.vision.acquire-timeout-ms:10000}")
     private long visionAcquireTimeoutMs;
 
-    private Semaphore visionSemaphore;
+    private volatile Semaphore visionSemaphore;
 
-    @PostConstruct
-    protected void init() {
-        this.visionSemaphore = new Semaphore(Math.max(1, visionMaxConcurrency));
-        this.transactionTemplate = new TransactionTemplate(transactionManager);
+    private Semaphore getVisionSemaphore() {
+        if (visionSemaphore == null) {
+            synchronized (this) {
+                if (visionSemaphore == null) {
+                    visionSemaphore = new Semaphore(Math.max(1, visionMaxConcurrency));
+                }
+            }
+        }
+        return visionSemaphore;
     }
 
     @Override
@@ -65,53 +60,43 @@ public class ProcessingServiceImpl implements ProcessingService {
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();
             try {
-                // Phase A: short DB work - create or reuse processing record
-                processing = createOrReuseProcessingRecord(submissionId, submission);
-
-                // createOrReuseProcessingRecord returns null when work should be skipped (idempotency)
+                processing = persistence.createOrReuseProcessingRecord(submissionId);
                 if (processing == null) {
                     meterRegistry.counter("processing.submissions.skipped", "reason", "already_processed_or_in_progress").increment();
                     return;
                 }
 
-                // record an attempt
                 meterRegistry.counter("processing.submissions.attempts").increment();
 
-                // Phase B: external work (outside transaction)
                 if (!visionClient.isAvailable()) {
-                    log.warn("Vision unavailable, skipping processing {}", submissionId);
-                    // revert to PENDING so it can be retried later
-                    setProcessingPending(processing.getId());
+                    log.warn("Vision unavailable, deferring processing {}", submissionId);
+                    persistence.setPending(processing.getId());
                     meterRegistry.counter("processing.submissions.skipped", "reason", "vision_unavailable").increment();
                     return;
                 }
 
                 UUID mediaFileId = submission.getOriginalMediaFileId();
-                if (mediaFileId == null) {
-                    setProcessingFailed(processing.getId(), "No original media file available", true, startNanos);
-                    return;
-                }
-                if (!fileStorage.existsById(mediaFileId)) {
-                    setProcessingFailed(processing.getId(), "Original media file not found: " + mediaFileId, true, startNanos);
+                if (mediaFileId == null || !fileStorage.existsById(mediaFileId)) {
+                    persistence.setFailed(processing.getId(),
+                            "Original media file not found: " + mediaFileId, true, startNanos);
                     return;
                 }
 
-                // Apply backpressure for Vision calls: limit concurrent detection requests using a semaphore.
                 boolean acquired = false;
                 try {
                     try {
-                        acquired = visionSemaphore.tryAcquire(visionAcquireTimeoutMs, TimeUnit.MILLISECONDS);
+                        acquired = getVisionSemaphore().tryAcquire(visionAcquireTimeoutMs, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        log.warn("Interrupted while waiting for vision permit, deferring processing {}", submissionId);
-                        setProcessingPending(processing.getId());
+                        log.warn("Interrupted waiting for vision permit, deferring processing {}", submissionId);
+                        persistence.setPending(processing.getId());
                         meterRegistry.counter("processing.submissions.throttled").increment();
                         return;
                     }
 
                     if (!acquired) {
                         log.warn("Could not obtain vision permit in {}ms, deferring processing {}", visionAcquireTimeoutMs, submissionId);
-                        setProcessingPending(processing.getId());
+                        persistence.setPending(processing.getId());
                         meterRegistry.counter("processing.submissions.throttled").increment();
                         return;
                     }
@@ -125,181 +110,39 @@ public class ProcessingServiceImpl implements ProcessingService {
                     }
 
                     if (embedding == null || embedding.length == 0) {
-                        setProcessingFailed(processing.getId(), "Empty embedding returned", true, startNanos);
+                        persistence.setFailed(processing.getId(), "Empty embedding returned", true, startNanos);
                         return;
                     }
 
-                    // Normalize embedding before use and persistence. Store unit-length vectors in DB
-                    // to make DB-side similarity semantics explicit and robust.
                     float[] normalized = VectorUtils.normalize(embedding);
                     if (normalized == null) {
-                        setProcessingFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
+                        persistence.setFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
                         return;
                     }
 
-                    // Attach normalized embedding to the in-memory processing object for similarity search
                     processing.setEmbedding(normalized);
                 } finally {
                     if (acquired) {
-                        visionSemaphore.release();
+                        getVisionSemaphore().release();
                     }
                 }
 
-                // Run similarity outside transaction
                 List<MarkSuggestion> suggestions = similarityService.findSimilar(processing, 20);
-
-                // Phase C: short DB work - persist embedding, suggestions and mark completed
-                finalizeProcessingSuccess(processing.getId(), processing.getEmbedding(), suggestions, startNanos);
+                persistence.finalizeSuccess(processing.getId(), processing.getEmbedding(), suggestions, startNanos);
 
             } catch (Exception e) {
                 log.error("Error processing submission {}: {}", submissionId, e.getMessage(), e);
                 try {
                     if (processing != null) {
-                        setProcessingFailed(processing.getId(), e.getMessage(), false, startNanos);
+                        persistence.setFailed(processing.getId(), e.getMessage(), false, startNanos);
                     } else {
-                        // best-effort: find by submission and mark failed (retryable)
                         processingRepository.findBySubmissionId(submissionId)
-                                .ifPresent(p -> setProcessingFailed(p.getId(), e.getMessage(), false, startNanos));
+                                .ifPresent(p -> persistence.setFailed(p.getId(), e.getMessage(), false, startNanos));
                     }
                 } catch (Exception ex) {
                     log.warn("Failed to persist failure state for submission {}: {}", submissionId, ex.getMessage());
                 }
             }
         }, () -> log.warn("Submission with id {} not found for processing", submissionId));
-    }
-
-    // --- helper DB operations (short transactions executed by repository methods) ---
-
-    /**
-     * Create a processing record or reuse an existing one.
-     * Returns null when no work should be performed (idempotency - already completed or in progress).
-     * Uses a lightweight projection check first to avoid loading the float[384] embedding column
-     * when the record is already in a terminal state.
-     */
-    protected MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId, MarkEvidenceSubmission submission) {
-        var overview = processingRepository.findOverviewBySubmissionId(submissionId);
-        if (overview.isPresent()) {
-            ProcessingStatus status = overview.get().getStatus();
-            if (status == ProcessingStatus.COMPLETED || status == ProcessingStatus.PROCESSING) {
-                log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, status);
-                return null;
-            }
-        }
-
-        return transactionTemplate.execute(status -> {
-            try {
-                var existingOpt = processingRepository.findBySubmissionIdForUpdate(submissionId);
-                if (existingOpt.isPresent()) {
-                    MarkEvidenceProcessing p = existingOpt.get();
-                    if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.PROCESSING) {
-                        log.info("Submission {} already processed or in progress (status={}), skipping", submissionId, p.getStatus());
-                        return null;
-                    }
-                    p.setStatus(ProcessingStatus.PROCESSING);
-                    p.setFailedAt(null);
-                    p.setErrorMessage(null);
-                    p.setUpdatedAt(Instant.now());
-                    return processingRepository.save(p);
-                }
-
-                MarkEvidenceProcessing p = MarkEvidenceProcessing.builder()
-                        .submissionId(submission.getId())
-                        .status(ProcessingStatus.PROCESSING)
-                        .updatedAt(Instant.now())
-                        .build();
-                try {
-                    return processingRepository.save(p);
-                } catch (org.springframework.dao.DataIntegrityViolationException ex) {
-                    log.warn("Race detected creating processing for submission {} — reading existing record in new transaction", submissionId);
-                    return transactionTemplate.execute(status2 -> {
-                        var found = processingRepository.findBySubmissionId(submissionId);
-                        if (found.isPresent()) {
-                            var existing = found.get();
-                            if (existing.getStatus() == ProcessingStatus.COMPLETED
-                                    || existing.getStatus() == ProcessingStatus.PROCESSING) {
-                                return null;
-                            }
-                            existing.setStatus(ProcessingStatus.PROCESSING);
-                            existing.setFailedAt(null);
-                            existing.setErrorMessage(null);
-                            existing.setUpdatedAt(Instant.now());
-                            return processingRepository.save(existing);
-                        }
-                        throw ex;
-                    });
-                }
-            } catch (LockTimeoutException | LockAcquisitionException lockEx) {
-                log.warn("Could not acquire lock for submission {}: {}", submissionId, lockEx.getMessage());
-                return null;
-            }
-        });
-    }
-
-    protected void setProcessingPending(UUID processingId) {
-        transactionTemplate.executeWithoutResult(status ->
-            processingRepository.findById(processingId).ifPresent(p -> {
-                p.setStatus(ProcessingStatus.PENDING);
-                p.setLastRetryAt(Instant.now());
-                processingRepository.save(p);
-            })
-        );
-    }
-
-    /**
-     * Mark processing as failed. 'permanent' indicates whether the failure is non-retryable.
-     * Records metrics (failure counter and processing duration).
-     */
-    protected void setProcessingFailed(UUID processingId, String message, boolean permanent, long startNanos) {
-        transactionTemplate.executeWithoutResult(status ->
-            processingRepository.findById(processingId).ifPresent(p -> {
-                p.setStatus(ProcessingStatus.FAILED);
-                p.setFailedAt(Instant.now());
-                p.setLastRetryAt(Instant.now());
-                p.setRetryCount(p.getRetryCount() + 1);
-                p.setPermanent(permanent);
-                p.setErrorMessage(message);
-                processingRepository.save(p);
-
-                // metrics
-                meterRegistry.counter("processing.submissions.failed", "permanent", String.valueOf(permanent)).increment();
-                long durationNanos = System.nanoTime() - startNanos;
-                meterRegistry.timer("processing.submissions.duration", "result", "failed").record(Duration.ofNanos(durationNanos));
-                long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-                Long submissionId = p.getSubmissionId();
-                log.info("Processing {} failed for submission {} after {} ms: {}", processingId, submissionId, durationMs, message);
-            })
-        );
-    }
-
-    /**
-     * Finalize successful processing: persist embedding and suggestions, mark completed and record metrics.
-     */
-    protected void finalizeProcessingSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
-        transactionTemplate.executeWithoutResult(status ->
-            processingRepository.findById(processingId).ifPresent(p -> {
-                p.setEmbedding(embedding);
-                p.setProcessedAt(Instant.now());
-                p.setRetryCount(0);
-                p.setLastRetryAt(null);
-                p.setPermanent(false);
-                p.setStatus(ProcessingStatus.COMPLETED);
-
-                suggestionRepository.deleteByProcessingId(p.getId());
-                if (suggestions != null && !suggestions.isEmpty()) {
-                    suggestions.forEach(s -> s.setProcessing(p));
-                    suggestions.forEach(s -> s.setId(null));
-                    suggestionRepository.saveAll(suggestions);
-                }
-                processingRepository.save(p);
-
-                meterRegistry.counter("processing.submissions.success").increment();
-                long durationNanos = System.nanoTime() - startNanos;
-                meterRegistry.timer("processing.submissions.duration", "result", "success").record(Duration.ofNanos(durationNanos));
-                long durationMs = TimeUnit.NANOSECONDS.toMillis(durationNanos);
-                int suggestionCount = suggestions == null ? 0 : suggestions.size();
-                log.info("Processing {} completed for submission {} after {} ms — suggestions={}",
-                        processingId, p.getSubmissionId(), durationMs, suggestionCount);
-            })
-        );
     }
 }

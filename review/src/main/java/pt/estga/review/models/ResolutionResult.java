@@ -1,5 +1,5 @@
 package pt.estga.review.models;
 
-import pt.estga.mark.entities.Mark;
+import pt.estga.mark.dtos.MarkDto;
 
-public record ResolutionResult(Mark mark) {}
+public record ResolutionResult(MarkDto mark) {}

@@ -38,7 +38,7 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     List<RetryableProjection> findRetryableProjectionsByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
 
     @Modifying
-    @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff")
+    @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff AND (p.updatedAt = p.processingStartedAt OR p.processingStartedAt IS NULL)")
     int resetStuckProcessing(@Param("sourceStatus") ProcessingStatus sourceStatus, @Param("targetStatus") ProcessingStatus targetStatus, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
 
     @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
