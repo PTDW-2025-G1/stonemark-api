@@ -8,7 +8,7 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -68,11 +68,6 @@ public class InitialPhotoHandler implements ConversationStateHandler {
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         return BotResponse.menuResponse(textService.get(MessageKey.REQUEST_PHOTO_PROMPT));
-    }
-
-    @Override
-    public RichText failureResponse(ChatbotContext context) {
-        return textService.get(MessageKey.EXPECTING_PHOTO_ERROR);
     }
 
     private SubmissionSource mapPlatformToSubmissionSource(Platform platform) {

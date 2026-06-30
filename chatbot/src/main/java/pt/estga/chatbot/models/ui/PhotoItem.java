@@ -2,7 +2,7 @@ package pt.estga.chatbot.models.ui;
 
 import lombok.Builder;
 import lombok.Data;
-import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RenderedText;
 
 import java.util.UUID;
 
@@ -10,6 +10,6 @@ import java.util.UUID;
 @Builder
 public final class PhotoItem implements UIComponent {
     private UUID mediaFileId;
-    private RichText captionNode;
+    private RenderedText captionNode;
     private String callbackData;
 }

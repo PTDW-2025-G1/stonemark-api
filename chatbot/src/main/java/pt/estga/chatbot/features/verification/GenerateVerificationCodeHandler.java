@@ -8,7 +8,7 @@ import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.verification.entities.ActionCode;
 import pt.estga.verification.services.ChatbotVerificationService;
@@ -59,7 +59,7 @@ public class GenerateVerificationCodeHandler implements ConversationStateHandler
     @Override
     public List<BotResponse> createResponse(ChatbotContext context, HandlerOutcome outcome, BotInput input) {
         List<BotResponse> responses = new ArrayList<>();
-        RichText instructions = textService.get(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS);
+        RenderedText instructions = textService.get(MessageKey.CONNECT_MESSENGER_INSTRUCTIONS);
         responses.addAll(BotResponse.menuResponse(instructions));
         String code = context.getVerificationCode();
         responses.add(BotResponse.builder()

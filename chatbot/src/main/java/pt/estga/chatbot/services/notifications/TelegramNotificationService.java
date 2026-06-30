@@ -11,10 +11,8 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.Message;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
-import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.chatbot.telegram.StonemarkTelegramBot;
-import pt.estga.chatbot.telegram.TelegramRenderer;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +21,6 @@ public class TelegramNotificationService {
 
     private final StonemarkTelegramBot telegramBot;
     private final UiTextService uiTextService;
-    private final TelegramRenderer renderer;
 
     public void sendNotification(String recipientId, Message message) {
         send(recipientId, uiTextService.get(message));
@@ -54,10 +51,6 @@ public class TelegramNotificationService {
         } catch (TelegramApiException e) {
             log.error("Failed to send notification to Telegram user {}: {}", recipientId, e.getMessage());
         }
-    }
-
-    private void send(String recipientId, RichText textNode) {
-        send(recipientId, renderer.render(textNode));
     }
 
     private void sendMenu(String recipientId) {

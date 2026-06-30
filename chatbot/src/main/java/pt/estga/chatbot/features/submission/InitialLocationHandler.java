@@ -6,7 +6,7 @@ import pt.estga.chatbot.constants.MessageKey;
 import pt.estga.chatbot.context.*;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
-import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.services.messages.UiTextService;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -56,10 +56,5 @@ public class InitialLocationHandler implements ConversationStateHandler {
                 .messageNode(textService.get(MessageKey.REQUEST_LOCATION_PROMPT))
                 .build();
         return Collections.singletonList(BotResponse.builder().uiComponent(locationRequest).build());
-    }
-
-    @Override
-    public RichText failureResponse(ChatbotContext context) {
-        return textService.get(MessageKey.EXPECTING_LOCATION_ERROR);
     }
 }

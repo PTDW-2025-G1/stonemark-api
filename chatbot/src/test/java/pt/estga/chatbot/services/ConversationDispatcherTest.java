@@ -15,7 +15,7 @@ import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
-import pt.estga.chatbot.models.text.RichText;
+import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.services.messages.UiTextService;
 
 import java.util.List;
@@ -23,8 +23,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,7 +34,7 @@ class ConversationDispatcherTest {
     @Mock
     private UiTextService textService;
 
-    private RichText dummyText = new RichText.Plain("dummy");
+    private RenderedText dummyText = new RenderedText("dummy", null);
 
     private ChatbotContext context;
     private BotInput input;

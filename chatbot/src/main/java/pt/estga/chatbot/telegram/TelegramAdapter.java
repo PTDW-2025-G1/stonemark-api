@@ -21,7 +21,6 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RenderedText;
-import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.models.ui.Button;
 import pt.estga.chatbot.models.ui.LocationRequest;
 import pt.estga.chatbot.models.ui.Menu;
@@ -47,7 +46,6 @@ public class TelegramAdapter {
     private static final String IMAGE_MIME_TYPE_PREFIX = "image/";
 
     private final TelegramFileService fileService;
-    private final TelegramRenderer textService;
 
     public BotInput toBotInput(Update update) {
         log.debug("Converting Update to BotInput: {}", update);
@@ -190,7 +188,7 @@ public class TelegramAdapter {
     private void addTextResponse(List<PartialBotApiMethod<?>> methods, String chatId, BotResponse response) {
         if (response.getTextNode() != null) {
             log.debug("Rendering text node response");
-            RenderedText rendered = textService.render(response.getTextNode());
+            RenderedText rendered = response.getTextNode();
             SendMessage msg = new SendMessage(chatId, rendered.text());
             if (rendered.parseMode() != null) {
                 msg.setParseMode(rendered.parseMode());
@@ -208,18 +206,18 @@ public class TelegramAdapter {
             methods.addAll(renderPhotoItem(chatId, photoItem));
         } else if (uiComponent instanceof TextMessage textMessage) {
             log.debug("Rendering TextMessage component");
-            RenderedText rendered = textService.render(textMessage.getTextNode());
+            RenderedText rendered = textMessage.getTextNode();
             SendMessage msg = new SendMessage(chatId, rendered.text());
             if (rendered.parseMode() != null) msg.setParseMode(rendered.parseMode());
             methods.add(msg);
         }
     }
 
-    private SendMessage renderMenu(String chatId, Menu menu, RichText textNode) {
+    private SendMessage renderMenu(String chatId, Menu menu, RenderedText textNode) {
         // Render the provided textNode if it exists, otherwise fallback to the menu title
         RenderedText rendered = textNode != null
-                ? textService.render(textNode)
-                : textService.render(menu.getTitleNode());
+                ? textNode
+                : menu.getTitleNode();
 
         SendMessage sendMessage = new SendMessage(chatId, rendered.text());
         if (rendered.parseMode() != null) sendMessage.setParseMode(rendered.parseMode());
@@ -232,7 +230,7 @@ public class TelegramAdapter {
 
     private SendMessage renderLocationRequest(String chatId, LocationRequest locationRequest) {
         log.debug("Parsed messageNode for location request");
-        RenderedText rendered = textService.render(locationRequest.getMessageNode());
+        RenderedText rendered = locationRequest.getMessageNode();
         SendMessage message = new SendMessage(chatId, rendered.text());
         if (rendered.parseMode() != null) message.setParseMode(rendered.parseMode());
         message.setReplyMarkup(createReplyKeyboardMarkup("Send my location", true, false));
@@ -241,7 +239,7 @@ public class TelegramAdapter {
 
     private List<PartialBotApiMethod<?>> renderPhotoItem(String chatId, PhotoItem item) {
         List<PartialBotApiMethod<?>> methods = new ArrayList<>();
-        RenderedText captionRendered = textService.render(item.getCaptionNode());
+        RenderedText captionRendered = item.getCaptionNode();
         String caption = captionRendered.text();
 
         if (item.getMediaFileId() != null) {
@@ -273,7 +271,7 @@ public class TelegramAdapter {
             List<InlineKeyboardButton> rowInline = new ArrayList<>();
             for (Button button : row) {
                 InlineKeyboardButton inlineButton = new InlineKeyboardButton();
-                RenderedText rendered = textService.render(button.getTextNode());
+                RenderedText rendered = button.getTextNode();
                 inlineButton.setText(rendered.text());
                 inlineButton.setCallbackData(button.getCallbackData());
                 rowInline.add(inlineButton);
