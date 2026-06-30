@@ -52,6 +52,7 @@
 
         <!-- Entry point: depends on everything -->
         <module>application</module>
+        <module>auth</module>
     </modules>
     <scm>
 		<connection/>

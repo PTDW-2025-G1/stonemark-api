@@ -30,7 +30,7 @@ public class ContactRequest {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String name; // todo: first and last name
 
     @Column(nullable = false)
     private String email;
@@ -39,7 +39,7 @@ public class ContactRequest {
     private String subject;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String message;
+    private String message; // todo: add limit
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -48,7 +48,11 @@ public class ContactRequest {
     @Enumerated(EnumType.STRING)
     private ContactStatus status = ContactStatus.PENDING;
 
+    // todo: add processedAt, processedBy
+
     @Column
     private Long submittedById;
+
+    // todo: add method isProcessed() and add more states
 
 }
