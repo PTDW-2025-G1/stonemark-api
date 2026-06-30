@@ -59,9 +59,10 @@
 		<tag/>
 		<url/>
 	</scm>
-	<properties>
+    <properties>
 		<java.version>25</java.version>
         <stonemark.version>0.0.1-SNAPSHOT</stonemark.version>
+        <spring-modulith.version>2.1.0</spring-modulith.version>
     </properties>
 
     <dependencyManagement>
@@ -86,6 +87,14 @@
                 <groupId>com.bucket4j</groupId>
                 <artifactId>bucket4j-core</artifactId>
                 <version>8.10.1</version>
+            </dependency>
+            <!-- Spring Modulith BOM -->
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <!-- Internal modules -->
             <dependency>
@@ -192,6 +201,12 @@
     </dependencyManagement>
 
     <dependencies>
+        <!-- Spring Modulith API (compile-time, all modules need it for @ApplicationModule) -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-api</artifactId>
+        </dependency>
+
         <!-- Testing (universal) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

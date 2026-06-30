@@ -31,6 +31,11 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     locations: classpath:db/migration
+  modulith:
+    events:
+      completion-mode: update
+      jdbc-schema-initialization:
+        enabled: false
   jackson:
     deserializer:
       read_enum_values_using_index: false
