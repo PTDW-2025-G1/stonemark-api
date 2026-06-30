@@ -13,7 +13,6 @@ import pt.estga.user.dtos.UserDto;
 import pt.estga.user.dtos.UserFilter;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.repositories.ChatbotAccountRepository;
 import pt.estga.user.repositories.UserRepository;
 
 @Service
@@ -22,7 +21,6 @@ import pt.estga.user.repositories.UserRepository;
 public class UserService {
 
     private final UserRepository repository;
-    private final ChatbotAccountRepository chatbotAccountRepository;
 
     public Page<UserDto> search(UserFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<User>()
@@ -59,7 +57,6 @@ public class UserService {
     public void softDeleteUser(Long id) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        chatbotAccountRepository.deleteByUser(user);
         repository.softDelete(user);
     }
 
