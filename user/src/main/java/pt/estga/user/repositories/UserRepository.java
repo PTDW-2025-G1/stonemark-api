@@ -28,4 +28,6 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
            "WHERE u.id = :id")
     Optional<User> findByIdWithRoles(@Param("id") Long id);
 
+    Optional<User> findByTelegramChatId(String telegramChatId);
+
 }
