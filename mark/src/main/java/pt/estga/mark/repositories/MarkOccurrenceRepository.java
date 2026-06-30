@@ -16,8 +16,6 @@ public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence,
     @EntityGraph(attributePaths = {"monument", "mark", "author"})
     Page<MarkOccurrence> findAll(Pageable pageable);
 
-    Optional<MarkOccurrence> findByMarkIdAndMonumentId(Long markId, Long monumentId);
-
     Optional<MarkOccurrence> findByMarkIdAndMonumentIdIsNull(Long markId);
 
 }
