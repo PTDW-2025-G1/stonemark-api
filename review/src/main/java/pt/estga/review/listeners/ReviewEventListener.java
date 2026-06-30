@@ -72,7 +72,7 @@ public class ReviewEventListener {
 
                     return occurrenceRepository.save(MarkOccurrence.builder()
                             .mark(mark)
-                            .monument(null)
+                            .monumentId(null)
                             .validationState(state)
                             .build());
                 });

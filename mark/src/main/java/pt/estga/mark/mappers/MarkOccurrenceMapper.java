@@ -13,7 +13,7 @@ public class MarkOccurrenceMapper {
         return new MarkOccurrenceDto(
                 entity.getId(),
                 entity.getMark() != null ? entity.getMark().getId() : null,
-                entity.getMonument() != null ? entity.getMonument().getId() : null,
+                entity.getMonumentId(),
                 entity.getMark() != null ? MarkMapper.toDto(entity.getMark()) : null,
                 entity.getCreatedAt(),
                 entity.getStatus() == EntityStatus.ACTIVE
