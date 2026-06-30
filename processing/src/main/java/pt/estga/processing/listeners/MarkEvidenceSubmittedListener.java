@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.modulith.events.ApplicationModuleListener;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
@@ -25,7 +24,6 @@ public class MarkEvidenceSubmittedListener {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final AsyncProcessingService asyncProcessingService;
 
-    @Transactional
     @ApplicationModuleListener
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
         Long submissionId = event.submissionId();
