@@ -51,7 +51,7 @@
         <module>chatbot</module>            <!-- needs file, user, intake, verification -->
 
         <!-- Entry point: depends on everything -->
-        <module>boot</module>
+        <module>application</module>
     </modules>
     <scm>
 		<connection/>
