@@ -106,6 +106,10 @@ public class ProcessingPersistenceService {
     @Transactional
     public void setPending(UUID processingId) {
         processingRepository.findById(processingId).ifPresent(p -> {
+            if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.REVIEWED) {
+                log.warn("Refusing to revert {} record {} to PENDING", p.getStatus(), processingId);
+                return;
+            }
             p.setStatus(ProcessingStatus.PENDING);
             p.setLastRetryAt(Instant.now());
             processingRepository.save(p);
@@ -115,6 +119,10 @@ public class ProcessingPersistenceService {
     @Transactional
     public void setFailed(UUID processingId, String message, boolean permanent, long startNanos) {
         processingRepository.findById(processingId).ifPresent(p -> {
+            if (p.getStatus() == ProcessingStatus.COMPLETED || p.getStatus() == ProcessingStatus.REVIEWED) {
+                log.warn("Refusing to mark {} record {} as FAILED", p.getStatus(), processingId);
+                return;
+            }
             p.setStatus(ProcessingStatus.FAILED);
             p.setFailedAt(Instant.now());
             p.setLastRetryAt(Instant.now());

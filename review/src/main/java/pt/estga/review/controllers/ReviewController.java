@@ -17,6 +17,7 @@ import pt.estga.review.mappers.ReviewMapper;
 import pt.estga.review.services.ReviewService;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/admin/review")
@@ -62,9 +63,9 @@ public class ReviewController {
 
     @GetMapping("/{submissionId}")
     public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
-        ReviewDecision status = reviewService.getReviewStatus(submissionId);
-        if (status == null) throw new pt.estga.commonweb.exceptions.ResourceNotFoundException("Review not found");
-        return ResponseEntity.ok(status);
+        return reviewService.getReviewStatus(submissionId)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> new pt.estga.commonweb.exceptions.ResourceNotFoundException("Review not found"));
     }
 
     @GetMapping("/{submissionId}/suggestions")

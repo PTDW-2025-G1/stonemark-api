@@ -114,10 +114,9 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public ReviewDecision getReviewStatus(Long submissionId) {
+    public Optional<ReviewDecision> getReviewStatus(Long submissionId) {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
-                .map(MarkEvidenceReview::getDecision)
-                .orElse(null);
+                .map(MarkEvidenceReview::getDecision);
     }
 
     private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
