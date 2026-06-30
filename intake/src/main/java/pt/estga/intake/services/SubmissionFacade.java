@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
@@ -24,6 +24,7 @@ public class SubmissionFacade {
     private final FileStorageOperations fileStorage;
     private final MarkEvidenceSubmissionSubmitService submitService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final SubmissionMapper submissionMapper;
 
     @Transactional
     public SubmissionDto submitFromWeb(MultipartFile file, Double latitude, Double longitude, String notes) throws IOException {
@@ -40,7 +41,7 @@ public class SubmissionFacade {
 
         submitService.submit(submission, staged.id(), file.getOriginalFilename());
 
-        return SubmissionMapper.toDto(submissionRepository.findById(submission.getId()).orElseThrow());
+        return submissionMapper.toDto(submissionRepository.findById(submission.getId()).orElseThrow());
     }
 
     public void submitStaged(MarkEvidenceSubmission submission, UUID stagedFileId,

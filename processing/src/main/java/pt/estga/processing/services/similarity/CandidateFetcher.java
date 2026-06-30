@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pt.estga.mark.dtos.EvidenceMarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
-import pt.estga.markapi.MarkEvidenceQueryService;
+import pt.estga.mark.api.MarkEvidenceQueryService;
 
 import java.util.List;
 import java.util.UUID;

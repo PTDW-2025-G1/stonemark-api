@@ -21,8 +21,6 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 
 	boolean existsBySubmissionId(Long submissionId);
 
-	List<MarkEvidenceProcessing> findBySubmissionIdIn(List<Long> submissionIds);
-
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
 
 	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
@@ -36,15 +34,8 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 	@Query("UPDATE MarkEvidenceProcessing p SET p.status = :status WHERE p.submissionId = :submissionId")
 	int updateStatusBySubmissionId(@Param("submissionId") Long submissionId, @Param("status") ProcessingStatus status);
 
-	List<MarkEvidenceProcessing> findByStatusIn(List<ProcessingStatus> statuses);
-
-    @Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
-    List<MarkEvidenceProcessing> findRetryableByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
-
     @Query("SELECT p.id AS id, p.submissionId AS submissionId, p.retryCount AS retryCount, p.lastRetryAt AS lastRetryAt FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
     List<RetryableProjection> findRetryableProjectionsByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
-
-    long countByStatusAndPermanentFalse(ProcessingStatus status);
 
     @Modifying
     @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff")

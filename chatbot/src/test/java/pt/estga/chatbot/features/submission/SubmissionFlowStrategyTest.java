@@ -8,7 +8,7 @@ import pt.estga.chatbot.context.HandlerOutcome;
 import pt.estga.chatbot.context.SubmissionState;
 import pt.estga.chatbot.features.core.MainMenuFactory;
 import pt.estga.chatbot.models.BotInput;
-import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.chatbot.services.messages.UiTextService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

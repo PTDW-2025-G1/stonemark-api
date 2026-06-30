@@ -12,8 +12,10 @@ import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pt.estga.monument.entities.Monument;
+import pt.estga.monument.mappers.MonumentMapper;
 import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
+import pt.estga.commoncore.interfaces.DivisionLookupClient;
 import pt.estga.commonweb.exceptions.GlobalExceptionHandler;
 
 import java.util.List;
@@ -33,9 +35,11 @@ class MonumentControllerTest {
 
     private final MonumentService service = mock();
     private final MonumentRepository repository = mock();
+    private final DivisionLookupClient divisionLookupClient = mock();
+    private final MonumentMapper mapper = new MonumentMapper(divisionLookupClient);
 
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
-            new MonumentController(service, repository)
+            new MonumentController(service, repository, mapper)
     ).setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .setControllerAdvice(new GlobalExceptionHandler()).build();
 
@@ -86,9 +90,9 @@ class MonumentControllerTest {
     @DisplayName("should return monuments filtered by division")
     void shouldReturnMonumentsByDivision() throws Exception {
         Page<Monument> page = new PageImpl<>(List.of(monument), PageRequest.of(0, 9), 1);
-        when(repository.findByDivisionId(eq(5L), any())).thenReturn(page);
+        when(repository.findByDivisionCode(eq("110501"), any())).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/public/monuments/division/{id}", 5L))
+        mockMvc.perform(get("/api/v1/public/monuments/division/{code}", "110501"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)));
     }

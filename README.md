@@ -88,7 +88,7 @@ Notes on service ports (as configured in `docker-compose.yml`):
 # Build all modules
 .\n+\mvnw.cmd -DskipTests clean package
 
-# Run the boot module locally (or use your IDE to run pt.estga.boot.StonemarkApplication)
+# Run the boot module locally (or use your IDE to run pt.estga.StonemarkApplication)
 cd boot
 ..\mvnw.cmd spring-boot:run
 ```

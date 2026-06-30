@@ -7,7 +7,7 @@ import pt.estga.mark.dtos.MarkEvidenceDistanceDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.mappers.MarkEvidenceMapper;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
-import pt.estga.markapi.MarkEvidenceQueryService;
+import pt.estga.mark.api.MarkEvidenceQueryService;
 import pt.estga.processing.config.ProcessingProperties;
 import pt.estga.commoncore.utils.VectorUtils;
 

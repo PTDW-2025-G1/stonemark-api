@@ -1,6 +1,6 @@
 package pt.estga.monument.dtos;
 
-import pt.estga.territory.dtos.AdministrativeDivisionDto;
+import pt.estga.commoncore.models.DivisionRef;
 
 import java.time.Instant;
 
@@ -14,7 +14,7 @@ public record MonumentDto(
         Double longitude,
         String address,
         String postalCode,
-        AdministrativeDivisionDto division,
+        DivisionRef division,
         Instant createdAt,
         Instant lastModifiedAt,
         Boolean active

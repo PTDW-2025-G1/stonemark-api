@@ -11,7 +11,7 @@ import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.models.text.RichText;
 import pt.estga.chatbot.services.messages.ResponseFactory;
 import pt.estga.chatbot.services.messages.UiTextService;
-import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;
 

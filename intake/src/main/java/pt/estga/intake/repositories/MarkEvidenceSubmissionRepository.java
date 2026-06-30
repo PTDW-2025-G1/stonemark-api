@@ -10,6 +10,4 @@ import java.util.UUID;
 
 @Repository
 public interface MarkEvidenceSubmissionRepository extends JpaRepository<MarkEvidenceSubmission, Long>, JpaSpecificationExecutor<MarkEvidenceSubmission> {
-
-    List<MarkEvidenceSubmission> findByOriginalMediaFileIdIn(List<UUID> originalMediaFileIds);
 }

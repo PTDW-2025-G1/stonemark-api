@@ -20,9 +20,13 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-spatial</artifactId>
+        </dependency>
+        <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>territory</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>common-core</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>

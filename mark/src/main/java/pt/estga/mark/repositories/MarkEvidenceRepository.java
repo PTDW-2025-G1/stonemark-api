@@ -54,8 +54,5 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 
 	Page<MarkEvidence> findAllByEmbeddingIsNotNull(Pageable pageable);
 
-	// Projection-based batch fetch to return embeddings without hydrating full entities.
-	List<EvidenceEmbeddingProjection> findAllByIdIn(List<UUID> ids);
-
 	Optional<MarkEvidence> findByFileId(UUID fileId);
 }

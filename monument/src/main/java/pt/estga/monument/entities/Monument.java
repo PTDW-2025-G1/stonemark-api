@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 import pt.estga.commoninfra.entities.BaseEntity;
-import pt.estga.territory.entities.AdministrativeDivision;
 
 @Entity
 @NoArgsConstructor
@@ -29,7 +28,7 @@ public class Monument extends BaseEntity {
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point location;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    private AdministrativeDivision division;
+    @Column(length = 8)
+    private String divisionCode;
 
 }

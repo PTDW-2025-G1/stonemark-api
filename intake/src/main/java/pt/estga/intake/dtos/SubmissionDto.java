@@ -16,6 +16,6 @@ public record SubmissionDto(
         String userNotes,
         UUID originalMediaFileId,
         Long submittedById,
-        Long divisionId,
+        String divisionCode,
         String divisionName
 ) {}
