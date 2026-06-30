@@ -2,295 +2,91 @@
 
 ## Overview
 
-The `processing` module is responsible for transforming raw evidence similarity data into ranked mark suggestions.
+The `processing` module transforms raw submission evidence into ranked mark suggestions via Vision AI detection and vector similarity search. It bridges intake (submission ingestion) and review (human decision).
 
-It implements a deterministic aggregation pipeline that:
-- Sanitizes DB results
-- Groups evidence per mark
-- Computes weighted similarity scores
-- Produces normalized rankings
-- Generates final `MarkSuggestion` outputs
+## Flow
 
-The system is designed for:
-- Determinism
-- Testability
-- Config-driven scoring behavior
-- Debuggable aggregation flow
-
----
-
-## High-Level Pipeline
-
-
-```text
-DB projections
-↓
-CandidateSanitizer
-↓
-CandidateEvidence list
-↓
-CandidateGrouper
-↓
-Grouped contributions (mark → evidence list)
-↓
-ScoreCalculator
-↓
-AggregationState (raw scores + weights)
-↓
-AggregationResultBuilder
-↓
-MarkScore list (ranked)
-↓
-SuggestionBuilder
-↓
-MarkSuggestion output
+```
+intake publishes MarkEvidenceSubmittedEvent
+  ↓
+MarkEvidenceSubmittedListener (creates PENDING placeholder, dispatches async)
+  ↓
+ProcessingServiceImpl.processSubmission() (async thread)
+  ↓
+Phase A: create or reuse processing record (pessimistic lock, idempotency)
+  ↓
+Phase B: Vision detection → embedding → pgvector similarity search
+  ↓
+Phase C: persist embedding + suggestions, mark COMPLETED
+  ↓
+ReviewService (human decides: accept suggestion / create new mark / reject)
+  ↓
+Side effects: update submission status, link evidence to mark occurrence
 ```
 
+## Core Components
 
----
+### MarkEvidenceSubmittedListener
+Receives `@ApplicationModuleListener` event. Creates a `PENDING` placeholder processing record if one doesn't exist. Re-dispatches async processing if an existing record is in `PENDING`/`FAILED` state (handles Modulith event replay). Registers `afterCommit` synchronization to dispatch async processing after the listener's transaction commits.
 
-## Core Design Principles
+### ProcessingServiceImpl
+Orchestrates the processing pipeline on an async thread. Three phases:
 
-### 1. Determinism
-All outputs are stable across runs:
-- TreeMap ordering for mark IDs
-- Explicit tie-breakers in sorting
-- Stable grouping and iteration order
+- **Phase A** (transactional): Delegates to `ProcessingPersistenceService.createOrReuseProcessingRecord()` — pessimistic lock with idempotency checks. Returns null if already `PROCESSING`/`COMPLETED`. Handles race conditions via nested `REQUIRES_NEW` transaction on `DataIntegrityViolationException`.
+- **Phase B** (non-transactional): Vision availability check, semaphore-backed Vision API call, embedding normalization, pgvector similarity search via `SimilarityService`.
+- **Phase C** (transactional): Persists embedding and suggestions, marks `COMPLETED`. Guards against reaper reset by checking status is still `PROCESSING`.
 
-### 2. Separation of Concerns
-Each component has a single responsibility:
-
-- **Sanitizer** → validates and normalizes DB input
-- **Grouper** → expands evidence into mark contributions
-- **ScoreCalculator** → computes raw scores and weights
-- **ResultBuilder** → converts scores into final ranked output
-- **SuggestionBuilder** → maps scores to persistence entities
-
----
-
-## Key Concepts
-
-### CandidateEvidence
-Represents a single similarity hit from DB:
-
-- `evidenceId`
-- `occurrenceId`
-- `similarity`
-
-This is the atomic unit of scoring.
-
----
-
-### Fan-Out Strategy
-
-Each evidence may contribute to multiple marks.
-
-Two strategies exist:
-
-- **SPLIT**
-    - contribution is divided across marks
-    - prevents score inflation
-
-- **FULL**
-    - full contribution applied to each mark
-    - increases scoring sensitivity
-
-Fan-out is computed dynamically from grouped evidence.
-
----
-
-### Decay System
-
-Within a single mark group:
-- later evidence contributions are decayed
-
-Formula:
-
-```text
-decayFactor = perMarkDecay ^ positionIndex
-```
-
-
-This reduces impact of repeated lower-ranked signals.
-
----
-
-### Confidence Score
-
-
-Final mark score:
-
-```text
-confidence = totalScore / weightSum
-```
-
-Properties:
-- normalized to [0, 1]
-- relative ranking metric (NOT probability)
-- clamped and quantized for stability
-
----
-
-## Components
-
-### CandidateSanitizer
-Responsibilities:
-- Remove invalid DB rows
-- Clamp similarity to configured bounds
-- Track anomalies
-
-Output:
-- `List<CandidateEvidence>`
-- metadata (invalid/out-of-range counts)
-
----
-
-### CandidateGrouper
-Responsibilities:
-- Group evidence by mark ID
-- Expand evidence → multiple marks
-- Sort within groups by:
-    1. similarity (desc)
-    2. occurrenceId
-    3. evidenceId
-
----
-
-### ScoreCalculator
-Responsibilities:
-- Deduplicate contributions
-- Apply decay
-- Apply rank weighting
-- Apply fan-out scaling
-- Compute:
-    - raw scores
-    - weight sums
-    - diagnostics counters
-
-Output:
-- `AggregationState`
-
----
-
-### AggregationResultBuilder
-Responsibilities:
-- Convert raw scores → normalized confidence
-- Sort results deterministically
-- Limit top-K results
-- Emit diagnostics warnings
-
-Output:
-- `AggregationResult`
-
----
-
-### MarkScoreSelector
-Responsibilities:
-- Select best score per mark
-- Resolve ties deterministically
-- Prepare data for suggestion creation
-
----
-
-### SuggestionBuilder / SuggestionFactory
-Responsibilities:
-- Convert `MarkScore` → `MarkSuggestion`
-- Ensure immutability and ordering stability
-
----
+### ProcessingPersistenceService
+Transactional wrapper for all DB state transitions: `createOrReuseProcessingRecord`, `setPending`, `setFailed`, `finalizeSuccess`. Guards `setPending`/`setFailed` against reverting `COMPLETED`/`REVIEWED` records.
 
 ### SimilarityService
-Responsibilities:
-- Orchestrate full pipeline
-- Call DB + preprocessing
-- Collect metrics
-- Enforce limits (K, distance)
-- Return final suggestions
+Simplified similarity pipeline:
+1. Convert embedding to pgvector literal
+2. Query top-K similar evidence via `MarkEvidenceQueryService.findTopKSimilar()`
+3. Filter NaN/Infinity values
+4. Fetch mark associations via `findMarksByEvidenceIds()`
+5. Group by mark ID, sum confidence
+6. Sort by confidence descending, create `MarkSuggestion` entities
 
----
+### AsyncProcessingService
+Thin `@Async` wrapper that delegates to `ProcessingServiceImpl.processSubmission()` on a dedicated thread pool.
+
+### ProcessingRetryScheduler
+Periodic (`processing.retry.interval`, default 60s): collects `PENDING`/`FAILED` records with elapsed exponential backoff. Dispatches in configurable batches with pauses. Also collects orphaned `RECEIVED` submissions without processing records. Skips when Vision service is unavailable.
+
+### ProcessingStuckReaper
+Periodic (`processing.reaper.interval`, default 1h): resets records stuck in `PROCESSING` for >30min back to `PENDING`. Uses `processingStartedAt` fence — only resets records where no progress was ever persisted (`updatedAt == processingStartedAt`).
+
+## State Machine
+
+```
+RECEIVED (intake)  →  PENDING (placeholder)  →  PROCESSING (acquired)
+  ↓                                                 ↓
+  (retry)                                           FAILED (retryable/permanent)
+                                                    ↓
+                                                  COMPLETED (suggestions ready)
+                                                    ↓
+                                                  REVIEWED (after human decision)
+```
 
 ## Configuration
 
-### ScoringPolicy
-- `useRankWeighting`
-- `perMarkDecay` (0–1)
-- `fanOutStrategy` (SPLIT / FULL)
+| Property | Default | Description |
+|----------|---------|-------------|
+| `processing.vision.max-concurrency` | 4 | Max concurrent Vision API calls |
+| `processing.vision.acquire-timeout-ms` | 10000 | Semaphore acquire timeout |
+| `processing.similarity.maxK` | 20 | Max candidates returned |
+| `processing.similarity.minScore` | 0.5 | Minimum similarity threshold (maxDistance = 1 - minScore) |
+| `processing.retry.base-delay-ms` | 60000 | Base backoff for retry |
+| `processing.retry.max-delay-ms` | 1800000 | Max backoff (30 min) |
+| `processing.retry.batch-size` | 5 | Retry/orphan batch size |
+| `processing.retry.interval` | 60000 | Retry scheduler interval |
+| `processing.reaper.max-stuck-minutes` | 30 | Stuck PROCESSING threshold |
+| `processing.reaper.interval` | 3600000 | Reaper interval (1 hour) |
 
-### SimilarityPolicy
-- `maxK`
-- `minScore`
-- `parityEnabled`
+## Review Configuration
 
-### SanitizationPolicy
-- `minSimilarity`
-- `maxSimilarity`
-
-### EmbeddingPolicy
-- embedding dimension constraints
-
----
-
-## Failure Modes & Safeguards
-
-### 1. Invalid similarity values
-→ filtered during sanitization
-
-### 2. Empty weight sums
-→ confidence = 0
-
-### 3. Missing mark mappings
-→ tracked via `missingMarkMappings`
-
-### 4. Duplicate contributions
-→ deduplicated via AggregationKey
-
-### 5. Numeric instability
-→ Kahan summation used for aggregation
-
----
-
-## Test Strategy
-
-Recommended tests:
-
-### Unit tests
-- grouping correctness
-- decay behavior
-- fan-out scaling
-- deduplication logic
-- confidence normalization
-
-### Property-based tests
-- ordering stability
-- idempotence of aggregation
-- bounded output [0,1]
-
-### Integration tests
-- DB → sanitizer → aggregation pipeline
-- full suggestion generation
-
----
-
-## Maintainability Notes
-
-- Keep scoring logic inside `ScoreCalculator`
-- Do not introduce side effects in grouper or builder
-- Avoid adding business rules to service orchestrator
-- Preserve deterministic ordering contracts
-
----
-
-## Summary
-
-This module implements a deterministic, policy-driven similarity aggregation engine with:
-
-- stable ranking behavior
-- configurable scoring model
-- clear separation of concerns
-- strong debugging visibility
-
-It is designed to be safe under:
-- noisy DB input
-- duplicate evidence
-- partial data
-- evolving scoring policies
+| Property | Default | Description |
+|----------|---------|-------------|
+| `review.allow-empty-review` | false | Allow review with no suggestions |
+| `review.new-mark.max-suggestion-confidence` | 0.5 | Threshold forcing existing mark review before new mark creation |
