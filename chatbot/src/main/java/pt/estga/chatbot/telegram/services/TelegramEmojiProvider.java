@@ -2,12 +2,10 @@ package pt.estga.chatbot.telegram.services;
 
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.constants.EmojiKey;
-import pt.estga.chatbot.services.messages.EmojiProvider;
 
-@Component("telegramEmojiProvider")
-public class TelegramEmojiProvider implements EmojiProvider {
+@Component
+public class TelegramEmojiProvider {
 
-    @Override
     public String render(EmojiKey key) {
         return switch (key) {
             case WAVE -> "👋";

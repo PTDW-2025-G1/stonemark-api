@@ -1,7 +1,6 @@
 package pt.estga.chatbot.telegram;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.models.text.RichText;
@@ -13,8 +12,8 @@ import pt.estga.chatbot.models.text.RichText.Italic;
 import pt.estga.chatbot.models.text.RichText.NewLine;
 import pt.estga.chatbot.models.text.RichText.Plain;
 import pt.estga.chatbot.models.text.RichText.Placeholder;
-import pt.estga.chatbot.services.messages.EmojiProvider;
 import pt.estga.chatbot.services.messages.TextRenderer;
+import pt.estga.chatbot.telegram.services.TelegramEmojiProvider;
 
 import java.util.List;
 
@@ -22,9 +21,9 @@ import java.util.List;
 @Slf4j
 public class TelegramRenderer implements TextRenderer {
 
-    private final EmojiProvider emojiProvider;
+    private final TelegramEmojiProvider emojiProvider;
 
-    public TelegramRenderer(@Qualifier("telegramEmojiProvider") EmojiProvider emojiProvider) {
+    public TelegramRenderer(TelegramEmojiProvider emojiProvider) {
         this.emojiProvider = emojiProvider;
     }
 
