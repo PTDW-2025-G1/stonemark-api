@@ -12,6 +12,10 @@ public interface FileStorageOperations {
 
     Optional<MediaFileDto> findById(UUID id);
 
+    boolean existsById(UUID id);
+
+    Optional<InputStream> openStream(UUID id);
+
     StagedFileRecord stage(InputStream data, String originalFilename);
 
     MediaFileDto commit(UUID stagingId, String originalFilename);
