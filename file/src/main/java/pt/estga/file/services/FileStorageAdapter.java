@@ -8,8 +8,8 @@ import pt.estga.file.mappers.MediaFileMapper;
 import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.staging.FileStagingService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
-import pt.estga.fileapi.FileStorageOperations;
-import pt.estga.fileapi.StagedFileRecord;
+import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.StagedFileRecord;
 
 import java.io.InputStream;
 import java.nio.file.Files;

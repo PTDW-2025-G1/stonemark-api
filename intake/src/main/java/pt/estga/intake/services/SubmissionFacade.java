@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionSource;

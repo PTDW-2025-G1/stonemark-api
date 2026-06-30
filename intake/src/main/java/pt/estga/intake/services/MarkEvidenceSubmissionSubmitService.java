@@ -3,7 +3,7 @@ package pt.estga.intake.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pt.estga.fileapi.FileStorageOperations;
+import pt.estga.file.api.FileStorageOperations;
 import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;

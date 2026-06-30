@@ -1,4 +1,4 @@
-package pt.estga.fileapi;
+package pt.estga.file.api;
 
 import pt.estga.file.dtos.MediaFileDto;
 

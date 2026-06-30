@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import pt.estga.file.config.StorageProperties;
-import pt.estga.fileapi.StagedFileRecord;
+import pt.estga.file.api.StagedFileRecord;
 
 import java.io.IOException;
 import java.io.InputStream;
