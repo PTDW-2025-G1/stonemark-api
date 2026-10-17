@@ -39,35 +39,32 @@ public class ReviewService {
     private final ProcessingReviewApi processingApi;
     private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
     private final MarkQueryService markQueryService;
+    private final MarkCreationSuggestionService markCreationSuggestionService;
     private final ReviewExecutor executor;
     private final MeterRegistry meterRegistry;
 
     @Value("${review.allow-empty-review:false}")
     private boolean allowEmptyReview;
 
-    @Value("${review.new-mark.max-suggestion-confidence:0.5}")
-    private double newMarkMaxSuggestionConfidence;
-
-    @Transactional
-    public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarkTitle, String comment) {
-        intakeApi.findById(submissionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
-
-        Double maxConfidence = processingApi.findOverview(submissionId)
-                .map(overview -> processingApi.maxSuggestionConfidence(overview.processingId()))
-                .orElse(null);
-        if (maxConfidence != null && maxConfidence >= newMarkMaxSuggestionConfidence) {
-            throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
-        }
-
-        DiscoveryContext ctx = new DiscoveryContext(newMarkTitle, null, null, null, null);
-        return performReview(submissionId, ReviewType.DISCOVERY, ctx, comment);
-    }
-
+    /**
+     * Accepts a submission as an existing mark.
+     */
     @Transactional
     public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
         DiscoveryContext ctx = new DiscoveryContext(null, markId, null, null, null);
         return performReview(submissionId, ReviewType.MATCH, ctx, comment);
+    }
+
+    /**
+     * Records that no existing mark matches the submission. The submission is kept
+     * as a candidate for a new mark; no mark is provisioned here. Once enough similar
+     * candidates accumulate, a mark-creation suggestion is raised for moderators.
+     */
+    @Transactional
+    public MarkEvidenceReview noMatch(Long submissionId, String comment) {
+        MarkEvidenceReview review = performReview(submissionId, ReviewType.NO_MATCH, null, comment);
+        markCreationSuggestionService.recompute();
+        return review;
     }
 
     @Transactional
@@ -94,7 +91,7 @@ public class ReviewService {
         if (processed && overview.status() != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
-        if (processed && type != ReviewType.DISCOVERY && !allowEmptyReview && suggestionCount == 0) {
+        if (processed && type == ReviewType.MATCH && !allowEmptyReview && suggestionCount == 0) {
             throw new IllegalStateException("No suggestions available to review.");
         }
         if (markEvidenceReviewRepository.existsBySubmissionId(submissionId)) {
@@ -102,7 +99,11 @@ public class ReviewService {
         }
 
         ResolutionResult resolution = resolve(type, ctx);
-        ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
+        ReviewDecision decision = switch (type) {
+            case MATCH -> ReviewDecision.APPROVED;
+            case NO_MATCH -> ReviewDecision.NO_MATCH;
+            case REJECTION -> ReviewDecision.REJECTED;
+        };
 
         try {
             MarkEvidenceReview review = executor.execute(submissionId, decision, comment, resolution);
@@ -137,21 +138,14 @@ public class ReviewService {
     private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
         return switch (type) {
             case MATCH -> {
-                MarkDto mark = ctx.existingMarkId() != null
-                        ? markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow()
-                        : null;
-                yield new ResolutionResult(mark);
-            }
-            case DISCOVERY -> {
-                MarkDto mark = null;
-                if (ctx.existingMarkId() != null) {
-                    mark = markQueryService.findMarkById(ctx.existingMarkId()).orElseThrow();
-                } else if (ctx.markTitle() != null) {
-                    mark = markQueryService.createMark(ctx.markTitle());
+                if (ctx == null || ctx.existingMarkId() == null) {
+                    throw new IllegalArgumentException("A mark id is required to accept a suggestion");
                 }
+                MarkDto mark = markQueryService.findMarkById(ctx.existingMarkId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Mark " + ctx.existingMarkId() + " not found"));
                 yield new ResolutionResult(mark);
             }
-            case REJECTION -> new ResolutionResult(null);
+            case NO_MATCH, REJECTION -> new ResolutionResult(null);
         };
     }
 
@@ -159,10 +153,10 @@ public class ReviewService {
                                         ResolutionResult resolution, boolean processed) {
         Long submissionId = submission.id();
 
-        if (decision == ReviewDecision.APPROVED) {
-            intakeApi.markProcessed(submissionId);
-        } else {
+        if (decision == ReviewDecision.REJECTED) {
             intakeApi.markRejected(submissionId);
+        } else {
+            intakeApi.markProcessed(submissionId);
         }
         try {
             meterRegistry.counter("review.applied", "decision", decision.name()).increment();
@@ -195,25 +189,9 @@ public class ReviewService {
         }
         MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(
                 markId, null, submission.latitude(), submission.longitude());
-        float[] embedding = parseEmbedding(processingApi.findEmbeddingText(submission.id()));
+        float[] embedding = processingApi.findEmbedding(submission.id()).orElse(null);
         markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), submission.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",
                 mediaFileId, occurrence.id(), submission.id());
-    }
-
-    private static float[] parseEmbedding(Optional<String> text) {
-        return text.map(t -> {
-            String trimmed = t.trim();
-            if (trimmed.isEmpty() || "[]".equals(trimmed)) return null;
-            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-                trimmed = trimmed.substring(1, trimmed.length() - 1);
-            }
-            String[] parts = trimmed.split(",");
-            float[] result = new float[parts.length];
-            for (int i = 0; i < parts.length; i++) {
-                result[i] = Float.parseFloat(parts[i].trim());
-            }
-            return result;
-        }).orElse(null);
     }
 }

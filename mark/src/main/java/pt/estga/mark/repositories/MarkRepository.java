@@ -6,6 +6,7 @@ import pt.estga.mark.entities.Mark;
 import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.jpa.repositories.BaseRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,6 @@ public interface MarkRepository extends BaseRepository<Mark, Long>, JpaSpecifica
 	List<Mark> findByStatus(PublicationStatus status);
 
 	Optional<Mark> findByIdAndStatus(Long id, PublicationStatus status);
+
+	List<Mark> findByIdInAndStatusAndDeletedAtIsNull(Collection<Long> ids, PublicationStatus status);
 }

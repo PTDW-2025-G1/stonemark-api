@@ -16,7 +16,7 @@ A module's packages are its own `entities`, `repositories`, `services`, `control
 
 | Module | Responsibility |
 |---|---|
-| `shared` | Cross-cutting bases and utilities: `AuditedEntity`, `PublishableEntity`, `SoftDeletable`, `PublicationStatus`, exceptions, `SpecBuilder`, rate limiting, `AppPrincipal`, `GeometryUtils`. Not a Modulith module. |
+| `shared` | Cross-cutting bases and utilities: `AuditedEntity`, `SoftDeletableEntity`, `PublishableEntity`, `SoftDeletable`, `PublicationStatus`, exceptions, `SpecBuilder`, rate limiting, `AppPrincipal`, `GeometryUtils`. Not a Modulith module. |
 | `file` | Media storage on the local filesystem: staging, one web derivative, public media read API. |
 | `monument` | Places: CRUD, public listing, polygon search. |
 | `user` | Accounts, profiles, the single `UserRole`. |
@@ -73,6 +73,9 @@ and fails the build on any violation.
   server is external. Internals:
   [`../processing/PROCESSING_MODULE.md`](../processing/PROCESSING_MODULE.md) and
   [`../processing/SCORING_CONTRACT.md`](../processing/SCORING_CONTRACT.md).
+- Automation policy: matching a finding to an existing mark may be auto-accepted
+  above a confidence threshold, while creating a mark is always a human decision
+  (see [`OVERVIEW.md`](OVERVIEW.md)).
 
 ## Persistence
 

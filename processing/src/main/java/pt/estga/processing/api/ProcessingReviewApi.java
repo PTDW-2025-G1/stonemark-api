@@ -2,6 +2,7 @@ package pt.estga.processing.api;
 
 import pt.estga.processing.dtos.MarkSuggestionDto;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,7 +21,11 @@ public interface ProcessingReviewApi {
 
     Double maxSuggestionConfidence(UUID processingId);
 
-    Optional<String> findEmbeddingText(Long submissionId);
+    /** The submission's embedding, when it was processed successfully. */
+    Optional<float[]> findEmbedding(Long submissionId);
+
+    /** Embeddings of the given submissions, for the ones that have one. */
+    List<SubmissionEmbedding> findEmbeddings(Collection<Long> submissionIds);
 
     void markReviewed(Long submissionId);
 

@@ -20,6 +20,7 @@ import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.core.utils.GeometryUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,9 +59,29 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     }
 
     @Override
+    public List<MarkDto> findPublishedMarksByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return markRepository.findByIdInAndStatusAndDeletedAtIsNull(ids, PublicationStatus.PUBLISHED).stream()
+                .map(MarkMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return occurrenceRepository.findByIdInAndStatusAndDeletedAtIsNull(ids, PublicationStatus.PUBLISHED).stream()
+                .map(MarkOccurrenceMapper::toDto)
+                .toList();
+    }
+
+    @Override
     @Transactional
-    public MarkDto createMark(String title) {
-        Mark mark = markRepository.save(Mark.builder().title(title).build());
+    public MarkDto createMark(String title, String description) {
+        Mark mark = markRepository.save(Mark.builder().title(title).description(description).build());
         return MarkMapper.toDto(mark);
     }
 

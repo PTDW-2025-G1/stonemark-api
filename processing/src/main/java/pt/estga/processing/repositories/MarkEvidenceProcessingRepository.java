@@ -11,6 +11,7 @@ import pt.estga.processing.entities.MarkEvidenceProcessing;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.List;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -22,6 +23,8 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
 	boolean existsBySubmissionId(Long submissionId);
 
     Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
+
+    List<MarkEvidenceProcessing> findBySubmissionIdInAndEmbeddingIsNotNull(Collection<Long> submissionIds);
 
 	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
 	Optional<ProcessingOverviewProjection> findOverviewBySubmissionId(@Param("submissionId") Long submissionId);

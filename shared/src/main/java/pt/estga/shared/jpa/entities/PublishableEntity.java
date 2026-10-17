@@ -10,24 +10,19 @@ import pt.estga.shared.core.enums.PublicationStatus;
 import java.time.Instant;
 
 /**
- * Base for publishable, audited, soft-deletable entities.
- *
- * <p>Carries a single lifecycle ({@link PublicationStatus}) plus {@code publishedAt}.
- * Rows are never physically removed in normal operation: soft deletion
- * ({@code deletedAt}) keeps them so database foreign keys remain satisfied, while
- * reads filter deleted rows out.
+ * Base for publishable entities: audited content with a lifecycle
+ * ({@link PublicationStatus}) and soft deletion inherited from
+ * {@link SoftDeletableEntity}.
  */
 @MappedSuperclass
 @Getter
-public abstract class PublishableEntity extends AuditedEntity implements SoftDeletable {
+public abstract class PublishableEntity extends SoftDeletableEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     protected PublicationStatus status = PublicationStatus.DRAFT;
 
     protected Instant publishedAt;
-
-    protected Instant deletedAt;
 
     /**
      * Moves the entity to {@link PublicationStatus#PUBLISHED}, stamping the first
@@ -46,17 +41,5 @@ public abstract class PublishableEntity extends AuditedEntity implements SoftDel
 
     public void revertToDraft() {
         this.status = PublicationStatus.DRAFT;
-    }
-
-    @Override
-    public void markDeleted() {
-        if (this.deletedAt == null) {
-            this.deletedAt = Instant.now();
-        }
-    }
-
-    @Override
-    public boolean isDeleted() {
-        return this.deletedAt != null;
     }
 }

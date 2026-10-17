@@ -2,7 +2,6 @@ package pt.estga.review.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.review.dtos.AcceptNewMarkRequest;
 import pt.estga.review.dtos.ReviewResponseDto;
 import pt.estga.review.dtos.SimpleReviewRequest;
 import pt.estga.review.enums.ReviewDecision;
@@ -56,14 +54,15 @@ public class ReviewController {
                 .body(ReviewMapper.toDto(reviewService.acceptSuggestion(submissionId, markId, comment)));
     }
 
-    @PostMapping("/{submissionId}/accept-as-new")
-    @Operation(summary = "Create a new mark and accept the submission")
-    public ResponseEntity<ReviewResponseDto> acceptAsNew(
+    @PostMapping("/{submissionId}/no-match")
+    @Operation(summary = "Record that no existing mark matches the submission (kept as a new-mark candidate)")
+    public ResponseEntity<ReviewResponseDto> noMatch(
             @PathVariable Long submissionId,
-            @Valid @RequestBody AcceptNewMarkRequest request) {
+            @RequestBody(required = false) SimpleReviewRequest request) {
 
+        var comment = request != null ? request.comment() : null;
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ReviewMapper.toDto(reviewService.acceptAsNew(submissionId, request.markTitle(), request.comment())));
+                .body(ReviewMapper.toDto(reviewService.noMatch(submissionId, comment)));
     }
 
     @PostMapping("/{submissionId}/reject")

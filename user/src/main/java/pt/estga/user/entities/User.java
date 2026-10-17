@@ -12,7 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import pt.estga.shared.jpa.entities.BaseEntity;
+import pt.estga.shared.jpa.entities.SoftDeletableEntity;
 import pt.estga.user.enums.UserRole;
 
 import java.io.Serial;
@@ -27,7 +27,7 @@ import java.util.Objects;
 @Getter
 @Setter
 @Builder
-public class User extends BaseEntity implements Serializable {
+public class User extends SoftDeletableEntity implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

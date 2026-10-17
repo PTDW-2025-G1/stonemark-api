@@ -68,6 +68,21 @@ A user holds one ordered role: `USER < REVIEWER < MODERATOR < ADMIN`, with
 capabilities inherited upward. Reviewers clear the moderation queue, moderators
 manage the catalogue, admins manage users. Contributors need no account.
 
+## Automation
+
+Work is split by what it takes to be wrong, once a trained Vision model exists:
+
+- **Occurrences are detection.** Deciding whether a finding matches an existing mark
+  is a classification the system can do: above a confidence threshold the submission
+  is accepted and its occurrence linked automatically; below it, the case is queued
+  for a human. This needs only the model.
+- **Marks are judgement.** Deciding that a set of findings is a new *design* is
+  always a human decision. The system never creates a mark; it only proposes clusters
+  of unmatched findings once enough of them accumulate, for a moderator to action.
+
+Until the model exists the pipeline is off (`processing.enabled=false`), so both
+paths are dormant and every submission is moderated by hand.
+
 ## Direction
 
 - A public catalogue UI with richer browsing and media.

@@ -1,7 +1,8 @@
 # Review module configuration
-# Controls whether non-suggested marks can be accepted during review.
 review:
-  allow-non-suggested: false
+  # Allow recording a decision when a submission has no suggestions.
   allow-empty-review: false
-  new-mark:
-    max-suggestion-confidence: 0.5
+  # Clusters of unmatched submissions become mark-creation suggestions at this size.
+  mark-creation:
+    min-cluster-size: 3
+    max-distance: 0.15

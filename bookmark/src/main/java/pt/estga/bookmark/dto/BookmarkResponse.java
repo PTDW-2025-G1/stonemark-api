@@ -1,14 +1,19 @@
 package pt.estga.bookmark.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import pt.estga.bookmark.enums.BookmarkTargetType;
+import pt.estga.mark.dtos.MarkDto;
+import pt.estga.mark.dtos.MarkOccurrenceDto;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Schema(description = "Response representation for a bookmark with resolved target content.")
-@JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * A bookmark with its resolved target. The field matching the bookmark's
+ * {@code type} is populated only while the target is available (published); a null
+ * target means it is no longer available.
+ */
+@Schema(description = "A bookmark with its resolved target content.")
 public record BookmarkResponse(
         @Schema(description = "Unique bookmark identifier.")
         UUID id,
@@ -17,12 +22,15 @@ public record BookmarkResponse(
         BookmarkTargetType type,
 
         @Schema(description = "ID of the bookmarked resource.")
-        String targetId,
+        Long targetId,
 
         @Schema(description = "Timestamp when the bookmark was created.")
         Instant createdAt,
 
-        @Schema(description = "Resolved target resource content. Type varies based on 'type' field.")
-        BookmarkContent content
+        @Schema(description = "The bookmarked mark, or null when it is no longer available.")
+        MarkDto mark,
+
+        @Schema(description = "The bookmarked occurrence, or null when it is no longer available.")
+        MarkOccurrenceDto occurrence
 ) {
 }
