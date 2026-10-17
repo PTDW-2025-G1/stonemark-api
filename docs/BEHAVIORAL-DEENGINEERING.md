@@ -3,7 +3,7 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
-**Status:** §4 joins (`vision`→`processing`, `verification`→`user`, `notification`→`support`) **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
+**Status:** §4 joins **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §5 `modules.verify()` **enforced**. §2 (`processing` scaffolding) **pending — gated on P3**.
 
 ## Principles
 
@@ -73,19 +73,21 @@
 
 **Behavior impact:** none. Verified by the build.
 
-## 5. Enforce `modules.verify()`
+## 5. Enforce `modules.verify()` — ✅ Done
 
-**What exists.** `ModulithVerificationTest` prints violations but never fails the build. The current set (as of P4) still lists many cross-module references — notably `review`→`processing`/`mark`, `chatbot`→`intake`/`file`/`user`, `verification`→`user`, `processing`→`intake`. Several are declared `allowedDependencies` yet still reported, a residue of the old `*-api` split (partly resolved by P4).
+**Resolved.** Boundaries are now enforced: `ModulithVerificationTest` calls `ApplicationModules.of(StonemarkApplication.class).verify()` with no catch, so any cross-module access that leaves an exposed named interface **fails the build**.
 
-**Why it matters.** Without enforcement the boundaries erode silently — the original problem this whole effort started from.
+The work to get there:
+1. **Composition-root leaks** fixed — `EmailAdminController` moved into `support`; `ProcessingProperties` registered inside `processing`.
+2. **Named interfaces** declared for the genuine contract packages (`file::api`/`dtos`, `mark::api`/`dtos`, `user::api`/`dtos`, `intake::events`/`enums`, `processing::dtos`/`enums`) and `allowedDependencies` tightened to reference them.
+3. **APIs extracted** for the remaining internal access:
+   - `intake::api` — `IntakeSubmissionApi` (+ `SubmissionRef`) so `processing`/`review` stop touching `intake.repositories`/`entities`.
+   - `processing::api` — `ProcessingReviewApi` (+ `ProcessingOverview`, `ProcessingModerationView`) so `review` stops touching `processing.repositories`/`entities`/`mappers`.
+   - `mark::api` — `MarkQueryService.findProvisionalMarks()` so `review` stops touching `mark.repositories`/`entities`.
 
-**Options.**
-- **A — Keep informational.**
-- **B — Make it fail**, after routing cross-module access through `.api`/`@NamedInterface` and correcting `allowedDependencies`.
+`review` and `processing` now depend only on exposed interfaces of other modules. `verify()` passes with **zero violations**.
 
-**Recommendation: B, as a dedicated follow-up.** First re-run `verify()` now that P4 landed and triage the remaining set — some entries may already be resolved or misreported.
-
-**Behavior impact:** none; it adds a guardrail.
+**Behavior impact:** none beyond the delegations; the review side-effect logic is unchanged in substance.
 
 ## Sequencing
 
@@ -103,7 +105,7 @@
 - **D1 — `file` derivatives:** ✅ **1** (`OPTIMIZED`). `THUMBNAIL`/`PREVIEW` and the `/thumbnail`/`/preview` endpoints removed.
 - **D2 — `chatbot`:** ✅ **removed** (module deleted; Telegram was a dev stand-in only).
 - **D3 — `notification` home:** ✅ **folded into `support`**.
-- **D4 — enforce `modules.verify()`:** now / after boundary cleanup (recommend after).
+- **D4 — enforce `modules.verify()`:** ✅ **enforced** (build fails on boundary violations; zero violations today).
 
 ## Explicitly out of scope
 

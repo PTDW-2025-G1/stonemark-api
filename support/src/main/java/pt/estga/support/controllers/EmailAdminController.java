@@ -1,13 +1,13 @@
-package pt.estga;
+package pt.estga.support.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.shared.web.dtos.MessageResponseDto;
 import pt.estga.support.notification.models.Email;
 import pt.estga.support.notification.services.EmailService;
-import pt.estga.shared.web.dtos.MessageResponseDto;
 
 import java.util.Map;
 

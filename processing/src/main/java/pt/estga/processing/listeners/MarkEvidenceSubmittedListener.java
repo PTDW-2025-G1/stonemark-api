@@ -2,13 +2,15 @@ package pt.estga.processing.listeners;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
@@ -22,11 +24,12 @@ import java.time.Instant;
 @ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class MarkEvidenceSubmittedListener {
 
-    private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final IntakeSubmissionApi intakeApi;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final AsyncProcessingService asyncProcessingService;
 
-    @ApplicationModuleListener
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
         Long submissionId = event.submissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
@@ -54,14 +57,22 @@ public class MarkEvidenceSubmittedListener {
         }
 
         if (needsDispatch) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
-                        asyncProcessingService.processAsync(submission.getId());
-                    }, () -> log.warn("Submission {} not found for processing dispatch", submissionId));
-                }
-            });
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        dispatch(submissionId);
+                    }
+                });
+            } else {
+                dispatch(submissionId);
+            }
         }
+    }
+
+    private void dispatch(Long submissionId) {
+        intakeApi.findById(submissionId).ifPresentOrElse(
+                submission -> asyncProcessingService.processAsync(submission.id()),
+                () -> log.warn("Submission {} not found for processing dispatch", submissionId));
     }
 }

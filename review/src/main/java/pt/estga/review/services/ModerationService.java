@@ -3,34 +3,31 @@ package pt.estga.review.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.mark.api.MarkQueryService;
+import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.review.dtos.ModerationDtos;
 import pt.estga.shared.core.enums.ValidationState;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ModerationService {
 
-    private final MarkSuggestionRepository suggestionRepository;
-    private final MarkRepository markRepository;
+    private final ProcessingReviewApi processingApi;
+    private final MarkQueryService markQueryService;
 
     public List<ModerationDtos.ProcessingDto> findProcessingByConfidence(double min, double max) {
-        return suggestionRepository.findProcessingByMaxConfidenceBetween(min, max)
-                .stream()
-                .map(p -> new ModerationDtos.ProcessingDto(
-                        p.getProcessingId(), p.getSubmissionId(), p.getStatus(), p.getMaxConfidence()))
-                .collect(Collectors.toList());
+        return processingApi.findProcessingByConfidence(min, max).stream()
+                .map(v -> new ModerationDtos.ProcessingDto(
+                        v.processingId(), v.submissionId(), v.status(), v.maxConfidence()))
+                .toList();
     }
 
     public List<ModerationDtos.MarkDto> findProvisionalMarks() {
-        return markRepository.findByValidationState(ValidationState.PROVISIONAL)
-                .stream()
-                .map(m -> new ModerationDtos.MarkDto(m.getId(), m.getTitle(), m.getValidationState()))
-                .collect(Collectors.toList());
+        return markQueryService.findProvisionalMarks().stream()
+                .map(m -> new ModerationDtos.MarkDto(m.id(), m.title(), ValidationState.PROVISIONAL))
+                .toList();
     }
 }

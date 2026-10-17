@@ -9,24 +9,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.shared.web.exceptions.ResourceNotFoundException;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.intake.api.IntakeSubmissionApi;
+import pt.estga.intake.api.SubmissionRef;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.processing.api.ProcessingOverview;
+import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.processing.mappers.MarkSuggestionMapper;
-import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,9 +35,8 @@ import java.util.UUID;
 @Slf4j
 public class ReviewService {
 
-    private final MarkEvidenceSubmissionRepository submissionRepository;
-    private final MarkEvidenceProcessingRepository processingRepository;
-    private final MarkSuggestionRepository suggestionRepository;
+    private final IntakeSubmissionApi intakeApi;
+    private final ProcessingReviewApi processingApi;
     private final MarkEvidenceReviewRepository markEvidenceReviewRepository;
     private final MarkQueryService markQueryService;
     private final ReviewExecutor executor;
@@ -53,11 +50,11 @@ public class ReviewService {
 
     @Transactional
     public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarkTitle, String comment) {
-        submissionRepository.findById(submissionId)
+        intakeApi.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-        Double maxConfidence = processingRepository.findOverviewBySubmissionId(submissionId)
-                .map(overview -> suggestionRepository.findMaxConfidenceByProcessingId(overview.getId()))
+        Double maxConfidence = processingApi.findOverview(submissionId)
+                .map(overview -> processingApi.maxSuggestionConfidence(overview.processingId()))
                 .orElse(null);
         if (maxConfidence != null && maxConfidence >= newMarkMaxSuggestionConfidence) {
             throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
@@ -81,21 +78,20 @@ public class ReviewService {
     /**
      * Records a moderation decision for a submission and persists it as a label.
      *
-     * <p>Processing is optional. A submission that was never processed by the AI
-     * pipeline can still be moderated manually — that is how the labelled corpus the
-     * model will later learn from is built. When a processing record exists, its
-     * status and suggestions gate the decision as before.
+     * <p>Processing is optional: a submission that was never processed can still be
+     * moderated manually. When a processing record exists, its status and suggestions
+     * gate the decision.
      */
     @Transactional
     public MarkEvidenceReview performReview(Long submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
-        var submission = submissionRepository.findById(submissionId)
+        SubmissionRef submission = intakeApi.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-        var overview = processingRepository.findOverviewBySubmissionId(submissionId).orElse(null);
+        ProcessingOverview overview = processingApi.findOverview(submissionId).orElse(null);
         boolean processed = overview != null;
-        long suggestionCount = processed ? suggestionRepository.countByProcessingId(overview.getId()) : 0L;
+        long suggestionCount = processed ? processingApi.countSuggestions(overview.processingId()) : 0L;
 
-        if (processed && overview.getStatus() != ProcessingStatus.COMPLETED) {
+        if (processed && overview.status() != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
         if (processed && type != ReviewType.DISCOVERY && !allowEmptyReview && suggestionCount == 0) {
@@ -109,8 +105,7 @@ public class ReviewService {
         ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
 
         try {
-            MarkEvidenceReview review = executor.execute(
-                    submission, decision, comment, resolution, processed ? overview.getId() : null);
+            MarkEvidenceReview review = executor.execute(submissionId, decision, comment, resolution);
             applyReviewSideEffects(submission, decision, resolution, processed);
             return review;
         } catch (DataIntegrityViolationException dive) {
@@ -120,12 +115,9 @@ public class ReviewService {
 
     @Transactional(readOnly = true)
     public List<MarkSuggestionDto> getSuggestions(Long submissionId) {
-        return processingRepository.findBySubmissionId(submissionId)
-                .map(p -> suggestionRepository.findByProcessingId(p.getId())
-                        .stream()
-                        .map(MarkSuggestionMapper::toDto)
-                        .toList())
+        ProcessingOverview overview = processingApi.findOverview(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Suggestions not found"));
+        return processingApi.findSuggestions(overview.processingId());
     }
 
     @Transactional(readOnly = true)
@@ -163,33 +155,27 @@ public class ReviewService {
         };
     }
 
-    private void applyReviewSideEffects(MarkEvidenceSubmission submission, ReviewDecision decision,
+    private void applyReviewSideEffects(SubmissionRef submission, ReviewDecision decision,
                                         ResolutionResult resolution, boolean processed) {
-        Long submissionId = submission.getId();
-        SubmissionStatus targetStatus = decision == ReviewDecision.APPROVED
-                ? SubmissionStatus.PROCESSED : SubmissionStatus.REJECTED;
+        Long submissionId = submission.id();
 
-        if (submission.getStatus() != targetStatus) {
-            if (targetStatus == SubmissionStatus.PROCESSED) submission.markProcessed();
-            else submission.markRejected();
-            submissionRepository.save(submission);
-            try {
-                meterRegistry.counter("review.applied", "decision", decision.name()).increment();
-            } catch (Exception ex) {
-                log.debug("Failed to increment review.applied metric: {}", ex.getMessage());
-            }
+        if (decision == ReviewDecision.APPROVED) {
+            intakeApi.markProcessed(submissionId);
+        } else {
+            intakeApi.markRejected(submissionId);
+        }
+        try {
+            meterRegistry.counter("review.applied", "decision", decision.name()).increment();
+        } catch (Exception ex) {
+            log.debug("Failed to increment review.applied metric: {}", ex.getMessage());
         }
 
         if (processed) {
-            try {
-                processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
-            } catch (Exception ex) {
-                log.error("Failed to mark processing REVIEWED for submission {}", submissionId, ex);
-            }
+            processingApi.markReviewed(submissionId);
         }
 
         if (decision == ReviewDecision.APPROVED && resolution != null && resolution.mark() != null) {
-            linkEvidenceToMark(submissionId, submission.getOriginalMediaFileId(), resolution.mark().id());
+            linkEvidenceToMark(submissionId, submission.originalMediaFileId(), resolution.mark().id());
         }
     }
 
@@ -206,7 +192,7 @@ public class ReviewService {
             throw new IllegalStateException("Submission " + submissionId + " has no media to link");
         }
         MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, true);
-        float[] embedding = parseEmbedding(processingRepository.findEmbeddingTextBySubmissionId(submissionId));
+        float[] embedding = parseEmbedding(processingApi.findEmbeddingText(submissionId));
         markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",
                 mediaFileId, occurrence.id(), submissionId);

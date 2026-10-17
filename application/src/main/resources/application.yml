@@ -33,10 +33,6 @@ spring:
     locations: classpath:db/migration
   modulith:
     detection-strategy: explicitly-annotated
-    events:
-      completion-mode: update
-      jdbc-schema-initialization:
-        enabled: false
   jackson:
     deserializer:
       read_enum_values_using_index: false

@@ -106,11 +106,12 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 
 ## Notes
 
-- Build + tests verified: `mvn -B clean test`, 13 modules, **BUILD SUCCESS**, 46 tests, 0 failures (Docker; no local JDK).
+- Build + tests verified: `mvn -B clean test`, 12 modules, **BUILD SUCCESS**, 44 tests, 0 failures (Docker; no local JDK).
 - **Chatbot removed** (Telegram ingestion); the app needs no Telegram config.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
 - Automatic approval is **gated on data** — it is P3, not P1.
-- The Modulith verification test still only *prints* violations (informational); enforcing it is deferred until the remaining boundary violations are routed through the `.api` packages.
+- The Modulith verification test now **fails the build** on boundary violations (enforced; zero violations).
+- Modulith is used for **boundary verification only**. Its event registry (`spring-modulith-starter-jpa` / `events-api` / `event_publication` table) was dropped; the single async listener now uses Spring's `@TransactionalEventListener(AFTER_COMMIT)` + `@Async`.
 - Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

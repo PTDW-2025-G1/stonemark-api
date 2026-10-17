@@ -16,6 +16,8 @@ public interface MarkQueryService {
 
     List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
 
+    List<MarkDto> findProvisionalMarks();
+
     MarkDto createMark(String title);
 
     MarkOccurrenceDto findOrCreateOccurrence(Long markId, boolean approved);

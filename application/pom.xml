@@ -117,11 +117,7 @@
             <artifactId>pgvector</artifactId>
         </dependency>
 
-        <!-- Spring Modulith -->
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-jpa</artifactId>
-        </dependency>
+        <!-- Spring Modulith (verification only; no event registry) -->
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-starter-test</artifactId>

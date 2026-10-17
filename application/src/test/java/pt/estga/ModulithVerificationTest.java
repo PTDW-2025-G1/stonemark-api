@@ -3,17 +3,14 @@ package pt.estga;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 
+/**
+ * Enforces the module boundaries: any cross-module access that goes outside an
+ * exposed named interface fails the build.
+ */
 class ModulithVerificationTest {
 
     @Test
     void verifyModules() {
-        ApplicationModules modules = ApplicationModules.of(StonemarkApplication.class);
-
-        try {
-            modules.verify();
-        } catch (Exception e) {
-            System.err.println("Modulith violations detected (informational - not failing build):");
-            System.err.println(e.getMessage());
-        }
+        ApplicationModules.of(StonemarkApplication.class).verify();
     }
 }
