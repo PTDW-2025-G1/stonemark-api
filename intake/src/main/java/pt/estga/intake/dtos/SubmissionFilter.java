@@ -10,6 +10,5 @@ public record SubmissionFilter(
         SubmissionSource source,
         Long submittedById,
         Instant submittedAfter,
-        Instant submittedBefore,
-        String divisionCode
+        Instant submittedBefore
 ) {}

@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.shared.core.interfaces.DivisionLookupClient;
 import pt.estga.shared.core.utils.SecurityUtils;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.file.api.StagedFileRecord;
@@ -21,8 +20,8 @@ import java.util.Optional;
 /**
  * Entry point for creating submissions from external channels (web, chatbot).
  *
- * <p>Deliberately not transactional: slow external work (file staging, reverse
- * geocoding) happens outside the database transaction that persists the submission.
+ * <p>Deliberately not transactional: slow external work (file staging) happens
+ * outside the database transaction that persists the submission.
  * The database write is delegated to {@link MarkEvidenceSubmissionSubmitService},
  * which stores the media object and the submission row in one transaction and
  * compensates object storage on rollback.
@@ -36,7 +35,6 @@ public class SubmissionFacade {
     private final MarkEvidenceSubmissionSubmitService submitService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final SubmissionMapper submissionMapper;
-    private final DivisionLookupClient divisionLookupClient;
 
     /**
      * Submits evidence from the public web flow.
@@ -60,7 +58,6 @@ public class SubmissionFacade {
             }
         }
 
-        String divisionCode = resolveDivisionCode(latitude, longitude);
         StagedFileRecord staged = fileStorage.stage(file.getInputStream(), file.getOriginalFilename());
 
         MarkEvidenceSubmission submission = MarkEvidenceSubmission.builder()
@@ -68,7 +65,6 @@ public class SubmissionFacade {
                 .longitude(longitude)
                 .userNotes(notes)
                 .submissionSource(SubmissionSource.WEB_APP)
-                .divisionCode(divisionCode)
                 .idempotencyKey(key)
                 .build();
         SecurityUtils.getCurrentUserId().ifPresent(submission::setSubmittedById);
@@ -88,20 +84,6 @@ public class SubmissionFacade {
         } catch (RuntimeException e) {
             discardStagedQuietly(staged);
             throw e;
-        }
-    }
-
-    private String resolveDivisionCode(Double latitude, Double longitude) {
-        if (latitude == null || longitude == null) {
-            return null;
-        }
-        try {
-            return divisionLookupClient.resolveByCoordinates(latitude, longitude)
-                    .map(division -> division.code())
-                    .orElse(null);
-        } catch (Exception e) {
-            log.warn("Division lookup failed for ({}, {}): {}", latitude, longitude, e.getMessage());
-            return null;
         }
     }
 

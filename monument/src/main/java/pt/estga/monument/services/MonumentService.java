@@ -20,7 +20,6 @@ public class MonumentService {
 
     public Page<Monument> search(MonumentFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<Monument>()
-                .eq("divisionCode", filter.divisionCode())
                 .like("name", filter.name());
         return repository.findAll(sb.build(), pageable);
     }

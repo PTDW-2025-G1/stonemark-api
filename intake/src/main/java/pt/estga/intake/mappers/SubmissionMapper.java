@@ -1,21 +1,14 @@
 package pt.estga.intake.mappers;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pt.estga.shared.core.interfaces.DivisionLookupClient;
-import pt.estga.shared.core.models.DivisionRef;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 
 @Component
-@RequiredArgsConstructor
 public class SubmissionMapper {
-
-    private final DivisionLookupClient divisionLookupClient;
 
     public SubmissionDto toDto(MarkEvidenceSubmission s) {
         if (s == null) return null;
-        String divisionName = resolveDivisionName(s.getDivisionCode());
         return new SubmissionDto(
                 s.getId(),
                 s.getStatus(),
@@ -25,16 +18,7 @@ public class SubmissionMapper {
                 s.getLongitude(),
                 s.getUserNotes(),
                 s.getOriginalMediaFileId(),
-                s.getSubmittedById(),
-                s.getDivisionCode(),
-                divisionName
+                s.getSubmittedById()
         );
-    }
-
-    private String resolveDivisionName(String code) {
-        if (code == null || code.isBlank()) return null;
-        return divisionLookupClient.findByCode(code)
-                .map(DivisionRef::name)
-                .orElse(null);
     }
 }

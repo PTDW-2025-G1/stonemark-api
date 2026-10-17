@@ -40,10 +40,9 @@ public class MonumentController {
     @GetMapping
     public ResponseEntity<Page<MonumentListDto>> findAll(
             @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) String divisionCode,
             @RequestParam(required = false) String name
     ) {
-        MonumentFilter filter = new MonumentFilter(divisionCode, name);
+        MonumentFilter filter = new MonumentFilter(name);
         return ResponseEntity.ok(service.search(filter, pageable).map(mapper::toListDto));
     }
 
@@ -53,13 +52,5 @@ public class MonumentController {
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
         return ResponseEntity.ok(repository.findByPolygon(request.geoJson(), pageable).map(mapper::toListDto));
-    }
-
-    @GetMapping("/division/{code}")
-    public ResponseEntity<Page<MonumentListDto>> getMonumentsByDivision(
-            @PathVariable String code,
-            @PageableDefault(size = 9, sort = "name") Pageable pageable
-    ) {
-        return ResponseEntity.ok(repository.findByDivisionCode(code, pageable).map(mapper::toListDto));
     }
 }

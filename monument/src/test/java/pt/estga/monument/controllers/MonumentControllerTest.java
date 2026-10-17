@@ -15,7 +15,6 @@ import pt.estga.monument.entities.Monument;
 import pt.estga.monument.mappers.MonumentMapper;
 import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
-import pt.estga.shared.core.interfaces.DivisionLookupClient;
 import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,8 +33,7 @@ class MonumentControllerTest {
 
     private final MonumentService service = mock();
     private final MonumentRepository repository = mock();
-    private final DivisionLookupClient divisionLookupClient = mock();
-    private final MonumentMapper mapper = new MonumentMapper(divisionLookupClient);
+    private final MonumentMapper mapper = new MonumentMapper();
 
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
             new MonumentController(service, repository, mapper)
@@ -84,16 +81,5 @@ class MonumentControllerTest {
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Test Monument"));
-    }
-
-    @Test
-    @DisplayName("should return monuments filtered by division")
-    void shouldReturnMonumentsByDivision() throws Exception {
-        Page<Monument> page = new PageImpl<>(List.of(monument), PageRequest.of(0, 9), 1);
-        when(repository.findByDivisionCode(eq("110501"), any())).thenReturn(page);
-
-        mockMvc.perform(get("/api/v1/public/monuments/division/{code}", "110501"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 }

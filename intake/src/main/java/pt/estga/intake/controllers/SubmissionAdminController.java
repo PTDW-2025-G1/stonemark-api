@@ -36,9 +36,8 @@ public class SubmissionAdminController {
             @RequestParam(required = false) SubmissionSource source,
             @RequestParam(required = false) Long submittedById,
             @RequestParam(required = false) Instant submittedAfter,
-            @RequestParam(required = false) Instant submittedBefore,
-            @RequestParam(required = false) String divisionCode) {
-        SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore, divisionCode);
+            @RequestParam(required = false) Instant submittedBefore) {
+        SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore);
         return ResponseEntity.ok(submissionService.search(filter, pageable));
     }
 

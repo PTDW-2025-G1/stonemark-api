@@ -28,7 +28,4 @@ public class Monument extends BaseEntity {
     @Column(columnDefinition = "geometry(Point, 4326)")
     private Point location;
 
-    @Column(length = 8)
-    private String divisionCode;
-
 }

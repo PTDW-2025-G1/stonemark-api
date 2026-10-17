@@ -25,7 +25,6 @@ public class SubmissionService {
                 .eq("status", filter.status())
                 .eq("submissionSource", filter.source())
                 .eq("submittedById", filter.submittedById())
-                .eq("divisionCode", filter.divisionCode())
                 .afterOrEqual("submittedAt", filter.submittedAfter())
                 .beforeOrEqual("submittedAt", filter.submittedBefore());
         return submissionRepository.findAll(sb.build(), pageable).map(submissionMapper::toDto);
