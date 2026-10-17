@@ -38,7 +38,6 @@
         <!-- Higher-order services -->
         <module>processing</module>
         <module>review</module>
-        <module>chatbot</module>
 
         <!-- Entry point: depends on everything -->
         <module>application</module>
@@ -131,11 +130,6 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>review</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>chatbot</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

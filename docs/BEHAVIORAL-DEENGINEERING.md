@@ -3,7 +3,7 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
-**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **parked**. §1 (`file` variants), §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
+**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **removed**. §1 (`file` variants), §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
 
 ## Principles
 
@@ -59,13 +59,11 @@
 - **B — Simplify to a linear ingestion flow** (photo → optional location → optional notes → submit), dropping the general engine, the UI component model and i18n (single locale).
 - **C — Park the module** (leave the code, disable the channel).
 
-**Resolved: C (parked).** The channel was removed at the **composition root**: `chatbot` is no longer a dependency of `application` and is no longer in `spring.profiles.include`, so it is not on the runtime classpath. The module, its code and its 41 tests still build in the reactor.
+**Resolved: removed.** The module was deleted (recoverable from git history). It was never used in production — Telegram was only ever a development stand-in for the stakeholder's WhatsApp idea — and it was a **launch blocker**: the app would not boot without `TELEGRAM_BOT_TOKEN` (`TelegramBotConfig.@PostConstruct` throws, the bot sets its webhook at startup, readiness health depended on Telegram). Web submission remains the only channel and is unaffected.
 
-This also removes a **launch blocker**: previously the app would not boot without `TELEGRAM_BOT_TOKEN` (`TelegramBotConfig.@PostConstruct` throws, the bot sets its webhook at startup, and readiness health depended on Telegram). No Telegram configuration is needed now.
+**Now orphaned (kept, per owner guidance — flag for a later decision):** `user.verification.*` (`ChatbotVerificationService`, `ActionCode`, `AccountVerificationController`) and `intake`'s `submitStaged` existed only for the chatbot channel.
 
-**What is now dormant:** Telegram ingestion, the chatbot identity-verification flow (kept in `user.verification`), and `intake.submitStaged` (kept).
-
-**Behavior impact.** Web submission is unaffected and remains the only channel. Re-enabling is one dependency line.
+**Behavior impact.** Web submission is unaffected and is the only channel. Recovering the code is a `git revert` away.
 
 **Note on WhatsApp.** Telegram was the development stand-in for the stakeholder's WhatsApp idea. WhatsApp is a **separate integration** (Meta WhatsApp Business Cloud API: business account, dedicated number, webhook verification, approved templates) — not a config switch. The flow/handlers are reusable groundwork; a WhatsApp adapter would be a new, separate piece of work.
 
@@ -111,7 +109,7 @@ Ideally done in P4; listed here because they touch small modules whose home is a
 ## Open decisions
 
 - **D1 — `file` derivatives:** 3 / 1 / none (recommend 1).
-- **D2 — `chatbot`:** ✅ **parked** at the composition root (module kept, not wired into the app).
+- **D2 — `chatbot`:** ✅ **removed** (module deleted; Telegram was a dev stand-in only).
 - **D3 — `notification` home:** keep standalone / fold into `support` (recommend fold).
 - **D4 — enforce `modules.verify()`:** now / after boundary cleanup (recommend after).
 
