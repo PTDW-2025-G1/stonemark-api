@@ -25,9 +25,6 @@ public class SecurityConfig {
     @Value("${telegram.bot.webhook-path}")
     private String telegramWebhookPath;
 
-    @Value("${whatsapp.bot.webhook-path}")
-    private String whatsappWebhookPath;
-
     @Value("${chatbot.auth.optional:true}")
     private boolean chatbotAuthOptional;
 
@@ -93,9 +90,9 @@ public class SecurityConfig {
                         auth.anyRequest().permitAll();
                     } else {
                         if (chatbotAuthOptional) {
-                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).permitAll();
+                            auth.requestMatchers(telegramWebhookPath).permitAll();
                         } else {
-                            auth.requestMatchers(telegramWebhookPath, whatsappWebhookPath).authenticated();
+                            auth.requestMatchers(telegramWebhookPath).authenticated();
                         }
 
                         auth.anyRequest().authenticated();

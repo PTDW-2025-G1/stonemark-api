@@ -25,35 +25,30 @@
         <!-- Foundation: no internal dependencies -->
         <module>common-core</module>
         <module>common-web</module>
-        <module>file-api</module>
-        <module>mark-api</module>
         <module>notification</module>
         <module>vision</module>
 
         <!-- Infrastructure layer -->
-        <module>common-infra</module>       <!-- needs shared-core -->
-        <module>user-api</module>           <!-- needs file-api -->
+        <module>common-infra</module>
 
         <!-- Domain services -->
-        <module>file</module>               <!-- needs file-api, shared-web, shared-infra -->
-        <module>monument</module>           <!-- needs shared-core, shared-web, shared-infra -->
-        <module>user</module>               <!-- needs user-api, file-api, shared-web, shared-infra -->
-        <module>verification</module>       <!-- needs shared-web, shared-infra, user-api -->
-        <module>mark</module>               <!-- needs monument, file-api, vision, shared-web, shared-infra, mark-api -->
-        <module>support</module>            <!-- needs shared-web, user-api, notification, shared-infra -->
-        <module>bookmark</module>           <!-- needs shared-web, mark-api, user-api -->
-        <module>intake</module>             <!-- needs shared-infra, file-api, user-api, mark-api -->
-
+        <module>file</module>
+        <module>monument</module>
+        <module>user</module>
+        <module>verification</module>
+        <module>mark</module>
+        <module>support</module>
+        <module>bookmark</module>
+        <module>intake</module>
 
         <!-- Higher-order services -->
-        <module>processing</module>         <!-- needs file, mark-api, intake, vision, monument -->
-        <module>review</module>             <!-- needs processing, shared-infra, mark, user -->
-        <module>chatbot</module>            <!-- needs file, user, intake, verification -->
+        <module>processing</module>
+        <module>review</module>
+        <module>chatbot</module>
 
         <!-- Entry point: depends on everything -->
         <module>application</module>
         <module>auth</module>
-        <module>intake-api</module>
     </modules>
     <scm>
 		<connection/>
@@ -116,27 +111,7 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>mark-api</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>intake-api</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>user-api</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
                 <artifactId>user</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>file-api</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

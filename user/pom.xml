@@ -21,12 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>user-api</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>file-api</artifactId>
+            <artifactId>file</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

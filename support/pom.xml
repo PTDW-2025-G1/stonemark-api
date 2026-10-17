@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>user-api</artifactId>
+            <artifactId>user</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

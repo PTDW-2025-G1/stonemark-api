@@ -7,9 +7,3 @@ telegram:
     username: stonemarkbot
     token: ${TELEGRAM_BOT_TOKEN}
     webhook-path: /webhook/telegram
-
-whatsapp:
-  bot:
-    token: ${WHATSAPP_BOT_TOKEN}
-    webhook-path: /webhook/whatsapp
-    phone-number-id: 993756740480737

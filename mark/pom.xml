@@ -26,11 +26,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>file-api</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>vision</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
@@ -47,11 +42,6 @@
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>common-infra</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>mark-api</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
     </dependencies>
