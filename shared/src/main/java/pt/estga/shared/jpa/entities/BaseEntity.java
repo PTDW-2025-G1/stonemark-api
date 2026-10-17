@@ -11,7 +11,7 @@ import java.time.Instant;
 
 @MappedSuperclass
 @Getter
-public abstract class BaseEntity extends AuditedEntity {
+public abstract class BaseEntity extends AuditedEntity implements SoftDeletable {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -19,11 +19,13 @@ public abstract class BaseEntity extends AuditedEntity {
 
     protected Instant deletedAt;
 
+    @Override
     public void markDeleted() {
         if (this.deletedAt != null) return;
         this.deletedAt = Instant.now();
     }
 
+    @Override
     public boolean isDeleted() {
         return deletedAt != null;
     }

@@ -29,7 +29,7 @@ public class ModerationController {
     }
 
     @GetMapping("/discovery/marks")
-    public ResponseEntity<List<ModerationDtos.MarkDto>> provisionalMarks() {
-        return ResponseEntity.ok(moderationService.findProvisionalMarks());
+    public ResponseEntity<List<ModerationDtos.MarkDto>> draftMarks() {
+        return ResponseEntity.ok(moderationService.findDraftMarks());
     }
 }

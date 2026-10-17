@@ -5,8 +5,8 @@ import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
 import pt.estga.monument.entities.Monument;
-import pt.estga.monument.utils.GeometryUtils;
 import pt.estga.shared.core.enums.EntityStatus;
+import pt.estga.shared.core.utils.GeometryUtils;
 
 @Component
 public class MonumentMapper {

@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence, Long> {
 
-    Optional<MarkOccurrence> findByMarkIdAndMonumentIdIsNull(Long markId);
-
+    Optional<MarkOccurrence> findByMarkIdAndMonumentId(Long markId, Long monumentId);
 }

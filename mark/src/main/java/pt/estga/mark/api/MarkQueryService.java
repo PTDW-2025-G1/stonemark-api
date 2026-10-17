@@ -16,11 +16,17 @@ public interface MarkQueryService {
 
     List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
 
-    List<MarkDto> findProvisionalMarks();
+    List<MarkDto> findDraftMarks();
 
     MarkDto createMark(String title);
 
-    MarkOccurrenceDto findOrCreateOccurrence(Long markId, boolean approved);
+    /**
+     * Returns the occurrence of the given mark at the given place, creating it when
+     * none exists yet. A {@code monumentId} identifies the place when it is known
+     * and is deduplicated per mark; otherwise the coordinates are recorded on a new
+     * occurrence (both may be absent, which is a valid unlocated occurrence).
+     */
+    MarkOccurrenceDto findOrCreateOccurrence(Long markId, Long monumentId, Double latitude, Double longitude);
 
-    void linkFileToOccurrence(UUID fileId, Long occurrenceId, float[] embedding);
+    void linkFileToOccurrence(UUID fileId, Long occurrenceId, Long submissionId, float[] embedding);
 }

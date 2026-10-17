@@ -7,6 +7,7 @@ public record MarkEvidenceDto(
         UUID fileId,
         Long occurrenceId,
         Long markId,
+        Long submissionId,
         float[] embedding
 ) {
 }

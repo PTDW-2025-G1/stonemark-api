@@ -7,6 +7,8 @@ import java.util.UUID;
  */
 public record SubmissionRef(
         Long id,
-        UUID originalMediaFileId
+        UUID originalMediaFileId,
+        Double latitude,
+        Double longitude
 ) {
 }

@@ -6,7 +6,6 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.review.dtos.ModerationDtos;
-import pt.estga.shared.core.enums.ValidationState;
 
 import java.util.List;
 
@@ -25,9 +24,9 @@ public class ModerationService {
                 .toList();
     }
 
-    public List<ModerationDtos.MarkDto> findProvisionalMarks() {
-        return markQueryService.findProvisionalMarks().stream()
-                .map(m -> new ModerationDtos.MarkDto(m.id(), m.title(), ValidationState.PROVISIONAL))
+    public List<ModerationDtos.MarkDto> findDraftMarks() {
+        return markQueryService.findDraftMarks().stream()
+                .map(m -> new ModerationDtos.MarkDto(m.id(), m.title(), m.status()))
                 .toList();
     }
 }

@@ -15,6 +15,7 @@ import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.shared.core.enums.PublicationStatus;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -52,18 +53,19 @@ class ReviewServiceTest {
     @Test
     @DisplayName("approves and links evidence even when the submission was never processed")
     void approvesWithoutProcessing() {
-        MarkDto mark = new MarkDto(MARK_ID, "Cross", null, null, null, Boolean.TRUE);
+        MarkDto mark = new MarkDto(MARK_ID, "Cross", null, null, PublicationStatus.DRAFT);
         MarkEvidenceReview label = MarkEvidenceReview.builder()
                 .id(Long.valueOf(100L)).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.APPROVED).selectedMarkId(MARK_ID).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
-                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID)));
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
         when(processingApi.findOverview(SUBMISSION_ID)).thenReturn(Optional.empty());
         when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
         when(markQueryService.findMarkById(MARK_ID)).thenReturn(Optional.of(mark));
-        when(markQueryService.findOrCreateOccurrence(MARK_ID, true))
-                .thenReturn(new MarkOccurrenceDto(OCCURRENCE_ID, MARK_ID, null, mark, null, Boolean.TRUE));
+        when(markQueryService.findOrCreateOccurrence(eq(MARK_ID), isNull(), isNull(), isNull()))
+                .thenReturn(new MarkOccurrenceDto(OCCURRENCE_ID, MARK_ID, null, null, null, null,
+                        PublicationStatus.PUBLISHED, null, mark));
         when(processingApi.findEmbeddingText(SUBMISSION_ID)).thenReturn(Optional.empty());
         when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.APPROVED), any(), any())).thenReturn(label);
 
@@ -71,7 +73,7 @@ class ReviewServiceTest {
 
         assertThat(result).isSameAs(label);
         verify(intakeApi).markProcessed(SUBMISSION_ID);
-        verify(markQueryService).linkFileToOccurrence(eq(FILE_ID), eq(OCCURRENCE_ID), isNull());
+        verify(markQueryService).linkFileToOccurrence(eq(FILE_ID), eq(OCCURRENCE_ID), eq(SUBMISSION_ID), isNull());
     }
 
     @Test
@@ -82,7 +84,7 @@ class ReviewServiceTest {
                 .decision(ReviewDecision.REJECTED).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
-                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID)));
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
         when(processingApi.findOverview(SUBMISSION_ID)).thenReturn(Optional.empty());
         when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
         when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.REJECTED), any(), any())).thenReturn(label);

@@ -32,6 +32,10 @@ public class MarkEvidence extends BaseEntity {
     @Column
     private UUID fileId;
 
+    /** Submission that produced this evidence, when it originated from intake. */
+    @Column(name = "submission_id")
+    private Long submissionId;
+
     @Column(columnDefinition = "vector(384)")
     private float[] embedding;
 

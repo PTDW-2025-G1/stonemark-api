@@ -6,9 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkUpdateDto;
 import pt.estga.mark.entities.Mark;
-import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.mappers.MarkMapper;
-import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
@@ -18,7 +16,6 @@ import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 public class MarkService {
 
     private final MarkRepository repository;
-    private final MarkEvidenceRepository evidenceRepository;
 
     public MarkDto findById(Long id) {
         return repository.findById(id)
@@ -32,16 +29,12 @@ public class MarkService {
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
         mark.setTitle(dto.title());
         mark.setDescription(dto.description());
-        if (dto.exemplarId() != null) {
-            MarkEvidence exemplar = evidenceRepository.findById(dto.exemplarId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Evidence with id " + dto.exemplarId() + " not found"));
-            mark.setExemplar(exemplar);
-        }
-        if (dto.active() != null) {
-            if (dto.active()) {
-                mark.activate();
-            } else {
-                mark.deactivate();
+        mark.setCoverMediaId(dto.coverMediaId());
+        if (dto.status() != null) {
+            switch (dto.status()) {
+                case PUBLISHED -> mark.publish();
+                case ARCHIVED -> mark.archive();
+                case DRAFT -> mark.revertToDraft();
             }
         }
         return MarkMapper.toDto(repository.save(mark));
