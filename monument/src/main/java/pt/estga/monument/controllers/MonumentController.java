@@ -8,14 +8,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import pt.estga.monument.mappers.MonumentMapper;
-import pt.estga.monument.dtos.MonumentFilter;
-import pt.estga.monument.repositories.MonumentRepository;
-import pt.estga.monument.services.MonumentService;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import pt.estga.monument.dtos.MonumentDto;
+import pt.estga.monument.dtos.MonumentFilter;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.PolygonSearchRequest;
+import pt.estga.monument.services.MonumentService;
 
 @RestController
 @RequestMapping("/api/v1/public/monuments")
@@ -24,15 +28,12 @@ import pt.estga.monument.dtos.PolygonSearchRequest;
 public class MonumentController {
 
     private final MonumentService service;
-    private final MonumentRepository repository;
-    private final MonumentMapper mapper;
 
     @GetMapping("/{id}")
     public ResponseEntity<MonumentDto> getMonumentById(
             @PathVariable Long id
     ) {
-        return repository.findById(id)
-                .map(mapper::toResponseDto)
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -43,7 +44,7 @@ public class MonumentController {
             @RequestParam(required = false) String name
     ) {
         MonumentFilter filter = new MonumentFilter(name);
-        return ResponseEntity.ok(service.search(filter, pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.search(filter, pageable));
     }
 
     @PostMapping(value = "/search/polygon", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -51,6 +52,6 @@ public class MonumentController {
             @Valid @RequestBody PolygonSearchRequest request,
             @PageableDefault(size = 9, sort = "name") Pageable pageable
     ) {
-        return ResponseEntity.ok(repository.findByPolygon(request.geoJson(), pageable).map(mapper::toListDto));
+        return ResponseEntity.ok(service.findByPolygon(request.geoJson(), pageable));
     }
 }

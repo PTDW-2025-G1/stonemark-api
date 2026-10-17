@@ -6,15 +6,17 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import pt.estga.monument.entities.Monument;
-import pt.estga.monument.mappers.MonumentMapper;
-import pt.estga.monument.repositories.MonumentRepository;
-import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
-import pt.estga.shared.web.exceptions.ResourceNotFoundException;
+import pt.estga.monument.services.MonumentService;
 
 import java.net.URI;
 
@@ -26,18 +28,13 @@ import java.net.URI;
 public class MonumentAdminController {
 
     private final MonumentService service;
-    private final MonumentRepository repository;
-    private final MonumentMapper mapper;
 
     @PostMapping
     public ResponseEntity<MonumentDto> createMonument(
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument monument = mapper.toEntity(monumentDto);
-
-        Monument createdMonument = repository.save(monument);
-        MonumentDto response = mapper.toResponseDto(createdMonument);
+        MonumentDto response = service.create(monumentDto);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -54,13 +51,7 @@ public class MonumentAdminController {
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
-        Monument existingMonument = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Monument not found"));
-
-        mapper.updateEntityFromDto(monumentDto, existingMonument);
-
-        Monument updatedMonument = repository.save(existingMonument);
-        return ResponseEntity.ok(mapper.toResponseDto(updatedMonument));
+        return ResponseEntity.ok(service.update(id, monumentDto));
     }
 
     @DeleteMapping("/{id}")

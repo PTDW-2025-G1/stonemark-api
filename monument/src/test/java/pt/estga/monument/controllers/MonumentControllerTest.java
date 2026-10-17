@@ -11,9 +11,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.mappers.MonumentMapper;
-import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
@@ -32,11 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MonumentControllerTest {
 
     private final MonumentService service = mock();
-    private final MonumentRepository repository = mock();
     private final MonumentMapper mapper = new MonumentMapper();
 
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
-            new MonumentController(service, repository, mapper)
+            new MonumentController(service)
     ).setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .setControllerAdvice(new GlobalExceptionHandler()).build();
 
@@ -52,7 +51,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return 200 and monument when found by id")
     void shouldReturnMonumentWhenFound() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(monument));
+        when(service.findById(1L)).thenReturn(Optional.of(mapper.toResponseDto(monument)));
 
         mockMvc.perform(get("/api/v1/public/monuments/{id}", 1L))
                 .andExpect(status().isOk())
@@ -64,7 +63,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return 404 when monument not found by id")
     void shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        when(service.findById(99L)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/public/monuments/{id}", 99L))
                 .andExpect(status().isNotFound());
@@ -73,7 +72,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return paginated monument list")
     void shouldReturnPaginatedList() throws Exception {
-        Page<Monument> page = new PageImpl<>(List.of(monument), PageRequest.of(0, 20), 1);
+        Page<MonumentListDto> page = new PageImpl<>(List.of(mapper.toListDto(monument)), PageRequest.of(0, 20), 1);
         when(service.search(any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/public/monuments"))

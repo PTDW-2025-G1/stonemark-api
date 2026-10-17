@@ -12,8 +12,6 @@ import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.dtos.SubmissionFilter;
 import pt.estga.intake.enums.SubmissionSource;
 import pt.estga.intake.enums.SubmissionStatus;
-import pt.estga.intake.mappers.SubmissionMapper;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.intake.services.SubmissionService;
 
 import java.time.Instant;
@@ -26,8 +24,6 @@ import java.time.Instant;
 public class SubmissionAdminController {
 
     private final SubmissionService submissionService;
-    private final MarkEvidenceSubmissionRepository submissionRepository;
-    private final SubmissionMapper submissionMapper;
 
     @GetMapping
     public ResponseEntity<Page<SubmissionDto>> findAll(
@@ -43,8 +39,7 @@ public class SubmissionAdminController {
 
     @GetMapping("/{id}")
     public ResponseEntity<SubmissionDto> findById(@PathVariable Long id) {
-        return submissionRepository.findById(id)
-                .map(submissionMapper::toDto)
+        return submissionService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

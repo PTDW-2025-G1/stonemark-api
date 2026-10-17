@@ -15,6 +15,7 @@ import pt.estga.support.mappers.ContactRequestMapper;
 import pt.estga.support.repositories.ContactRequestRepository;
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +38,10 @@ public class ContactRequestService {
                 .like("name", filter.name())
                 .like("email", filter.email());
         return repository.findAll(sb.build(), pageable);
+    }
+
+    public Optional<ContactRequest> findById(Long id) {
+        return repository.findById(id);
     }
 
     @Transactional

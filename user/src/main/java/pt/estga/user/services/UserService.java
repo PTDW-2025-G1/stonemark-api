@@ -11,9 +11,12 @@ import pt.estga.user.dtos.MeDto;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserDto;
 import pt.estga.user.dtos.UserFilter;
+import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.entities.User;
 import pt.estga.user.mappers.UserMapper;
 import pt.estga.user.repositories.UserRepository;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,18 @@ import pt.estga.user.repositories.UserRepository;
 public class UserService {
 
     private final UserRepository repository;
+
+    public Optional<UserPublicDto> findPublicById(Long id) {
+        return repository.findById(id).map(UserMapper::toPublicDto);
+    }
+
+    public boolean existsByUsername(String username) {
+        return repository.existsByUsername(username);
+    }
+
+    public Optional<UserDto> findById(Long id) {
+        return repository.findById(id).map(UserMapper::toDto);
+    }
 
     public Page<UserDto> search(UserFilter filter, Pageable pageable) {
         var sb = new SpecBuilder<User>()
@@ -58,6 +73,11 @@ public class UserService {
         User user = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         repository.softDelete(user);
+    }
+
+    @Transactional
+    public void deleteById(Long id) {
+        repository.deleteById(id);
     }
 
     public UserDto getProfile(Long userId) {
