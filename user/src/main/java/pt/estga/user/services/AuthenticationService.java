@@ -9,7 +9,7 @@ import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -19,12 +19,10 @@ public class AuthenticationService {
 
     @Transactional(readOnly = true)
     public AppPrincipal loadUserById(Long userId) {
-        User user = userRepository.findByIdWithRoles(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
 
-        var authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .collect(Collectors.toUnmodifiableSet());
+        var authorities = Set.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
         return AppPrincipal.builder()
                 .id(user.getId())

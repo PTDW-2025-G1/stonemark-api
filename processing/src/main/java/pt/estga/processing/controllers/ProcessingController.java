@@ -15,7 +15,7 @@ import pt.estga.shared.web.dtos.MessageResponseDto;
 @RequestMapping("/api/v1/admin/processing")
 @RequiredArgsConstructor
 @Tag(name = "Processing", description = "Endpoints for checking and managing processing of submissions.")
-@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('REVIEWER')")
 @ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class ProcessingController {
 
@@ -29,7 +29,7 @@ public class ProcessingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     @PostMapping("/submission/{submissionId}/reprocess")
     public ResponseEntity<MessageResponseDto> reprocess(@PathVariable Long submissionId) {
         asyncProcessingService.processAsync(submissionId);

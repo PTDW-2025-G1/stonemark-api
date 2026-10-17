@@ -14,7 +14,7 @@ import java.util.List;
 @RequestMapping("/api/v1/admin/processing/submission")
 @RequiredArgsConstructor
 @Tag(name = "Processing Suggestions", description = "Suggestions for a processing submission.")
-@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('REVIEWER')")
 public class ProcessingSuggestionsController {
 
     private final SuggestionQueryService suggestionQueryService;

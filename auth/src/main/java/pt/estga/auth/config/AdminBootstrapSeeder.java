@@ -9,13 +9,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
-import pt.estga.user.repositories.RoleRepository;
+import pt.estga.user.enums.UserRole;
 import pt.estga.user.repositories.UserRepository;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Creates an initial administrator from configuration so the moderation API is
@@ -31,7 +27,6 @@ import java.util.Set;
 public class AdminBootstrapSeeder {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${application.bootstrap.admin.username:}")
@@ -55,18 +50,12 @@ public class AdminBootstrapSeeder {
             return;
         }
 
-        Role adminRole = roleRepository.findByName("ADMIN")
-                .orElseGet(() -> roleRepository.save(Role.builder()
-                        .name("ADMIN")
-                        .description("Bootstrapped admin role")
-                        .build()));
-
         User admin = User.builder()
                 .username(username)
                 .email(StringUtils.hasText(email) ? email : null)
                 .passwordHash(passwordEncoder.encode(password))
                 .enabled(true)
-                .roles(new HashSet<>(Set.of(adminRole)))
+                .role(UserRole.ADMIN)
                 .build();
 
         userRepository.save(admin);

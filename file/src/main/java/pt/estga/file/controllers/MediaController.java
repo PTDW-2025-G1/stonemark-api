@@ -44,7 +44,7 @@ public class MediaController {
                     content = @Content(schema = @Schema(implementation = MediaFileDto.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input or file upload error")
     })
-    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MediaFileDto> uploadMedia(
             @Parameter(description = "The file to upload", required = true)
@@ -96,7 +96,7 @@ public class MediaController {
             @ApiResponse(responseCode = "204", description = "File deleted successfully"),
             @ApiResponse(responseCode = "404", description = "Media file not found")
     })
-    @PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMedia(
             @Parameter(description = "ID of the media file to delete", required = true)

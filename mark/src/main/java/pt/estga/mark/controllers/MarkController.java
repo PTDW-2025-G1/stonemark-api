@@ -23,7 +23,7 @@ import pt.estga.mark.services.MarkService;
 @RequestMapping("/api/v1/admin/marks")
 @RequiredArgsConstructor
 @Tag(name = "Marks Management", description = "Management endpoints for marks.")
-@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('MODERATOR')")
 public class MarkController {
 
     private final MarkService service;

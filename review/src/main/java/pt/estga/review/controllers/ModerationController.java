@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/moderation")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('REVIEWER')")
 public class ModerationController {
 
     private final ModerationService moderationService;

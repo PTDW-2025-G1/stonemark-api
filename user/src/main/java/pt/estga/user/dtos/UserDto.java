@@ -1,9 +1,9 @@
 package pt.estga.user.dtos;
 
 import pt.estga.file.dtos.MediaFileDto;
+import pt.estga.user.enums.UserRole;
 
 import java.time.Instant;
-import java.util.Set;
 
 public record UserDto(
         Long id,
@@ -12,6 +12,6 @@ public record UserDto(
         String username,
         String email,
         MediaFileDto photo,
-        Set<String> roles,
+        UserRole role,
         Instant createdAt
 ) { }

@@ -1,7 +1,6 @@
 package pt.estga.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -14,23 +13,12 @@ import java.util.concurrent.TimeUnit;
 @EnableCaching
 public class CacheConfig {
 
-    @Value("${cache.user-permissions.ttl-minutes:15}")
-    private long userPermissionsTtlMinutes;
-
-    @Value("${cache.user-permissions.max-size:1000}")
-    private long userPermissionsMaxSize;
-
     @Bean
     public CacheManager cacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager("user-permissions");
-        cacheManager.registerCustomCache("conversations",
-                Caffeine.newBuilder()
-                        .expireAfterAccess(30, TimeUnit.MINUTES)
-                        .maximumSize(10_000)
-                        .build());
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .expireAfterWrite(userPermissionsTtlMinutes, TimeUnit.MINUTES)
-                .maximumSize(userPermissionsMaxSize)
+                .expireAfterWrite(15, TimeUnit.MINUTES)
+                .maximumSize(1000)
                 .recordStats());
         return cacheManager;
     }

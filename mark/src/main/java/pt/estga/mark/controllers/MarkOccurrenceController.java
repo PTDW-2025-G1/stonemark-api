@@ -23,7 +23,7 @@ import pt.estga.mark.services.MarkOccurrenceService;
 @RequestMapping("/api/v1/admin/occurrences")
 @RequiredArgsConstructor
 @Tag(name = "Mark Occurrences Management", description = "Management endpoints for mark occurrences.")
-@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('MODERATOR')")
 public class MarkOccurrenceController {
 
     private final MarkOccurrenceService service;

@@ -20,7 +20,7 @@ import java.time.Instant;
 @RequestMapping("/api/v1/admin/submissions")
 @RequiredArgsConstructor
 @Tag(name = "Submission Management", description = "Admin endpoints for managing evidence submissions.")
-@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('MODERATOR')")
 public class SubmissionAdminController {
 
     private final SubmissionService submissionService;

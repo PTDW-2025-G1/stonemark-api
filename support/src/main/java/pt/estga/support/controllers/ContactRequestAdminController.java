@@ -17,7 +17,7 @@ import pt.estga.support.services.ContactRequestService;
 @RequestMapping("/api/v1/admin/contact-requests")
 @RequiredArgsConstructor
 @Tag(name = "Admin Contact Requests", description = "Admin endpoints for contact requests.")
-@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('MODERATOR')")
 public class ContactRequestAdminController {
 
     private final ContactRequestService service;
