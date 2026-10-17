@@ -28,6 +28,7 @@ public class JwtService {
         JwtClaimsSet.Builder builder = JwtClaimsSet.builder()
                 .issuer("stonemark-api")
                 .subject(String.valueOf(user.getId()))
+                .claim("user_id", user.getId())
                 .claim("preferred_username", user.getUsername())
                 .claim("token_version", user.getTokenVersion())
                 .issuedAt(now)

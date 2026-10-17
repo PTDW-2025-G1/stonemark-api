@@ -48,7 +48,7 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - **Idempotent**: optional `Idempotency-Key` header (unique column); replays return the existing submission.
 - **Decoupled from vision**: `processing.enabled` (default `false`) gates the listener, schedulers, async executor and processing endpoints.
 - Forgiving validation: photo only required; empty file rejected with a clear 400; staging + reverse-geocoding run **outside** the DB transaction; abandoned staged files are swept.
-- Public media **write** endpoints locked to moderator/admin; `@EnableMethodSecurity` added so `@PreAuthorize` actually applies; Google login made optional so the app boots without OAuth creds.
+- Public media **write** endpoints locked to moderator/admin; `@EnableMethodSecurity` added so `@PreAuthorize` actually applies. Auth is password + JWT only (Google OAuth2 and the `/google` endpoint were removed).
 - Boot fixes: removed the broken `@EntityGraph`; fixed two no-op self-invoked `@Transactional` methods.
 - Test: `SubmissionFacadeTest`.
 *Done: a phone photo submits successfully with no account and no location, is stored exactly once, and never depends on vision.*
@@ -114,4 +114,5 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 - Automatic approval is **gated on data** — it is P3, not P1.
 - The Modulith verification test now **fails the build** on boundary violations (enforced; zero violations).
 - Modulith is used for **boundary verification only**. Its event registry (`spring-modulith-starter-jpa` / `events-api` / `event_publication` table) was dropped; the single async listener now uses Spring's `@TransactionalEventListener(AFTER_COMMIT)` + `@Async`.
+- **Auth is password + JWT only** (no Keycloak, no Google OAuth2). JWT access tokens now carry a `user_id` claim so the authenticated principal id is populated; `SecurityUtils` is null-safe.
 - Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

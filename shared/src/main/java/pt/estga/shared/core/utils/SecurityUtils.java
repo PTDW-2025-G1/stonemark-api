@@ -28,7 +28,7 @@ public final class SecurityUtils {
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof AuthenticatedPrincipal authenticatedPrincipal) {
-            return Optional.of(authenticatedPrincipal.getId());
+            return Optional.ofNullable(authenticatedPrincipal.getId());
         }
 
         return Optional.empty();
