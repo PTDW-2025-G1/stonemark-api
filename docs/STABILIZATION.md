@@ -19,7 +19,8 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - **P1 — Launch-ready intake: done.**
 - **P2 — Manual moderation + labelling: done.**
 - **P4 — Consolidate modules: done** (structural; behavioral de-engineering deferred).
-- **P3, P5: not started.**
+- **P5 — Pipeline tests + CI: done.**
+- **P3 — Train + automate: not started** (gated on collected data).
 - Behavior changes: the AI pipeline is off by default (`processing.enabled=false`), and the API is **secure by default** (`application.security.disabled=false`).
 
 ## V1 scope
@@ -71,7 +72,11 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - **22 → 16 Maven modules**; one Maven module per capability.
 - **Deferred (behavioral/product, needs a decision):** cutting the `file` multi-variant pipeline, simplifying the `chatbot` engine, consolidating the `processing` schedulers/semaphore, and making `modules.verify()` fail the build.
 
-**P5 — Prove it.** Pipeline tests (stub vision, seeded corpus) + minimal CI.
+**P5 — Prove it. ✅ Done.**
+- Pipeline tests with a **stubbed Vision client** and a seeded (mocked) evidence corpus:
+  - `SimilarityServiceTest` — groups evidence hits by mark, sums and sorts confidence; empty embedding and non-finite scores yield no suggestions.
+  - `ProcessingServiceImplTest` — Vision unavailable → `PENDING`; already-processed → skip; missing media → permanent `FAILED`; empty embedding → permanent `FAILED`; happy path → embedding + suggestions into `finalizeSuccess`.
+- Minimal CI: `.github/workflows/ci.yml` runs `./mvnw -B clean test` on JDK 25 and uploads surefire reports.
 
 ## Overengineering to cut (later)
 
@@ -96,7 +101,8 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Notes
 
-- Build + tests verified: `mvn -B clean test`, 16 modules, **BUILD SUCCESS**, 79 tests, 0 failures (Docker; no local JDK).
+- Build + tests verified: `mvn -B clean test`, 16 modules, **BUILD SUCCESS**, 87 tests, 0 failures (Docker; no local JDK).
+- **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
 - Automatic approval is **gated on data** — it is P3, not P1.
