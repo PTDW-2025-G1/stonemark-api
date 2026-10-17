@@ -1,6 +1,10 @@
 # Processing-specific application properties
 # Keep defaults aligned with SimilarityService implementation.
 processing:
+  # Master switch for the AI preprocessing/categorization pipeline.
+  # Disabled for V1: it requires a trained Vision model and an existing embedding
+  # corpus. Submissions are stored and moderated manually until then.
+  enabled: false
   similarity:
     # Minimum similarity (confidence) required for suggestions. Range: 0.0 - 1.0
     min-score: 0.6

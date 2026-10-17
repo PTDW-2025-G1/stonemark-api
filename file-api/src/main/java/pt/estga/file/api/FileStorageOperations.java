@@ -19,4 +19,6 @@ public interface FileStorageOperations {
     StagedFileRecord stage(InputStream data, String originalFilename);
 
     MediaFileDto commit(UUID stagingId, String originalFilename);
+
+    void discardStaged(UUID stagingId, String originalFilename);
 }

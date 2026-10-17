@@ -7,8 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
 import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 import pt.estga.file.config.StorageProperties;
@@ -39,22 +37,16 @@ class MediaUploadOrchestratorTest {
     private FileNamingService fileNamingService;
     @Mock
     private AfterCommitEventPublisher eventPublisher;
-    @Mock
-    private PlatformTransactionManager ptm;
-    @Mock
-    private TransactionStatus transactionStatus;
 
     private final SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
     private StorageProperties storageProperties;
     private MediaUploadOrchestrator orchestrator;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         storageProperties = new StorageProperties();
         storageProperties.setMaxUploadSize(10 * 1024 * 1024);
         storageProperties.setAllowedMimeTypes(List.of("image/jpeg", "image/png"));
-
-        lenient().when(ptm.getTransaction(any())).thenReturn(transactionStatus);
 
         orchestrator = new MediaUploadOrchestrator(
                 mediaFileRepository,
@@ -62,10 +54,8 @@ class MediaUploadOrchestratorTest {
                 fileNamingService,
                 storageProperties,
                 meterRegistry,
-                eventPublisher,
-                ptm
+                eventPublisher
         );
-        orchestrator.init();
     }
 
     @Test

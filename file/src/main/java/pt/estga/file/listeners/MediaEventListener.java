@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.file.enums.MediaStatus;
@@ -46,7 +45,8 @@ public class MediaEventListener {
         }
     }
 
-    @Transactional
+    // Repository writes are transactional by themselves; a method-level
+    // @Transactional here would be bypassed by the internal call and misleading.
     private void markMediaFailed(java.util.UUID mediaFileId) {
         try {
             mediaFileRepository.findById(mediaFileId).ifPresent(media -> {

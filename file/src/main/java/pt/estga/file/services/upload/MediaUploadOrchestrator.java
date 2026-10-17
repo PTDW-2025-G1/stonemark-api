@@ -1,16 +1,12 @@
 package pt.estga.file.services.upload;
 
 import io.micrometer.core.instrument.MeterRegistry;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import pt.estga.commoncore.events.AfterCommitEventPublisher;
 import pt.estga.commonweb.exceptions.UnsupportedFileTypeException;
 import pt.estga.file.config.StorageProperties;
@@ -45,15 +41,6 @@ public class MediaUploadOrchestrator {
     private final StorageProperties storageProperties;
     private final MeterRegistry meterRegistry;
     private final AfterCommitEventPublisher eventPublisher;
-    private final PlatformTransactionManager ptm;
-
-    private TransactionTemplate requiresNewTemplate;
-
-    @PostConstruct
-    void init() {
-        this.requiresNewTemplate = new TransactionTemplate(ptm);
-        this.requiresNewTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    }
 
     public MediaFile orchestrateUpload(InputStream input, String originalFilename) throws IOException {
         long startNanos = System.nanoTime();
@@ -93,24 +80,28 @@ public class MediaUploadOrchestrator {
             MediaFile media = MediaFile.createForProcessing(storedFilename, originalFilename, provider);
             media.completeUpload(actualSize, storagePath, null, MediaStatus.UPLOADED);
 
+            MediaFile saved;
             try {
-                MediaFile saved = saveWithRetry(media);
-                if (saved.getId() != null) {
-                    eventPublisher.publish(new MediaUploadedEvent(saved.getId()));
-                }
-                long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
-                meterRegistry.counter("media.upload.success").increment();
-                meterRegistry.summary("media.upload.size.bytes").record(actualSize);
-                meterRegistry.timer("media.upload.duration").record(elapsed, TimeUnit.MILLISECONDS);
-                return saved;
+                saved = mediaFileRepository.save(media);
             } catch (Exception e) {
-                try {
-                    fileStorageService.deleteFile(storagePath);
-                } catch (Exception ignored) {}
+                deleteStoredQuietly(storagePath);
                 meterRegistry.counter("media.upload.failed").increment();
                 throw new MediaPersistenceException(
                         "Failed to persist media metadata for " + storedFilename, e);
             }
+
+            // Keep object storage consistent with the database: if the surrounding
+            // transaction rolls back the metadata disappears, so remove the object too.
+            registerRollbackCleanup(storagePath);
+
+            if (saved.getId() != null) {
+                eventPublisher.publish(new MediaUploadedEvent(saved.getId()));
+            }
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000;
+            meterRegistry.counter("media.upload.success").increment();
+            meterRegistry.summary("media.upload.size.bytes").record(actualSize);
+            meterRegistry.timer("media.upload.duration").record(elapsed, TimeUnit.MILLISECONDS);
+            return saved;
         } finally {
             try {
                 Files.deleteIfExists(tempFile);
@@ -136,29 +127,30 @@ public class MediaUploadOrchestrator {
         return mime != null && allowedMimeTypes.contains(mime);
     }
 
-    private MediaFile saveWithRetry(MediaFile mediaFile) {
-        final int maxAttempts = 3;
-        int tried = 0;
-        while (true) {
-            try {
-                return requiresNewTemplate.execute(status -> mediaFileRepository.save(mediaFile));
-            } catch (DataIntegrityViolationException e) {
-                throw e;
-            } catch (DataAccessException e) {
-                tried++;
-                if (tried >= maxAttempts) {
-                    throw e;
-                }
-                log.warn("Transient error saving media metadata for id {} - retry {}/{}",
-                        mediaFile.getId(), tried, maxAttempts, e);
-                try {
-                    long backoff = (long) (250L * tried * (0.5 + Math.random()));
-                    TimeUnit.MILLISECONDS.sleep(backoff);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted while retrying metadata save", ie);
+    /**
+     * Registers a compensation that deletes the stored object if the surrounding
+     * transaction rolls back, so object storage never keeps files the database has
+     * forgotten. No-op when there is no active transaction (the caller then owns cleanup).
+     */
+    private void registerRollbackCleanup(String storagePath) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    deleteStoredQuietly(storagePath);
                 }
             }
+        });
+    }
+
+    private void deleteStoredQuietly(String storagePath) {
+        try {
+            fileStorageService.deleteFile(storagePath);
+        } catch (Exception e) {
+            log.warn("Failed to delete stored object {} during compensation: {}", storagePath, e.getMessage());
         }
     }
 }

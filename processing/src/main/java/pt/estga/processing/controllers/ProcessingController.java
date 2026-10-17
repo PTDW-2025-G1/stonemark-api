@@ -2,6 +2,7 @@ package pt.estga.processing.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import pt.estga.commonweb.dtos.MessageResponseDto;
 @RequiredArgsConstructor
 @Tag(name = "Processing", description = "Endpoints for checking and managing processing of submissions.")
 @PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class ProcessingController {
 
     private final ProcessingStatusQueryService processingStatusQueryService;

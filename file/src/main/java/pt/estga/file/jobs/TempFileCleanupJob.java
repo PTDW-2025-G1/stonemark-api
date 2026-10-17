@@ -24,23 +24,39 @@ public class TempFileCleanupJob {
 
     @Scheduled(fixedDelayString = "PT30M")
     public void cleanupOrphanedTempFiles() {
-        String customDir = storageProperties.getTempDir();
-        if (!StringUtils.hasText(customDir)) {
-            return;
-        }
-        Path dir = Path.of(customDir);
-        if (!Files.exists(dir)) {
-            return;
-        }
         Instant cutoff = Instant.now().minusSeconds(CLEANUP_AGE_MINUTES * 60);
-        log.debug("Running temp file cleanup in {}", dir);
-        cleanDirectory(dir, cutoff);
 
-        Path stagingDir = dir.resolve(storageProperties.getStagingDir());
+        // Only sweep a custom temp dir; never the shared system temp directory.
+        String customDir = storageProperties.getTempDir();
+        if (StringUtils.hasText(customDir)) {
+            Path dir = Path.of(customDir);
+            if (Files.isDirectory(dir)) {
+                log.debug("Running temp file cleanup in {}", dir);
+                cleanDirectory(dir, cutoff);
+            }
+        }
+
+        Path stagingDir = resolveStagingDir();
         if (Files.isDirectory(stagingDir)) {
             log.debug("Running staging file cleanup in {}", stagingDir);
             cleanDirectory(stagingDir, cutoff);
         }
+    }
+
+    /**
+     * Resolves the staging directory the same way {@code FileStagingService} does,
+     * so abandoned staged uploads are cleaned even when no custom temp dir is set.
+     */
+    private Path resolveStagingDir() {
+        String staging = storageProperties.getStagingDir();
+        if (Path.of(staging).isAbsolute()) {
+            return Path.of(staging);
+        }
+        String tempDir = storageProperties.getTempDir();
+        if (StringUtils.hasText(tempDir)) {
+            return Path.of(tempDir, staging);
+        }
+        return Path.of(System.getProperty("java.io.tmpdir"), staging);
     }
 
     private void cleanDirectory(Path directory, Instant cutoff) {

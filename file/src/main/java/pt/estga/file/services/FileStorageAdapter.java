@@ -43,6 +43,11 @@ public class FileStorageAdapter implements FileStorageOperations {
     }
 
     @Override
+    public void discardStaged(UUID stagingId, String originalFilename) {
+        stagingService.deleteStagedFile(stagingId, originalFilename);
+    }
+
+    @Override
     @Transactional
     public MediaFileDto commit(UUID stagingId, String originalFilename) {
         try {
