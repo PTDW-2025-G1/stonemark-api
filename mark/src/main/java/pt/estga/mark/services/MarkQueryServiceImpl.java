@@ -20,6 +20,7 @@ import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.core.utils.GeometryUtils;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +55,26 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     public List<MarkDto> findDraftMarks() {
         return markRepository.findByStatus(PublicationStatus.DRAFT).stream()
                 .map(MarkMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<MarkDto> findPublishedMarksByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return markRepository.findByIdInAndStatusAndDeletedAtIsNull(ids, PublicationStatus.PUBLISHED).stream()
+                .map(MarkMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return occurrenceRepository.findByIdInAndStatusAndDeletedAtIsNull(ids, PublicationStatus.PUBLISHED).stream()
+                .map(MarkOccurrenceMapper::toDto)
                 .toList();
     }
 

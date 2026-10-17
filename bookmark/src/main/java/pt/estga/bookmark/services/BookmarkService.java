@@ -1,73 +1,133 @@
 package pt.estga.bookmark.services;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.bookmark.dto.BookmarkContent;
 import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
 import pt.estga.bookmark.entities.Bookmark;
+import pt.estga.bookmark.enums.BookmarkTargetType;
 import pt.estga.bookmark.repositories.BookmarkRepository;
+import pt.estga.mark.api.MarkQueryService;
+import pt.estga.mark.dtos.MarkDto;
+import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.shared.web.exceptions.DuplicateResourceException;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
-import pt.estga.user.api.UserQueryService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BookmarkService {
 
     private final BookmarkRepository bookmarkRepository;
-    private final BookmarkContentResolver contentResolver;
-    private final UserQueryService userQueryService;
+    private final MarkQueryService markQueryService;
 
     public Page<BookmarkResponse> listByUser(Long userId, Pageable pageable) {
-        Page<Bookmark> page = bookmarkRepository.findAllByCreatedById(userId, pageable);
-        Map<UUID, BookmarkContent> contentMap = contentResolver.resolve(page.getContent());
-        return page.map(b -> toResponse(b, contentMap.get(b.getId())));
+        Page<Bookmark> page = bookmarkRepository.findAllByUserId(userId, pageable);
+        Map<Long, MarkDto> marks = resolveMarks(page.getContent());
+        Map<Long, MarkOccurrenceDto> occurrences = resolveOccurrences(page.getContent());
+        return page.map(bookmark -> toResponse(bookmark, marks, occurrences));
     }
 
     @Transactional
     public BookmarkResponse create(Long userId, BookmarkCreateRequest request) {
-        if (bookmarkRepository.existsByCreatedByIdAndTargetTypeAndTargetId(
-                userId, request.targetType(), request.targetId())) {
-            throw new DuplicateResourceException("Bookmark already exists");
+        BookmarkTargetType type = request.targetType();
+        Long targetId = request.targetId();
+        if (type == null || targetId == null) {
+            throw new IllegalArgumentException("Bookmark target type and id are required");
         }
-        if (!userQueryService.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found");
+        requireAvailable(type, targetId);
+        if (bookmarkRepository.existsByUserIdAndTargetTypeAndTargetId(userId, type, targetId)) {
+            throw new DuplicateResourceException("Bookmark already exists");
         }
 
         Bookmark bookmark = Bookmark.builder()
-                .createdById(userId)
-                .targetType(request.targetType())
-                .targetId(request.targetId())
+                .userId(userId)
+                .targetType(type)
+                .targetId(targetId)
                 .build();
-
-        Bookmark saved = bookmarkRepository.save(bookmark);
-        BookmarkContent content = resolveSingle(saved);
-        return toResponse(saved, content);
+        try {
+            Bookmark saved = bookmarkRepository.save(bookmark);
+            return toResponse(saved, resolveMarks(List.of(saved)), resolveOccurrences(List.of(saved)));
+        } catch (DataIntegrityViolationException duplicate) {
+            throw new DuplicateResourceException("Bookmark already exists");
+        }
     }
 
     @Transactional
     public void delete(Long userId, UUID bookmarkId) {
-        bookmarkRepository.findByIdAndCreatedById(bookmarkId, userId)
+        bookmarkRepository.findByIdAndUserId(bookmarkId, userId)
                 .ifPresent(bookmarkRepository::delete);
     }
 
-    private BookmarkContent resolveSingle(Bookmark bookmark) {
-        Map<UUID, BookmarkContent> map = contentResolver.resolve(List.of(bookmark));
-        return map.get(bookmark.getId());
+    private void requireAvailable(BookmarkTargetType type, Long targetId) {
+        switch (type) {
+            case MARK -> {
+                if (markQueryService.findPublishedMarksByIds(List.of(targetId)).isEmpty()) {
+                    throw new ResourceNotFoundException("Mark " + targetId + " not found");
+                }
+            }
+            case MARK_OCCURRENCE -> {
+                if (markQueryService.findPublishedOccurrencesByIds(List.of(targetId)).isEmpty()) {
+                    throw new ResourceNotFoundException("Mark occurrence " + targetId + " not found");
+                }
+            }
+        }
     }
 
-    private static BookmarkResponse toResponse(Bookmark b, BookmarkContent content) {
-        return new BookmarkResponse(b.getId(), b.getTargetType(), b.getTargetId(), b.getCreatedAt(), content);
+    /**
+     * Resolves the targets of a page of bookmarks in one query per target type.
+     * Targets that are missing or no longer published are absent from the maps.
+     */
+    private Map<Long, MarkDto> resolveMarks(List<Bookmark> bookmarks) {
+        List<Long> ids = targetIds(bookmarks, BookmarkTargetType.MARK);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return markQueryService.findPublishedMarksByIds(ids).stream()
+                .collect(Collectors.toMap(MarkDto::id, Function.identity()));
+    }
+
+    private Map<Long, MarkOccurrenceDto> resolveOccurrences(List<Bookmark> bookmarks) {
+        List<Long> ids = targetIds(bookmarks, BookmarkTargetType.MARK_OCCURRENCE);
+        if (ids.isEmpty()) {
+            return Map.of();
+        }
+        return markQueryService.findPublishedOccurrencesByIds(ids).stream()
+                .collect(Collectors.toMap(MarkOccurrenceDto::id, Function.identity()));
+    }
+
+    private static List<Long> targetIds(List<Bookmark> bookmarks, BookmarkTargetType type) {
+        return bookmarks.stream()
+                .filter(bookmark -> bookmark.getTargetType() == type)
+                .map(Bookmark::getTargetId)
+                .distinct()
+                .toList();
+    }
+
+    private static BookmarkResponse toResponse(Bookmark bookmark, Map<Long, MarkDto> marks,
+                                               Map<Long, MarkOccurrenceDto> occurrences) {
+        MarkDto mark = bookmark.getTargetType() == BookmarkTargetType.MARK
+                ? marks.get(bookmark.getTargetId())
+                : null;
+        MarkOccurrenceDto occurrence = bookmark.getTargetType() == BookmarkTargetType.MARK_OCCURRENCE
+                ? occurrences.get(bookmark.getTargetId())
+                : null;
+        return new BookmarkResponse(
+                bookmark.getId(),
+                bookmark.getTargetType(),
+                bookmark.getTargetId(),
+                bookmark.getCreatedAt(),
+                mark,
+                occurrence);
     }
 }

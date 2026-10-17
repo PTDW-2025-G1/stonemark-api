@@ -8,8 +8,7 @@ public record BookmarkCreateRequest(
         @Schema(description = "Type of the target resource.", example = "MARK")
         BookmarkTargetType targetType,
 
-        @Schema(description = "ID of the target resource (numeric for MARK/MARK_OCCURRENCE, UUID for MARK_EVIDENCE).",
-                example = "123")
-        String targetId
+        @Schema(description = "ID of the target resource.", example = "123")
+        Long targetId
 ) {
 }

@@ -47,12 +47,15 @@ Media writes require authentication: `POST /api/v1/public/media` and
 ## Bookmarks (authenticated)
 
 Bookmarks belong to the authenticated caller; the user is taken from the security
-context, never from the request.
+context, never from the request. Bookmarks point at catalogue resources — a mark or a
+mark occurrence (a finding at a place); photos are not targets of their own. The
+target field matching `type` (`mark` or `occurrence`) is null when the target is no
+longer available.
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/api/v1/bookmarks` | The authenticated user's bookmarks. |
-| POST | `/api/v1/bookmarks` | Bookmark a target. |
+| POST | `/api/v1/bookmarks` | Bookmark a target (`{"targetType":"MARK","targetId":123}` or `targetType: "MARK_OCCURRENCE"`). |
 | DELETE | `/api/v1/bookmarks/{bookmarkId}` | Remove a bookmark. |
 
 ## Review and moderation (REVIEWER or higher)

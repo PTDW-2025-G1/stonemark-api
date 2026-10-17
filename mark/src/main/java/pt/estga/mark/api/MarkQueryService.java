@@ -4,6 +4,7 @@ import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,18 @@ public interface MarkQueryService {
     List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
 
     List<MarkDto> findDraftMarks();
+
+    /**
+     * Returns the published, non-deleted marks with the given ids, for callers that
+     * resolve several marks at once (for example bookmarks).
+     */
+    List<MarkDto> findPublishedMarksByIds(Collection<Long> ids);
+
+    /**
+     * Returns the published, non-deleted occurrences with the given ids, for callers
+     * that resolve several occurrences at once (for example bookmarks).
+     */
+    List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids);
 
     MarkDto createMark(String title);
 
