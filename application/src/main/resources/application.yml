@@ -6,7 +6,7 @@ server:
 
 spring:
   profiles:
-    include: chatbot, notification, file, security, processing, review
+    include: notification, file, security, processing, review
   servlet:
     multipart:
       max-file-size: 50MB
@@ -95,7 +95,7 @@ management:
       show-details: always
       group:
         readiness:
-          include: [readinessState, vision, telegram, db]
+          include: [readinessState, vision, db]
         liveness:
           include: [livenessState]
       validate-group-membership: false

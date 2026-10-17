@@ -91,11 +91,12 @@ See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the ful
 
 These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
 
-## Module set (16)
+## Module set (14)
 
-`shared`, `notification`, `vision`, `file`, `monument`, `user`, `verification`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `chatbot`, `application`, `auth`. One capability = one Maven module. (Contracts live in `.api`/`.dtos`/`.events` packages inside the owning module.)
+`shared`, `notification`, `file`, `monument`, `user`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `application`, `auth` — plus `chatbot`, which **builds but is not wired into the app** (parked; see `BEHAVIORAL-DEENGINEERING.md` §3). One capability = one Maven module.
 
-**Still to join (deferred):** fold `vision` into `processing`, `notification` into `support`, `verification` into `user`, and park/simplify `chatbot`.
+Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`.
+**Still to join (D3):** `notification` → `support`.
 
 ## Open decisions
 
@@ -105,7 +106,8 @@ These are **behavioral/product decisions** — not done blind. WhatsApp config w
 
 ## Notes
 
-- Build + tests verified: `mvn -B clean test`, 16 modules, **BUILD SUCCESS**, 87 tests, 0 failures (Docker; no local JDK).
+- Build + tests verified: `mvn -B clean test`, 14 modules, **BUILD SUCCESS**, 87 tests, 0 failures (Docker; no local JDK).
+- **Chatbot is parked** (not a dependency of `application`); the app needs no Telegram config.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.

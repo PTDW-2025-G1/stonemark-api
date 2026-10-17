@@ -3,6 +3,8 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
+**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **parked**. §1 (`file` variants), §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
+
 ## Principles
 
 1. **Structure is done; this is behavior.** P4 already consolidated modules. Everything here changes runtime behavior, API surface, or operational machinery.
@@ -52,16 +54,20 @@
 
 **Why it is heavy.** A general conversational-UI framework for what is a **secondary ingestion channel** (photo + location + notes → submission).
 
-**Options.**
+**Options.** ~~keep / simplify / park~~
 - **A — Keep** the full engine.
 - **B — Simplify to a linear ingestion flow** (photo → optional location → optional notes → submit), dropping the general engine, the UI component model and i18n (single locale).
-- **C — Park the module** (leave the code, disable the bean/webhook) if Telegram is not a launch channel.
+- **C — Park the module** (leave the code, disable the channel).
 
-**Recommendation: decide first (D2).** **C** if Telegram isn't part of launch; **B** if it is. Don't invest in the engine either way.
+**Resolved: C (parked).** The channel was removed at the **composition root**: `chatbot` is no longer a dependency of `application` and is no longer in `spring.profiles.include`, so it is not on the runtime classpath. The module, its code and its 41 tests still build in the reactor.
 
-**Behavior impact.** B loses configurable menus/locale; C disables Telegram ingestion entirely. Web submission (P1) is unaffected.
+This also removes a **launch blocker**: previously the app would not boot without `TELEGRAM_BOT_TOKEN` (`TelegramBotConfig.@PostConstruct` throws, the bot sets its webhook at startup, and readiness health depended on Telegram). No Telegram configuration is needed now.
 
-**Risk.** 41 tests in `chatbot`; the verification flow (`verification` module) exists only to link a chat identity.
+**What is now dormant:** Telegram ingestion, the chatbot identity-verification flow (kept in `user.verification`), and `intake.submitStaged` (kept).
+
+**Behavior impact.** Web submission is unaffected and remains the only channel. Re-enabling is one dependency line.
+
+**Note on WhatsApp.** Telegram was the development stand-in for the stakeholder's WhatsApp idea. WhatsApp is a **separate integration** (Meta WhatsApp Business Cloud API: business account, dedicated number, webhook verification, approved templates) — not a config switch. The flow/handlers are reusable groundwork; a WhatsApp adapter would be a new, separate piece of work.
 
 ## 4. Remaining module joins (structural, zero behavior change)
 
@@ -105,7 +111,7 @@ Ideally done in P4; listed here because they touch small modules whose home is a
 ## Open decisions
 
 - **D1 — `file` derivatives:** 3 / 1 / none (recommend 1).
-- **D2 — `chatbot`:** keep / simplify to linear ingestion / park (recommend park if not a launch channel).
+- **D2 — `chatbot`:** ✅ **parked** at the composition root (module kept, not wired into the app).
 - **D3 — `notification` home:** keep standalone / fold into `support` (recommend fold).
 - **D4 — enforce `modules.verify()`:** now / after boundary cleanup (recommend after).
 

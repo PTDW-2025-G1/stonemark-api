@@ -28,11 +28,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>chatbot</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>support</artifactId>
             <version>${stonemark.version}</version>
         </dependency>

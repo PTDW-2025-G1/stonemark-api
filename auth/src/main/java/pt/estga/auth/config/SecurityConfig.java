@@ -22,7 +22,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${telegram.bot.webhook-path}")
+    @Value("${telegram.bot.webhook-path:/webhook/telegram}")
     private String telegramWebhookPath;
 
     @Value("${chatbot.auth.optional:true}")
