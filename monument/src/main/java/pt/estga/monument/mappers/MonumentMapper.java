@@ -5,7 +5,6 @@ import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
 import pt.estga.monument.entities.Monument;
-import pt.estga.shared.core.enums.EntityStatus;
 import pt.estga.shared.core.utils.GeometryUtils;
 
 @Component
@@ -25,7 +24,7 @@ public class MonumentMapper {
                 monument.getPostalCode(),
                 monument.getCreatedAt(),
                 monument.getLastModifiedAt(),
-                monument.getStatus() == EntityStatus.ACTIVE
+                monument.isActive()
         );
     }
 
@@ -34,7 +33,7 @@ public class MonumentMapper {
         return new MonumentListDto(
                 monument.getId(),
                 monument.getName(),
-                monument.getStatus() == EntityStatus.ACTIVE
+                monument.isActive()
         );
     }
 

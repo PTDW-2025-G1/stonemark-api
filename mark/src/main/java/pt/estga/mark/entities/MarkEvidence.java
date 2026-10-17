@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
-import pt.estga.shared.jpa.entities.BaseEntity;
+import pt.estga.shared.jpa.entities.SoftDeletableEntity;
 
 import java.util.UUID;
 
@@ -22,7 +22,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @Builder
-public class MarkEvidence extends BaseEntity {
+public class MarkEvidence extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue

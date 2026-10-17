@@ -42,7 +42,7 @@ One Maven module per capability, packaged by feature under `pt.estga.<module>`:
 
 | Module | Responsibility |
 |---|---|
-| `shared` | Cross-cutting bases: entities (`AuditedEntity`, `PublishableEntity`), DTOs, exceptions, specs, rate limiting, security helpers. Not a Modulith module. |
+| `shared` | Cross-cutting bases: entities (`AuditedEntity`, `SoftDeletableEntity`, `PublishableEntity`), DTOs, exceptions, specs, rate limiting, security helpers. Not a Modulith module. |
 | `file` | Media storage (local filesystem), staging, one web derivative, public media read API. |
 | `monument` | Places (monuments): CRUD, public listing, polygon search. |
 | `user` | Accounts, profiles, the single `UserRole`. |
