@@ -11,7 +11,7 @@ import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
-import pt.estga.commoncore.utils.SecurityUtils;
+import pt.estga.shared.core.utils.SecurityUtils;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -49,7 +49,9 @@ public class ReviewExecutor {
 
         try {
             meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
-            if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMarkId() != null) {
+            if (processingId != null
+                    && review.getDecision() == ReviewDecision.APPROVED
+                    && review.getSelectedMarkId() != null) {
                 suggestionRepository.findByProcessingIdAndMarkId(processingId, review.getSelectedMarkId())
                         .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
             }

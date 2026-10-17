@@ -33,13 +33,18 @@ public class FileStorageAdapter implements FileStorageOperations {
             var entity = orchestrator.orchestrateUpload(data, originalFilename);
             return MediaFileMapper.toDto(entity);
         } catch (java.io.IOException e) {
-            throw new pt.estga.commonweb.exceptions.FileStorageException("Failed to upload file", e);
+            throw new pt.estga.shared.web.exceptions.FileStorageException("Failed to upload file", e);
         }
     }
 
     @Override
     public StagedFileRecord stage(InputStream data, String originalFilename) {
         return stagingService.stage(data, originalFilename);
+    }
+
+    @Override
+    public void discardStaged(UUID stagingId, String originalFilename) {
+        stagingService.deleteStagedFile(stagingId, originalFilename);
     }
 
     @Override
@@ -53,7 +58,7 @@ public class FileStorageAdapter implements FileStorageOperations {
                 return MediaFileMapper.toDto(entity);
             }
         } catch (java.io.IOException e) {
-            throw new pt.estga.commonweb.exceptions.FileStorageException("Failed to commit staged file " + stagingId, e);
+            throw new pt.estga.shared.web.exceptions.FileStorageException("Failed to commit staged file " + stagingId, e);
         }
     }
 
@@ -73,7 +78,7 @@ public class FileStorageAdapter implements FileStorageOperations {
             try {
                 return mediaService.loadFile(mediaFile).getInputStream();
             } catch (IOException e) {
-                throw new pt.estga.commonweb.exceptions.FileStorageException("Failed to open stream for file " + id, e);
+                throw new pt.estga.shared.web.exceptions.FileStorageException("Failed to open stream for file " + id, e);
             }
         });
     }

@@ -13,7 +13,7 @@ import pt.estga.file.entities.MediaVariant;
 import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.storage.FileStorageService;
 import pt.estga.file.services.upload.MediaUploadOrchestrator;
-import pt.estga.commonweb.exceptions.FileNotFoundException;
+import pt.estga.shared.web.exceptions.FileNotFoundException;
 
 import java.io.IOException;
 import java.io.InputStream;

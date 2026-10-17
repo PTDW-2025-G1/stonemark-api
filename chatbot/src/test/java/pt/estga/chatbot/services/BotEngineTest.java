@@ -18,8 +18,8 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.Platform;
 import pt.estga.chatbot.telegram.services.TelegramAuthService;
-import pt.estga.commoncore.models.AppPrincipal;
-import pt.estga.commoncore.utils.SecurityUtils;
+import pt.estga.shared.core.models.AppPrincipal;
+import pt.estga.shared.core.utils.SecurityUtils;
 
 import java.util.List;
 import java.util.Optional;

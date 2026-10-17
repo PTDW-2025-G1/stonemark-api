@@ -4,6 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +30,19 @@ import java.util.Optional;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    /**
+     * Moderation queue helper: lists recent decisions (training labels).
+     * The queue of submissions awaiting moderation is
+     * {@code GET /api/v1/admin/submissions?status=RECEIVED}.
+     */
+    @GetMapping
+    @Operation(summary = "List recorded moderation decisions (labels)")
+    public ResponseEntity<Page<ReviewResponseDto>> listReviews(
+            @PageableDefault(size = 50, sort = "id", direction = org.springframework.data.domain.Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(reviewService.listReviews(pageable).map(ReviewMapper::toDto));
+    }
 
     @PostMapping("/{submissionId}/accept")
     @Operation(summary = "Accept an existing mark suggestion")
@@ -65,7 +81,7 @@ public class ReviewController {
     public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
         return reviewService.getReviewStatus(submissionId)
                 .map(ResponseEntity::ok)
-                .orElseThrow(() -> new pt.estga.commonweb.exceptions.ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new pt.estga.shared.web.exceptions.ResourceNotFoundException("Review not found"));
     }
 
     @GetMapping("/{submissionId}/suggestions")

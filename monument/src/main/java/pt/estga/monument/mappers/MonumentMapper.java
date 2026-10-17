@@ -2,9 +2,9 @@ package pt.estga.monument.mappers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pt.estga.commoncore.enums.EntityStatus;
-import pt.estga.commoncore.interfaces.DivisionLookupClient;
-import pt.estga.commoncore.models.DivisionRef;
+import pt.estga.shared.core.enums.EntityStatus;
+import pt.estga.shared.core.interfaces.DivisionLookupClient;
+import pt.estga.shared.core.models.DivisionRef;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.dtos.MonumentRequestDto;

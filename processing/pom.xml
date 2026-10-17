@@ -20,12 +20,12 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>file</artifactId>
+            <artifactId>shared</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>mark-api</artifactId>
+            <artifactId>file</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
@@ -41,11 +41,6 @@
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>vision</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-infra</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

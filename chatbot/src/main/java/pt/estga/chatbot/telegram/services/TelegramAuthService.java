@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
-import pt.estga.commoncore.models.AppPrincipal;
+import pt.estga.shared.core.models.AppPrincipal;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
 

@@ -8,7 +8,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.repositories.MonumentRepository;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.Optional;
 

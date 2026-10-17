@@ -6,8 +6,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.StorageProperties;
-import pt.estga.commonweb.exceptions.FileNotFoundException;
-import pt.estga.commonweb.exceptions.FileStorageException;
+import pt.estga.shared.web.exceptions.FileNotFoundException;
+import pt.estga.shared.web.exceptions.FileStorageException;
 
 import java.io.IOException;
 import java.io.InputStream;

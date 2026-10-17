@@ -11,8 +11,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import pt.estga.file.entities.MediaFile;
 import pt.estga.file.services.MediaService;
 import pt.estga.file.services.MediaVariantService;
-import pt.estga.commonweb.exceptions.FileNotFoundException;
-import pt.estga.commonweb.exceptions.GlobalExceptionHandler;
+import pt.estga.shared.web.exceptions.FileNotFoundException;
+import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
 import java.util.UUID;
 

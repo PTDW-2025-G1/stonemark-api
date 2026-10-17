@@ -3,6 +3,7 @@ package pt.estga.processing.scheduling;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import pt.estga.processing.enums.ProcessingStatus;
@@ -19,6 +20,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class ProcessingRetryScheduler {
 
     private final MarkEvidenceProcessingRepository processingRepository;

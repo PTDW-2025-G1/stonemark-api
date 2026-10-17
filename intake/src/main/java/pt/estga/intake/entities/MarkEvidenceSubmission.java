@@ -61,6 +61,13 @@ public class MarkEvidenceSubmission {
     private String divisionCode;
 
     /**
+     * Optional client-supplied key used to make submission creation idempotent.
+     * A unique value guarantees a retried upload is stored only once.
+     */
+    @Column(name = "idempotency_key", length = 100, unique = true)
+    private String idempotencyKey;
+
+    /**
      * Domain method: mark submission as processed by a human reviewer.
      */
     public void markProcessed() {

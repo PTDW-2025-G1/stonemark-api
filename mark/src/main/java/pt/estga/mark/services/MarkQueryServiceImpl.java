@@ -3,7 +3,7 @@ package pt.estga.mark.services;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.commoncore.enums.ValidationState;
+import pt.estga.shared.core.enums.ValidationState;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;

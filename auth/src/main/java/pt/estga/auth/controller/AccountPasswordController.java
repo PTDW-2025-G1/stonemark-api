@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 import pt.estga.auth.dto.PasswordChangeRequest;
 import pt.estga.auth.dto.PasswordSetRequest;
 import pt.estga.auth.service.PasswordService;
-import pt.estga.commoncore.interfaces.AuthenticatedPrincipal;
-import pt.estga.commonweb.dtos.MessageResponseDto;
+import pt.estga.shared.core.interfaces.AuthenticatedPrincipal;
+import pt.estga.shared.web.dtos.MessageResponseDto;
 
 @RestController
 @RequestMapping("/api/v1/account")

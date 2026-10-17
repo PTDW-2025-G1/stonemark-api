@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public interface MarkEvidenceSubmissionRepository extends JpaRepository<MarkEvidenceSubmission, Long>, JpaSpecificationExecutor<MarkEvidenceSubmission> {
+
+    Optional<MarkEvidenceSubmission> findByIdempotencyKey(String idempotencyKey);
 }

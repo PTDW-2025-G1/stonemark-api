@@ -6,7 +6,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import pt.estga.commoncore.models.AppPrincipal;
+import pt.estga.shared.core.models.AppPrincipal;
 
 import java.util.Collection;
 import java.util.Collections;

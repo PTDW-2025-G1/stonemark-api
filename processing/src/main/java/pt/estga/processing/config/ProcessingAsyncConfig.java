@@ -1,6 +1,7 @@
 package pt.estga.processing.config;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -14,6 +15,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 @EnableAsync
 @EnableScheduling
+@ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class ProcessingAsyncConfig {
 
     @Bean(name = "processingTaskExecutor")

@@ -2,6 +2,7 @@ package pt.estga.processing.services.processing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -9,6 +10,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@ConditionalOnProperty(name = "processing.enabled", havingValue = "true")
 public class AsyncProcessingService {
 
     private final ProcessingService processingService;

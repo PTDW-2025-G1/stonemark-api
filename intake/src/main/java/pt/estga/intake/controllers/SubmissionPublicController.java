@@ -29,9 +29,11 @@ public class SubmissionPublicController {
             @RequestParam(required = false) Double latitude,
             @Parameter(description = "Longitude coordinate")
             @RequestParam(required = false) Double longitude,
-            @RequestParam(required = false) String notes) throws IOException {
+            @RequestParam(required = false) String notes,
+            @Parameter(description = "Optional key that makes the request idempotent; replaying it returns the same submission")
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) throws IOException {
 
-        SubmissionDto result = submissionFacade.submitFromWeb(file, latitude, longitude, notes);
+        SubmissionDto result = submissionFacade.submitFromWeb(file, latitude, longitude, notes, idempotencyKey);
 
         var location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")

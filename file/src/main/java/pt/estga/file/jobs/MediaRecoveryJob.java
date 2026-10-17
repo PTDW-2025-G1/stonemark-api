@@ -2,6 +2,8 @@ package pt.estga.file.jobs;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,14 @@ public class MediaRecoveryJob {
     private final MediaFileRepository mediaFileRepository;
     private final FileStorageService fileStorageService;
 
+    /**
+     * Self-reference so the per-item transactional method is invoked through the
+     * proxy; a direct internal call would bypass @Transactional.
+     */
+    @Lazy
+    @Autowired
+    private MediaRecoveryJob self;
+
     @Scheduled(fixedDelayString = "PT15M")
     public void markStaleProcessingAsFailed() {
         Instant cutoff = Instant.now().minus(10, ChronoUnit.MINUTES);
@@ -31,7 +41,7 @@ public class MediaRecoveryJob {
         log.info("Found {} stuck processing media files older than {} - marking as FAILED", stuck.size(), cutoff);
         for (MediaFile m : stuck) {
             try {
-                failWithCleanup(m);
+                self.failWithCleanup(m);
             } catch (Exception e) {
                 log.error("Failed to mark media id {} as FAILED during recovery job", m.getId(), e);
             }
@@ -39,7 +49,7 @@ public class MediaRecoveryJob {
     }
 
     @Transactional
-    protected void failWithCleanup(MediaFile mediaFile) {
+    public void failWithCleanup(MediaFile mediaFile) {
         List<MediaVariant> variants = List.copyOf(mediaFile.getVariants());
         for (MediaVariant variant : variants) {
             try {

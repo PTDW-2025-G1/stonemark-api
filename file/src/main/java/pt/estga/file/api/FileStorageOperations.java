@@ -1,0 +1,24 @@
+package pt.estga.file.api;
+
+import pt.estga.file.dtos.MediaFileDto;
+
+import java.io.InputStream;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface FileStorageOperations {
+
+    MediaFileDto upload(InputStream data, String originalFilename);
+
+    Optional<MediaFileDto> findById(UUID id);
+
+    boolean existsById(UUID id);
+
+    Optional<InputStream> openStream(UUID id);
+
+    StagedFileRecord stage(InputStream data, String originalFilename);
+
+    MediaFileDto commit(UUID stagingId, String originalFilename);
+
+    void discardStaged(UUID stagingId, String originalFilename);
+}
