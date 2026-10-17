@@ -3,7 +3,7 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
-**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **removed**. §1 (`file` variants), §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
+**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
 
 ## Principles
 
@@ -16,20 +16,17 @@
 
 **What exists.** Upload orchestrator + staging; `MediaProcessingService` (async, `@PostConstruct` webp check); `ImageVariantGenerator` (3 derivatives — `THUMBNAIL` 200², `PREVIEW` 1024², `OPTIMIZED` scale 1.0 — via thumbnailator → webp); `MediaVariant` entity + repo; `MediaVariantService` (cached lookup); `FileAsyncConfig` (`fileTaskExecutor`); `MediaUploadedEvent` → listener generates `OPTIMIZED`; `MediaApprovedEvent` → listener generates `THUMBNAIL`+`PREVIEW` (**never published — unreachable**); `MediaRecoveryJob` (stuck `PROCESSING` → `FAILED`); `TempFileCleanupJob`; `MediaController` exposes `/{id}/thumbnail|preview|optimized`.
 
-**Why it is heavy.** Three derivatives, an event-driven async pipeline, a cache, a recovery job and two events — for what is, at the catalogue's scale, "show a web-friendly image".
+**Why it was heavy.** Three derivatives, an event-driven async pipeline, a cache, a recovery job and two events — for what is, at the catalogue's scale, "show a web-friendly image".
 
-**Options.**
-- **A — Keep all three derivatives** (status quo).
-- **B — One derivative.** Generate a single web-optimized derivative (e.g. `OPTIMIZED`, ~1600px webp) on upload, synchronously; serve the original as fallback; drop `THUMBNAIL`/`PREVIEW`, `MediaApprovedEvent`, the async path and the recovery job.
-- **C — No derivatives.** Store and serve the original only; let the client/CDN resize.
+**Resolved: D1 = one derivative (done).**
+- `MediaVariantType` now has a single value, `OPTIMIZED`; `ImageVariantGenerator` produces only it.
+- `MediaApprovedEvent` and its (unreachable) handler were removed.
+- `MediaController` no longer exposes `/{id}/thumbnail` or `/{id}/preview`; only `/{id}/optimized` remains.
+- `ImageVariantGeneratorTest` updated to the single variant.
 
-**Recommendation: B.** One derivative covers both grid thumbnails and detail views; it removes an event, a job and a cache.
+**Still present (not part of D1 — flag for later):** the async event path (`MediaUploadedEvent` → listener → `MediaProcessingService`), `FileAsyncConfig`, the `MediaVariantService` cache, and `MediaRecoveryJob`. Cutting those is a further, optional step.
 
-**Behavior impact.** `GET /{id}/thumbnail` and `/{id}/preview` disappear (or 404); the UI must use one image URL. This is a **public API change**.
-
-**Risk.** `MediaControllerTest`, `ImageVariantGeneratorTest`, and `stonemark-react`/`react-admin-panel` (out of scope here) assume the three endpoints.
-
-**Decision needed (D1):** how many sizes does the public UI actually need?
+**Behavior impact.** `GET /{id}/thumbnail` and `/{id}/preview` are gone; the UI must use `/{id}/optimized`. This is a **public API change** (frontends are out of scope here).
 
 ## 2. `processing` operational scaffolding
 
@@ -108,7 +105,7 @@ Ideally done in P4; listed here because they touch small modules whose home is a
 
 ## Open decisions
 
-- **D1 — `file` derivatives:** 3 / 1 / none (recommend 1).
+- **D1 — `file` derivatives:** ✅ **1** (`OPTIMIZED`). `THUMBNAIL`/`PREVIEW` and the `/thumbnail`/`/preview` endpoints removed.
 - **D2 — `chatbot`:** ✅ **removed** (module deleted; Telegram was a dev stand-in only).
 - **D3 — `notification` home:** keep standalone / fold into `support` (recommend fold).
 - **D4 — enforce `modules.verify()`:** now / after boundary cleanup (recommend after).

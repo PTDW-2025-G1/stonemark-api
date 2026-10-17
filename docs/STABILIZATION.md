@@ -84,7 +84,7 @@ See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the ful
 
 | Subsystem | Keep | Cut |
 |---|---|---|
-| `file` image pipeline | storage (local filesystem) + staging + original | multi-variant async pipeline, recovery job, retry/`Thread.sleep` |
+| `file` image pipeline | storage (local filesystem) + staging + original + one web derivative | *done:* multi-variant → 1; *remaining:* async event path, recovery job |
 | `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead scoring config |
 | `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n |
 | module system | Modulith | swallowed `modules.verify()` |

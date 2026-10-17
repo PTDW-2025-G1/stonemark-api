@@ -30,8 +30,6 @@ public class ImageVariantGenerator {
         try {
             Thumbnails.Builder<File> builder = Thumbnails.of(originalFile.toFile());
             switch (type) {
-                case THUMBNAIL -> builder.size(200, 200).crop(net.coobird.thumbnailator.geometry.Positions.CENTER);
-                case PREVIEW -> builder.size(1024, 1024);
                 case OPTIMIZED -> builder.scale(1.0);
             }
             builder.outputFormat("webp").toFile(temp.toFile());

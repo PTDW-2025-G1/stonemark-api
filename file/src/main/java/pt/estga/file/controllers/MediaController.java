@@ -106,30 +106,6 @@ public class MediaController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Get media thumbnail", description = "Retrieves the thumbnail variant of the media file.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Thumbnail retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Thumbnail not found")
-    })
-    @GetMapping("/{id}/thumbnail")
-    public ResponseEntity<Resource> getThumbnail(
-            @Parameter(description = "ID of the media file", required = true)
-            @PathVariable UUID id) {
-        return getVariant(id, MediaVariantType.THUMBNAIL);
-    }
-
-    @Operation(summary = "Get media preview", description = "Retrieves the preview variant of the media file.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Preview retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Preview not found")
-    })
-    @GetMapping("/{id}/preview")
-    public ResponseEntity<Resource> getPreview(
-            @Parameter(description = "ID of the media file", required = true)
-            @PathVariable UUID id) {
-        return getVariant(id, MediaVariantType.PREVIEW);
-    }
-
     @Operation(summary = "Get optimized media", description = "Retrieves the optimized variant of the media file.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Optimized version retrieved successfully"),
