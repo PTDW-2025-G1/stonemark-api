@@ -87,6 +87,7 @@ See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the ful
 | `file` image pipeline | storage (local filesystem) + staging + original + one web derivative | *done:* multi-variant → 1; *remaining:* async event path, recovery job |
 | `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead scoring config |
 | `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n |
+| geo / divisions | coordinates (`Point,4326`) on monuments and occurrences | home-grown division lookup client + `divisionCode` plumbing |
 | module system | Modulith | swallowed `modules.verify()` |
 
 These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
@@ -97,6 +98,7 @@ These are **behavioral/product decisions** — not done blind. WhatsApp config w
 
 Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`, `notification` → `support`.
 **Removed:** `chatbot` (Telegram ingestion) — never used in production; recoverable from git history.
+**Removed (abandoned):** the home-grown geo/division lookup — `DivisionLookupClient`, `HttpDivisionLookupClient` (called a self-built `http://localhost:8081` geo API), `DivisionRef`, and the `divisionCode`/`divisionName` plumbing across `monument` and `intake` (entities, DTOs, admin filters, the `/monuments/division/{code}` endpoint, and reverse-geocoding on submission). Coordinates stay on `Monument`/occurrences; a ready-made PT open-data source can replace this later if administrative areas are needed.
 
 ## Open decisions
 
@@ -107,7 +109,9 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 ## Notes
 
 - Build + tests verified: `mvn -B clean test`, 12 modules, **BUILD SUCCESS**, 44 tests, 0 failures (Docker; no local JDK).
+- **Next work (domain model + public API rewrite):** see [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md) — target model, HTTP surface, decisions, and a commit-by-commit plan.
 - **Chatbot removed** (Telegram ingestion); the app needs no Telegram config.
+- **Geo lookup stripped:** the abandoned home-grown geo service client (and all `divisionCode`/`divisionName` fields, filters and endpoints) was removed — see **D6** in [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md). Coordinates (`Point,4326`) remain on monuments and occurrences.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
