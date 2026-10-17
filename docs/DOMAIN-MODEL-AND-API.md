@@ -7,7 +7,7 @@
 
 - §1 is the critique of what exists. §2–§3 are the target. §4 lists the decisions that shape §2/§3.
 - §5 is the work plan as an ordered list of commits. **C4 onward depends on §4 being decided.**
-- Nothing here is implemented yet.
+- **Partially implemented** — see §7 Progress for what has landed.
 
 ---
 
@@ -176,3 +176,22 @@ Sequencing notes:
 - **C4 is a schema-breaking change.** No production data yet, so acceptable; confirm before real submissions exist.
 - **Cross-module FKs** trade module-table isolation for integrity — a deliberate call (D5).
 - **Doing this before Flyway** means the baseline in C10 must capture the final shape; don't baseline twice.
+
+## 7. Progress
+
+Landed on branch `bugfix/domain` (each commit builds green; `modules.verify()` green):
+
+| Theme | What landed |
+|---|---|
+| Geo cleanup (docs) | D6 recorded; the abandoned geo/division subsystem is documented as removed. |
+| Geo removal | Deleted `DivisionLookupClient` / `HttpDivisionLookupClient` / `DivisionRef`; removed `divisionCode` / `division` / filters / the `/monuments/division/{code}` endpoint across `monument` and `intake`. |
+| Lifecycle + model (C4/C5/C7/C8/C9) | `PublicationStatus` + `PublishableEntity` (audit + soft delete + `publishedAt`) + `SoftDeletable`; `Mark`/`MarkOccurrence` remodeled (own coordinates, optional monument, unlocated allowed, evidence lineage with `submissionId`); `ValidationState`/`exemplar` dropped; first mark publish cascade-publishes existing occurrences. |
+| Public API (C6) | `GET /api/v1/public/marks` (published only; `q`, `monumentId`, `located`, paged) and `GET /api/v1/public/marks/{id}` (mark + published occurrences + evidence media ids). |
+| Conventions (C11) | Controllers no longer inject repositories; all reads go through services. |
+
+Still open:
+- **C3/C10** — DB foreign keys + Flyway baseline (deferred until migrations are wanted).
+- `GET /api/v1/public/monuments/{id}/marks` — reachable today via `GET /public/marks?monumentId=`; a nested route can follow if the UI needs it.
+- Admin occurrence publish/archive exists (`PUT /api/v1/admin/occurrences/{id}`); evidence lifecycle is intentionally minimal (follows its occurrence).
+
+Verification: `./mvnw -B clean test` — BUILD SUCCESS, 43 tests, `ModulithVerificationTest` green.

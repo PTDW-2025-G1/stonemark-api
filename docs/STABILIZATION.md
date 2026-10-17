@@ -110,6 +110,7 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 
 - Build + tests verified: `mvn -B clean test`, 12 modules, **BUILD SUCCESS**, 44 tests, 0 failures (Docker; no local JDK).
 - **Next work (domain model + public API rewrite):** see [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md) — target model, HTTP surface, decisions, and a commit-by-commit plan.
+- **Domain remodel + public read API landed** on `bugfix/domain`: single `PublicationStatus`, occurrences with their own coordinates/optional monument, evidence lineage, `GET /api/v1/public/marks`, and controllers off repositories. See the **Progress** section in [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md).
 - **Chatbot removed** (Telegram ingestion); the app needs no Telegram config.
 - **Geo lookup stripped:** the abandoned home-grown geo service client (and all `divisionCode`/`divisionName` fields, filters and endpoints) was removed — see **D6** in [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md). Coordinates (`Point,4326`) remain on monuments and occurrences.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
