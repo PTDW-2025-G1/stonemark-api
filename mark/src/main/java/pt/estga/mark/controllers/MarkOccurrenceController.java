@@ -1,6 +1,7 @@
 package pt.estga.mark.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.mark.dtos.MarkOccurrenceUpdateDto;
 import pt.estga.mark.mappers.MarkOccurrenceMapper;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.services.MarkOccurrenceService;
@@ -31,6 +33,12 @@ public class MarkOccurrenceController {
     @GetMapping("/{id}")
     public ResponseEntity<MarkOccurrenceDto> findById(@PathVariable Long id) {
         return ResponseEntity.ok(service.findById(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<MarkOccurrenceDto> update(@PathVariable Long id,
+                                                    @Valid @RequestBody MarkOccurrenceUpdateDto dto) {
+        return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
