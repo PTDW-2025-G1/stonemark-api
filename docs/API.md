@@ -20,7 +20,6 @@ Paged endpoints accept `page`, `size` and `sort`.
 | GET | `/api/v1/public/users/{id}` | Public user profile. |
 | GET | `/api/v1/public/users/exists/by-username` | Username availability. |
 | POST | `/api/v1/public/contact-requests` | Submit a contact request. |
-| GET | `/api/v1/public/bookmarks/user/{userId}` | A user's bookmarks. |
 | GET | `/api/v1/public/vision/health` | Vision server health. |
 
 Media writes require authentication: `POST /api/v1/public/media` and
@@ -44,6 +43,17 @@ Media writes require authentication: `POST /api/v1/public/media` and
 | POST | `/api/v1/account/password` | Set a password. |
 | PUT | `/api/v1/account/password` | Change the password. |
 | DELETE | `/api/v1/account` | Delete the account. |
+
+## Bookmarks (authenticated)
+
+Bookmarks belong to the authenticated caller; the user is taken from the security
+context, never from the request.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/api/v1/bookmarks` | The authenticated user's bookmarks. |
+| POST | `/api/v1/bookmarks` | Bookmark a target. |
+| DELETE | `/api/v1/bookmarks/{bookmarkId}` | Remove a bookmark. |
 
 ## Review and moderation (REVIEWER or higher)
 
