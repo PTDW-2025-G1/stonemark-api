@@ -80,12 +80,16 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Overengineering to cut (later)
 
+See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the full plan (options, impact, risks, decisions). Summary of what remains:
+
 | Subsystem | Keep | Cut |
 |---|---|---|
 | `file` image pipeline | storage (MinIO/local) + staging + original | multi-variant async pipeline, recovery job, retry/`Thread.sleep` |
-| `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead entity + dead scoring config |
-| `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n; **WhatsApp config** |
-| module system | Modulith | `*-api`/Modulith split; swallowed `modules.verify()` |
+| `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead scoring config |
+| `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n |
+| module system | Modulith | swallowed `modules.verify()` |
+
+These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
 
 ## Module set (16)
 

@@ -1,4 +1,4 @@
-package pt.estga.verification.controllers;
+package pt.estga.user.verification.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,8 +12,8 @@ import pt.estga.shared.core.interfaces.AuthenticatedPrincipal;
 import pt.estga.shared.web.dtos.MessageResponseDto;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 import pt.estga.user.repositories.UserRepository;
-import pt.estga.verification.dtos.ChatbotVerificationRequestDto;
-import pt.estga.verification.services.ChatbotVerificationService;
+import pt.estga.user.verification.dtos.ChatbotVerificationRequestDto;
+import pt.estga.user.verification.services.ChatbotVerificationService;
 
 import java.util.Optional;
 

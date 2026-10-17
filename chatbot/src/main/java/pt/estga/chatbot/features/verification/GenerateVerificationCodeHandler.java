@@ -10,8 +10,8 @@ import pt.estga.chatbot.models.BotInput;
 import pt.estga.chatbot.models.BotResponse;
 import pt.estga.chatbot.models.text.RenderedText;
 import pt.estga.chatbot.services.messages.UiTextService;
-import pt.estga.verification.entities.ActionCode;
-import pt.estga.verification.services.ChatbotVerificationService;
+import pt.estga.user.verification.entities.ActionCode;
+import pt.estga.user.verification.services.ChatbotVerificationService;
 
 import java.util.ArrayList;
 import java.util.List;

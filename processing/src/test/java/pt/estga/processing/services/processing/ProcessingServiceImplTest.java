@@ -16,8 +16,8 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
-import pt.estga.vision.DetectionResult;
-import pt.estga.vision.VisionClient;
+import pt.estga.processing.vision.DetectionResult;
+import pt.estga.processing.vision.VisionClient;
 
 import java.io.InputStream;
 import java.util.List;

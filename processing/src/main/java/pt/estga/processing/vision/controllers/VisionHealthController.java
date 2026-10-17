@@ -1,12 +1,12 @@
-package pt.estga.vision.controllers;
+package pt.estga.processing.vision.controllers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import pt.estga.vision.VisionClient;
-import pt.estga.vision.dtos.VisionHealthResponse;
+import pt.estga.processing.vision.VisionClient;
+import pt.estga.processing.vision.dtos.VisionHealthResponse;
 
 @RestController
 @RequestMapping("/api/v1/public/vision")

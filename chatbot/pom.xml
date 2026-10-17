@@ -39,11 +39,6 @@
             <artifactId>intake</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>verification</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
 
         <dependency>
             <groupId>org.reactivestreams</groupId>

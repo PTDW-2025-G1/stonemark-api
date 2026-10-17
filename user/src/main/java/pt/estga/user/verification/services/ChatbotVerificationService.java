@@ -1,13 +1,13 @@
-package pt.estga.verification.services;
+package pt.estga.user.verification.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.verification.entities.ActionCode;
-import pt.estga.verification.enums.ActionCodeType;
-import pt.estga.verification.repositories.ActionCodeRepository;
+import pt.estga.user.verification.entities.ActionCode;
+import pt.estga.user.verification.enums.ActionCodeType;
+import pt.estga.user.verification.repositories.ActionCodeRepository;
 
 import java.security.SecureRandom;
 import java.time.Instant;

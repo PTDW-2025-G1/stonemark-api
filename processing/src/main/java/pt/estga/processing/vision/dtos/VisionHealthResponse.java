@@ -1,4 +1,4 @@
-package pt.estga.vision.dtos;
+package pt.estga.processing.vision.dtos;
 
 public record VisionHealthResponse(String status, String message) {
 

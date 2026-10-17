@@ -1,4 +1,4 @@
-package pt.estga.verification.enums;
+package pt.estga.user.verification.enums;
 
 /**
  * Types of action codes used in the verification system.

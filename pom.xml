@@ -25,13 +25,11 @@
         <!-- Foundation: no internal dependencies -->
         <module>shared</module>
         <module>notification</module>
-        <module>vision</module>
 
         <!-- Domain services -->
         <module>file</module>
         <module>monument</module>
         <module>user</module>
-        <module>verification</module>
         <module>mark</module>
         <module>support</module>
         <module>bookmark</module>
@@ -122,11 +120,6 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>vision</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
                 <artifactId>intake</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
@@ -143,11 +136,6 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>chatbot</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>verification</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

@@ -1,8 +1,8 @@
-package pt.estga.verification.entities;
+package pt.estga.user.verification.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import pt.estga.verification.enums.ActionCodeType;
+import pt.estga.user.verification.enums.ActionCodeType;
 
 import java.time.Instant;
 

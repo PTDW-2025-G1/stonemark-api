@@ -1,4 +1,4 @@
-package pt.estga.verification.dtos;
+package pt.estga.user.verification.dtos;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
