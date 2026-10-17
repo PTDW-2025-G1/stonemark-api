@@ -1,2 +1,2 @@
-@org.springframework.modulith.ApplicationModule(displayName = "Support", allowedDependencies = {"user", "notification"})
+@org.springframework.modulith.ApplicationModule(displayName = "Support", allowedDependencies = {"user"})
 package pt.estga.support;

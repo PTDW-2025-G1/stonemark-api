@@ -6,7 +6,7 @@ server:
 
 spring:
   profiles:
-    include: chatbot, notification, file, security, processing, review
+    include: notification, file, security, processing, review
   servlet:
     multipart:
       max-file-size: 50MB
@@ -33,10 +33,6 @@ spring:
     locations: classpath:db/migration
   modulith:
     detection-strategy: explicitly-annotated
-    events:
-      completion-mode: update
-      jdbc-schema-initialization:
-        enabled: false
   jackson:
     deserializer:
       read_enum_values_using_index: false
@@ -77,12 +73,6 @@ rate-limit:
     refill-tokens: 100
     refill-period: 1
     refill-unit: MINUTES
-  paths:
-    /api/v1/account/verification/chatbot:
-      capacity: 10
-      refill-tokens: 10
-      refill-period: 1
-      refill-unit: MINUTES
 
 management:
   endpoints:
@@ -95,7 +85,7 @@ management:
       show-details: always
       group:
         readiness:
-          include: [readinessState, vision, telegram, db]
+          include: [readinessState, vision, db]
         liveness:
           include: [livenessState]
       validate-group-membership: false

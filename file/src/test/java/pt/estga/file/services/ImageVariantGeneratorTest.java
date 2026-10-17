@@ -39,36 +39,7 @@ class ImageVariantGeneratorTest {
     }
 
     @Test
-    @DisplayName("should generate thumbnail variant with correct dimensions")
-    void shouldGenerateThumbnail() throws Exception {
-        VariantResult result = generator.generate(testImage, MediaVariantType.THUMBNAIL);
-
-        try {
-            assertEquals(200, result.width());
-            assertEquals(200, result.height());
-            assertTrue(result.size() > 0);
-            assertTrue(result.file().toString().endsWith(".webp"));
-        } finally {
-            Files.deleteIfExists(result.file());
-        }
-    }
-
-    @Test
-    @DisplayName("should generate preview variant")
-    void shouldGeneratePreview() throws Exception {
-        VariantResult result = generator.generate(testImage, MediaVariantType.PREVIEW);
-
-        try {
-            assertEquals(1024, result.width());
-            assertEquals(768, result.height());
-            assertTrue(result.size() > 0);
-        } finally {
-            Files.deleteIfExists(result.file());
-        }
-    }
-
-    @Test
-    @DisplayName("should generate optimized variant with same dimensions")
+    @DisplayName("should generate the single optimized variant with the original dimensions")
     void shouldGenerateOptimized() throws Exception {
         VariantResult result = generator.generate(testImage, MediaVariantType.OPTIMIZED);
 

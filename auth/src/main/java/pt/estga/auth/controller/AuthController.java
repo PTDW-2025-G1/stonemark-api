@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pt.estga.auth.dto.AuthResponse;
-import pt.estga.auth.dto.GoogleAuthRequest;
 import pt.estga.auth.dto.LoginRequest;
 import pt.estga.auth.dto.RefreshTokenRequest;
 import pt.estga.auth.service.AuthService;
@@ -27,12 +26,6 @@ public class AuthController {
     @Operation(summary = "Authenticate with username and password")
     public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.authenticate(request.username(), request.password()));
-    }
-
-    @PostMapping("/google")
-    @Operation(summary = "Authenticate with Google ID token")
-    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleAuthRequest request) {
-        return ResponseEntity.ok(authService.authenticateWithGoogle(request.token()));
     }
 
     @PostMapping("/refresh")

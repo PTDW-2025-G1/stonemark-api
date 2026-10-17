@@ -10,29 +10,24 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
-import pt.estga.auth.oauth.GoogleOAuth2UserService;
-import pt.estga.auth.oauth.OAuth2LoginSuccessHandler;
 
 import java.util.List;
 
+/**
+ * Security configuration for the password/JWT authentication model.
+ *
+ * <p>Public routes stay open (anonymous submissions); everything else requires an
+ * authenticated principal, and admin/moderator endpoints additionally enforce roles
+ * via {@code @PreAuthorize} (enabled here).
+ */
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Value("${telegram.bot.webhook-path}")
-    private String telegramWebhookPath;
-
-    @Value("${chatbot.auth.optional:true}")
-    private boolean chatbotAuthOptional;
-
     @Value("${application.security.disabled:false}")
     private boolean securityDisabled;
-
-    @Value("${spring.security.oauth2.client.registration.google.client-id:}")
-    private String googleClientId;
 
     private static final String[] OPEN_API_ROUTES = {
             "/",
@@ -58,8 +53,6 @@ public class SecurityConfig {
     };
 
     private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
-    private final GoogleOAuth2UserService googleOAuth2UserService;
-    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -76,7 +69,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(OPEN_API_ROUTES).permitAll();
                     auth.requestMatchers("/actuator/**").permitAll();
-                    auth.requestMatchers("/login/**", "/oauth2/**").permitAll();
 
                     // Media writes are not public: uploaded evidence is stored through
                     // the submission flow, not by anonymous clients.
@@ -89,33 +81,17 @@ public class SecurityConfig {
                     if (securityDisabled) {
                         auth.anyRequest().permitAll();
                     } else {
-                        if (chatbotAuthOptional) {
-                            auth.requestMatchers(telegramWebhookPath).permitAll();
-                        } else {
-                            auth.requestMatchers(telegramWebhookPath).authenticated();
-                        }
-
                         auth.anyRequest().authenticated();
                     }
                 })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                );
-
-        // Google login is only wired when a client id is configured, so the service
-        // still boots (with JWT authentication) on deployments without OAuth.
-        if (StringUtils.hasText(googleClientId)) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .userInfoEndpoint(userInfo -> userInfo
-                            .userService(googleOAuth2UserService))
-                    .successHandler(oAuth2LoginSuccessHandler));
-        }
-
-        http.oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt
-                        .jwtAuthenticationConverter(appJwtAuthenticationConverter)
                 )
-        );
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(appJwtAuthenticationConverter)
+                        )
+                );
 
         return http.build();
     }

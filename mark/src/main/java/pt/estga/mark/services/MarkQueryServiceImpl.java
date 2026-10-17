@@ -49,6 +49,13 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     }
 
     @Override
+    public List<MarkDto> findProvisionalMarks() {
+        return markRepository.findByValidationState(ValidationState.PROVISIONAL).stream()
+                .map(MarkMapper::toDto)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public MarkDto createMark(String title) {
         Mark mark = markRepository.save(Mark.builder().title(title).build());

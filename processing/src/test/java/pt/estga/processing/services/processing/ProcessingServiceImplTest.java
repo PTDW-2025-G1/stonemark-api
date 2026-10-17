@@ -9,15 +9,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.file.dtos.MediaFileDto;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.intake.api.IntakeSubmissionApi;
+import pt.estga.intake.api.SubmissionRef;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
-import pt.estga.vision.DetectionResult;
-import pt.estga.vision.VisionClient;
+import pt.estga.processing.vision.DetectionResult;
+import pt.estga.processing.vision.VisionClient;
 
 import java.io.InputStream;
 import java.util.List;
@@ -45,7 +45,7 @@ class ProcessingServiceImplTest {
     private static final Long SUBMISSION_ID = Long.valueOf(1L);
 
     @Mock
-    private MarkEvidenceSubmissionRepository submissionRepository;
+    private IntakeSubmissionApi intakeApi;
     @Mock
     private MarkEvidenceProcessingRepository processingRepository;
     @Mock
@@ -62,12 +62,12 @@ class ProcessingServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new ProcessingServiceImpl(
-                submissionRepository, processingRepository, visionClient,
+                intakeApi, processingRepository, visionClient,
                 fileStorage, similarityService, new SimpleMeterRegistry(), persistence);
     }
 
-    private MarkEvidenceSubmission submission(UUID fileId) {
-        return MarkEvidenceSubmission.builder().id(SUBMISSION_ID).originalMediaFileId(fileId).build();
+    private void givenSubmission(UUID fileId) {
+        when(intakeApi.findById(SUBMISSION_ID)).thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, fileId)));
     }
 
     private MarkEvidenceProcessing processing() {
@@ -82,7 +82,7 @@ class ProcessingServiceImplTest {
     @DisplayName("defers (PENDING) when the Vision service is unavailable")
     void defersWhenVisionUnavailable() {
         MarkEvidenceProcessing processing = processing();
-        when(submissionRepository.findById(SUBMISSION_ID)).thenReturn(Optional.of(submission(UUID.randomUUID())));
+        givenSubmission(UUID.randomUUID());
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(processing);
         when(visionClient.isAvailable()).thenReturn(Boolean.FALSE);
 
@@ -95,7 +95,7 @@ class ProcessingServiceImplTest {
     @Test
     @DisplayName("skips when the record is already processed or in progress")
     void skipsWhenAlreadyProcessed() {
-        when(submissionRepository.findById(SUBMISSION_ID)).thenReturn(Optional.of(submission(UUID.randomUUID())));
+        givenSubmission(UUID.randomUUID());
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(null);
 
         service.processSubmission(SUBMISSION_ID);
@@ -109,7 +109,7 @@ class ProcessingServiceImplTest {
     void failsWhenMediaMissing() {
         UUID fileId = UUID.randomUUID();
         MarkEvidenceProcessing processing = processing();
-        when(submissionRepository.findById(SUBMISSION_ID)).thenReturn(Optional.of(submission(fileId)));
+        givenSubmission(fileId);
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(processing);
         when(visionClient.isAvailable()).thenReturn(Boolean.TRUE);
         when(fileStorage.existsById(fileId)).thenReturn(Boolean.FALSE);
@@ -125,7 +125,7 @@ class ProcessingServiceImplTest {
     void failsOnEmptyEmbedding() {
         UUID fileId = UUID.randomUUID();
         MarkEvidenceProcessing processing = processing();
-        when(submissionRepository.findById(SUBMISSION_ID)).thenReturn(Optional.of(submission(fileId)));
+        givenSubmission(fileId);
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(processing);
         when(visionClient.isAvailable()).thenReturn(Boolean.TRUE);
         when(fileStorage.existsById(fileId)).thenReturn(Boolean.TRUE);
@@ -148,7 +148,7 @@ class ProcessingServiceImplTest {
         List<MarkSuggestion> suggestions = List.of(
                 MarkSuggestion.builder().markId(Long.valueOf(10L)).confidence(0.9).build());
 
-        when(submissionRepository.findById(SUBMISSION_ID)).thenReturn(Optional.of(submission(fileId)));
+        givenSubmission(fileId);
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(processing);
         when(visionClient.isAvailable()).thenReturn(Boolean.TRUE);
         when(fileStorage.existsById(fileId)).thenReturn(Boolean.TRUE);

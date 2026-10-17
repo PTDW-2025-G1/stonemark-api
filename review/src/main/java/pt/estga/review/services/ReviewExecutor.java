@@ -5,8 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.processing.repositories.MarkSuggestionRepository;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.models.ResolutionResult;
@@ -14,7 +12,6 @@ import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.core.utils.SecurityUtils;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -22,21 +19,19 @@ import java.util.UUID;
 public class ReviewExecutor {
 
     private final MarkEvidenceReviewRepository reviewRepository;
-    private final MarkSuggestionRepository suggestionRepository;
     private final MeterRegistry meterRegistry;
 
     @Transactional
     public MarkEvidenceReview execute(
-            MarkEvidenceSubmission submission,
+            Long submissionId,
             ReviewDecision decision,
             String comment,
-            ResolutionResult resolution,
-            UUID processingId) {
+            ResolutionResult resolution) {
 
         Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().id() : null;
 
         MarkEvidenceReview review = MarkEvidenceReview.builder()
-                .submissionId(submission.getId())
+                .submissionId(submissionId)
                 .selectedMarkId(selectedMarkId)
                 .decision(decision)
                 .reviewedAt(Instant.now())
@@ -49,12 +44,6 @@ public class ReviewExecutor {
 
         try {
             meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
-            if (processingId != null
-                    && review.getDecision() == ReviewDecision.APPROVED
-                    && review.getSelectedMarkId() != null) {
-                suggestionRepository.findByProcessingIdAndMarkId(processingId, review.getSelectedMarkId())
-                        .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
-            }
         } catch (Exception ex) {
             log.debug("Failed to record review metrics: {}", ex.getMessage());
         }

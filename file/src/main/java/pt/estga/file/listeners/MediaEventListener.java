@@ -8,7 +8,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.MediaVariantType;
-import pt.estga.file.events.MediaApprovedEvent;
 import pt.estga.file.events.MediaUploadedEvent;
 import pt.estga.file.repositories.MediaFileRepository;
 import pt.estga.file.services.MediaProcessingService;
@@ -29,18 +28,6 @@ public class MediaEventListener {
             processingService.process(event.mediaFileId(), MediaVariantType.OPTIMIZED);
         } catch (Exception e) {
             log.error("Failed to generate optimized variant for media {} — marking FAILED", event.mediaFileId(), e);
-            markMediaFailed(event.mediaFileId());
-        }
-    }
-
-    @Async("fileTaskExecutor")
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void onMediaApproved(MediaApprovedEvent event) {
-        log.info("Media approved with ID: {} — generating display variants", event.mediaFileId());
-        try {
-            processingService.process(event.mediaFileId(), MediaVariantType.THUMBNAIL, MediaVariantType.PREVIEW);
-        } catch (Exception e) {
-            log.error("Unhandled failure processing media {} — marking FAILED", event.mediaFileId(), e);
             markMediaFailed(event.mediaFileId());
         }
     }

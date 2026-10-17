@@ -53,17 +53,11 @@ public class User extends BaseEntity implements Serializable {
     @Column(name = "token_version")
     private int tokenVersion = 0;
 
-    @Column(name = "google_sub", unique = true)
-    private String googleSub;
-
     private boolean accountLocked;
     @Builder.Default
     private boolean enabled = false;
 
     private Instant lastLoginAt;
-
-    @Column(unique = true)
-    private String telegramChatId;
 
     @Override
     public boolean equals(Object o) {

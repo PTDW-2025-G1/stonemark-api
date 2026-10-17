@@ -1,10 +1,4 @@
 storage:
-  provider: minio # or local
+  provider: local
   local:
     root-path: uploads
-
-minio:
-  endpoint: http://localhost:9000
-  bucket-name: stonemark
-  access-key: ${MINIO_ROOT_USER}
-  secret-key: ${MINIO_ROOT_PASSWORD}

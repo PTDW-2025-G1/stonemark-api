@@ -24,14 +24,11 @@
     <modules>
         <!-- Foundation: no internal dependencies -->
         <module>shared</module>
-        <module>notification</module>
-        <module>vision</module>
 
         <!-- Domain services -->
         <module>file</module>
         <module>monument</module>
         <module>user</module>
-        <module>verification</module>
         <module>mark</module>
         <module>support</module>
         <module>bookmark</module>
@@ -40,7 +37,6 @@
         <!-- Higher-order services -->
         <module>processing</module>
         <module>review</module>
-        <module>chatbot</module>
 
         <!-- Entry point: depends on everything -->
         <module>application</module>
@@ -122,11 +118,6 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>vision</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
                 <artifactId>intake</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
@@ -142,27 +133,12 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>chatbot</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>verification</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
                 <artifactId>support</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>bookmark</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>notification</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
         </dependencies>
@@ -173,10 +149,6 @@
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-events-api</artifactId>
         </dependency>
 
         <!-- Testing (universal) -->

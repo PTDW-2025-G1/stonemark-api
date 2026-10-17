@@ -6,14 +6,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pt.estga.shared.core.utils.VectorUtils;
 import pt.estga.file.api.FileStorageOperations;
-import pt.estga.intake.entities.MarkEvidenceSubmission;
-import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
+import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
-import pt.estga.vision.VisionClient;
+import pt.estga.processing.vision.VisionClient;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.io.InputStream;
@@ -27,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ProcessingServiceImpl implements ProcessingService {
 
-    private final MarkEvidenceSubmissionRepository submissionRepository;
+    private final IntakeSubmissionApi intakeApi;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final VisionClient visionClient;
     private final FileStorageOperations fileStorage;
@@ -56,7 +55,7 @@ public class ProcessingServiceImpl implements ProcessingService {
 
     @Override
     public void processSubmission(Long submissionId) {
-        submissionRepository.findById(submissionId).ifPresentOrElse(submission -> {
+        intakeApi.findById(submissionId).ifPresentOrElse(submission -> {
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();
             try {
@@ -75,7 +74,7 @@ public class ProcessingServiceImpl implements ProcessingService {
                     return;
                 }
 
-                UUID mediaFileId = submission.getOriginalMediaFileId();
+                UUID mediaFileId = submission.originalMediaFileId();
                 if (mediaFileId == null || !fileStorage.existsById(mediaFileId)) {
                     persistence.setFailed(processing.getId(),
                             "Original media file not found: " + mediaFileId, true, startNanos);

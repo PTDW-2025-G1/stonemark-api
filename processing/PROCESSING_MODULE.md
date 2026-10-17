@@ -27,7 +27,7 @@ Side effects: update submission status, link evidence to mark occurrence
 ## Core Components
 
 ### MarkEvidenceSubmittedListener
-Receives `@ApplicationModuleListener` event. Creates a `PENDING` placeholder processing record if one doesn't exist. Re-dispatches async processing if an existing record is in `PENDING`/`FAILED` state (handles Modulith event replay). Registers `afterCommit` synchronization to dispatch async processing after the listener's transaction commits.
+Receives the submission event. Creates a `PENDING` placeholder processing record if one doesn't exist. Re-dispatches async processing if an existing record is in `PENDING`/`FAILED` state. Registers an `afterCommit` synchronization to dispatch async processing after the surrounding transaction commits.
 
 ### ProcessingServiceImpl
 Orchestrates the processing pipeline on an async thread. Three phases:

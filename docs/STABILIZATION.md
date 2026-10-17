@@ -48,7 +48,7 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - **Idempotent**: optional `Idempotency-Key` header (unique column); replays return the existing submission.
 - **Decoupled from vision**: `processing.enabled` (default `false`) gates the listener, schedulers, async executor and processing endpoints.
 - Forgiving validation: photo only required; empty file rejected with a clear 400; staging + reverse-geocoding run **outside** the DB transaction; abandoned staged files are swept.
-- Public media **write** endpoints locked to moderator/admin; `@EnableMethodSecurity` added so `@PreAuthorize` actually applies; Google login made optional so the app boots without OAuth creds.
+- Public media **write** endpoints locked to moderator/admin; `@EnableMethodSecurity` added so `@PreAuthorize` actually applies. Auth is password + JWT only (Google OAuth2 and the `/google` endpoint were removed).
 - Boot fixes: removed the broken `@EntityGraph`; fixed two no-op self-invoked `@Transactional` methods.
 - Test: `SubmissionFacadeTest`.
 *Done: a phone photo submits successfully with no account and no location, is stored exactly once, and never depends on vision.*
@@ -80,18 +80,23 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Overengineering to cut (later)
 
+See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the full plan (options, impact, risks, decisions). Summary of what remains:
+
 | Subsystem | Keep | Cut |
 |---|---|---|
-| `file` image pipeline | storage (MinIO/local) + staging + original | multi-variant async pipeline, recovery job, retry/`Thread.sleep` |
-| `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead entity + dead scoring config |
-| `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n; **WhatsApp config** |
-| module system | Modulith | `*-api`/Modulith split; swallowed `modules.verify()` |
+| `file` image pipeline | storage (local filesystem) + staging + original + one web derivative | *done:* multi-variant → 1; *remaining:* async event path, recovery job |
+| `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead scoring config |
+| `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n |
+| module system | Modulith | swallowed `modules.verify()` |
 
-## Module set (16)
+These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
 
-`shared`, `notification`, `vision`, `file`, `monument`, `user`, `verification`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `chatbot`, `application`, `auth`. One capability = one Maven module. (Contracts live in `.api`/`.dtos`/`.events` packages inside the owning module.)
+## Module set (12)
 
-**Still to join (deferred):** fold `vision` into `processing`, `notification` into `support`, `verification` into `user`, and park/simplify `chatbot`.
+`shared`, `file`, `monument`, `user`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `application`, `auth`. One capability = one Maven module.
+
+Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`, `notification` → `support`.
+**Removed:** `chatbot` (Telegram ingestion) — never used in production; recoverable from git history.
 
 ## Open decisions
 
@@ -101,10 +106,13 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Notes
 
-- Build + tests verified: `mvn -B clean test`, 16 modules, **BUILD SUCCESS**, 87 tests, 0 failures (Docker; no local JDK).
+- Build + tests verified: `mvn -B clean test`, 12 modules, **BUILD SUCCESS**, 44 tests, 0 failures (Docker; no local JDK).
+- **Chatbot removed** (Telegram ingestion); the app needs no Telegram config.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
 - Automatic approval is **gated on data** — it is P3, not P1.
-- The Modulith verification test still only *prints* violations (informational); enforcing it is deferred until the remaining boundary violations are routed through the `.api` packages.
+- The Modulith verification test now **fails the build** on boundary violations (enforced; zero violations).
+- Modulith is used for **boundary verification only**. Its event registry (`spring-modulith-starter-jpa` / `events-api` / `event_publication` table) was dropped; the single async listener now uses Spring's `@TransactionalEventListener(AFTER_COMMIT)` + `@Async`.
+- **Auth is password + JWT only** (no Keycloak, no Google OAuth2). JWT access tokens now carry a `user_id` claim so the authenticated principal id is populated; `SecurityUtils` is null-safe.
 - Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

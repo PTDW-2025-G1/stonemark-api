@@ -10,7 +10,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.projections.RetryableProjection;
 import pt.estga.processing.services.processing.AsyncProcessingService;
-import pt.estga.vision.VisionClient;
+import pt.estga.processing.vision.VisionClient;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;

@@ -28,11 +28,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>chatbot</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>support</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
@@ -48,11 +43,6 @@
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
-            <artifactId>vision</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
             <artifactId>file</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
@@ -64,11 +54,6 @@
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>user</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>verification</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>
@@ -93,6 +78,11 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.3</version>
         </dependency>
 
         <!-- Database (composition root runtime deps) -->
@@ -127,11 +117,7 @@
             <artifactId>pgvector</artifactId>
         </dependency>
 
-        <!-- Spring Modulith -->
-        <dependency>
-            <groupId>org.springframework.modulith</groupId>
-            <artifactId>spring-modulith-starter-jpa</artifactId>
-        </dependency>
+        <!-- Spring Modulith (verification only; no event registry) -->
         <dependency>
             <groupId>org.springframework.modulith</groupId>
             <artifactId>spring-modulith-starter-test</artifactId>

@@ -1,9 +1,0 @@
-chatbot:
-  auth:
-    optional: true
-
-telegram:
-  bot:
-    username: stonemarkbot
-    token: ${TELEGRAM_BOT_TOKEN}
-    webhook-path: /webhook/telegram

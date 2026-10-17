@@ -40,13 +40,6 @@
             <version>0.1.6</version>
             <scope>compile</scope>
         </dependency>
-        <!-- Source: https://mvnrepository.com/artifact/io.minio/minio -->
-        <dependency>
-            <groupId>io.minio</groupId>
-            <artifactId>minio</artifactId>
-            <version>9.0.0</version>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>

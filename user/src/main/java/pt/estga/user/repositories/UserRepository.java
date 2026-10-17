@@ -16,8 +16,6 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
 
     Optional<User> findByUsername(String username);
 
-    Optional<User> findByGoogleSub(String googleSub);
-
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForProfile(@Param("id") Long id);
 
@@ -27,7 +25,5 @@ public interface UserRepository extends BaseRepository<User, Long>, JpaSpecifica
            "LEFT JOIN FETCH u.roles " +
            "WHERE u.id = :id")
     Optional<User> findByIdWithRoles(@Param("id") Long id);
-
-    Optional<User> findByTelegramChatId(String telegramChatId);
 
 }

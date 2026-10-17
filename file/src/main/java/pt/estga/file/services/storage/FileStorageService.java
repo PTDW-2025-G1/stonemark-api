@@ -6,7 +6,7 @@ import java.io.InputStream;
 
 /**
  * Service interface for low-level file storage operations.
- * Implementations can provide storage on local file system, cloud storage (e.g., MinIO, S3), etc.
+ * Implementations provide storage; the local filesystem implementation ships by default.
  */
 public interface FileStorageService {
 

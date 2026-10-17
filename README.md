@@ -14,7 +14,7 @@ StoneMark API is the backend service for the StoneMark project, dedicated to the
 
 This service provides:
 - Storage and retrieval for marks and associated metadata (images, location, estimated date, notes).
-- Asset storage using MinIO (S3-compatible).
+- Asset storage on the local filesystem.
 - Search and geospatial tooling for monuments and territories.
 - Integration points for computer vision-based detection (external Vision Server) and chatbot interfaces.
 
@@ -22,7 +22,7 @@ This service provides:
 
 - Core CRUD for marks, monuments and related domain objects.
 - Advanced search and filtering across symbols and locations.
-- Digital asset management with MinIO.
+- Digital asset management.
 - Computer-vision integration hooks (Vision Server is external to this repository).
 - Community workflows: submissions, verification and reporting.
 - Bot integrations (Telegram / WhatsApp) via the `chatbot` module.
@@ -35,7 +35,7 @@ This service provides:
   - Spring Data JPA (Hibernate)
 - Database: PostgreSQL 18 (image based on PostGIS 3.6 — see `postgres/Dockerfile`)
   - pgvector is installed in the DB image for vector search support
-- Storage: MinIO (S3 API)
+- Storage: local filesystem
 - API docs: SpringDoc OpenAPI (swagger UI available)
 - Build: Maven (mvn / Maven Wrapper)
 - Containers: Docker & Docker Compose
@@ -58,13 +58,7 @@ Example `.env` (store secrets securely in real deployments):
 DB_USERNAME=postgres
 DB_PASSWORD=changeme
 
-# MinIO
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=minioadmin
-
-# Optional: bots / notifications
-TELEGRAM_BOT_TOKEN=
-WHATSAPP_BOT_TOKEN=
+# Optional: notifications
 MAIL_ADDRESS=
 MAIL_PASSWORD=
 ```
@@ -73,14 +67,12 @@ MAIL_PASSWORD=
 
 ```powershell
 # From repository root
-docker-compose up --build database minio 
+docker-compose up --build database
 ```
 
 Notes on service ports (as configured in `docker-compose.yml`):
 - Application (when run locally): 8080
-- MinIO API: http://localhost:9000
-- MinIO Console: http://localhost:9001
-- PostgreSQL (container): 5432 � mapped to host 5440
+- PostgreSQL (container): 5432 mapped to host 5440
 
 3. Build and run the API (PowerShell):
 
@@ -123,7 +115,7 @@ This repository uses a modular monolith layout. Modules defined in the root POM 
 - `boot` — application entry and composition; wires modules together and hosts the Spring Boot application.
 - `mark` — domain logic and persistence for masons' marks and related entities.
 - `vision` — adapters and services for computer-vision detection (integration hooks to external Vision Server).
-- `file` — file storage and retrieval utilities; MinIO client integration and upload handling.
+- `file` — file storage and retrieval utilities; local filesystem storage and upload handling.
 - `user` — account management, authentication and profile operations.
 - `shared` — shared DTOs, common utilities, exceptions and cross-module helpers.
 - `intake` — user-submitted marks and lifecycle management for suggested content.
@@ -137,7 +129,6 @@ This repository uses a modular monolith layout. Modules defined in the root POM 
 - `bookmark` — user bookmarking and favorites management.
 - `content-import` — importers/parsers for bulk content ingestion and ETL tasks.
 - `monument` — domain and CRUD for monuments and physical locations.
-- `notification` — notification dispatching (email) and template management.
 
 ## Development notes
 
