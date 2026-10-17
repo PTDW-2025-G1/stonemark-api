@@ -11,18 +11,16 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.support.dtos.ContactRequestFilter;
 import pt.estga.support.enums.ContactStatus;
 import pt.estga.support.entities.ContactRequest;
-import pt.estga.support.repositories.ContactRequestRepository;
 import pt.estga.support.services.ContactRequestService;
 
 @RestController
 @RequestMapping("/api/v1/admin/contact-requests")
 @RequiredArgsConstructor
 @Tag(name = "Admin Contact Requests", description = "Admin endpoints for contact requests.")
-@PreAuthorize("hasAnyRole('MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('MODERATOR')")
 public class ContactRequestAdminController {
 
     private final ContactRequestService service;
-    private final ContactRequestRepository repository;
 
     @GetMapping
     public ResponseEntity<Page<ContactRequest>> findAll(
@@ -36,7 +34,7 @@ public class ContactRequestAdminController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ContactRequest> getById(@PathVariable Long id) {
-        return repository.findById(id)
+        return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }

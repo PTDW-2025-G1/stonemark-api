@@ -12,6 +12,5 @@ public record MonumentRequestDto(
         @NotNull Double longitude,
         String address,
         String postalCode,
-        String divisionCode,
         Boolean active
 ) { }

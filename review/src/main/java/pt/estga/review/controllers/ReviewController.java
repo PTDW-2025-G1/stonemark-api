@@ -26,7 +26,7 @@ import java.util.Optional;
 @RequestMapping("/api/v1/admin/review")
 @RequiredArgsConstructor
 @Tag(name = "Review", description = "Review submissions and manage mark suggestions")
-@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('REVIEWER')")
 public class ReviewController {
 
     private final ReviewService reviewService;

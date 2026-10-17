@@ -7,7 +7,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.shared.core.interfaces.DivisionLookupClient;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;
@@ -25,7 +24,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -50,9 +48,6 @@ class SubmissionFacadeTest {
 
     @Mock
     private SubmissionMapper submissionMapper;
-
-    @Mock
-    private DivisionLookupClient divisionLookupClient;
 
     @InjectMocks
     private SubmissionFacade facade;
@@ -96,8 +91,6 @@ class SubmissionFacadeTest {
         when(file.getInputStream()).thenReturn(InputStream.nullInputStream());
         when(fileStorage.stage(any(), eq("mark.jpg")))
                 .thenReturn(new StagedFileRecord(STAGED_ID, "mark.jpg", 10L));
-        when(divisionLookupClient.resolveByCoordinates(anyDouble(), anyDouble()))
-                .thenReturn(Optional.empty());
         when(submitService.submit(any(MarkEvidenceSubmission.class), eq(STAGED_ID), eq("mark.jpg")))
                 .thenReturn(CREATED_ID);
 
@@ -115,6 +108,6 @@ class SubmissionFacadeTest {
 
     private static SubmissionDto dto(Long id) {
         return new SubmissionDto(id, SubmissionStatus.RECEIVED, SubmissionSource.WEB_APP,
-                Instant.now(), null, null, null, null, null, null, null);
+                Instant.now(), null, null, null, null, null);
     }
 }

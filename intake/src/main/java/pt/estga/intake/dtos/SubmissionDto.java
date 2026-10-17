@@ -15,7 +15,5 @@ public record SubmissionDto(
         Double longitude,
         String userNotes,
         UUID originalMediaFileId,
-        Long submittedById,
-        String divisionCode,
-        String divisionName
+        Long submittedById
 ) {}

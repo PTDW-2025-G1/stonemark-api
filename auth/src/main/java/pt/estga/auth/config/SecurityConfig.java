@@ -11,6 +11,10 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 
 import java.util.List;
 
@@ -19,7 +23,9 @@ import java.util.List;
  *
  * <p>Public routes stay open (anonymous submissions); everything else requires an
  * authenticated principal, and admin/moderator endpoints additionally enforce roles
- * via {@code @PreAuthorize} (enabled here).
+ * via {@code @PreAuthorize} (enabled here). Roles are ordered
+ * ({@code ADMIN > MODERATOR > REVIEWER > USER}), so an endpoint only declares the
+ * minimum role it needs.
  */
 @Configuration
 @EnableMethodSecurity
@@ -53,6 +59,26 @@ public class SecurityConfig {
     };
 
     private final AppJwtAuthenticationConverter appJwtAuthenticationConverter;
+
+    /**
+     * Ordered roles, highest first: an ADMIN satisfies a MODERATOR requirement, and
+     * so on down to USER.
+     */
+    @Bean
+    static RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.fromHierarchy("""
+                ROLE_ADMIN > ROLE_MODERATOR
+                ROLE_MODERATOR > ROLE_REVIEWER
+                ROLE_REVIEWER > ROLE_USER
+                """);
+    }
+
+    @Bean
+    static MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+        handler.setRoleHierarchy(roleHierarchy);
+        return handler;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

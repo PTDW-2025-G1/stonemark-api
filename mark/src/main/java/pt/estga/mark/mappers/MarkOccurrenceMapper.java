@@ -1,8 +1,8 @@
 package pt.estga.mark.mappers;
 
+import org.locationtech.jts.geom.Point;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.shared.core.enums.EntityStatus;
 
 public class MarkOccurrenceMapper {
 
@@ -10,13 +10,17 @@ public class MarkOccurrenceMapper {
 
     public static MarkOccurrenceDto toDto(MarkOccurrence entity) {
         if (entity == null) return null;
+        Point location = entity.getLocation();
         return new MarkOccurrenceDto(
                 entity.getId(),
                 entity.getMark() != null ? entity.getMark().getId() : null,
                 entity.getMonumentId(),
-                entity.getMark() != null ? MarkMapper.toDto(entity.getMark()) : null,
-                entity.getCreatedAt(),
-                entity.getStatus() == EntityStatus.ACTIVE
+                location != null ? location.getY() : null,
+                location != null ? location.getX() : null,
+                entity.getPeriod(),
+                entity.getStatus(),
+                entity.getPublishedAt(),
+                entity.getMark() != null ? MarkMapper.toDto(entity.getMark()) : null
         );
     }
 }

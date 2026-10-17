@@ -11,11 +11,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import pt.estga.monument.dtos.MonumentListDto;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.mappers.MonumentMapper;
-import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
-import pt.estga.shared.core.interfaces.DivisionLookupClient;
 import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
 import java.util.List;
@@ -23,7 +22,6 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,12 +32,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MonumentControllerTest {
 
     private final MonumentService service = mock();
-    private final MonumentRepository repository = mock();
-    private final DivisionLookupClient divisionLookupClient = mock();
-    private final MonumentMapper mapper = new MonumentMapper(divisionLookupClient);
+    private final MonumentMapper mapper = new MonumentMapper();
 
     private final MockMvc mockMvc = MockMvcBuilders.standaloneSetup(
-            new MonumentController(service, repository, mapper)
+            new MonumentController(service)
     ).setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
             .setControllerAdvice(new GlobalExceptionHandler()).build();
 
@@ -55,7 +51,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return 200 and monument when found by id")
     void shouldReturnMonumentWhenFound() throws Exception {
-        when(repository.findById(1L)).thenReturn(Optional.of(monument));
+        when(service.findById(1L)).thenReturn(Optional.of(mapper.toResponseDto(monument)));
 
         mockMvc.perform(get("/api/v1/public/monuments/{id}", 1L))
                 .andExpect(status().isOk())
@@ -67,7 +63,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return 404 when monument not found by id")
     void shouldReturn404WhenNotFound() throws Exception {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        when(service.findById(99L)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/v1/public/monuments/{id}", 99L))
                 .andExpect(status().isNotFound());
@@ -76,7 +72,7 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return paginated monument list")
     void shouldReturnPaginatedList() throws Exception {
-        Page<Monument> page = new PageImpl<>(List.of(monument), PageRequest.of(0, 20), 1);
+        Page<MonumentListDto> page = new PageImpl<>(List.of(mapper.toListDto(monument)), PageRequest.of(0, 20), 1);
         when(service.search(any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/public/monuments"))
@@ -84,16 +80,5 @@ class MonumentControllerTest {
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].name").value("Test Monument"));
-    }
-
-    @Test
-    @DisplayName("should return monuments filtered by division")
-    void shouldReturnMonumentsByDivision() throws Exception {
-        Page<Monument> page = new PageImpl<>(List.of(monument), PageRequest.of(0, 9), 1);
-        when(repository.findByDivisionCode(eq("110501"), any())).thenReturn(page);
-
-        mockMvc.perform(get("/api/v1/public/monuments/division/{code}", "110501"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content", hasSize(1)));
     }
 }

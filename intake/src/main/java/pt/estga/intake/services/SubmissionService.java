@@ -12,6 +12,8 @@ import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 import pt.estga.shared.jpa.jpa.SpecBuilder;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -25,9 +27,12 @@ public class SubmissionService {
                 .eq("status", filter.status())
                 .eq("submissionSource", filter.source())
                 .eq("submittedById", filter.submittedById())
-                .eq("divisionCode", filter.divisionCode())
                 .afterOrEqual("submittedAt", filter.submittedAfter())
                 .beforeOrEqual("submittedAt", filter.submittedBefore());
         return submissionRepository.findAll(sb.build(), pageable).map(submissionMapper::toDto);
+    }
+
+    public Optional<SubmissionDto> findById(Long id) {
+        return submissionRepository.findById(id).map(submissionMapper::toDto);
     }
 }

@@ -3,7 +3,7 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
-**Status:** §4 joins **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §5 `modules.verify()` **enforced**. §2 (`processing` scaffolding) **pending — gated on P3**.
+**Status:** §4 joins **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §5 `modules.verify()` **enforced**. §6 geo lookup **stripped**. §2 (`processing` scaffolding) **pending — gated on P3**.
 
 ## Principles
 
@@ -89,6 +89,18 @@ The work to get there:
 
 **Behavior impact:** none beyond the delegations; the review side-effect logic is unchanged in substance.
 
+## 6. Home-grown geo / division lookup
+
+**What existed.** A port `DivisionLookupClient` (`findByCode`, `findByCodes`, `resolveByCoordinates`) and an `HttpDivisionLookupClient` implementation that called a **self-built geo API** (`geo.api.base-url`, default `http://localhost:8081`; endpoints `/api/v1/geo-units/...` and `/api/v1/geo/reverse-geocode`). Modelled around it: `DivisionRef`, `divisionCode` on `Monument` and `MarkEvidenceSubmission`, a `division` object in `MonumentDto`/`MonumentListDto`, a `/api/v1/public/monuments/division/{code}` endpoint, `divisionCode` admin filters in both modules, and name resolution in `MonumentMapper`/`SubmissionMapper`/`SubmissionFacade`.
+
+**Why it is heavy.** It is a whole subsystem (external service + HTTP client + DTOs + reverse-geocoding) built to own administrative divisions — a **self-built geo API idea that was abandoned**. The default target points at a service that does not exist, so every call fails silently and resolves to `null`, while the coupling and the extra DTO fields stay alive.
+
+**Resolved: stripped.** Delete the port, the HTTP client and `DivisionRef`; remove `divisionCode` from `Monument`/`MarkEvidenceSubmission`, the `division` field from the monument DTOs, the `divisionCode` admin filters, the `/monuments/division/{code}` endpoint, and the name-resolution branches in the mappers/facade. Coordinates (`Point`,4326) on monuments and occurrences stay — they are the real place data.
+
+**Behavior impact.** `GET /api/v1/public/monuments?division=...` and `GET /api/v1/public/monuments/division/{code}` disappear; monument/submission payloads drop `division`/`divisionCode`/`divisionName`; admin filters lose `divisionCode`; reverse-geocoding on web submission is gone (the raw lat/lon is still stored).
+
+**If administrative areas are needed later:** use an existing public PT open-data source rather than resurrecting this client. See **D6** in `DOMAIN-MODEL-AND-API.md`.
+
 ## Sequencing
 
 | Order | Work | Behavior change | Gated on |
@@ -99,6 +111,7 @@ The work to get there:
 | 4 | §1 `file` variants | yes (API) | **D1** |
 | 5 | §5 enforce verify | none | §4 + boundary fixes |
 | 6 | §2 `processing` scaffolding | none while off | **P3** |
+| 7 | §6 geo / division lookup | yes (API) | nothing — abandoned subsystem |
 
 ## Open decisions
 
@@ -106,6 +119,7 @@ The work to get there:
 - **D2 — `chatbot`:** ✅ **removed** (module deleted; Telegram was a dev stand-in only).
 - **D3 — `notification` home:** ✅ **folded into `support`**.
 - **D4 — enforce `modules.verify()`:** ✅ **enforced** (build fails on boundary violations; zero violations today).
+- **D5 — geo / divisions:** ✅ **stripped** — the abandoned home-grown geo lookup (port + HTTP client + `DivisionRef` + `divisionCode` plumbing) was removed; coordinates are kept. Use a ready-made PT open-data source if administrative areas are needed later.
 
 ## Explicitly out of scope
 

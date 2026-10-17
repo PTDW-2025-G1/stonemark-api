@@ -175,27 +175,30 @@ public class ReviewService {
         }
 
         if (decision == ReviewDecision.APPROVED && resolution != null && resolution.mark() != null) {
-            linkEvidenceToMark(submissionId, submission.originalMediaFileId(), resolution.mark().id());
+            linkEvidenceToMark(submission, resolution.mark().id());
         }
     }
 
     /**
-     * Links the submission's photo to a mark occurrence.
+     * Links the submission's photo to a mark occurrence, carrying the submission's
+     * coordinates onto the occurrence when present.
      *
      * <p>Deliberately not wrapped in a catch: this runs inside the review
      * transaction, so a linking failure rolls the whole decision back and a
      * submission can never be approved without its evidence being linked. The
      * embedding is optional and is absent when the submission was not processed.
      */
-    private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId) {
+    private void linkEvidenceToMark(SubmissionRef submission, Long markId) {
+        UUID mediaFileId = submission.originalMediaFileId();
         if (mediaFileId == null) {
-            throw new IllegalStateException("Submission " + submissionId + " has no media to link");
+            throw new IllegalStateException("Submission " + submission.id() + " has no media to link");
         }
-        MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, true);
-        float[] embedding = parseEmbedding(processingApi.findEmbeddingText(submissionId));
-        markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
+        MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(
+                markId, null, submission.latitude(), submission.longitude());
+        float[] embedding = parseEmbedding(processingApi.findEmbeddingText(submission.id()));
+        markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), submission.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",
-                mediaFileId, occurrence.id(), submissionId);
+                mediaFileId, occurrence.id(), submission.id());
     }
 
     private static float[] parseEmbedding(Optional<String> text) {

@@ -8,6 +8,7 @@ import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.shared.jpa.repositories.BaseRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,4 +56,6 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	Page<MarkEvidence> findAllByEmbeddingIsNotNull(Pageable pageable);
 
 	Optional<MarkEvidence> findByFileId(UUID fileId);
+
+	List<MarkEvidence> findByOccurrenceIdIn(Collection<Long> occurrenceIds);
 }

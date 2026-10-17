@@ -3,11 +3,7 @@ package pt.estga.user.mappers;
 import pt.estga.user.dtos.ProfileUpdateRequestDto;
 import pt.estga.user.dtos.UserPublicDto;
 import pt.estga.user.dtos.UserDto;
-import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class UserMapper {
 
@@ -15,9 +11,6 @@ public class UserMapper {
 
     public static UserDto toDto(User user) {
         if (user == null) return null;
-        Set<String> roleNames = user.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toSet());
         return new UserDto(
                 user.getId(),
                 user.getFirstName(),
@@ -25,7 +18,7 @@ public class UserMapper {
                 user.getUsername(),
                 user.getEmail(),
                 null,
-                roleNames,
+                user.getRole(),
                 user.getCreatedAt()
         );
     }
@@ -61,5 +54,8 @@ public class UserMapper {
         user.setLastName(dto.lastName());
         user.setUsername(dto.username());
         user.setEmail(dto.email());
+        if (dto.role() != null) {
+            user.setRole(dto.role());
+        }
     }
 }

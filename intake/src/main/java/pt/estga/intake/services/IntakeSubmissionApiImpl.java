@@ -20,7 +20,7 @@ public class IntakeSubmissionApiImpl implements IntakeSubmissionApi {
     @Transactional(readOnly = true)
     public Optional<SubmissionRef> findById(Long submissionId) {
         return submissionRepository.findById(submissionId)
-                .map(s -> new SubmissionRef(s.getId(), s.getOriginalMediaFileId()));
+                .map(s -> new SubmissionRef(s.getId(), s.getOriginalMediaFileId(), s.getLatitude(), s.getLongitude()));
     }
 
     @Override

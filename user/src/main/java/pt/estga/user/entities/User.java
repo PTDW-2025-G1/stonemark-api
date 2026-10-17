@@ -1,15 +1,24 @@
 package pt.estga.user.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import pt.estga.shared.jpa.entities.BaseEntity;
+import pt.estga.user.enums.UserRole;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 @Entity
 @Table(name = "_user")
@@ -37,14 +46,10 @@ public class User extends BaseEntity implements Serializable {
     @Builder.Default
     private boolean emailVerified = false;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "user_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     @Builder.Default
-    private Set<Role> roles = new HashSet<>();
+    private UserRole role = UserRole.USER;
 
     @Column(name = "password_hash")
     private String passwordHash;

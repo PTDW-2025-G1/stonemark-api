@@ -1,9 +1,9 @@
 package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Point;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.shared.core.enums.ValidationState;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDto;
@@ -17,6 +17,8 @@ import pt.estga.mark.mappers.MarkOccurrenceMapper;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
+import pt.estga.shared.core.enums.PublicationStatus;
+import pt.estga.shared.core.utils.GeometryUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -49,8 +51,8 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     }
 
     @Override
-    public List<MarkDto> findProvisionalMarks() {
-        return markRepository.findByValidationState(ValidationState.PROVISIONAL).stream()
+    public List<MarkDto> findDraftMarks() {
+        return markRepository.findByStatus(PublicationStatus.DRAFT).stream()
                 .map(MarkMapper::toDto)
                 .toList();
     }
@@ -64,34 +66,39 @@ public class MarkQueryServiceImpl implements MarkQueryService {
 
     @Override
     @Transactional
-    public MarkOccurrenceDto findOrCreateOccurrence(Long markId, boolean approved) {
-        MarkOccurrence occurrence = occurrenceRepository.findByMarkIdAndMonumentIdIsNull(markId)
-                .orElseGet(() -> {
-                    ValidationState state = approved ? ValidationState.VERIFIED : ValidationState.PROVISIONAL;
-                    Mark mark = markRepository.findById(markId)
-                            .orElseThrow(() -> new IllegalArgumentException("Mark not found"));
-                    return occurrenceRepository.save(MarkOccurrence.builder()
-                            .mark(mark)
-                            .monumentId(null)
-                            .validationState(state)
-                            .build());
-                });
+    public MarkOccurrenceDto findOrCreateOccurrence(Long markId, Long monumentId, Double latitude, Double longitude) {
+        MarkOccurrence occurrence = monumentId != null
+                ? occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
+                        .orElseGet(() -> createOccurrence(markId, monumentId, null))
+                : createOccurrence(markId, null, GeometryUtils.createPoint(latitude, longitude));
         return MarkOccurrenceMapper.toDto(occurrence);
+    }
+
+    private MarkOccurrence createOccurrence(Long markId, Long monumentId, Point location) {
+        Mark mark = markRepository.findById(markId)
+                .orElseThrow(() -> new IllegalArgumentException("Mark not found: " + markId));
+        return occurrenceRepository.save(MarkOccurrence.builder()
+                .mark(mark)
+                .monumentId(monumentId)
+                .location(location)
+                .build());
     }
 
     @Override
     @Transactional
-    public void linkFileToOccurrence(UUID fileId, Long occurrenceId, float[] embedding) {
+    public void linkFileToOccurrence(UUID fileId, Long occurrenceId, Long submissionId, float[] embedding) {
         MarkOccurrence occurrence = occurrenceRepository.findById(occurrenceId)
                 .orElseThrow(() -> new IllegalArgumentException("Occurrence not found: " + occurrenceId));
 
         evidenceRepository.findByFileId(fileId).ifPresentOrElse(ev -> {
             ev.setOccurrence(occurrence);
+            ev.setSubmissionId(submissionId);
             evidenceRepository.save(ev);
         }, () -> {
             MarkEvidence newEvidence = MarkEvidence.builder()
                     .fileId(fileId)
                     .occurrence(occurrence)
+                    .submissionId(submissionId)
                     .embedding(embedding)
                     .build();
             evidenceRepository.save(newEvidence);

@@ -10,9 +10,7 @@ import pt.estga.shared.core.models.AppPrincipal;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 public class AppJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
@@ -36,14 +34,11 @@ public class AppJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
         return new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
     }
 
-    @SuppressWarnings("unchecked")
     private static Collection<SimpleGrantedAuthority> extractAuthorities(Jwt jwt) {
-        List<String> roles = jwt.getClaim("roles");
-        if (roles == null || roles.isEmpty()) {
+        String role = jwt.getClaim("role");
+        if (role == null || role.isBlank()) {
             return Set.of();
         }
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toUnmodifiableSet());
+        return Set.of(new SimpleGrantedAuthority("ROLE_" + role));
     }
 }

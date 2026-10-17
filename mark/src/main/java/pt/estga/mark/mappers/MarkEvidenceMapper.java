@@ -15,6 +15,7 @@ public class MarkEvidenceMapper {
                 evidence.getOccurrence() != null ? evidence.getOccurrence().getId() : null,
                 evidence.getOccurrence() != null && evidence.getOccurrence().getMark() != null
                         ? evidence.getOccurrence().getMark().getId() : null,
+                evidence.getSubmissionId(),
                 evidence.getEmbedding()
         );
     }

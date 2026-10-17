@@ -8,12 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.auth.config.JwtService;
 import pt.estga.auth.dto.AuthResponse;
-import pt.estga.user.entities.Role;
 import pt.estga.user.entities.User;
 import pt.estga.user.repositories.UserRepository;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -76,23 +72,11 @@ public class AuthService {
     }
 
     private AuthResponse buildAuthResponse(User user) {
-        User userWithRoles = userRepository.findByIdWithRoles(user.getId())
-                .orElseThrow(() -> new IllegalStateException("User not found after authentication"));
-
-        Set<String> roles = userWithRoles.getRoles().stream()
-                .map(Role::getName)
-                .collect(Collectors.toSet());
-
-        String highestRole = roles.stream()
-                .filter(name -> name.equals("ADMIN") || name.equals("MODERATOR") || name.equals("USER"))
-                .findFirst()
-                .orElse("USER");
-
         return new AuthResponse(
-                jwtService.generateAccessToken(userWithRoles, roles),
-                jwtService.generateRefreshToken(userWithRoles),
-                highestRole,
-                userWithRoles.getId()
+                jwtService.generateAccessToken(user),
+                jwtService.generateRefreshToken(user),
+                user.getRole().name(),
+                user.getId()
         );
     }
 }

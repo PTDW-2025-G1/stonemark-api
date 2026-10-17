@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pt.estga.monument.entities.Monument;
+import pt.estga.monument.mappers.MonumentMapper;
 import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
@@ -20,6 +21,9 @@ class MonumentServiceTest {
 
     @Mock
     private MonumentRepository repository;
+
+    @Mock
+    private MonumentMapper mapper;
 
     @InjectMocks
     private MonumentService service;

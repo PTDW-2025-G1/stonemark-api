@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/moderation")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('REVIEWER', 'MODERATOR', 'ADMIN')")
+@PreAuthorize("hasRole('REVIEWER')")
 public class ModerationController {
 
     private final ModerationService moderationService;
@@ -29,7 +29,7 @@ public class ModerationController {
     }
 
     @GetMapping("/discovery/marks")
-    public ResponseEntity<List<ModerationDtos.MarkDto>> provisionalMarks() {
-        return ResponseEntity.ok(moderationService.findProvisionalMarks());
+    public ResponseEntity<List<ModerationDtos.MarkDto>> draftMarks() {
+        return ResponseEntity.ok(moderationService.findDraftMarks());
     }
 }

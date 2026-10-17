@@ -57,9 +57,6 @@ public class MarkEvidenceSubmission {
     @CreatedDate
     private Instant submittedAt;
 
-    @Column(length = 8)
-    private String divisionCode;
-
     /**
      * Optional client-supplied key used to make submission creation idempotent.
      * A unique value guarantees a retried upload is stored only once.

@@ -87,6 +87,7 @@ See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the ful
 | `file` image pipeline | storage (local filesystem) + staging + original + one web derivative | *done:* multi-variant → 1; *remaining:* async event path, recovery job |
 | `processing` scaffolding | the pipeline shape | two schedulers → one; hand-rolled semaphore → bounded executor; dead scoring config |
 | `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n |
+| geo / divisions | coordinates (`Point,4326`) on monuments and occurrences | home-grown division lookup client + `divisionCode` plumbing |
 | module system | Modulith | swallowed `modules.verify()` |
 
 These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
@@ -97,6 +98,7 @@ These are **behavioral/product decisions** — not done blind. WhatsApp config w
 
 Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`, `notification` → `support`.
 **Removed:** `chatbot` (Telegram ingestion) — never used in production; recoverable from git history.
+**Removed (abandoned):** the home-grown geo/division lookup — `DivisionLookupClient`, `HttpDivisionLookupClient` (called a self-built `http://localhost:8081` geo API), `DivisionRef`, and the `divisionCode`/`divisionName` plumbing across `monument` and `intake` (entities, DTOs, admin filters, the `/monuments/division/{code}` endpoint, and reverse-geocoding on submission). Coordinates stay on `Monument`/occurrences; a ready-made PT open-data source can replace this later if administrative areas are needed.
 
 ## Open decisions
 
@@ -107,7 +109,10 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 ## Notes
 
 - Build + tests verified: `mvn -B clean test`, 12 modules, **BUILD SUCCESS**, 44 tests, 0 failures (Docker; no local JDK).
+- **Next work (domain model + public API rewrite):** see [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md) — target model, HTTP surface, decisions, and a commit-by-commit plan.
+- **Domain remodel + public read API landed** on `bugfix/domain`: single `PublicationStatus`, occurrences with their own coordinates/optional monument, evidence lineage, `GET /api/v1/public/marks`, and controllers off repositories. See the **Progress** section in [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md).
 - **Chatbot removed** (Telegram ingestion); the app needs no Telegram config.
+- **Geo lookup stripped:** the abandoned home-grown geo service client (and all `divisionCode`/`divisionName` fields, filters and endpoints) was removed — see **D6** in [`DOMAIN-MODEL-AND-API.md`](DOMAIN-MODEL-AND-API.md). Coordinates (`Point,4326`) remain on monuments and occurrences.
 - **CI:** `.github/workflows/ci.yml` runs the build + tests on JDK 25.
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
@@ -115,4 +120,5 @@ Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `pro
 - The Modulith verification test now **fails the build** on boundary violations (enforced; zero violations).
 - Modulith is used for **boundary verification only**. Its event registry (`spring-modulith-starter-jpa` / `events-api` / `event_publication` table) was dropped; the single async listener now uses Spring's `@TransactionalEventListener(AFTER_COMMIT)` + `@Async`.
 - **Auth is password + JWT only** (no Keycloak, no Google OAuth2). JWT access tokens now carry a `user_id` claim so the authenticated principal id is populated; `SecurityUtils` is null-safe.
+- **Roles simplified:** a user holds a single `UserRole` (`USER < REVIEWER < MODERATOR < ADMIN`) stored as one column; the `roles` table, `user_roles` join, `Role` entity/repo/seeder are gone, and `@PreAuthorize` only declares the minimum role (inherited via a Spring role hierarchy). This also removed the non-deterministic `highestRole` computation and the unused `user-permissions`/`conversations` caches. The JWT now carries a single `role` claim (old tokens are invalidated).
 - Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

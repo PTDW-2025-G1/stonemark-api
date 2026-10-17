@@ -67,7 +67,7 @@ class ProcessingServiceImplTest {
     }
 
     private void givenSubmission(UUID fileId) {
-        when(intakeApi.findById(SUBMISSION_ID)).thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, fileId)));
+        when(intakeApi.findById(SUBMISSION_ID)).thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, fileId, null, null)));
     }
 
     private MarkEvidenceProcessing processing() {

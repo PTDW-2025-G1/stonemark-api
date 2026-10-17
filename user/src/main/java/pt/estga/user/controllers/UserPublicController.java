@@ -7,10 +7,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import pt.estga.user.dtos.UserPublicDto;
-import pt.estga.user.mappers.UserMapper;
-import pt.estga.user.repositories.UserRepository;
+import pt.estga.user.services.UserService;
 
 @RestController
 @RequestMapping("/api/v1/public/users")
@@ -18,14 +21,13 @@ import pt.estga.user.repositories.UserRepository;
 @Tag(name = "Users", description = "Public endpoints for users.")
 public class UserPublicController {
 
-    private final UserRepository repository;
+    private final UserService service;
 
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDto> publicGetById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        return repository.findById(id)
-                .map(UserMapper::toPublicDto)
+        return service.findPublicById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -38,6 +40,6 @@ public class UserPublicController {
     public ResponseEntity<Boolean> existsByUsername(
             @Parameter(description = "Username to check for existence", required = true)
             @RequestParam String username) {
-        return ResponseEntity.ok(repository.existsByUsername(username));
+        return ResponseEntity.ok(service.existsByUsername(username));
     }
 }
