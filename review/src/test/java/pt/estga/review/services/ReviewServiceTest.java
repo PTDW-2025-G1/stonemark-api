@@ -45,6 +45,8 @@ class ReviewServiceTest {
     @Mock
     private MarkQueryService markQueryService;
     @Mock
+    private MarkCreationSuggestionService markCreationSuggestionService;
+    @Mock
     private ReviewExecutor executor;
 
     @InjectMocks
@@ -66,7 +68,7 @@ class ReviewServiceTest {
         when(markQueryService.findOrCreateOccurrence(eq(MARK_ID), isNull(), isNull(), isNull()))
                 .thenReturn(new MarkOccurrenceDto(OCCURRENCE_ID, MARK_ID, null, null, null, null,
                         PublicationStatus.PUBLISHED, null, mark));
-        when(processingApi.findEmbeddingText(SUBMISSION_ID)).thenReturn(Optional.empty());
+        when(processingApi.findEmbedding(SUBMISSION_ID)).thenReturn(Optional.empty());
         when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.APPROVED), any(), any())).thenReturn(label);
 
         MarkEvidenceReview result = reviewService.acceptSuggestion(SUBMISSION_ID, MARK_ID, "ok");
@@ -93,6 +95,27 @@ class ReviewServiceTest {
 
         assertThat(result).isSameAs(label);
         verify(intakeApi).markRejected(SUBMISSION_ID);
+        verifyNoInteractions(markQueryService);
+    }
+
+    @Test
+    @DisplayName("no-match keeps the submission as a candidate without provisioning a mark")
+    void noMatchDoesNotProvisionMark() {
+        MarkEvidenceReview label = MarkEvidenceReview.builder()
+                .id(Long.valueOf(102L)).submissionId(SUBMISSION_ID)
+                .decision(ReviewDecision.NO_MATCH).build();
+
+        when(intakeApi.findById(SUBMISSION_ID))
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
+        when(processingApi.findOverview(SUBMISSION_ID)).thenReturn(Optional.empty());
+        when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
+        when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.NO_MATCH), any(), any())).thenReturn(label);
+
+        MarkEvidenceReview result = reviewService.noMatch(SUBMISSION_ID, "looks new");
+
+        assertThat(result).isSameAs(label);
+        verify(intakeApi).markProcessed(SUBMISSION_ID);
+        verify(markCreationSuggestionService).recompute();
         verifyNoInteractions(markQueryService);
     }
 }

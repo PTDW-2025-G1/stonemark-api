@@ -31,7 +31,7 @@ public interface MarkQueryService {
      */
     List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids);
 
-    MarkDto createMark(String title);
+    MarkDto createMark(String title, String description);
 
     /**
      * Returns the occurrence of the given mark at the given place, creating it when

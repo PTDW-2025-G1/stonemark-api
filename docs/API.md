@@ -65,9 +65,12 @@ longer available.
 | GET | `/api/v1/admin/review` | List recorded decisions (labels). |
 | GET | `/api/v1/admin/review/{submissionId}` | Decision for a submission. |
 | GET | `/api/v1/admin/review/{submissionId}/suggestions` | Suggestions for a submission. |
-| POST | `/api/v1/admin/review/{submissionId}/accept` | Accept an existing mark. |
-| POST | `/api/v1/admin/review/{submissionId}/accept-as-new` | Accept as a new mark. |
+| POST | `/api/v1/admin/review/{submissionId}/accept` | Accept an existing mark (`?markId=`). |
+| POST | `/api/v1/admin/review/{submissionId}/no-match` | Record that no existing mark matches; the submission becomes a new-mark candidate. |
 | POST | `/api/v1/admin/review/{submissionId}/reject` | Reject the submission. |
+| GET | `/api/v1/admin/mark-suggestions` | Clusters of unmatched submissions suggested as a new mark. |
+| POST | `/api/v1/admin/mark-suggestions/{id}/create` | Create a mark from a suggestion and link its occurrences. |
+| POST | `/api/v1/admin/mark-suggestions/{id}/dismiss` | Dismiss a suggestion. |
 | GET | `/api/v1/admin/moderation/processing-by-confidence` | Processing records in a confidence band. |
 | GET | `/api/v1/admin/moderation/discovery/marks` | Draft marks. |
 | GET | `/api/v1/admin/processing/submission/{submissionId}/status` | Processing status. |

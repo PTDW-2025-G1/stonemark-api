@@ -80,8 +80,8 @@ public class MarkQueryServiceImpl implements MarkQueryService {
 
     @Override
     @Transactional
-    public MarkDto createMark(String title) {
-        Mark mark = markRepository.save(Mark.builder().title(title).build());
+    public MarkDto createMark(String title, String description) {
+        Mark mark = markRepository.save(Mark.builder().title(title).description(description).build());
         return MarkMapper.toDto(mark);
     }
 
