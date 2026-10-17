@@ -1,151 +1,98 @@
 # StoneMark API
 
-> Preserving history through technology — a modular REST backend for documenting and analysing masons' marks.
+> Preserving masons' marks — a modular REST backend for collecting, moderating and publishing masonic marks.
 
 ![Java](https://img.shields.io/badge/Java-25-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.4-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue)
-![Docker](https://img.shields.io/badge/Docker-Enabled-blue)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-PostGIS%20%2B%20pgvector-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-## About
+## What it is
 
-StoneMark API is the backend service for the StoneMark project, dedicated to the digital preservation of masons' marks — symbols carved by stonemasons used to identify work, provenance, or crew.
+Masons' marks are symbols carved into stone by stonemasons to identify their work,
+crew or provenance. They survive on monuments (churches, walls, bridges) but are
+poorly catalogued. StoneMark is the backend that builds that catalogue:
 
-This service provides:
-- Storage and retrieval for marks and associated metadata (images, location, estimated date, notes).
-- Asset storage on the local filesystem.
-- Search and geospatial tooling for monuments and territories.
-- Integration points for computer vision-based detection (external Vision Server) and chatbot interfaces.
+- **Collect** — anyone can submit a photo (optionally with a location); no account needed.
+- **Curate** — a moderator decides what each photo is, producing clean data and the
+  training labels for later automation.
+- **Publish** — the curated catalogue of marks and their locations is served publicly.
+- **Automate (later)** — Vision detection and matching, once enough labelled data exists.
 
-## Key features
+The domain model and product direction are in **[docs/OVERVIEW.md](docs/OVERVIEW.md)**.
 
-- Core CRUD for marks, monuments and related domain objects.
-- Advanced search and filtering across symbols and locations.
-- Digital asset management.
-- Computer-vision integration hooks (Vision Server is external to this repository).
-- Community workflows: submissions, verification and reporting.
-- Bot integrations (Telegram / WhatsApp) via the `chatbot` module.
+## Where the project is
 
-## Technology
+| Area | State |
+|---|---|
+| Public photo intake (atomic, idempotent) | working |
+| Manual moderation / labelling | working |
+| Marks, occurrences and monuments catalogue with a publish lifecycle | working |
+| Public read API for published marks | working |
+| Password + JWT auth, single ordered role | working |
+| Local filesystem media, one web derivative | working |
+| Vision / AI pipeline | **off by default** — no trained model yet |
+| Flyway migrations + DB foreign keys, deployment, ML training | deferred |
 
-- Language: Java 25
-- Framework: Spring Boot 4.0.4
-  - Spring Web (REST)
-  - Spring Data JPA (Hibernate)
-- Database: PostgreSQL 18 (image based on PostGIS 3.6 — see `postgres/Dockerfile`)
-  - pgvector is installed in the DB image for vector search support
-- Storage: local filesystem
-- API docs: SpringDoc OpenAPI (swagger UI available)
-- Build: Maven (mvn / Maven Wrapper)
-- Containers: Docker & Docker Compose
+The HTTP surface is in **[docs/API.md](docs/API.md)**.
 
-## Prerequisites
+## Modules (12)
 
-- Java 25 JDK
-- Maven 3.8+ (or use the bundled Maven Wrapper: `mvnw`, `mvnw.cmd`)
-- Docker & Docker Compose
-- Git
+One Maven module per capability, packaged by feature under `pt.estga.<module>`:
 
-## Quick start (recommended: Docker)
+| Module | Responsibility |
+|---|---|
+| `shared` | Cross-cutting bases: entities (`AuditedEntity`, `PublishableEntity`), DTOs, exceptions, specs, rate limiting, security helpers. Not a Modulith module. |
+| `file` | Media storage (local filesystem), staging, one web derivative, public media read API. |
+| `monument` | Places (monuments): CRUD, public listing, polygon search. |
+| `user` | Accounts, profiles, the single `UserRole`. |
+| `mark` | Marks, occurrences, evidence, embeddings, and the public catalogue. |
+| `intake` | Public photo submissions and the admin submission queue. |
+| `review` | Moderation decisions (the labels). |
+| `processing` | Vision detection, similarity search and suggestions (disabled by default). |
+| `bookmark` | User bookmarks. |
+| `support` | Contact requests and email/notifications. |
+| `auth` | Security configuration, JWT, login/refresh, admin bootstrap. |
+| `application` | Composition root: configuration, health, the Spring Boot entry point. |
 
-1. Create a `.env` file in the repository root with required values (examples below).
+Boundaries are enforced by Modulith — see **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
-Example `.env` (store secrets securely in real deployments):
+## Quick start
 
-```properties
-# Database
-DB_USERNAME=postgres
-DB_PASSWORD=changeme
-
-# Optional: notifications
-MAIL_ADDRESS=
-MAIL_PASSWORD=
-```
-
-2. Start infrastructure services (PowerShell):
+Prerequisites: **JDK 25**, the bundled **Maven Wrapper** (`./mvnw`, `.\mvnw.cmd`), and
+**Docker** for the database.
 
 ```powershell
-# From repository root
-docker-compose up --build database
-```
+# 1. Create .env (see .env.example) with DB_USERNAME and DB_PASSWORD.
 
-Notes on service ports (as configured in `docker-compose.yml`):
-- Application (when run locally): 8080
-- PostgreSQL (container): 5432 mapped to host 5440
+# 2. Start PostgreSQL with PostGIS + pgvector (host port 5440).
+docker-compose up -d database
 
-3. Build and run the API (PowerShell):
+# 3. Build and test.
+.\mvnw.cmd -B clean test
 
-```powershell
-# Build all modules
-.\n+\mvnw.cmd -DskipTests clean package
-
-# Run the boot module locally (or use your IDE to run pt.estga.StonemarkApplication)
-cd boot
+# 4. Run the API (or run pt.estga.StonemarkApplication from your IDE).
+cd application
 ..\mvnw.cmd spring-boot:run
 ```
 
-If the `app` service is enabled in `docker-compose.yml` (it is commented out by default), it will bind to port 8080.
+Swagger UI: <http://localhost:8080/swagger-ui/index.html>
 
-## Running without Docker (developer flow)
+To explore without a trained model, the AI pipeline stays off
+(`processing.enabled=false`). To run without auth locally, set
+`application.security.disabled=true`.
 
-1. Ensure a PostgreSQL instance with PostGIS and pgvector is available and reachable; update environment variables or `application.yml` accordingly.
-2. Build and run the `boot` module the same way as above.
+## Documentation
 
-## API documentation
-
-When the application is running, the Swagger UI is available at:
-
-http://localhost:8080/swagger-ui/index.html
-
-The application sets the OpenAPI base URL using `application.base-url` (see `boot/src/main/resources`).
-
-## Notes about detection and vision
-
-The Vision Server used for automated detection is external and not provided in this repository or the default Docker Compose. Integration points exist in the `detection` module and environment variables reference a `VISION_SERVER_URL` if set. If detection is required, provide or run the Vision Server separately and set the `VISION_SERVER_URL` environment variable.
-
-## Database image details
-
-The `postgres` folder contains a Dockerfile based on `postgis/postgis:18-3.6` and installs `pgvector` (v0.8.1) so the DB image supports vector search. The compose mapping exposes the DB on host port 5440.
-
-## Project modules
-
-This repository uses a modular monolith layout. Modules defined in the root POM include:
-
-- `boot` — application entry and composition; wires modules together and hosts the Spring Boot application.
-- `mark` — domain logic and persistence for masons' marks and related entities.
-- `vision` — adapters and services for computer-vision detection (integration hooks to external Vision Server).
-- `file` — file storage and retrieval utilities; local filesystem storage and upload handling.
-- `user` — account management, authentication and profile operations.
-- `shared` — shared DTOs, common utilities, exceptions and cross-module helpers.
-- `intake` — user-submitted marks and lifecycle management for suggested content.
-- `support` — operational helpers and supporting services used across modules (email, scheduling, utilities).
-- `chatbot` — bot integrations for Telegram/WhatsApp and conversational handlers.
-- `verification` — admin verification workflows and moderation tooling for submissions.
-- `report` — reporting and export features (analytics, generated reports).
-- `territory` — geospatial models and territory/administrative division management.
-- `decision` — business rules and decision-making workflows (automated or manual rule engines).
-- `shared-web` — web utilities, OpenAPI configuration and Swagger integration.
-- `bookmark` — user bookmarking and favorites management.
-- `content-import` — importers/parsers for bulk content ingestion and ETL tasks.
-- `monument` — domain and CRUD for monuments and physical locations.
-
-## Development notes
-
-- Swagger/OpenAPI is provided by SpringDoc (see `shared-web/pom.xml`).
-- The repository provides a Maven Wrapper (`mvnw`, `mvnw.cmd`) for reproducible builds on CI and contributors' machines.
-
-## Contributing
-
-Contributions are welcome. Suggested workflow:
-
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feature/your-feature`.
-3. Commit changes with clear messages.
-4. Push and open a Pull Request.
-
-Please follow existing code style and module boundaries.
+| Document | Contents |
+|---|---|
+| [docs/OVERVIEW.md](docs/OVERVIEW.md) | Purpose, domain model, direction. |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, boundaries, conventions, security, configuration, build. |
+| [docs/API.md](docs/API.md) | HTTP endpoints. |
+| [processing/PROCESSING_MODULE.md](processing/PROCESSING_MODULE.md) | Vision pipeline internals. |
+| [processing/SCORING_CONTRACT.md](processing/SCORING_CONTRACT.md) | Similarity scoring contract. |
+| [AGENTS.md](AGENTS.md) | Conventions for (AI) contributors. |
 
 ## License
 
-This project is licensed under the MIT License — see the `LICENSE` file for details.
+MIT — see [`licence.txt`](licence.txt).
