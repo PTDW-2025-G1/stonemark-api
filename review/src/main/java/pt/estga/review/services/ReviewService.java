@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.commonweb.exceptions.ResourceNotFoundException;
@@ -15,7 +17,6 @@ import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.processing.dtos.MarkSuggestionDto;
-import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
@@ -52,11 +53,13 @@ public class ReviewService {
 
     @Transactional
     public MarkEvidenceReview acceptAsNew(Long submissionId, String newMarkTitle, String comment) {
-        var overview = processingRepository.findOverviewBySubmissionId(submissionId)
-                .orElseThrow(() -> new ResourceNotFoundException("Processing not found"));
+        submissionRepository.findById(submissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-        Double maxConf = suggestionRepository.findMaxConfidenceByProcessingId(overview.getId());
-        if (maxConf != null && maxConf >= newMarkMaxSuggestionConfidence) {
+        Double maxConfidence = processingRepository.findOverviewBySubmissionId(submissionId)
+                .map(overview -> suggestionRepository.findMaxConfidenceByProcessingId(overview.getId()))
+                .orElse(null);
+        if (maxConfidence != null && maxConfidence >= newMarkMaxSuggestionConfidence) {
             throw new IllegalStateException("Confident suggestions exist. You must review existing marks.");
         }
 
@@ -75,22 +78,40 @@ public class ReviewService {
         return performReview(submissionId, ReviewType.REJECTION, null, comment);
     }
 
+    /**
+     * Records a moderation decision for a submission and persists it as a label.
+     *
+     * <p>Processing is optional. A submission that was never processed by the AI
+     * pipeline can still be moderated manually — that is how the labelled corpus the
+     * model will later learn from is built. When a processing record exists, its
+     * status and suggestions gate the decision as before.
+     */
     @Transactional
     public MarkEvidenceReview performReview(Long submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
         var submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
-        var overview = processingRepository.findOverviewBySubmissionId(submissionId)
-                .orElseThrow(() -> new IllegalStateException("Submission " + submissionId + " not processed"));
+        var overview = processingRepository.findOverviewBySubmissionId(submissionId).orElse(null);
+        boolean processed = overview != null;
+        long suggestionCount = processed ? suggestionRepository.countByProcessingId(overview.getId()) : 0L;
 
-        validateState(submissionId, overview.getStatus(), suggestionRepository.countByProcessingId(overview.getId()), type);
+        if (processed && overview.getStatus() != ProcessingStatus.COMPLETED) {
+            throw new IllegalStateException("Processing not ready.");
+        }
+        if (processed && type != ReviewType.DISCOVERY && !allowEmptyReview && suggestionCount == 0) {
+            throw new IllegalStateException("No suggestions available to review.");
+        }
+        if (markEvidenceReviewRepository.existsBySubmissionId(submissionId)) {
+            throw new IllegalStateException("Submission already reviewed.");
+        }
 
         ResolutionResult resolution = resolve(type, ctx);
-
         ReviewDecision decision = (type == ReviewType.REJECTION) ? ReviewDecision.REJECTED : ReviewDecision.APPROVED;
+
         try {
-            MarkEvidenceReview review = executor.execute(submission, decision, comment, resolution, overview.getId());
-            applyReviewSideEffects(submission, decision, resolution);
+            MarkEvidenceReview review = executor.execute(
+                    submission, decision, comment, resolution, processed ? overview.getId() : null);
+            applyReviewSideEffects(submission, decision, resolution, processed);
             return review;
         } catch (DataIntegrityViolationException dive) {
             throw new IllegalStateException("Submission " + submissionId + " already reviewed", dive);
@@ -111,6 +132,14 @@ public class ReviewService {
     public Optional<ReviewDecision> getReviewStatus(Long submissionId) {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
                 .map(MarkEvidenceReview::getDecision);
+    }
+
+    /**
+     * Lists persisted moderation decisions (the training labels), newest first by default.
+     */
+    @Transactional(readOnly = true)
+    public Page<MarkEvidenceReview> listReviews(Pageable pageable) {
+        return markEvidenceReviewRepository.findAll(pageable);
     }
 
     private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
@@ -134,19 +163,8 @@ public class ReviewService {
         };
     }
 
-    private void validateState(Long submissionId, ProcessingStatus status, long count, ReviewType reviewType) {
-        if (status != ProcessingStatus.COMPLETED) {
-            throw new IllegalStateException("Processing not ready.");
-        }
-        if (reviewType != ReviewType.DISCOVERY && !allowEmptyReview && count == 0) {
-            throw new IllegalStateException("No suggestions available to review.");
-        }
-        if (markEvidenceReviewRepository.existsBySubmissionId(submissionId)) {
-            throw new IllegalStateException("Submission already reviewed.");
-        }
-    }
-
-    private void applyReviewSideEffects(MarkEvidenceSubmission submission, ReviewDecision decision, ResolutionResult resolution) {
+    private void applyReviewSideEffects(MarkEvidenceSubmission submission, ReviewDecision decision,
+                                        ResolutionResult resolution, boolean processed) {
         Long submissionId = submission.getId();
         SubmissionStatus targetStatus = decision == ReviewDecision.APPROVED
                 ? SubmissionStatus.PROCESSED : SubmissionStatus.REJECTED;
@@ -162,41 +180,36 @@ public class ReviewService {
             }
         }
 
-        try {
-            int updated = processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
-            if (updated > 0) {
-                log.info("Processing marked REVIEWED for submission {}", submissionId);
+        if (processed) {
+            try {
+                processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
+            } catch (Exception ex) {
+                log.error("Failed to mark processing REVIEWED for submission {}", submissionId, ex);
             }
-        } catch (Exception ex) {
-            log.error("Failed to mark processing REVIEWED for submission {}: {}", submissionId, ex.getMessage(), ex);
         }
 
-        if (resolution != null && resolution.mark() != null) {
-            UUID mediaFileId = submission.getOriginalMediaFileId();
-            linkEvidenceToMark(submissionId, mediaFileId, resolution.mark().id(), decision == ReviewDecision.APPROVED);
+        if (decision == ReviewDecision.APPROVED && resolution != null && resolution.mark() != null) {
+            linkEvidenceToMark(submissionId, submission.getOriginalMediaFileId(), resolution.mark().id());
         }
     }
 
-    private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId, boolean approved) {
-        if (mediaFileId == null) return;
-
-        try {
-            MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, approved);
-
-            float[] embedding = parseEmbedding(
-                    processingRepository.findEmbeddingTextBySubmissionId(submissionId));
-            if (embedding == null) {
-                log.warn("Cannot create MarkEvidence for file {}: no embedding for submission {}",
-                        mediaFileId, submissionId);
-                return;
-            }
-
-            markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
-            log.info("Linked evidence file {} to occurrence {} (submission {})",
-                    mediaFileId, occurrence.id(), submissionId);
-        } catch (Exception e) {
-            log.error("Failed to link evidence for file {}: {}", mediaFileId, e.getMessage(), e);
+    /**
+     * Links the submission's photo to a mark occurrence.
+     *
+     * <p>Deliberately not wrapped in a catch: this runs inside the review
+     * transaction, so a linking failure rolls the whole decision back and a
+     * submission can never be approved without its evidence being linked. The
+     * embedding is optional and is absent when the submission was not processed.
+     */
+    private void linkEvidenceToMark(Long submissionId, UUID mediaFileId, Long markId) {
+        if (mediaFileId == null) {
+            throw new IllegalStateException("Submission " + submissionId + " has no media to link");
         }
+        MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(markId, true);
+        float[] embedding = parseEmbedding(processingRepository.findEmbeddingTextBySubmissionId(submissionId));
+        markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), embedding);
+        log.info("Linked evidence file {} to occurrence {} (submission {})",
+                mediaFileId, occurrence.id(), submissionId);
     }
 
     private static float[] parseEmbedding(Optional<String> text) {

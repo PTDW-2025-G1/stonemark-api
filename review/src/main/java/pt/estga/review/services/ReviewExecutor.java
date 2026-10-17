@@ -49,7 +49,9 @@ public class ReviewExecutor {
 
         try {
             meterRegistry.counter("review.decisions.count", "decision", review.getDecision().name()).increment();
-            if (review.getDecision() == ReviewDecision.APPROVED && review.getSelectedMarkId() != null) {
+            if (processingId != null
+                    && review.getDecision() == ReviewDecision.APPROVED
+                    && review.getSelectedMarkId() != null) {
                 suggestionRepository.findByProcessingIdAndMarkId(processingId, review.getSelectedMarkId())
                         .ifPresent(s -> meterRegistry.summary("review.accepted.confidence").record(s.getConfidence()));
             }

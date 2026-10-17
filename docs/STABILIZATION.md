@@ -16,8 +16,9 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Status
 
-- **P1 — Launch-ready intake: done.** See "Plan" below for what changed.
-- **P2–P5: not started.**
+- **P1 — Launch-ready intake: done.**
+- **P2 — Manual moderation + labelling: done.** See "Plan" below.
+- **P3–P5: not started.**
 - Behavior changes to be aware of: the AI pipeline is now off by default (`processing.enabled=false`), and the API is **secure by default** (`application.security.disabled=false`).
 
 ## V1 scope
@@ -50,7 +51,13 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - Test: `SubmissionFacadeTest`.
 *Done: a phone photo submits successfully with no account and no location, is stored exactly once, and never depends on vision.*
 
-**P2 — Manual moderation + labelling.** A simple queue; assign / create-mark / reject. Every decision is persisted as a label.
+**P2 — Manual moderation + labelling. ✅ Done.**
+- Review/moderation now works **without the AI pipeline**: `ReviewService` treats a processing record as optional (no more "not processed" failure).
+- Approving links the photo to a mark occurrence even with **no embedding**; a linking failure now rolls the whole decision back, so a submission cannot be approved with unlinked evidence.
+- Every decision is persisted as a `MarkEvidenceReview` label (submission → existing mark / new mark / reject) with reviewer and comment.
+- Queue: `GET /api/v1/admin/submissions?status=RECEIVED`. Decisions: `POST /api/v1/admin/review/{id}/accept|accept-as-new|reject`. Labels: `GET /api/v1/admin/review`.
+- Admin bootstrap: first admin created from `APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD` / `_EMAIL` (disabled when unset).
+- Test: `ReviewServiceTest` (approve and reject without processing).
 *Done: a moderator can clear the queue and each decision is recorded as training data.*
 
 **P3 — Collect, then automate.** Grow the labelled set, train the detector/embedder, evaluate, enable suggestions, then auto-approve. See `marks-processing/PLAN.md`.
@@ -87,4 +94,4 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
 - Automatic approval is **gated on data** — it is P3, not P1.
 - The Modulith verification test still only *prints* violations (informational); enforcing it is P4.
-- Security now on means admin/moderation endpoints require authentication; a way to provision an admin login is needed before P2.
+- Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

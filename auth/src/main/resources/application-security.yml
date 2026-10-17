@@ -25,3 +25,9 @@ application:
         expiration: 2592000000 # 30 days
       chatbot-verification:
         expiration: 900000 # 15 minutes
+  # Optional admin bootstrap for a fresh deployment. Leave the password unset to disable.
+  bootstrap:
+    admin:
+      username: ${APPLICATION_BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${APPLICATION_BOOTSTRAP_ADMIN_PASSWORD:}
+      email: ${APPLICATION_BOOTSTRAP_ADMIN_EMAIL:}
