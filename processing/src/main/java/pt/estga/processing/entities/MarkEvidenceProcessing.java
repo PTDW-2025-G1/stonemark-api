@@ -19,11 +19,11 @@ public class MarkEvidenceProcessing {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(unique = true)
-    private Long submissionId;
+    private UUID submissionId;
 
     @Column(columnDefinition = "vector(384)")
     private float[] embedding;

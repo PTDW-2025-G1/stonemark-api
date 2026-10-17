@@ -1,5 +1,7 @@
 package pt.estga.review.repositories;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Repository;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
@@ -9,11 +11,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MarkEvidenceReviewRepository extends BaseRepository<MarkEvidenceReview, Long> {
+public interface MarkEvidenceReviewRepository extends BaseRepository<MarkEvidenceReview, UUID> {
 
-    Optional<MarkEvidenceReview> findBySubmissionId(Long submissionId);
+    Optional<MarkEvidenceReview> findBySubmissionId(UUID submissionId);
 
-    boolean existsBySubmissionId(Long submissionId);
+    boolean existsBySubmissionId(UUID submissionId);
 
     List<MarkEvidenceReview> findByDecision(ReviewDecision decision);
 }

@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public final class ModerationDtos {
 
-    public record ProcessingDto(UUID processingId, Long submissionId, ProcessingStatus status, Double maxConfidence) {}
+    public record ProcessingDto(UUID processingId, UUID submissionId, ProcessingStatus status, Double maxConfidence) {}
 
-    public record MarkDto(Long id, String title, PublicationStatus status) {}
+    public record MarkDto(UUID id, String title, PublicationStatus status) {}
 
 }

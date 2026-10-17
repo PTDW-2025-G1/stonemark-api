@@ -1,5 +1,7 @@
 package pt.estga.shared.core.models;
 
+import java.util.UUID;
+
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,7 +13,7 @@ import java.util.Collection;
 @Builder
 public class AppPrincipal implements UserDetails, AuthenticatedPrincipal {
 
-    private final Long id;
+    private final UUID id;
     @Getter
     private final String identifier; // username OR service name
     private final String password;
@@ -20,7 +22,7 @@ public class AppPrincipal implements UserDetails, AuthenticatedPrincipal {
     private final boolean accountNonLocked;
 
     @Override
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 

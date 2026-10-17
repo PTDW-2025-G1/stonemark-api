@@ -1,5 +1,7 @@
 package pt.estga.monument.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -47,7 +49,7 @@ public class MonumentAdminController {
 
     @PutMapping(value = "/{id}")
     public ResponseEntity<MonumentDto> updateMonument(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Parameter(description = "Monument form data", required = true)
             @Valid @ModelAttribute MonumentRequestDto monumentDto
     ) {
@@ -56,7 +58,7 @@ public class MonumentAdminController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMonument(
-            @PathVariable Long id
+            @PathVariable UUID id
     ) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();

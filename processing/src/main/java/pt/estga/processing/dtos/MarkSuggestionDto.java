@@ -8,6 +8,6 @@ import java.util.UUID;
 public class MarkSuggestionDto {
     private UUID id;
     private UUID processingId;
-    private Long markId;
+    private UUID markId;
     private double confidence;
 }

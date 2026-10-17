@@ -1,5 +1,7 @@
 package pt.estga.mark.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +29,7 @@ public class MarkService {
         return repository.findAll(pageable).map(MarkMapper::toDto);
     }
 
-    public MarkDto findById(Long id) {
+    public MarkDto findById(UUID id) {
         return repository.findById(id)
                 .map(MarkMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
@@ -38,7 +40,7 @@ public class MarkService {
      * its existing occurrences; occurrences added afterwards keep their own lifecycle.
      */
     @Transactional
-    public MarkDto update(Long id, MarkUpdateDto dto) {
+    public MarkDto update(UUID id, MarkUpdateDto dto) {
         Mark mark = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
         mark.setTitle(dto.title());
@@ -61,7 +63,7 @@ public class MarkService {
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         Mark mark = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark with id " + id + " not found"));
         repository.softDelete(mark);

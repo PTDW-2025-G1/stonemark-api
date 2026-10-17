@@ -1,5 +1,7 @@
 package pt.estga.review.dtos;
 
+import java.util.UUID;
+
 import pt.estga.review.enums.ReviewDecision;
 
 import java.time.Instant;
@@ -8,12 +10,12 @@ import java.time.Instant;
  * Response DTO for a persisted review.
  */
 public record ReviewResponseDto(
-        Long id,
-        Long submissionId,
+        UUID id,
+        UUID submissionId,
         ReviewDecision decision,
-        Long selectedMarkId,
+        UUID selectedMarkId,
         String selectedMarkTitle,
-        Long reviewerId,
+        UUID reviewerId,
         String reviewerName,
         Instant reviewedAt,
         String comment) {

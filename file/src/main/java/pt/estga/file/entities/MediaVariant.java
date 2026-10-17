@@ -1,5 +1,9 @@
 package pt.estga.file.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -21,7 +25,8 @@ public class MediaVariant {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     @NotNull
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

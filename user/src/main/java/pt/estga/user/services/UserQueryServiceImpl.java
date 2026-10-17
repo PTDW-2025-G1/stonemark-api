@@ -1,5 +1,7 @@
 package pt.estga.user.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,7 +16,7 @@ public class UserQueryServiceImpl implements UserQueryService {
     private final UserRepository userRepository;
 
     @Override
-    public boolean existsById(Long userId) {
+    public boolean existsById(UUID userId) {
         return userRepository.existsById(userId);
     }
 }

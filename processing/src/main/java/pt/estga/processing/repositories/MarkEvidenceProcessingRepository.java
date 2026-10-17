@@ -20,22 +20,22 @@ import pt.estga.processing.repositories.projections.RetryableProjection;
 
 public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvidenceProcessing, UUID> {
 
-	boolean existsBySubmissionId(Long submissionId);
+	boolean existsBySubmissionId(UUID submissionId);
 
-    Optional<MarkEvidenceProcessing> findBySubmissionId(Long submissionId);
+    Optional<MarkEvidenceProcessing> findBySubmissionId(UUID submissionId);
 
-    List<MarkEvidenceProcessing> findBySubmissionIdInAndEmbeddingIsNotNull(Collection<Long> submissionIds);
+    List<MarkEvidenceProcessing> findBySubmissionIdInAndEmbeddingIsNotNull(Collection<UUID> submissionIds);
 
 	@Query("SELECT p.id AS id, p.status AS status FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
-	Optional<ProcessingOverviewProjection> findOverviewBySubmissionId(@Param("submissionId") Long submissionId);
+	Optional<ProcessingOverviewProjection> findOverviewBySubmissionId(@Param("submissionId") UUID submissionId);
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT p FROM MarkEvidenceProcessing p WHERE p.submissionId = :submissionId")
-	Optional<MarkEvidenceProcessing> findBySubmissionIdForUpdate(@Param("submissionId") Long submissionId);
+	Optional<MarkEvidenceProcessing> findBySubmissionIdForUpdate(@Param("submissionId") UUID submissionId);
 
 	@Modifying
 	@Query("UPDATE MarkEvidenceProcessing p SET p.status = :status WHERE p.submissionId = :submissionId")
-	int updateStatusBySubmissionId(@Param("submissionId") Long submissionId, @Param("status") ProcessingStatus status);
+	int updateStatusBySubmissionId(@Param("submissionId") UUID submissionId, @Param("status") ProcessingStatus status);
 
     @Query("SELECT p.id AS id, p.submissionId AS submissionId, p.retryCount AS retryCount, p.lastRetryAt AS lastRetryAt FROM MarkEvidenceProcessing p WHERE p.status IN :statuses AND p.permanent = false AND p.retryCount < p.maxRetries")
     List<RetryableProjection> findRetryableProjectionsByStatusIn(@Param("statuses") List<ProcessingStatus> statuses);
@@ -45,8 +45,8 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     int resetStuckProcessing(@Param("sourceStatus") ProcessingStatus sourceStatus, @Param("targetStatus") ProcessingStatus targetStatus, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
 
     @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
-    Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") Long submissionId);
+    Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") UUID submissionId);
 
     @Query(value = "SELECT s.id FROM mark_evidence_submission s WHERE s.status = 'RECEIVED' AND NOT EXISTS (SELECT 1 FROM mark_evidence_processing p WHERE p.submission_id = s.id)", nativeQuery = true)
-    List<Long> findOrphanedSubmissionIds();
+    List<UUID> findOrphanedSubmissionIds();
 }

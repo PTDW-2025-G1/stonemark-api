@@ -1,5 +1,7 @@
 package pt.estga.shared.jpa.entities;
 
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -28,12 +30,12 @@ public abstract class AuditedEntity {
 
     @CreatedBy
     @Column(name = "created_by_id", updatable = false)
-    protected Long createdBy;
+    protected UUID createdBy;
 
     @LastModifiedDate
     protected Instant lastModifiedAt;
 
     @LastModifiedBy
     @Column(name = "modified_by_id")
-    protected Long modifiedBy;
+    protected UUID modifiedBy;
 }

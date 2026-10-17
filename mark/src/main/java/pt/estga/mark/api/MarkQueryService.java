@@ -11,9 +11,9 @@ import java.util.UUID;
 
 public interface MarkQueryService {
 
-    Optional<MarkDto> findMarkById(Long id);
+    Optional<MarkDto> findMarkById(UUID id);
 
-    Optional<MarkOccurrenceDto> findOccurrenceById(Long id);
+    Optional<MarkOccurrenceDto> findOccurrenceById(UUID id);
 
     List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
 
@@ -23,13 +23,13 @@ public interface MarkQueryService {
      * Returns the published, non-deleted marks with the given ids, for callers that
      * resolve several marks at once (for example bookmarks).
      */
-    List<MarkDto> findPublishedMarksByIds(Collection<Long> ids);
+    List<MarkDto> findPublishedMarksByIds(Collection<UUID> ids);
 
     /**
      * Returns the published, non-deleted occurrences with the given ids, for callers
      * that resolve several occurrences at once (for example bookmarks).
      */
-    List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids);
+    List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<UUID> ids);
 
     MarkDto createMark(String title, String description);
 
@@ -39,7 +39,7 @@ public interface MarkQueryService {
      * and is deduplicated per mark; otherwise the coordinates are recorded on a new
      * occurrence (both may be absent, which is a valid unlocated occurrence).
      */
-    MarkOccurrenceDto findOrCreateOccurrence(Long markId, Long monumentId, Double latitude, Double longitude);
+    MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude);
 
-    void linkFileToOccurrence(UUID fileId, Long occurrenceId, Long submissionId, float[] embedding);
+    void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding);
 }

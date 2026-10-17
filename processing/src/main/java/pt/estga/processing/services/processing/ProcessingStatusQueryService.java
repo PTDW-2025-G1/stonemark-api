@@ -1,5 +1,7 @@
 package pt.estga.processing.services.processing;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +18,7 @@ public class ProcessingStatusQueryService {
 
     private final MarkEvidenceProcessingRepository processingRepository;
 
-    public Optional<ProcessingStatusDto> findStatusBySubmissionId(Long submissionId) {
+    public Optional<ProcessingStatusDto> findStatusBySubmissionId(UUID submissionId) {
         return processingRepository.findBySubmissionId(submissionId)
                 .map(ProcessingStatusMapper::toDto);
     }

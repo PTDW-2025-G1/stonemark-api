@@ -4,29 +4,26 @@ import java.util.UUID;
 
 /**
  * Consolidated candidate key used for deduplication and uniqueness checks.
+ * A null {@code occurrenceId} means the occurrence is not yet known.
  */
-public record CandidateKey(UUID evidenceId, Long occurrenceId, Long markId) {
-
-    private static final Long MISSING = -1L;
+public record CandidateKey(UUID evidenceId, UUID occurrenceId, UUID markId) {
 
     /**
      * Sanitizer-level factory: markId is unknown at sanitization time.
      */
-    public static CandidateKey of(UUID evidenceId, Long occurrenceId) {
-        Long occ = occurrenceId == null ? MISSING : occurrenceId;
-        return new CandidateKey(evidenceId, occ, null);
+    public static CandidateKey of(UUID evidenceId, UUID occurrenceId) {
+        return new CandidateKey(evidenceId, occurrenceId, null);
     }
 
     /**
      * Aggregation-level factory: includes markId to distinguish contributions targeted at different marks.
      */
-    public static CandidateKey of(UUID evidenceId, Long occurrenceId, Long markId) {
-        Long occ = occurrenceId == null ? MISSING : occurrenceId;
-        return new CandidateKey(evidenceId, occ, markId);
+    public static CandidateKey of(UUID evidenceId, UUID occurrenceId, UUID markId) {
+        return new CandidateKey(evidenceId, occurrenceId, markId);
     }
 
     public boolean isOccurrenceMissing() {
-        return MISSING.equals(occurrenceId);
+        return occurrenceId == null;
     }
 
     public boolean hasMark() {

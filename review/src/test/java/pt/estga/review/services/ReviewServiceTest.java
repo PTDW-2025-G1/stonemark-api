@@ -31,9 +31,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
 
-    private static final Long SUBMISSION_ID = Long.valueOf(1L);
-    private static final Long MARK_ID = Long.valueOf(5L);
-    private static final Long OCCURRENCE_ID = Long.valueOf(9L);
+    private static final UUID SUBMISSION_ID = UUID.randomUUID();
+    private static final UUID MARK_ID = UUID.randomUUID();
+    private static final UUID OCCURRENCE_ID = UUID.randomUUID();
     private static final UUID FILE_ID = UUID.randomUUID();
 
     @Mock
@@ -57,7 +57,7 @@ class ReviewServiceTest {
     void approvesWithoutProcessing() {
         MarkDto mark = new MarkDto(MARK_ID, "Cross", null, null, PublicationStatus.DRAFT);
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(100L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.APPROVED).selectedMarkId(MARK_ID).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
@@ -82,7 +82,7 @@ class ReviewServiceTest {
     @DisplayName("rejects without processing and records the decision as a label")
     void rejectsWithoutProcessing() {
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(101L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.REJECTED).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
@@ -102,7 +102,7 @@ class ReviewServiceTest {
     @DisplayName("no-match keeps the submission as a candidate without provisioning a mark")
     void noMatchDoesNotProvisionMark() {
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(102L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.NO_MATCH).build();
 
         when(intakeApi.findById(SUBMISSION_ID))

@@ -1,5 +1,7 @@
 package pt.estga.mark.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,7 +28,7 @@ public class PublicMarkController {
     @GetMapping
     public ResponseEntity<Page<PublicMarkSummaryDto>> findAll(
             @RequestParam(required = false) String q,
-            @RequestParam(required = false) Long monumentId,
+            @RequestParam(required = false) UUID monumentId,
             @RequestParam(required = false) Boolean located,
             @PageableDefault(size = 20, sort = "title") Pageable pageable
     ) {
@@ -34,7 +36,7 @@ public class PublicMarkController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PublicMarkDto> findById(@PathVariable Long id) {
+    public ResponseEntity<PublicMarkDto> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(catalogService.findPublished(id));
     }
 }

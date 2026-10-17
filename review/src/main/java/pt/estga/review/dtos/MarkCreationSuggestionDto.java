@@ -11,8 +11,8 @@ public record MarkCreationSuggestionDto(
         MarkCreationSuggestionStatus status,
         int size,
         double coherence,
-        Set<Long> memberSubmissionIds,
-        Long createdMarkId,
+        Set<UUID> memberSubmissionIds,
+        UUID createdMarkId,
         Instant createdAt,
         Instant updatedAt
 ) {

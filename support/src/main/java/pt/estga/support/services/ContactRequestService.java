@@ -1,5 +1,7 @@
 package pt.estga.support.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,12 +42,12 @@ public class ContactRequestService {
         return repository.findAll(sb.build(), pageable);
     }
 
-    public Optional<ContactRequest> findById(Long id) {
+    public Optional<ContactRequest> findById(UUID id) {
         return repository.findById(id);
     }
 
     @Transactional
-    public ContactRequest updateStatus(Long id, ContactStatus status) {
+    public ContactRequest updateStatus(UUID id, ContactStatus status) {
         ContactRequest contact = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contact request not found with id: " + id));
         contact.setStatus(status);
@@ -53,7 +55,7 @@ public class ContactRequestService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(UUID id) {
         ContactRequest contact = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contact request not found with id: " + id));
         repository.softDelete(contact);

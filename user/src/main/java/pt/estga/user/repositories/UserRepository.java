@@ -1,5 +1,7 @@
 package pt.estga.user.repositories;
 
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,14 +12,14 @@ import pt.estga.user.entities.User;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends BaseRepository<User, Long>, JpaSpecificationExecutor<User> {
+public interface UserRepository extends BaseRepository<User, UUID>, JpaSpecificationExecutor<User> {
 
     Optional<User> findByEmail(String email);
 
     Optional<User> findByUsername(String username);
 
     @Query("SELECT u FROM User u WHERE u.id = :id")
-    Optional<User> findByIdForProfile(@Param("id") Long id);
+    Optional<User> findByIdForProfile(@Param("id") UUID id);
 
     boolean existsByUsername(String username);
 

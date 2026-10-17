@@ -27,7 +27,7 @@ public class MediaFile extends CreationAuditedEntity {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @NotBlank

@@ -1,5 +1,7 @@
 package pt.estga.intake.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,7 +34,7 @@ public class SubmissionService {
         return submissionRepository.findAll(sb.build(), pageable).map(submissionMapper::toDto);
     }
 
-    public Optional<SubmissionDto> findById(Long id) {
+    public Optional<SubmissionDto> findById(UUID id) {
         return submissionRepository.findById(id).map(submissionMapper::toDto);
     }
 }

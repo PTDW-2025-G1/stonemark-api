@@ -6,7 +6,7 @@ public final class TestBuilders {
 
     private TestBuilders() {}
 
-    public static Long mark(Long id) {
+    public static UUID mark(UUID id) {
         return id;
     }
 

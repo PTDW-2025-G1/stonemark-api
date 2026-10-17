@@ -57,5 +57,5 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 
 	Optional<MarkEvidence> findByFileId(UUID fileId);
 
-	List<MarkEvidence> findByOccurrenceIdIn(Collection<Long> occurrenceIds);
+	List<MarkEvidence> findByOccurrenceIdIn(Collection<UUID> occurrenceIds);
 }

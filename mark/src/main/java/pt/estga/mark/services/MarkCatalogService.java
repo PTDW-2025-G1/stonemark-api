@@ -37,7 +37,7 @@ public class MarkCatalogService {
     private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkEvidenceRepository evidenceRepository;
 
-    public Page<PublicMarkSummaryDto> search(String q, Long monumentId, Boolean located, Pageable pageable) {
+    public Page<PublicMarkSummaryDto> search(String q, UUID monumentId, Boolean located, Pageable pageable) {
         Specification<Mark> spec = published()
                 .and(matchesQuery(q))
                 .and(atMonument(monumentId))
@@ -45,11 +45,11 @@ public class MarkCatalogService {
         return markRepository.findAll(spec, pageable).map(PublicMarkMapper::toSummary);
     }
 
-    public PublicMarkDto findPublished(Long id) {
+    public PublicMarkDto findPublished(UUID id) {
         Mark mark = markRepository.findByIdAndStatus(id, PublicationStatus.PUBLISHED)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark " + id + " not found"));
         List<MarkOccurrence> occurrences = occurrenceRepository.findByMarkIdAndStatus(id, PublicationStatus.PUBLISHED);
-        Map<Long, List<UUID>> mediaByOccurrence = mediaByOccurrence(occurrences);
+        Map<UUID, List<UUID>> mediaByOccurrence = mediaByOccurrence(occurrences);
         List<PublicOccurrenceDto> occurrenceDtos = occurrences.stream()
                 .map(occurrence -> PublicMarkMapper.toOccurrence(
                         occurrence, mediaByOccurrence.getOrDefault(occurrence.getId(), List.of())))
@@ -57,8 +57,8 @@ public class MarkCatalogService {
         return PublicMarkMapper.toDetail(mark, occurrenceDtos);
     }
 
-    private Map<Long, List<UUID>> mediaByOccurrence(List<MarkOccurrence> occurrences) {
-        List<Long> occurrenceIds = occurrences.stream().map(MarkOccurrence::getId).toList();
+    private Map<UUID, List<UUID>> mediaByOccurrence(List<MarkOccurrence> occurrences) {
+        List<UUID> occurrenceIds = occurrences.stream().map(MarkOccurrence::getId).toList();
         if (occurrenceIds.isEmpty()) {
             return Map.of();
         }
@@ -80,7 +80,7 @@ public class MarkCatalogService {
         return (root, query, cb) -> cb.like(cb.lower(root.get("title")), "%" + q.toLowerCase() + "%");
     }
 
-    private static Specification<Mark> atMonument(Long monumentId) {
+    private static Specification<Mark> atMonument(UUID monumentId) {
         if (monumentId == null) return null;
         return (root, query, cb) -> {
             query.distinct(true);

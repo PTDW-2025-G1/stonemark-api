@@ -67,7 +67,7 @@ public class MarkCreationSuggestionService {
      */
     @Transactional
     public void recompute() {
-        List<Long> candidateSubmissionIds = reviewRepository.findByDecision(ReviewDecision.NO_MATCH).stream()
+        List<UUID> candidateSubmissionIds = reviewRepository.findByDecision(ReviewDecision.NO_MATCH).stream()
                 .map(MarkEvidenceReview::getSubmissionId)
                 .toList();
         if (candidateSubmissionIds.isEmpty()) {
@@ -91,7 +91,7 @@ public class MarkCreationSuggestionService {
         }
 
         MarkDto mark = markQueryService.createMark(request.title(), request.description());
-        for (Long submissionId : suggestion.getMemberSubmissionIds()) {
+        for (UUID submissionId : suggestion.getMemberSubmissionIds()) {
             associate(submissionId, mark.id());
         }
 
@@ -115,7 +115,7 @@ public class MarkCreationSuggestionService {
      * submission's coordinates, links the evidence, and rewrites the member's
      * decision as a positive label.
      */
-    private void associate(Long submissionId, Long markId) {
+    private void associate(UUID submissionId, UUID markId) {
         SubmissionRef submission = intakeApi.findById(submissionId).orElse(null);
         if (submission == null || submission.originalMediaFileId() == null) {
             return;
@@ -140,7 +140,7 @@ public class MarkCreationSuggestionService {
             if (used[i]) continue;
             SubmissionEmbedding seed = items.get(i);
             used[i] = true;
-            Set<Long> members = new LinkedHashSet<>();
+            Set<UUID> members = new LinkedHashSet<>();
             members.add(seed.submissionId());
             List<float[]> vectors = new java.util.ArrayList<>();
             vectors.add(seed.embedding());
@@ -159,13 +159,13 @@ public class MarkCreationSuggestionService {
 
     private void reconcile(List<Cluster> clusters) {
         List<MarkCreationSuggestion> open = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.OPEN);
-        Set<Set<Long>> dismissed = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.DISMISSED).stream()
+        Set<Set<UUID>> dismissed = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.DISMISSED).stream()
                 .map(suggestion -> Set.copyOf(suggestion.getMemberSubmissionIds()))
                 .collect(java.util.stream.Collectors.toSet());
 
-        Set<Set<Long>> significant = new HashSet<>();
+        Set<Set<UUID>> significant = new HashSet<>();
         for (Cluster cluster : clusters) {
-            Set<Long> members = Set.copyOf(cluster.members());
+            Set<UUID> members = Set.copyOf(cluster.members());
             significant.add(members);
             if (dismissed.contains(members)) {
                 continue;
@@ -269,6 +269,6 @@ public class MarkCreationSuggestionService {
                 suggestion.getUpdatedAt());
     }
 
-    private record Cluster(Set<Long> members, double coherence) {
+    private record Cluster(Set<UUID> members, double coherence) {
     }
 }

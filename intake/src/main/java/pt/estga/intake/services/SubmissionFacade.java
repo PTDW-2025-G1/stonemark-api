@@ -1,5 +1,7 @@
 package pt.estga.intake.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -70,7 +72,7 @@ public class SubmissionFacade {
         SecurityUtils.getCurrentUserId().ifPresent(submission::setSubmittedById);
 
         try {
-            Long id = submitService.submit(submission, staged.id(), file.getOriginalFilename());
+            UUID id = submitService.submit(submission, staged.id(), file.getOriginalFilename());
             return submissionMapper.toDto(submissionRepository.findById(id).orElseThrow());
         } catch (DataIntegrityViolationException duplicate) {
             discardStagedQuietly(staged);

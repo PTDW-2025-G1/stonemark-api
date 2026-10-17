@@ -1,5 +1,7 @@
 package pt.estga.monument.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,7 @@ public class MonumentController {
 
     @GetMapping("/{id}")
     public ResponseEntity<MonumentDto> getMonumentById(
-            @PathVariable Long id
+            @PathVariable UUID id
     ) {
         return service.findById(id)
                 .map(ResponseEntity::ok)

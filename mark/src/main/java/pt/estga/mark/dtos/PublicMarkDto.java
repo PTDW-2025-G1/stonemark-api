@@ -5,7 +5,7 @@ import java.util.UUID;
 
 /** Published mark with its published occurrences and the media backing them. */
 public record PublicMarkDto(
-        Long id,
+        UUID id,
         String title,
         String description,
         UUID coverMediaId,

@@ -1,5 +1,7 @@
 package pt.estga.mark.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,14 +26,14 @@ public class MarkOccurrenceService {
         return repository.findAll(pageable).map(MarkOccurrenceMapper::toDto);
     }
 
-    public MarkOccurrenceDto findById(Long id) {
+    public MarkOccurrenceDto findById(UUID id) {
         return repository.findById(id)
                 .map(MarkOccurrenceMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark occurrence with id " + id + " not found"));
     }
 
     @Transactional
-    public MarkOccurrenceDto update(Long id, MarkOccurrenceUpdateDto dto) {
+    public MarkOccurrenceDto update(UUID id, MarkOccurrenceUpdateDto dto) {
         MarkOccurrence occurrence = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark occurrence with id " + id + " not found"));
         if (dto.period() != null) {
@@ -54,7 +56,7 @@ public class MarkOccurrenceService {
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         MarkOccurrence occurrence = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mark occurrence with id " + id + " not found"));
         repository.softDelete(occurrence);

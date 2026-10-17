@@ -1,5 +1,7 @@
 package pt.estga.auth.service;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -54,7 +56,7 @@ public class AuthService {
             throw new IllegalArgumentException("Token is not a refresh token");
         }
 
-        Long userId = Long.parseLong(jwt.getSubject());
+        UUID userId = UUID.fromString(jwt.getSubject());
         Integer tokenVersion = jwt.getClaim("token_version");
 
         User user = userRepository.findById(userId)

@@ -1,5 +1,7 @@
 package pt.estga.processing.services.processing;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -21,7 +23,7 @@ public class AsyncProcessingService {
      * Exceptions are caught and logged to avoid killing the executor thread.
      */
     @Async("processingTaskExecutor")
-    public void processAsync(Long submissionId) {
+    public void processAsync(UUID submissionId) {
         log.info("Starting async processing for submission {}", submissionId);
         try {
             meterRegistry.counter("processing.async.invocations").increment();

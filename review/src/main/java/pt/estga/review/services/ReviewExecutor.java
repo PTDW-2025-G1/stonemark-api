@@ -1,5 +1,7 @@
 package pt.estga.review.services;
 
+import java.util.UUID;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +25,12 @@ public class ReviewExecutor {
 
     @Transactional
     public MarkEvidenceReview execute(
-            Long submissionId,
+            UUID submissionId,
             ReviewDecision decision,
             String comment,
             ResolutionResult resolution) {
 
-        Long selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().id() : null;
+        UUID selectedMarkId = resolution != null && resolution.mark() != null ? resolution.mark().id() : null;
 
         MarkEvidenceReview review = MarkEvidenceReview.builder()
                 .submissionId(submissionId)

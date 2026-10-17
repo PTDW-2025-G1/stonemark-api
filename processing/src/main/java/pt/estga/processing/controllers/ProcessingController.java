@@ -1,5 +1,7 @@
 package pt.estga.processing.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +25,7 @@ public class ProcessingController {
     private final AsyncProcessingService asyncProcessingService;
 
     @GetMapping("/submission/{submissionId}/status")
-    public ResponseEntity<ProcessingStatusDto> getProcessingStatus(@PathVariable Long submissionId) {
+    public ResponseEntity<ProcessingStatusDto> getProcessingStatus(@PathVariable UUID submissionId) {
         return processingStatusQueryService.findStatusBySubmissionId(submissionId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -31,7 +33,7 @@ public class ProcessingController {
 
     @PreAuthorize("hasRole('MODERATOR')")
     @PostMapping("/submission/{submissionId}/reprocess")
-    public ResponseEntity<MessageResponseDto> reprocess(@PathVariable Long submissionId) {
+    public ResponseEntity<MessageResponseDto> reprocess(@PathVariable UUID submissionId) {
         asyncProcessingService.processAsync(submissionId);
         return ResponseEntity.accepted().body(MessageResponseDto.success("Reprocessing triggered for submission " + submissionId));
     }

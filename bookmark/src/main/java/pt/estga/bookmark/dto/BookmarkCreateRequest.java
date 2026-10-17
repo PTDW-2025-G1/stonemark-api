@@ -1,5 +1,7 @@
 package pt.estga.bookmark.dto;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import pt.estga.bookmark.enums.BookmarkTargetType;
 
@@ -9,6 +11,6 @@ public record BookmarkCreateRequest(
         BookmarkTargetType targetType,
 
         @Schema(description = "ID of the target resource.", example = "123")
-        Long targetId
+        UUID targetId
 ) {
 }

@@ -12,12 +12,16 @@ import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MonumentServiceTest {
+
+    private static final UUID MONUMENT_ID = UUID.randomUUID();
+    private static final UUID MISSING_ID = UUID.randomUUID();
 
     @Mock
     private MonumentRepository repository;
@@ -32,11 +36,11 @@ class MonumentServiceTest {
     @DisplayName("should soft-delete monument when found")
     void shouldDeleteById() {
         var monument = new Monument();
-        monument.setId(1L);
+        monument.setId(MONUMENT_ID);
         monument.activate();
-        when(repository.findById(1L)).thenReturn(Optional.of(monument));
+        when(repository.findById(MONUMENT_ID)).thenReturn(Optional.of(monument));
 
-        service.deleteById(1L);
+        service.deleteById(MONUMENT_ID);
 
         verify(repository).softDelete(monument);
     }
@@ -44,10 +48,10 @@ class MonumentServiceTest {
     @Test
     @DisplayName("should throw when deleting non-existent monument")
     void shouldThrowWhenDeletingNotFound() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        when(repository.findById(MISSING_ID)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.deleteById(99L))
+        assertThatThrownBy(() -> service.deleteById(MISSING_ID))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("99");
+                .hasMessageContaining(MISSING_ID.toString());
     }
 }

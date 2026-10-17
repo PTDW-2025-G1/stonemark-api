@@ -9,7 +9,7 @@ public interface MarkEvidenceDistanceProjection {
 
     UUID id();
 
-    Long getOccurrenceId();
+    UUID getOccurrenceId();
 
     /**
      * Similarity score returned by the DB (higher is better). This replaces the previous

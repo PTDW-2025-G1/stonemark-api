@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record MarkEvidenceRequestDto(
         UUID fileId,
-        Long occurrenceId,
+        UUID occurrenceId,
         float[] embedding
 ) { }

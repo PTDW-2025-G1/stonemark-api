@@ -1,5 +1,7 @@
 package pt.estga.user.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +27,7 @@ public class UserService {
 
     private final UserRepository repository;
 
-    public Optional<UserPublicDto> findPublicById(Long id) {
+    public Optional<UserPublicDto> findPublicById(UUID id) {
         return repository.findById(id).map(UserMapper::toPublicDto);
     }
 
@@ -33,7 +35,7 @@ public class UserService {
         return repository.existsByUsername(username);
     }
 
-    public Optional<UserDto> findById(Long id) {
+    public Optional<UserDto> findById(UUID id) {
         return repository.findById(id).map(UserMapper::toDto);
     }
 
@@ -57,7 +59,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto updateFromDto(Long id, UserDto dto) {
+    public UserDto updateFromDto(UUID id, UserDto dto) {
         if (id == null) {
             throw new IllegalArgumentException("Id must be provided");
         }
@@ -69,24 +71,24 @@ public class UserService {
     }
 
     @Transactional
-    public void softDeleteUser(Long id) {
+    public void softDeleteUser(UUID id) {
         User user = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         repository.softDelete(user);
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         repository.deleteById(id);
     }
 
-    public UserDto getProfile(Long userId) {
+    public UserDto getProfile(UUID userId) {
         User user = repository.findByIdForProfile(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return UserMapper.toDto(user);
     }
 
-    public MeDto getMe(Long userId) {
+    public MeDto getMe(UUID userId) {
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return new MeDto(
@@ -102,7 +104,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updateProfile(Long userId, ProfileUpdateRequestDto request) {
+    public void updateProfile(UUID userId, ProfileUpdateRequestDto request) {
         User user = repository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         UserMapper.update(user, request);

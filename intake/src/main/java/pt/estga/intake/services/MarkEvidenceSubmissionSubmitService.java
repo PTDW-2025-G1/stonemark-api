@@ -30,7 +30,7 @@ public class MarkEvidenceSubmissionSubmitService {
     private final AfterCommitEventPublisher eventPublisher;
 
     @Transactional
-    public Long submit(MarkEvidenceSubmission submission, UUID stagedFileId, String photoFilename) {
+    public UUID submit(MarkEvidenceSubmission submission, UUID stagedFileId, String photoFilename) {
         if (submission == null) {
             throw new IllegalArgumentException("Submission cannot be null");
         }

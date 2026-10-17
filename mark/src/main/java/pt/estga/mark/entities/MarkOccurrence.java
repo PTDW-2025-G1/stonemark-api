@@ -1,5 +1,9 @@
 package pt.estga.mark.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,14 +39,15 @@ public class MarkOccurrence extends PublishableEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private Mark mark;
 
     /** Optional monument where the mark was found. */
     @Column(name = "monument_id")
-    private Long monumentId;
+    private UUID monumentId;
 
     /**
      * Optional WGS84 point of the finding. A null location is valid and means the

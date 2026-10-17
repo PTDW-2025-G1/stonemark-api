@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public record ProcessingModerationView(
         UUID processingId,
-        Long submissionId,
+        UUID submissionId,
         ProcessingStatus status,
         Double maxConfidence
 ) {

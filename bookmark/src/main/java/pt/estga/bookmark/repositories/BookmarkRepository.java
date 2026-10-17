@@ -13,9 +13,9 @@ import java.util.UUID;
 @Repository
 public interface BookmarkRepository extends JpaRepository<Bookmark, UUID> {
 
-    Page<Bookmark> findAllByUserId(Long userId, Pageable pageable);
+    Page<Bookmark> findAllByUserId(UUID userId, Pageable pageable);
 
-    boolean existsByUserIdAndTargetTypeAndTargetId(Long userId, BookmarkTargetType targetType, Long targetId);
+    boolean existsByUserIdAndTargetTypeAndTargetId(UUID userId, BookmarkTargetType targetType, UUID targetId);
 
-    Optional<Bookmark> findByIdAndUserId(UUID id, Long userId);
+    Optional<Bookmark> findByIdAndUserId(UUID id, UUID userId);
 }

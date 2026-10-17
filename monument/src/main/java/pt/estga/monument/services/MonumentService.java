@@ -1,5 +1,7 @@
 package pt.estga.monument.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +33,7 @@ public class MonumentService {
         return repository.findAll(sb.build(), pageable).map(mapper::toListDto);
     }
 
-    public Optional<MonumentDto> findById(Long id) {
+    public Optional<MonumentDto> findById(UUID id) {
         return repository.findById(id).map(mapper::toResponseDto);
     }
 
@@ -45,7 +47,7 @@ public class MonumentService {
     }
 
     @Transactional
-    public MonumentDto update(Long id, MonumentRequestDto dto) {
+    public MonumentDto update(UUID id, MonumentRequestDto dto) {
         Monument existing = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument with id " + id + " not found"));
         mapper.updateEntityFromDto(dto, existing);
@@ -53,7 +55,7 @@ public class MonumentService {
     }
 
     @Transactional
-    public void deleteById(Long id) {
+    public void deleteById(UUID id) {
         Monument existing = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Monument with id " + id + " not found"));
 

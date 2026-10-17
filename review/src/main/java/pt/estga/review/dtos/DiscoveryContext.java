@@ -1,5 +1,7 @@
 package pt.estga.review.dtos;
 
+import java.util.UUID;
+
 import org.locationtech.jts.geom.Point;
 
 /**
@@ -7,9 +9,9 @@ import org.locationtech.jts.geom.Point;
  */
 public record DiscoveryContext(
         String markTitle,
-        Long existingMarkId,
+        UUID existingMarkId,
         String monumentName,
-        Long existingMonumentId,
+        UUID existingMonumentId,
         Point location
 ) {
     public boolean isNewMark() { return existingMarkId == null && markTitle != null; }

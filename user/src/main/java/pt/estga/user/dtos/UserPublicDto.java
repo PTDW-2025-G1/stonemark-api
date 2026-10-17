@@ -1,12 +1,14 @@
 package pt.estga.user.dtos;
 
+import java.util.UUID;
+
 import lombok.Builder;
 
 @Builder
 public record UserPublicDto(
-        Long id,
+        UUID id,
         String username,
         String firstName,
         String lastName,
-        Long photoId
+        UUID photoId
 ) { }

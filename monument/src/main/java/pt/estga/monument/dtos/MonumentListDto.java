@@ -1,7 +1,9 @@
 package pt.estga.monument.dtos;
 
+import java.util.UUID;
+
 public record MonumentListDto(
-        Long id,
+        UUID id,
         String name,
         Boolean active
 ) { }

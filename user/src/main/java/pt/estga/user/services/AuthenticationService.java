@@ -1,5 +1,7 @@
 package pt.estga.user.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
@@ -18,7 +20,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public AppPrincipal loadUserById(Long userId) {
+    public AppPrincipal loadUserById(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
 

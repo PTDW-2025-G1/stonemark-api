@@ -1,5 +1,7 @@
 package pt.estga.processing.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +22,7 @@ public class ProcessingSuggestionsController {
     private final SuggestionQueryService suggestionQueryService;
 
     @GetMapping("/{submissionId}/suggestions")
-    public ResponseEntity<List<MarkSuggestionDto>> getSuggestionsForSubmission(@PathVariable Long submissionId) {
+    public ResponseEntity<List<MarkSuggestionDto>> getSuggestionsForSubmission(@PathVariable UUID submissionId) {
         return suggestionQueryService.findSuggestionsBySubmissionId(submissionId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());

@@ -1,6 +1,8 @@
 package pt.estga.user.api;
 
+import java.util.UUID;
+
 public interface UserQueryService {
 
-    boolean existsById(Long userId);
+    boolean existsById(UUID userId);
 }

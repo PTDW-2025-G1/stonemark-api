@@ -1,5 +1,9 @@
 package pt.estga.user.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,7 +38,8 @@ public class User extends SoftDeletableEntity implements Serializable {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     private String firstName;
     private String lastName;

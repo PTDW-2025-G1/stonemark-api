@@ -27,7 +27,7 @@ public class ProcessingReviewApiImpl implements ProcessingReviewApi {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<ProcessingOverview> findOverview(Long submissionId) {
+    public Optional<ProcessingOverview> findOverview(UUID submissionId) {
         return processingRepository.findOverviewBySubmissionId(submissionId)
                 .map(p -> new ProcessingOverview(p.getId(), p.getStatus()));
     }
@@ -54,13 +54,13 @@ public class ProcessingReviewApiImpl implements ProcessingReviewApi {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<float[]> findEmbedding(Long submissionId) {
+    public Optional<float[]> findEmbedding(UUID submissionId) {
         return processingRepository.findEmbeddingTextBySubmissionId(submissionId).map(ProcessingEmbeddingParser::parse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SubmissionEmbedding> findEmbeddings(Collection<Long> submissionIds) {
+    public List<SubmissionEmbedding> findEmbeddings(Collection<UUID> submissionIds) {
         if (submissionIds == null || submissionIds.isEmpty()) {
             return List.of();
         }
@@ -71,7 +71,7 @@ public class ProcessingReviewApiImpl implements ProcessingReviewApi {
 
     @Override
     @Transactional
-    public void markReviewed(Long submissionId) {
+    public void markReviewed(UUID submissionId) {
         processingRepository.updateStatusBySubmissionId(submissionId, ProcessingStatus.REVIEWED);
     }
 

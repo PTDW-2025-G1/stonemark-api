@@ -50,7 +50,7 @@ public class ReviewService {
      * Accepts a submission as an existing mark.
      */
     @Transactional
-    public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
+    public MarkEvidenceReview acceptSuggestion(UUID submissionId, UUID markId, String comment) {
         DiscoveryContext ctx = new DiscoveryContext(null, markId, null, null, null);
         return performReview(submissionId, ReviewType.MATCH, ctx, comment);
     }
@@ -61,14 +61,14 @@ public class ReviewService {
      * candidates accumulate, a mark-creation suggestion is raised for moderators.
      */
     @Transactional
-    public MarkEvidenceReview noMatch(Long submissionId, String comment) {
+    public MarkEvidenceReview noMatch(UUID submissionId, String comment) {
         MarkEvidenceReview review = performReview(submissionId, ReviewType.NO_MATCH, null, comment);
         markCreationSuggestionService.recompute();
         return review;
     }
 
     @Transactional
-    public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
+    public MarkEvidenceReview rejectAll(UUID submissionId, String comment) {
         return performReview(submissionId, ReviewType.REJECTION, null, comment);
     }
 
@@ -80,7 +80,7 @@ public class ReviewService {
      * gate the decision.
      */
     @Transactional
-    public MarkEvidenceReview performReview(Long submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
+    public MarkEvidenceReview performReview(UUID submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
         SubmissionRef submission = intakeApi.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
@@ -115,14 +115,14 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<MarkSuggestionDto> getSuggestions(Long submissionId) {
+    public List<MarkSuggestionDto> getSuggestions(UUID submissionId) {
         ProcessingOverview overview = processingApi.findOverview(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Suggestions not found"));
         return processingApi.findSuggestions(overview.processingId());
     }
 
     @Transactional(readOnly = true)
-    public Optional<ReviewDecision> getReviewStatus(Long submissionId) {
+    public Optional<ReviewDecision> getReviewStatus(UUID submissionId) {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
                 .map(MarkEvidenceReview::getDecision);
     }
@@ -151,7 +151,7 @@ public class ReviewService {
 
     private void applyReviewSideEffects(SubmissionRef submission, ReviewDecision decision,
                                         ResolutionResult resolution, boolean processed) {
-        Long submissionId = submission.id();
+        UUID submissionId = submission.id();
 
         if (decision == ReviewDecision.REJECTED) {
             intakeApi.markRejected(submissionId);
@@ -182,7 +182,7 @@ public class ReviewService {
      * submission can never be approved without its evidence being linked. The
      * embedding is optional and is absent when the submission was not processed.
      */
-    private void linkEvidenceToMark(SubmissionRef submission, Long markId) {
+    private void linkEvidenceToMark(SubmissionRef submission, UUID markId) {
         UUID mediaFileId = submission.originalMediaFileId();
         if (mediaFileId == null) {
             throw new IllegalStateException("Submission " + submission.id() + " has no media to link");

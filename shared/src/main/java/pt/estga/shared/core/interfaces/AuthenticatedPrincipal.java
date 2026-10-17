@@ -1,5 +1,7 @@
 package pt.estga.shared.core.interfaces;
 
+import java.util.UUID;
+
 public interface AuthenticatedPrincipal {
-    Long getId();
+    UUID getId();
 }

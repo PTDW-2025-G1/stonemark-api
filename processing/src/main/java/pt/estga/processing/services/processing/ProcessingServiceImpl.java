@@ -54,7 +54,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     }
 
     @Override
-    public void processSubmission(Long submissionId) {
+    public void processSubmission(UUID submissionId) {
         intakeApi.findById(submissionId).ifPresentOrElse(submission -> {
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();

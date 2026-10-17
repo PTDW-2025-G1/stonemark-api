@@ -5,7 +5,7 @@ import pt.estga.shared.core.enums.PublicationStatus;
 import java.util.UUID;
 
 public record MarkDto(
-        Long id,
+        UUID id,
         String title,
         String description,
         UUID coverMediaId,

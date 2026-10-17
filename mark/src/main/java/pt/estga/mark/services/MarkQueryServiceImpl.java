@@ -35,12 +35,12 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     private final MarkEvidenceRepository evidenceRepository;
 
     @Override
-    public Optional<MarkDto> findMarkById(Long id) {
+    public Optional<MarkDto> findMarkById(UUID id) {
         return markRepository.findById(id).map(MarkMapper::toDto);
     }
 
     @Override
-    public Optional<MarkOccurrenceDto> findOccurrenceById(Long id) {
+    public Optional<MarkOccurrenceDto> findOccurrenceById(UUID id) {
         return occurrenceRepository.findById(id).map(MarkOccurrenceMapper::toDto);
     }
 
@@ -59,7 +59,7 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     }
 
     @Override
-    public List<MarkDto> findPublishedMarksByIds(Collection<Long> ids) {
+    public List<MarkDto> findPublishedMarksByIds(Collection<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
@@ -69,7 +69,7 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     }
 
     @Override
-    public List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids) {
+    public List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
@@ -87,7 +87,7 @@ public class MarkQueryServiceImpl implements MarkQueryService {
 
     @Override
     @Transactional
-    public MarkOccurrenceDto findOrCreateOccurrence(Long markId, Long monumentId, Double latitude, Double longitude) {
+    public MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude) {
         MarkOccurrence occurrence = monumentId != null
                 ? occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
                         .orElseGet(() -> createOccurrence(markId, monumentId, null))
@@ -95,7 +95,7 @@ public class MarkQueryServiceImpl implements MarkQueryService {
         return MarkOccurrenceMapper.toDto(occurrence);
     }
 
-    private MarkOccurrence createOccurrence(Long markId, Long monumentId, Point location) {
+    private MarkOccurrence createOccurrence(UUID markId, UUID monumentId, Point location) {
         Mark mark = markRepository.findById(markId)
                 .orElseThrow(() -> new IllegalArgumentException("Mark not found: " + markId));
         return occurrenceRepository.save(MarkOccurrence.builder()
@@ -107,7 +107,7 @@ public class MarkQueryServiceImpl implements MarkQueryService {
 
     @Override
     @Transactional
-    public void linkFileToOccurrence(UUID fileId, Long occurrenceId, Long submissionId, float[] embedding) {
+    public void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding) {
         MarkOccurrence occurrence = occurrenceRepository.findById(occurrenceId)
                 .orElseThrow(() -> new IllegalArgumentException("Occurrence not found: " + occurrenceId));
 
