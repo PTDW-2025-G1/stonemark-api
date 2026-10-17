@@ -91,13 +91,12 @@ See **[`BEHAVIORAL-DEENGINEERING.md`](BEHAVIORAL-DEENGINEERING.md)** for the ful
 
 These are **behavioral/product decisions** — not done blind. WhatsApp config was already removed.
 
-## Module set (13)
+## Module set (12)
 
-`shared`, `notification`, `file`, `monument`, `user`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `application`, `auth`. One capability = one Maven module.
+`shared`, `file`, `monument`, `user`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `application`, `auth`. One capability = one Maven module.
 
-Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`.
+Joins completed: `*-api` → domains, `common-*` → `shared`, `vision` → `processing`, `verification` → `user`, `notification` → `support`.
 **Removed:** `chatbot` (Telegram ingestion) — never used in production; recoverable from git history.
-**Still to join (D3):** `notification` → `support`.
 
 ## Open decisions
 

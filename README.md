@@ -129,7 +129,6 @@ This repository uses a modular monolith layout. Modules defined in the root POM 
 - `bookmark` — user bookmarking and favorites management.
 - `content-import` — importers/parsers for bulk content ingestion and ETL tasks.
 - `monument` — domain and CRUD for monuments and physical locations.
-- `notification` — notification dispatching (email) and template management.
 
 ## Development notes
 

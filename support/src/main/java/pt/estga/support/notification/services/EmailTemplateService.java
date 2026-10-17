@@ -1,10 +1,10 @@
-package pt.estga.notification.services;
+package pt.estga.support.notification.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import pt.estga.notification.models.Email;
+import pt.estga.support.notification.models.Email;
 
 @Service
 @RequiredArgsConstructor

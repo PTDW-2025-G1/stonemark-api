@@ -1,4 +1,4 @@
-package pt.estga.notification.services;
+package pt.estga.support.notification.services;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -8,7 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import pt.estga.notification.models.Email;
+import pt.estga.support.notification.models.Email;
 
 @Service
 @AllArgsConstructor

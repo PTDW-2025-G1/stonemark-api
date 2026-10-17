@@ -24,7 +24,6 @@
     <modules>
         <!-- Foundation: no internal dependencies -->
         <module>shared</module>
-        <module>notification</module>
 
         <!-- Domain services -->
         <module>file</module>
@@ -140,11 +139,6 @@
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>bookmark</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>notification</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
         </dependencies>

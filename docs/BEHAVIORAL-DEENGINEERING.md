@@ -3,7 +3,7 @@
 > Companion to `STABILIZATION.md`. `STABILIZATION.md` covers the structural work (P1, P2, P4, P5).
 > This document covers the **behavioral/machinery** cuts that were deferred because each changes how the system runs and is therefore a product decision.
 
-**Status:** §4 joins (`vision`→`processing`, `verification`→`user`) **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
+**Status:** §4 joins (`vision`→`processing`, `verification`→`user`, `notification`→`support`) **done**. §3 `chatbot` **removed**. §1 `file` reduced to **1 variant**. §2 (`processing` scaffolding), §5 (enforce verify) **pending decisions**.
 
 ## Principles
 
@@ -64,19 +64,14 @@
 
 **Note on WhatsApp.** Telegram was the development stand-in for the stakeholder's WhatsApp idea. WhatsApp is a **separate integration** (Meta WhatsApp Business Cloud API: business account, dedicated number, webhook verification, approved templates) — not a config switch. The flow/handlers are reusable groundwork; a WhatsApp adapter would be a new, separate piece of work.
 
-## 4. Remaining module joins (structural, zero behavior change)
+## 4. Module joins (structural, zero behavior change)
 
-Ideally done in P4; listed here because they touch small modules whose home is a judgement call.
+**Done.**
+- `vision` → `processing` (package `pt.estga.processing.vision`).
+- `verification` → `user` (package `pt.estga.user.verification`) — the folded classes were later **deleted** along with the chatbot removal.
+- `notification` → `support` (package `pt.estga.support.notification`; mail templates + `application-notification.yml` moved too).
 
-| Join | Rationale | Consumers |
-|---|---|---|
-| `vision` → `processing` | `VisionClient` is used only by the pipeline | `processing` |
-| `verification` → `user` | it only links a chatbot identity to an account | `chatbot` |
-| `notification` → `support` | email is a support concern | `support`, `application` (`EmailAdminController`) |
-
-**Recommendation:** do `vision`→`processing` and `verification`→`user`; decide `notification` (D3).
-
-**Behavior impact:** none. **Risk:** low. Verified by the build, like P4.
+**Behavior impact:** none. Verified by the build.
 
 ## 5. Enforce `modules.verify()`
 
@@ -107,7 +102,7 @@ Ideally done in P4; listed here because they touch small modules whose home is a
 
 - **D1 — `file` derivatives:** ✅ **1** (`OPTIMIZED`). `THUMBNAIL`/`PREVIEW` and the `/thumbnail`/`/preview` endpoints removed.
 - **D2 — `chatbot`:** ✅ **removed** (module deleted; Telegram was a dev stand-in only).
-- **D3 — `notification` home:** keep standalone / fold into `support` (recommend fold).
+- **D3 — `notification` home:** ✅ **folded into `support`**.
 - **D4 — enforce `modules.verify()`:** now / after boundary cleanup (recommend after).
 
 ## Explicitly out of scope
