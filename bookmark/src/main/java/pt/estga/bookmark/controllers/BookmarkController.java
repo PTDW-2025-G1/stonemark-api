@@ -8,39 +8,58 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
 import pt.estga.bookmark.services.BookmarkService;
+import pt.estga.shared.core.interfaces.AuthenticatedPrincipal;
 
 import java.util.UUID;
 
+/**
+ * Bookmarks always belong to the authenticated caller: the user is taken from the
+ * security context, never from the request, so one user cannot read or modify
+ * another user's bookmarks.
+ */
 @RestController
-@RequestMapping("/api/v1/public/bookmarks")
+@RequestMapping("/api/v1/bookmarks")
 @RequiredArgsConstructor
-@Tag(name = "Bookmarks", description = "Endpoints for user bookmarks.")
+@Tag(name = "Bookmarks", description = "Bookmarks for the authenticated user.")
+@PreAuthorize("isAuthenticated()")
 public class BookmarkController {
 
     private final BookmarkService service;
 
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "List bookmarks for a user with pagination.")
-    public ResponseEntity<Page<BookmarkResponse>> listByUser(
-            @PathVariable Long userId,
+    @GetMapping
+    @Operation(summary = "List the authenticated user's bookmarks.")
+    public ResponseEntity<Page<BookmarkResponse>> list(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
             @SortDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(service.listByUser(userId, pageable));
+        return ResponseEntity.ok(service.listByUser(principal.getId(), pageable));
     }
 
-    @PostMapping("/user/{userId}")
-    @Operation(summary = "Create a bookmark.")
-    public ResponseEntity<BookmarkResponse> create(@PathVariable Long userId, @RequestBody BookmarkCreateRequest request) {
-        return ResponseEntity.ok(service.create(userId, request));
+    @PostMapping
+    @Operation(summary = "Create a bookmark for the authenticated user.")
+    public ResponseEntity<BookmarkResponse> create(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @RequestBody BookmarkCreateRequest request) {
+        return ResponseEntity.ok(service.create(principal.getId(), request));
     }
 
-    @DeleteMapping("/user/{userId}/{bookmarkId}")
-    @Operation(summary = "Delete a bookmark.")
-    public ResponseEntity<Void> delete(@PathVariable Long userId, @PathVariable UUID bookmarkId) {
-        service.delete(userId, bookmarkId);
+    @DeleteMapping("/{bookmarkId}")
+    @Operation(summary = "Delete one of the authenticated user's bookmarks.")
+    public ResponseEntity<Void> delete(
+            @AuthenticationPrincipal AuthenticatedPrincipal principal,
+            @PathVariable UUID bookmarkId) {
+        service.delete(principal.getId(), bookmarkId);
         return ResponseEntity.noContent().build();
     }
 }
