@@ -61,7 +61,7 @@
 
 **Resolved: removed.** The module was deleted (recoverable from git history). It was never used in production — Telegram was only ever a development stand-in for the stakeholder's WhatsApp idea — and it was a **launch blocker**: the app would not boot without `TELEGRAM_BOT_TOKEN` (`TelegramBotConfig.@PostConstruct` throws, the bot sets its webhook at startup, readiness health depended on Telegram). Web submission remains the only channel and is unaffected.
 
-**Now orphaned (kept, per owner guidance — flag for a later decision):** `user.verification.*` (`ChatbotVerificationService`, `ActionCode`, `AccountVerificationController`) and `intake`'s `submitStaged` existed only for the chatbot channel.
+**Also removed** (existed only for the chatbot channel): `user.verification.*` (`ChatbotVerificationService`, `ActionCode`, `ActionCodeRepository`, `ActionCodeType`, `ChatbotVerificationRequestDto`, `AccountVerificationController`), `User.telegramChatId` and `UserRepository.findByTelegramChatId`, `intake`'s `submitStaged`, the `action-code` config block, and the chatbot rate-limit path.
 
 **Behavior impact.** Web submission is unaffected and is the only channel. Recovering the code is a `git revert` away.
 

@@ -18,10 +18,3 @@ spring:
 application:
   security:
     disabled: false
-    action-code:
-      two-factor:
-        expiration: 3600000 # 1 hour
-      device-verification:
-        expiration: 2592000000 # 30 days
-      chatbot-verification:
-        expiration: 900000 # 15 minutes

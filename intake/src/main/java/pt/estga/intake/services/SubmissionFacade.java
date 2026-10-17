@@ -17,7 +17,6 @@ import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Entry point for creating submissions from external channels (web, chatbot).
@@ -90,21 +89,6 @@ public class SubmissionFacade {
             discardStagedQuietly(staged);
             throw e;
         }
-    }
-
-    /**
-     * Used by non-web channels (e.g. chatbot) that already staged a file and
-     * resolved their own submission metadata.
-     */
-    public void submitStaged(MarkEvidenceSubmission submission, UUID stagedFileId,
-                             String photoFilename, Long domainUserId, SubmissionSource source) {
-        if (domainUserId != null) {
-            submission.setSubmittedById(domainUserId);
-        }
-        if (submission.getSubmissionSource() == null) {
-            submission.setSubmissionSource(source != null ? source : SubmissionSource.OTHER);
-        }
-        submitService.submit(submission, stagedFileId, photoFilename);
     }
 
     private String resolveDivisionCode(Double latitude, Double longitude) {
