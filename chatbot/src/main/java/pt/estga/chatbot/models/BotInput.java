@@ -2,7 +2,7 @@ package pt.estga.chatbot.models;
 
 import lombok.Builder;
 import lombok.Data;
-import pt.estga.commoncore.models.Location;
+import pt.estga.shared.core.models.Location;
 
 import java.util.Locale;
 

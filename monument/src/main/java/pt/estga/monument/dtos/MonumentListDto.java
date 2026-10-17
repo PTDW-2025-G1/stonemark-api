@@ -1,6 +1,6 @@
 package pt.estga.monument.dtos;
 
-import pt.estga.commoncore.models.DivisionRef;
+import pt.estga.shared.core.models.DivisionRef;
 
 public record MonumentListDto(
         Long id,

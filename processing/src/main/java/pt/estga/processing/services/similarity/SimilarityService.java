@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import pt.estga.commoncore.utils.VectorUtils;
+import pt.estga.shared.core.utils.VectorUtils;
 import pt.estga.mark.api.MarkEvidenceQueryService;
 import pt.estga.mark.dtos.EvidenceMarkDto;
 import pt.estga.mark.dtos.MarkEvidenceDistanceDto;

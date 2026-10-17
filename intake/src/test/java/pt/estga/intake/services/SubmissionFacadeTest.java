@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.commoncore.interfaces.DivisionLookupClient;
+import pt.estga.shared.core.interfaces.DivisionLookupClient;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;

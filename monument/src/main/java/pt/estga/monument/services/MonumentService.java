@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import pt.estga.monument.dtos.MonumentFilter;
 import pt.estga.monument.entities.Monument;
 import pt.estga.monument.repositories.MonumentRepository;
-import pt.estga.commoninfra.jpa.SpecBuilder;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.jpa.jpa.SpecBuilder;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor

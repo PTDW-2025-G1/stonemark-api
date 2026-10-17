@@ -2,8 +2,8 @@ package pt.estga.intake.mappers;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import pt.estga.commoncore.interfaces.DivisionLookupClient;
-import pt.estga.commoncore.models.DivisionRef;
+import pt.estga.shared.core.interfaces.DivisionLookupClient;
+import pt.estga.shared.core.models.DivisionRef;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 

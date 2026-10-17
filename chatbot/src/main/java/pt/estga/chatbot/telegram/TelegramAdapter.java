@@ -28,7 +28,7 @@ import pt.estga.chatbot.models.ui.PhotoItem;
 import pt.estga.chatbot.models.ui.TextMessage;
 import pt.estga.chatbot.models.ui.UIComponent;
 import pt.estga.chatbot.telegram.services.TelegramFileService;
-import pt.estga.commoncore.models.Location;
+import pt.estga.shared.core.models.Location;
 
 import java.io.File;
 import java.io.IOException;

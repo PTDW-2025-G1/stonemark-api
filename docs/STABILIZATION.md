@@ -17,9 +17,10 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 ## Status
 
 - **P1 — Launch-ready intake: done.**
-- **P2 — Manual moderation + labelling: done.** See "Plan" below.
-- **P3–P5: not started.**
-- Behavior changes to be aware of: the AI pipeline is now off by default (`processing.enabled=false`), and the API is **secure by default** (`application.security.disabled=false`).
+- **P2 — Manual moderation + labelling: done.**
+- **P4 — Consolidate modules: done** (structural; behavioral de-engineering deferred).
+- **P3, P5: not started.**
+- Behavior changes: the AI pipeline is off by default (`processing.enabled=false`), and the API is **secure by default** (`application.security.disabled=false`).
 
 ## V1 scope
 
@@ -63,8 +64,12 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 **P3 — Collect, then automate.** Grow the labelled set, train the detector/embedder, evaluate, enable suggestions, then auto-approve. See `marks-processing/PLAN.md`.
 *Done: suggestions appear, then the confident cases resolve with no human clicks.*
 
-**P4 — De-engineer + consolidate.** Cut the scaffolding (see below); merge 22 modules → ~11.
-*Done: same behaviour, less machinery, fewer modules, enforced boundaries.*
+**P4 — Consolidate modules. ✅ Done (structure).**
+- Folded the four contract jars into their implementations: `file-api`→`file`, `mark-api`→`mark`, `user-api`→`user`, `intake-api`→`intake` (same packages, pure moves).
+- Merged `common-core` + `common-infra` + `common-web` into one `shared` module; packages renamed to `pt.estga.shared.core` / `.jpa` / `.web`.
+- Removed dead WhatsApp wiring (config + security matcher) — no code ever existed for it.
+- **22 → 16 Maven modules**; one Maven module per capability.
+- **Deferred (behavioral/product, needs a decision):** cutting the `file` multi-variant pipeline, simplifying the `chatbot` engine, consolidating the `processing` schedulers/semaphore, and making `modules.verify()` fail the build.
 
 **P5 — Prove it.** Pipeline tests (stub vision, seeded corpus) + minimal CI.
 
@@ -77,9 +82,11 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 | `chatbot` | minimal photo+location ingestion (or park) | conversational engine, UI framework, i18n; **WhatsApp config** |
 | module system | Modulith | `*-api`/Modulith split; swallowed `modules.verify()` |
 
-## Target module set (P4)
+## Module set (16)
 
-`shared` (common-core+infra+web), `media` (file), `mark` (+mark-api), `intake` (+intake-api), `processing` (+vision), `review`, `user` (+user-api+verification), `support` (+notification), plus `monument`, `bookmark`, `auth`, `application`. One capability = one Maven module = one Modulith module.
+`shared`, `notification`, `vision`, `file`, `monument`, `user`, `verification`, `mark`, `support`, `bookmark`, `intake`, `processing`, `review`, `chatbot`, `application`, `auth`. One capability = one Maven module. (Contracts live in `.api`/`.dtos`/`.events` packages inside the owning module.)
+
+**Still to join (deferred):** fold `vision` into `processing`, `notification` into `support`, `verification` into `user`, and park/simplify `chatbot`.
 
 ## Open decisions
 
@@ -89,9 +96,9 @@ Sequence: simple intake → manual moderation (= labelling) → train → automa
 
 ## Notes
 
-- Build + tests verified: `mvn -B clean test`, 22 modules, **BUILD SUCCESS**, 77 tests, 0 failures (Docker; no local JDK).
+- Build + tests verified: `mvn -B clean test`, 16 modules, **BUILD SUCCESS**, 79 tests, 0 failures (Docker; no local JDK).
 - **Switches:** `processing.enabled=false` disables the AI pipeline (set to `true` only once a trained model exists). `application.security.disabled=false` is the secure default; set it to `true` for local runs without auth.
 - Unused-but-referenced code is not deleted on sight; only genuinely broken pieces are fixed.
 - Automatic approval is **gated on data** — it is P3, not P1.
-- The Modulith verification test still only *prints* violations (informational); enforcing it is P4.
+- The Modulith verification test still only *prints* violations (informational); enforcing it is deferred until the remaining boundary violations are routed through the `.api` packages.
 - Security is on, so admin/moderation endpoints require authentication; the first admin is provisioned by the bootstrap seeder (`APPLICATION_BOOTSTRAP_ADMIN_USERNAME` / `_PASSWORD`).

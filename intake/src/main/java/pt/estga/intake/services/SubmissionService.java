@@ -10,7 +10,7 @@ import pt.estga.intake.dtos.SubmissionFilter;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.mappers.SubmissionMapper;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;
-import pt.estga.commoninfra.jpa.SpecBuilder;
+import pt.estga.shared.jpa.jpa.SpecBuilder;
 
 @Service
 @RequiredArgsConstructor

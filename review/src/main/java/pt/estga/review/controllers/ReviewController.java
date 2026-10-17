@@ -81,7 +81,7 @@ public class ReviewController {
     public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
         return reviewService.getReviewStatus(submissionId)
                 .map(ResponseEntity::ok)
-                .orElseThrow(() -> new pt.estga.commonweb.exceptions.ResourceNotFoundException("Review not found"));
+                .orElseThrow(() -> new pt.estga.shared.web.exceptions.ResourceNotFoundException("Review not found"));
     }
 
     @GetMapping("/{submissionId}/suggestions")

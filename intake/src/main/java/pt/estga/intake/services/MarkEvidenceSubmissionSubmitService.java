@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.commoncore.events.AfterCommitEventPublisher;
+import pt.estga.shared.core.events.AfterCommitEventPublisher;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;

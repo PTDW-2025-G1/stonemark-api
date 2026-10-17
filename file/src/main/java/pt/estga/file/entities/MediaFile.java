@@ -8,7 +8,7 @@ import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 import pt.estga.file.enums.MediaStatus;
 import pt.estga.file.enums.StorageProvider;
-import pt.estga.commoninfra.entities.CreationAuditedEntity;
+import pt.estga.shared.jpa.entities.CreationAuditedEntity;
 
 import java.util.ArrayList;
 import java.util.List;

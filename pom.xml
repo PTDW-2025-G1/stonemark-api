@@ -23,13 +23,9 @@
 	</developers>
     <modules>
         <!-- Foundation: no internal dependencies -->
-        <module>common-core</module>
-        <module>common-web</module>
+        <module>shared</module>
         <module>notification</module>
         <module>vision</module>
-
-        <!-- Infrastructure layer -->
-        <module>common-infra</module>
 
         <!-- Domain services -->
         <module>file</module>
@@ -101,22 +97,12 @@
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
-                <artifactId>common-core</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>common-infra</artifactId>
+                <artifactId>shared</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>
                 <groupId>pt.estga</groupId>
                 <artifactId>user</artifactId>
-                <version>${stonemark.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>pt.estga</groupId>
-                <artifactId>common-web</artifactId>
                 <version>${stonemark.version}</version>
             </dependency>
             <dependency>

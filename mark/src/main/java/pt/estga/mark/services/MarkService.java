@@ -10,7 +10,7 @@ import pt.estga.mark.entities.MarkEvidence;
 import pt.estga.mark.mappers.MarkMapper;
 import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 @Service
 @RequiredArgsConstructor

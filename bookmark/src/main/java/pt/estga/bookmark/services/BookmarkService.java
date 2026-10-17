@@ -11,8 +11,8 @@ import pt.estga.bookmark.dto.BookmarkCreateRequest;
 import pt.estga.bookmark.dto.BookmarkResponse;
 import pt.estga.bookmark.entities.Bookmark;
 import pt.estga.bookmark.repositories.BookmarkRepository;
-import pt.estga.commonweb.exceptions.DuplicateResourceException;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.web.exceptions.DuplicateResourceException;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 import pt.estga.user.api.UserQueryService;
 
 import java.util.List;

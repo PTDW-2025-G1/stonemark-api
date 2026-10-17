@@ -20,13 +20,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>pt.estga</groupId>
+            <artifactId>shared</artifactId>
+            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-web</artifactId>
-            <version>${stonemark.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
@@ -37,16 +37,6 @@
             <groupId>pt.estga</groupId>
             <artifactId>notification</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-infra</artifactId>
-            <version>${stonemark.version}</version>
         </dependency>
     </dependencies>
 

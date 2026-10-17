@@ -78,7 +78,7 @@ public class MediaController {
         MediaFile mediaFile = mediaService.findById(id)
                 .orElseThrow(() -> {
                     log.warn("Media not found with id: {}", id);
-                    return new pt.estga.commonweb.exceptions.FileNotFoundException("Media not found with id: " + id);
+                    return new pt.estga.shared.web.exceptions.FileNotFoundException("Media not found with id: " + id);
                 });
 
         log.info("Found media file, loading from path: {}", mediaFile.getStoragePath());

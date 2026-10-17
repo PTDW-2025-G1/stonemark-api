@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -17,6 +17,11 @@
         <stonemark.version>0.0.1-SNAPSHOT</stonemark.version>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>pt.estga</groupId>
+            <artifactId>shared</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -54,21 +59,6 @@
         <dependency>
             <groupId>pt.estga</groupId>
             <artifactId>intake</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-core</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-infra</artifactId>
-            <version>${stonemark.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-web</artifactId>
             <version>${stonemark.version}</version>
         </dependency>
         <dependency>

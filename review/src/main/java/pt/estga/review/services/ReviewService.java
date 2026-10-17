@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;

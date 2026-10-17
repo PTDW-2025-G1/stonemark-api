@@ -2,7 +2,7 @@ package pt.estga.mark.mappers;
 
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.commoncore.enums.EntityStatus;
+import pt.estga.shared.core.enums.EntityStatus;
 
 public class MarkOccurrenceMapper {
 

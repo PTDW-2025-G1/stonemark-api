@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import pt.estga.processing.dtos.ProcessingStatusDto;
 import pt.estga.processing.services.processing.AsyncProcessingService;
 import pt.estga.processing.services.processing.ProcessingStatusQueryService;
-import pt.estga.commonweb.dtos.MessageResponseDto;
+import pt.estga.shared.web.dtos.MessageResponseDto;
 
 @RestController
 @RequestMapping("/api/v1/admin/processing")

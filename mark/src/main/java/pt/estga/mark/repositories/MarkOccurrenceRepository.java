@@ -2,7 +2,7 @@ package pt.estga.mark.repositories;
 
 import org.springframework.stereotype.Repository;
 import pt.estga.mark.entities.MarkOccurrence;
-import pt.estga.commoninfra.repositories.BaseRepository;
+import pt.estga.shared.jpa.repositories.BaseRepository;
 
 import java.util.Optional;
 

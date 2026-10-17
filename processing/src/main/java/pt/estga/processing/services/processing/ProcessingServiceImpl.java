@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import pt.estga.commoncore.utils.VectorUtils;
+import pt.estga.shared.core.utils.VectorUtils;
 import pt.estga.file.api.FileStorageOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.repositories.MarkEvidenceSubmissionRepository;

@@ -15,8 +15,8 @@ import pt.estga.monument.entities.Monument;
 import pt.estga.monument.mappers.MonumentMapper;
 import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
-import pt.estga.commoncore.interfaces.DivisionLookupClient;
-import pt.estga.commonweb.exceptions.GlobalExceptionHandler;
+import pt.estga.shared.core.interfaces.DivisionLookupClient;
+import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
 import java.util.List;
 import java.util.Optional;

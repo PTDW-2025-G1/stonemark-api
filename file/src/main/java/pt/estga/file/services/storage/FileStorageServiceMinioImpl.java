@@ -9,8 +9,8 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import pt.estga.file.config.MinioProperties;
-import pt.estga.commonweb.exceptions.FileNotFoundException;
-import pt.estga.commonweb.exceptions.FileStorageException;
+import pt.estga.shared.web.exceptions.FileNotFoundException;
+import pt.estga.shared.web.exceptions.FileStorageException;
 
 import java.io.InputStream;
 

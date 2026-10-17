@@ -14,7 +14,7 @@ import pt.estga.monument.repositories.MonumentRepository;
 import pt.estga.monument.services.MonumentService;
 import pt.estga.monument.dtos.MonumentDto;
 import pt.estga.monument.dtos.MonumentRequestDto;
-import pt.estga.commonweb.exceptions.ResourceNotFoundException;
+import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.net.URI;
 

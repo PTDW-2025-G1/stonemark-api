@@ -21,18 +21,13 @@
     <dependencies>
         <dependency>
             <groupId>pt.estga</groupId>
+            <artifactId>shared</artifactId>
+            <version>${stonemark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>pt.estga</groupId>
             <artifactId>processing</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>pt.estga</groupId>
-            <artifactId>common-infra</artifactId>
-            <version>${stonemark.version}</version>
         </dependency>
         <dependency>
             <groupId>pt.estga</groupId>
