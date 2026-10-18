@@ -42,13 +42,11 @@ public class SimilarityService implements SimilarityStrategy {
             log.warn("Processing {} embedding has unexpected norm {} — continuing", processing.getId(), norm);
         }
 
-        String vector = VectorUtils.toVectorLiteral(embedding);
-
         long start = System.nanoTime();
         int safeK = Math.max(1, Math.min(k, properties.similarity().maxK()));
-        double maxDistance = properties.similarity().maxDistance();
+        double minScore = properties.similarity().minScore();
 
-        List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(vector, safeK, maxDistance);
+        List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(embedding, safeK, minScore);
         if (hits == null || hits.isEmpty()) return List.of();
 
         List<MarkEvidenceDistanceDto> valid = filterValid(hits);
