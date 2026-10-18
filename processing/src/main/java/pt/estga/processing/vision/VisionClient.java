@@ -62,7 +62,7 @@ public class VisionClient {
 
         if (result == null) {
             log.warn("Detection response body is null. Returning a failed detection result.");
-            return new DetectionResult(false, new float[0]);
+            return new DetectionResult(false, new float[0], null, null, null);
         }
 
         log.info("Detection process completed. Mason mark detected: {}", result.isMasonMark());

@@ -2,6 +2,7 @@ package pt.estga.mark.api;
 
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.shared.core.models.EmbeddingVector;
 
 import java.util.Collection;
 import java.util.List;
@@ -40,5 +41,10 @@ public interface MarkQueryService {
     /** Publishes an occurrence that is still a draft, so approvals become visible. */
     void publishOccurrence(UUID occurrenceId);
 
-    void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding);
+    /**
+     * Attaches the submission's photo, and its versioned embedding when present, to an
+     * occurrence as evidence. The embedding provenance is stored so a later model swap
+     * can find and recompute stale vectors.
+     */
+    void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, EmbeddingVector embedding);
 }

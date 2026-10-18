@@ -58,11 +58,6 @@
         <dependencies>
             <!-- Third-party libraries (not managed by Spring Boot BOM) -->
             <dependency>
-                <groupId>com.pgvector</groupId>
-                <artifactId>pgvector</artifactId>
-                <version>0.1.6</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
                 <version>3.2.3</version>

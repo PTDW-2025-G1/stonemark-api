@@ -22,12 +22,13 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SimilarityService {
+public class SimilarityService implements SimilarityStrategy {
 
     private final MeterRegistry meterRegistry;
     private final MarkEvidenceQueryService markEvidenceQueryService;
     private final ProcessingProperties properties;
 
+    @Override
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
         if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
             log.warn("Processing {} has no embedding, skipping similarity", processingId(processing));

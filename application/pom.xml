@@ -113,8 +113,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.pgvector</groupId>
-            <artifactId>pgvector</artifactId>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-vector</artifactId>
         </dependency>
 
         <!-- Spring Modulith (verification only; no event registry) -->

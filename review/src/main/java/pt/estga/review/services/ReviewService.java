@@ -24,6 +24,7 @@ import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
 import pt.estga.shared.core.enums.PublicationStatus;
+import pt.estga.shared.core.models.EmbeddingVector;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.List;
@@ -205,7 +206,7 @@ public class ReviewService {
         if (mark.status() == PublicationStatus.PUBLISHED && occurrence.status() != PublicationStatus.PUBLISHED) {
             markQueryService.publishOccurrence(occurrence.id());
         }
-        float[] embedding = processingApi.findEmbedding(submission.id()).orElse(null);
+        EmbeddingVector embedding = processingApi.findEmbedding(submission.id()).orElse(null);
         markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), submission.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",
                 mediaFileId, occurrence.id(), submission.id());

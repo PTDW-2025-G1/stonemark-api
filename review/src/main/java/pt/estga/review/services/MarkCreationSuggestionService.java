@@ -21,6 +21,7 @@ import pt.estga.review.enums.MarkCreationSuggestionStatus;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkCreationSuggestionRepository;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.shared.core.models.EmbeddingVector;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.time.Instant;
@@ -122,7 +123,7 @@ public class MarkCreationSuggestionService {
         }
         MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(
                 markId, null, submission.latitude(), submission.longitude());
-        float[] embedding = processingApi.findEmbedding(submissionId).orElse(null);
+        EmbeddingVector embedding = processingApi.findEmbedding(submissionId).orElse(null);
         markQueryService.linkFileToOccurrence(
                 submission.originalMediaFileId(), occurrence.id(), submissionId, embedding);
 

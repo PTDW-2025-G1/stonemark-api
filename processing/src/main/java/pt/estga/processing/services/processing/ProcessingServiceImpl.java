@@ -5,13 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pt.estga.shared.core.utils.VectorUtils;
+import pt.estga.shared.core.models.EmbeddingVector;
 import pt.estga.file.api.MediaOperations;
 import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
-import pt.estga.processing.services.similarity.SimilarityService;
+import pt.estga.processing.services.similarity.SimilarityStrategy;
+import pt.estga.processing.vision.DetectionResult;
 import pt.estga.processing.vision.VisionClient;
 import io.micrometer.core.instrument.MeterRegistry;
 
@@ -30,7 +32,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final VisionClient visionClient;
     private final MediaOperations fileStorage;
-    private final SimilarityService similarityService;
+    private final SimilarityStrategy similarityStrategy;
     private final MeterRegistry meterRegistry;
     private final ProcessingPersistenceService persistence;
 
@@ -100,34 +102,39 @@ public class ProcessingServiceImpl implements ProcessingService {
                         return;
                     }
 
-                    float[] embedding;
+                    EmbeddingVector embeddingVector;
                     try (InputStream in = fileStorage.openStream(mediaFileId)
                             .orElseThrow(() -> new IllegalStateException("Media file " + mediaFileId + " not found for streaming"))) {
-                        var detection = visionClient.detectMark(in,
+                        DetectionResult detection = visionClient.detectMark(in,
                                 fileStorage.findById(mediaFileId).map(mf -> mf.originalFilename()).orElse("unknown"));
-                        embedding = detection.embedding();
+
+                        float[] embedding = detection.embedding();
+                        if (embedding == null || embedding.length == 0) {
+                            persistence.setFailed(processing.getId(), "Empty embedding returned", true, startNanos);
+                            return;
+                        }
+
+                        float[] normalized = VectorUtils.normalize(embedding);
+                        if (normalized == null) {
+                            persistence.setFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
+                            return;
+                        }
+
+                        embeddingVector = new EmbeddingVector(
+                                normalized,
+                                detection.embeddingModel(),
+                                detection.embeddingVersion(),
+                                detection.dim() != null ? detection.dim() : normalized.length);
+                        processing.setEmbedding(normalized);
                     }
 
-                    if (embedding == null || embedding.length == 0) {
-                        persistence.setFailed(processing.getId(), "Empty embedding returned", true, startNanos);
-                        return;
-                    }
-
-                    float[] normalized = VectorUtils.normalize(embedding);
-                    if (normalized == null) {
-                        persistence.setFailed(processing.getId(), "Embedding has zero norm", true, startNanos);
-                        return;
-                    }
-
-                    processing.setEmbedding(normalized);
+                    List<MarkSuggestion> suggestions = similarityStrategy.findSimilar(processing, 20);
+                    persistence.finalizeSuccess(processing.getId(), embeddingVector, suggestions, startNanos);
                 } finally {
                     if (acquired) {
                         getVisionSemaphore().release();
                     }
                 }
-
-                List<MarkSuggestion> suggestions = similarityService.findSimilar(processing, 20);
-                persistence.finalizeSuccess(processing.getId(), processing.getEmbedding(), suggestions, startNanos);
 
             } catch (Exception e) {
                 log.error("Error processing submission {}: {}", submissionId, e.getMessage(), e);

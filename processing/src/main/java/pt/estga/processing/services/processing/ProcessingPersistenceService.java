@@ -15,6 +15,7 @@ import pt.estga.processing.entities.MarkSuggestion;
 import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.shared.core.models.EmbeddingVector;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -140,7 +141,7 @@ public class ProcessingPersistenceService {
     }
 
     @Transactional
-    public boolean finalizeSuccess(UUID processingId, float[] embedding, List<MarkSuggestion> suggestions, long startNanos) {
+    public boolean finalizeSuccess(UUID processingId, EmbeddingVector embedding, List<MarkSuggestion> suggestions, long startNanos) {
         var opt = processingRepository.findById(processingId);
         if (opt.isEmpty()) return false;
 
@@ -151,7 +152,10 @@ public class ProcessingPersistenceService {
             return false;
         }
 
-        p.setEmbedding(embedding);
+        p.setEmbedding(embedding.values());
+        p.setEmbeddingModel(embedding.model());
+        p.setEmbeddingVersion(embedding.version());
+        p.setEmbeddingDim(embedding.dim());
         p.setProcessedAt(Instant.now());
         p.setRetryCount(0);
         p.setLastRetryAt(null);
