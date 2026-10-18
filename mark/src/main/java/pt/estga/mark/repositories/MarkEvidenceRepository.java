@@ -30,18 +30,6 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 			@Param("maxDistance") double maxDistance
 	);
 
-	@Query(value = """
-	SELECT
-		me.id,
-		me.occurrence_id,
-		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity,
-		(me.embedding <#> CAST(:vector AS vector)) AS distance
-	FROM mark_evidence me
-	ORDER BY distance ASC, me.id ASC, me.occurrence_id ASC
-	LIMIT :k
-	""", nativeQuery = true)
-    List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(@Param("vector") String vector, @Param("k") int k);
-
 	@Query("""
 	SELECT e.id as id, m as mark FROM MarkEvidence e
 	JOIN e.occurrence o

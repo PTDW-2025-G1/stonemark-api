@@ -26,13 +26,6 @@ public class MarkEvidenceQueryServiceImpl implements MarkEvidenceQueryService {
     }
 
     @Override
-    public List<MarkEvidenceDistanceDto> findTopKSimilar(String vector, int k) {
-        return evidenceRepository.findTopKSimilarEvidence(vector, k).stream()
-                .map(p -> new MarkEvidenceDistanceDto(p.id(), p.getOccurrenceId(), p.getSimilarity()))
-                .toList();
-    }
-
-    @Override
     public List<EvidenceMarkDto> findMarksByEvidenceIds(List<UUID> evidenceIds) {
         return evidenceRepository.findMarksByEvidenceIds(evidenceIds).stream()
                 .map(p -> new EvidenceMarkDto(p.getId(), p.getMark().getId()))

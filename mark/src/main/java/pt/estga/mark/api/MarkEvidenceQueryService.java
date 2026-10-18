@@ -10,7 +10,5 @@ public interface MarkEvidenceQueryService {
 
     List<MarkEvidenceDistanceDto> findTopKSimilar(String vector, int k, double maxDistance);
 
-    List<MarkEvidenceDistanceDto> findTopKSimilar(String vector, int k);
-
     List<EvidenceMarkDto> findMarksByEvidenceIds(List<UUID> evidenceIds);
 }
