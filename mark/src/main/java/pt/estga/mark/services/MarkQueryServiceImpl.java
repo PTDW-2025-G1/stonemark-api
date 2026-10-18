@@ -114,6 +114,17 @@ public class MarkQueryServiceImpl implements MarkQueryService {
         return GeometryUtils.distanceMeters(latitude, longitude, location.getY(), location.getX());
     }
 
+    @Override
+    @Transactional
+    public void publishOccurrence(UUID occurrenceId) {
+        occurrenceRepository.findById(occurrenceId).ifPresent(occurrence -> {
+            if (occurrence.getStatus() != PublicationStatus.PUBLISHED) {
+                occurrence.publish();
+                occurrenceRepository.save(occurrence);
+            }
+        });
+    }
+
     private MarkOccurrence createOccurrence(UUID markId, UUID monumentId, Point location) {
         Mark mark = markRepository.findById(markId)
                 .orElseThrow(() -> new IllegalArgumentException("Mark not found: " + markId));

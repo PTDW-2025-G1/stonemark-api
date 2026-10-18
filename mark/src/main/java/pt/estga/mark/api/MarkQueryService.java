@@ -41,5 +41,8 @@ public interface MarkQueryService {
      */
     MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude);
 
+    /** Publishes an occurrence that is still a draft, so approvals become visible. */
+    void publishOccurrence(UUID occurrenceId);
+
     void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding);
 }

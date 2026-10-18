@@ -24,6 +24,7 @@ import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.List;
@@ -171,26 +172,30 @@ public class ReviewService {
         }
 
         if (decision == ReviewDecision.APPROVED && resolution != null && resolution.mark() != null) {
-            linkEvidenceToMark(submission, resolution.mark().id());
+            linkEvidenceToMark(submission, resolution.mark());
         }
     }
 
     /**
      * Links the submission's photo to a mark occurrence, carrying the submission's
-     * coordinates onto the occurrence when present.
+     * coordinates onto the occurrence when present. When the accepting mark is already
+     * published, the occurrence is published too, so the approval has a public effect.
      *
      * <p>Deliberately not wrapped in a catch: this runs inside the review
      * transaction, so a linking failure rolls the whole decision back and a
      * submission can never be approved without its evidence being linked. The
      * embedding is optional and is absent when the submission was not processed.
      */
-    private void linkEvidenceToMark(SubmissionRef submission, UUID markId) {
+    private void linkEvidenceToMark(SubmissionRef submission, MarkDto mark) {
         UUID mediaFileId = submission.originalMediaFileId();
         if (mediaFileId == null) {
             throw new IllegalStateException("Submission " + submission.id() + " has no media to link");
         }
         MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(
-                markId, null, submission.latitude(), submission.longitude());
+                mark.id(), null, submission.latitude(), submission.longitude());
+        if (mark.status() == PublicationStatus.PUBLISHED && occurrence.status() != PublicationStatus.PUBLISHED) {
+            markQueryService.publishOccurrence(occurrence.id());
+        }
         float[] embedding = processingApi.findEmbedding(submission.id()).orElse(null);
         markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), submission.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",
