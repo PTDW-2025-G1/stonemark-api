@@ -1,0 +1,16 @@
+# Test profile: boots the whole application against in-memory H2.
+#
+# No schema is created (Hibernate ddl-auto=none) because the real schema uses
+# PostGIS/pgvector column types H2 cannot provide. This profile verifies that the
+# application context, configuration and HTTP layer wire up correctly.
+spring:
+  datasource:
+    url: jdbc:h2:mem:stonemark;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: false

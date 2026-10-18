@@ -8,82 +8,88 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import pt.estga.shared.web.dtos.MessageResponseDto;
+import pt.estga.shared.web.dtos.ApiErrorResponse;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler to translate common input and JPA errors into 400 responses.
+ * Translates exceptions into a single error shape ({@link ApiErrorResponse}) with a
+ * meaningful HTTP status, so every client sees the same structure.
  */
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(IOException.class)
-    public ResponseEntity<String> handleIOException(IOException ex) {
-        return new ResponseEntity<>("File processing error: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage());
     }
 
-    @ExceptionHandler(FileStorageException.class)
-    public ResponseEntity<MessageResponseDto> handleFileStorageException(FileStorageException ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponseDto.error(ex.getMessage()));
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicate(DuplicateResourceException ex) {
+        return error(HttpStatus.CONFLICT, "CONFLICT", ex.getMessage());
     }
 
     @ExceptionHandler(FileNotFoundException.class)
-    public ResponseEntity<MessageResponseDto> handleFileNotFoundException(FileNotFoundException ex) {
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(MessageResponseDto.error(ex.getMessage()));
+    public ResponseEntity<ApiErrorResponse> handleFileNotFound(FileNotFoundException ex) {
+        return error(HttpStatus.NOT_FOUND, "NOT_FOUND", ex.getMessage());
     }
 
     @ExceptionHandler(UnsupportedFileTypeException.class)
-    public ResponseEntity<MessageResponseDto> handleUnsupportedFileTypeException(UnsupportedFileTypeException ex) {
-        return ResponseEntity
-                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(MessageResponseDto.error(ex.getMessage()));
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedFileType(UnsupportedFileTypeException ex) {
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", ex.getMessage());
+    }
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<ApiErrorResponse> handleFileStorage(FileStorageException ex) {
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "STORAGE_ERROR", ex.getMessage());
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<MessageResponseDto> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException ex) {
-        return ResponseEntity
-                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                .body(MessageResponseDto.error("Content-Type not supported. If uploading a file with JSON data, ensure the JSON part has 'Content-Type: application/json'. Details: " + ex.getBody()));
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<MessageResponseDto> handleRuntimeException(RuntimeException ex) {
-        log.error("Unhandled runtime exception: {}", ex.getMessage(), ex);
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponseDto.error("An unexpected error occurred"));
+    public ResponseEntity<ApiErrorResponse> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex) {
+        return error(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE",
+                "Content-Type not supported. If uploading a file with JSON data, ensure the JSON part has "
+                        + "'Content-Type: application/json'. Details: " + ex.getBody());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> details = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage()));
+                details.put(error.getField(), error.getDefaultMessage()));
         ex.getBindingResult().getGlobalErrors().forEach(error ->
-                errors.put(error.getObjectName(), error.getDefaultMessage()));
-        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+                details.put(error.getObjectName(), error.getDefaultMessage()));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), "VALIDATION_FAILED", "Validation failed", details));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest()
-                .body(Map.of("error", "Invalid Request Data", "message", ex.getMessage()));
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return error(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage());
     }
 
     @ExceptionHandler(InvalidDataAccessApiUsageException.class)
-    public ResponseEntity<Map<String, String>> handleJpaError(InvalidDataAccessApiUsageException ex) {
-        // Log the exception at debug level for troubleshooting without exposing internals to clients
+    public ResponseEntity<ApiErrorResponse> handleJpaError(InvalidDataAccessApiUsageException ex) {
+        // Log at debug for troubleshooting without exposing internals to clients.
         log.debug("JPA path/navigation error while handling request", ex);
-        return ResponseEntity.badRequest()
-                .body(Map.of("error", "Invalid Field Path", "message", "One or more provided fields are invalid for this entity."));
+        return error(HttpStatus.BAD_REQUEST, "BAD_REQUEST",
+                "One or more provided fields are invalid for this entity.");
     }
 
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<ApiErrorResponse> handleIOException(IOException ex) {
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "File processing error: " + ex.getMessage());
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiErrorResponse> handleRuntimeException(RuntimeException ex) {
+        log.error("Unhandled runtime exception: {}", ex.getMessage(), ex);
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "An unexpected error occurred");
+    }
+
+    private static ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message) {
+        return ResponseEntity.status(status).body(ApiErrorResponse.of(status.value(), code, message));
+    }
 }

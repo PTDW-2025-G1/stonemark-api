@@ -5,6 +5,19 @@
 
 Paged endpoints accept `page`, `size` and `sort`.
 
+## Errors
+
+Every error response uses one shape:
+
+```json
+{ "status": 404, "code": "NOT_FOUND", "message": "Mark 42 not found", "details": { "title": "must not be blank" } }
+```
+
+`details` is present only for validation errors. Codes by status: `NOT_FOUND` (404),
+`CONFLICT` (409), `VALIDATION_FAILED` and `BAD_REQUEST` (400),
+`UNSUPPORTED_MEDIA_TYPE` (415), `PAYLOAD_TOO_LARGE` (413), `STORAGE_ERROR` and
+`INTERNAL_ERROR` (500).
+
 ## Public (no authentication)
 
 | Method | Path | Purpose |
