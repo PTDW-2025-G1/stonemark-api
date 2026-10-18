@@ -38,7 +38,7 @@ public class SimilarityService {
 
         double norm = VectorUtils.l2Norm(embedding);
         if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
-            log.warn("Processing {} embedding has unexpected norm {:.4f} — continuing", processing.getId(), norm);
+            log.warn("Processing {} embedding has unexpected norm {} — continuing", processing.getId(), norm);
         }
 
         String vector = VectorUtils.toVectorLiteral(embedding);

@@ -61,7 +61,7 @@ public class ProcessingServiceImpl implements ProcessingService {
             try {
                 processing = persistence.createOrReuseProcessingRecord(submissionId);
                 if (processing == null) {
-                    meterRegistry.counter("processing.submissions.skipped", "reason", "already_processed_or_in_progress").increment();
+                    meterRegistry.counter("processing.submissions.skipped", "reason", notClaimedReason(submissionId)).increment();
                     return;
                 }
 
@@ -143,5 +143,15 @@ public class ProcessingServiceImpl implements ProcessingService {
                 }
             }
         }, () -> log.warn("Submission with id {} not found for processing", submissionId));
+    }
+
+    /**
+     * A dispatch that could not claim a record is either already processed/in
+     * progress or was blocked by a lock; the record's current state tells which.
+     */
+    private String notClaimedReason(UUID submissionId) {
+        return processingRepository.findBySubmissionId(submissionId)
+                .map(record -> "status_" + record.getStatus().name().toLowerCase())
+                .orElse("not_claimed");
     }
 }
