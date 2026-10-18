@@ -2,6 +2,7 @@ package pt.estga.auth.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,12 +24,12 @@ import java.util.List;
  *
  * <p>Public routes stay open (anonymous submissions); everything else requires an
  * authenticated principal, and admin/moderator endpoints additionally enforce roles
- * via {@code @PreAuthorize} (enabled here). Roles are ordered
+ * via {@code @PreAuthorize} (enabled below unless security is explicitly disabled).
+ * Roles are ordered
  * ({@code ADMIN > MODERATOR > REVIEWER > USER}), so an endpoint only declares the
  * minimum role it needs.
  */
 @Configuration
-@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -74,13 +75,6 @@ public class SecurityConfig {
     }
 
     @Bean
-    static MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
-        DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
-        handler.setRoleHierarchy(roleHierarchy);
-        return handler;
-    }
-
-    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -120,5 +114,23 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    /**
+     * Enables {@code @PreAuthorize} role checks backed by the ordered role hierarchy.
+     * Skipped when {@code application.security.disabled=true} so a local run is
+     * genuinely open, matching how the filter chain treats that switch.
+     */
+    @Configuration
+    @EnableMethodSecurity
+    @ConditionalOnProperty(value = "application.security.disabled", havingValue = "false", matchIfMissing = true)
+    static class MethodSecurityConfiguration {
+
+        @Bean
+        static MethodSecurityExpressionHandler methodSecurityExpressionHandler(RoleHierarchy roleHierarchy) {
+            DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+            handler.setRoleHierarchy(roleHierarchy);
+            return handler;
+        }
     }
 }

@@ -75,11 +75,12 @@ RECEIVED (intake)  →  PENDING (placeholder)  →  PROCESSING (acquired)
 |----------|---------|-------------|
 | `processing.vision.max-concurrency` | 4 | Max concurrent Vision API calls |
 | `processing.vision.acquire-timeout-ms` | 10000 | Semaphore acquire timeout |
-| `processing.similarity.maxK` | 20 | Max candidates returned |
-| `processing.similarity.minScore` | 0.5 | Minimum similarity threshold (maxDistance = 1 - minScore) |
+| `processing.similarity.maxK` | 200 | Max candidates returned |
+| `processing.similarity.minScore` | 0.6 | Minimum similarity threshold (maxDistance = 1 - minScore) |
 | `processing.retry.base-delay-ms` | 60000 | Base backoff for retry |
 | `processing.retry.max-delay-ms` | 1800000 | Max backoff (30 min) |
 | `processing.retry.batch-size` | 5 | Retry/orphan batch size |
+| `processing.retry.batch-pause-ms` | 2000 | Pause between retry batches |
 | `processing.retry.interval` | 60000 | Retry scheduler interval |
 | `processing.reaper.max-stuck-minutes` | 30 | Stuck PROCESSING threshold |
 | `processing.reaper.interval` | 3600000 | Reaper interval (1 hour) |
