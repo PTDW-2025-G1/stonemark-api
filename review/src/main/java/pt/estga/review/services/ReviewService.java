@@ -72,6 +72,17 @@ public class ReviewService {
     }
 
     /**
+     * Records an automated approval. Used by auto-approval when the system is
+     * confident and unambiguous about a match to an existing mark; it never creates
+     * a mark.
+     */
+    @Transactional
+    public MarkEvidenceReview autoApprove(UUID submissionId, UUID markId) {
+        return performReview(submissionId, ReviewType.MATCH, markId,
+                "Auto-approved: confident, unambiguous match");
+    }
+
+    /**
      * Records a moderation decision for a submission and persists it as a label.
      *
      * <p>Processing is optional: a submission that was never processed can still be
