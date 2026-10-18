@@ -24,14 +24,14 @@ public class MarkSuggestion {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @ManyToOne
     private MarkEvidenceProcessing processing;
 
     @Column(nullable = false)
-    private Long markId;
+    private UUID markId;
 
     private double confidence;
 

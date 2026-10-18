@@ -1,5 +1,7 @@
 package pt.estga.processing.services.processing;
 
+import java.util.UUID;
+
 public interface ProcessingService {
-    void processSubmission(Long submissionId);
+    void processSubmission(UUID submissionId);
 }

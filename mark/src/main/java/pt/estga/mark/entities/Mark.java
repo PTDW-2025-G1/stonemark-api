@@ -1,5 +1,7 @@
 package pt.estga.mark.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -31,7 +33,8 @@ public class Mark extends PublishableEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     private String title;
 

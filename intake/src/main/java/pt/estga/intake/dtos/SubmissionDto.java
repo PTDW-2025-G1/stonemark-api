@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record SubmissionDto(
-        Long id,
+        UUID id,
         SubmissionStatus status,
         SubmissionSource submissionSource,
         Instant submittedAt,
@@ -15,5 +15,5 @@ public record SubmissionDto(
         Double longitude,
         String userNotes,
         UUID originalMediaFileId,
-        Long submittedById
+        UUID submittedById
 ) {}

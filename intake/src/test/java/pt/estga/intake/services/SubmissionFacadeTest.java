@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -33,12 +33,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SubmissionFacadeTest {
 
-    private static final Long EXISTING_ID = 7L;
-    private static final Long CREATED_ID = 42L;
+    private static final UUID EXISTING_ID = UUID.randomUUID();
+    private static final UUID CREATED_ID = UUID.randomUUID();
     private static final UUID STAGED_ID = UUID.randomUUID();
 
     @Mock
-    private FileStorageOperations fileStorage;
+    private MediaOperations fileStorage;
 
     @Mock
     private MarkEvidenceSubmissionSubmitService submitService;
@@ -106,7 +106,7 @@ class SubmissionFacadeTest {
         verify(submitService).submit(any(MarkEvidenceSubmission.class), eq(STAGED_ID), eq("mark.jpg"));
     }
 
-    private static SubmissionDto dto(Long id) {
+    private static SubmissionDto dto(UUID id) {
         return new SubmissionDto(id, SubmissionStatus.RECEIVED, SubmissionSource.WEB_APP,
                 Instant.now(), null, null, null, null, null);
     }

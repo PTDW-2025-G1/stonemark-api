@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.intake.api.SubmissionRef;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ProcessingServiceImplTest {
 
-    private static final Long SUBMISSION_ID = Long.valueOf(1L);
+    private static final UUID SUBMISSION_ID = UUID.randomUUID();
 
     @Mock
     private IntakeSubmissionApi intakeApi;
@@ -51,7 +51,7 @@ class ProcessingServiceImplTest {
     @Mock
     private VisionClient visionClient;
     @Mock
-    private FileStorageOperations fileStorage;
+    private MediaOperations fileStorage;
     @Mock
     private SimilarityService similarityService;
     @Mock
@@ -146,7 +146,7 @@ class ProcessingServiceImplTest {
         UUID fileId = UUID.randomUUID();
         MarkEvidenceProcessing processing = processing();
         List<MarkSuggestion> suggestions = List.of(
-                MarkSuggestion.builder().markId(Long.valueOf(10L)).confidence(0.9).build());
+                MarkSuggestion.builder().markId(UUID.randomUUID()).confidence(0.9).build());
 
         givenSubmission(fileId);
         when(persistence.createOrReuseProcessingRecord(SUBMISSION_ID)).thenReturn(processing);

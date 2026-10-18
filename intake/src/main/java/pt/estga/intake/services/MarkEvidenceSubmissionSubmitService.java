@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.shared.core.events.AfterCommitEventPublisher;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
 import pt.estga.intake.enums.SubmissionStatus;
 import pt.estga.intake.events.MarkEvidenceSubmittedEvent;
@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Persists a submission and its media in a single transaction.
  *
- * <p>{@link FileStorageOperations#commit} joins this transaction, so a failure
+ * <p>{@link MediaOperations#commit} joins this transaction, so a failure
  * rolls back both the media metadata and the submission row, and object storage
  * is compensated on rollback. The submitted event is published only after commit.
  */
@@ -26,11 +26,11 @@ import java.util.UUID;
 public class MarkEvidenceSubmissionSubmitService {
 
     private final MarkEvidenceSubmissionRepository submissionRepository;
-    private final FileStorageOperations fileStorage;
+    private final MediaOperations fileStorage;
     private final AfterCommitEventPublisher eventPublisher;
 
     @Transactional
-    public Long submit(MarkEvidenceSubmission submission, UUID stagedFileId, String photoFilename) {
+    public UUID submit(MarkEvidenceSubmission submission, UUID stagedFileId, String photoFilename) {
         if (submission == null) {
             throw new IllegalArgumentException("Submission cannot be null");
         }

@@ -8,8 +8,8 @@ import java.util.UUID;
  * catalogued without a precise location (an "unlocated" entry).
  */
 public record PublicOccurrenceDto(
-        Long id,
-        Long monumentId,
+        UUID id,
+        UUID monumentId,
         Double latitude,
         Double longitude,
         String period,

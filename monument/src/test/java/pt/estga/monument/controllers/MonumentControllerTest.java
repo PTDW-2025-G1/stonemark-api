@@ -19,6 +19,7 @@ import pt.estga.shared.web.exceptions.GlobalExceptionHandler;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,6 +31,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 class MonumentControllerTest {
+
+    private static final UUID MONUMENT_ID = UUID.randomUUID();
+    private static final UUID MISSING_ID = UUID.randomUUID();
 
     private final MonumentService service = mock();
     private final MonumentMapper mapper = new MonumentMapper();
@@ -44,18 +48,18 @@ class MonumentControllerTest {
     @BeforeEach
     void setUp() {
         monument = new Monument();
-        monument.setId(1L);
+        monument.setId(MONUMENT_ID);
         monument.setName("Test Monument");
     }
 
     @Test
     @DisplayName("should return 200 and monument when found by id")
     void shouldReturnMonumentWhenFound() throws Exception {
-        when(service.findById(1L)).thenReturn(Optional.of(mapper.toResponseDto(monument)));
+        when(service.findById(MONUMENT_ID)).thenReturn(Optional.of(mapper.toResponseDto(monument)));
 
-        mockMvc.perform(get("/api/v1/public/monuments/{id}", 1L))
+        mockMvc.perform(get("/api/v1/public/monuments/{id}", MONUMENT_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value(MONUMENT_ID.toString()))
                 .andExpect(jsonPath("$.name").value("Test Monument"))
                 .andExpect(jsonPath("$.active").value(true));
     }
@@ -63,9 +67,9 @@ class MonumentControllerTest {
     @Test
     @DisplayName("should return 404 when monument not found by id")
     void shouldReturn404WhenNotFound() throws Exception {
-        when(service.findById(99L)).thenReturn(Optional.empty());
+        when(service.findById(MISSING_ID)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/v1/public/monuments/{id}", 99L))
+        mockMvc.perform(get("/api/v1/public/monuments/{id}", MISSING_ID))
                 .andExpect(status().isNotFound());
     }
 
@@ -78,7 +82,7 @@ class MonumentControllerTest {
         mockMvc.perform(get("/api/v1/public/monuments"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
-                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(MONUMENT_ID.toString()))
                 .andExpect(jsonPath("$.content[0].name").value("Test Monument"));
     }
 }

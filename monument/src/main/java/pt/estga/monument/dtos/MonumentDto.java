@@ -1,9 +1,11 @@
 package pt.estga.monument.dtos;
 
+import java.util.UUID;
+
 import java.time.Instant;
 
 public record MonumentDto(
-        Long id,
+        UUID id,
         String name,
         String description,
         String protectionTitle,

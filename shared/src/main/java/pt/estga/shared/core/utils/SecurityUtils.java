@@ -1,5 +1,7 @@
 package pt.estga.shared.core.utils;
 
+import java.util.UUID;
+
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +19,7 @@ public final class SecurityUtils {
      *
      * @return An Optional containing the user ID if authenticated, or empty if not.
      */
-    public static Optional<Long> getCurrentUserId() {
+    public static Optional<UUID> getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated() ||

@@ -11,7 +11,9 @@ import pt.estga.intake.api.SubmissionRef;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.processing.api.ProcessingOverview;
 import pt.estga.processing.api.ProcessingReviewApi;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
@@ -24,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -31,9 +34,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
 
-    private static final Long SUBMISSION_ID = Long.valueOf(1L);
-    private static final Long MARK_ID = Long.valueOf(5L);
-    private static final Long OCCURRENCE_ID = Long.valueOf(9L);
+    private static final UUID SUBMISSION_ID = UUID.randomUUID();
+    private static final UUID MARK_ID = UUID.randomUUID();
+    private static final UUID OCCURRENCE_ID = UUID.randomUUID();
     private static final UUID FILE_ID = UUID.randomUUID();
 
     @Mock
@@ -57,7 +60,7 @@ class ReviewServiceTest {
     void approvesWithoutProcessing() {
         MarkDto mark = new MarkDto(MARK_ID, "Cross", null, null, PublicationStatus.DRAFT);
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(100L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.APPROVED).selectedMarkId(MARK_ID).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
@@ -76,13 +79,38 @@ class ReviewServiceTest {
         assertThat(result).isSameAs(label);
         verify(intakeApi).markProcessed(SUBMISSION_ID);
         verify(markQueryService).linkFileToOccurrence(eq(FILE_ID), eq(OCCURRENCE_ID), eq(SUBMISSION_ID), isNull());
+        verify(markQueryService, never()).publishOccurrence(any());
+    }
+
+    @Test
+    @DisplayName("publishes the occurrence when the accepting mark is already published")
+    void publishesOccurrenceForPublishedMark() {
+        MarkDto mark = new MarkDto(MARK_ID, "Cross", null, null, PublicationStatus.PUBLISHED);
+        MarkEvidenceReview label = MarkEvidenceReview.builder()
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
+                .decision(ReviewDecision.APPROVED).selectedMarkId(MARK_ID).build();
+
+        when(intakeApi.findById(SUBMISSION_ID))
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
+        when(processingApi.findOverview(SUBMISSION_ID)).thenReturn(Optional.empty());
+        when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
+        when(markQueryService.findMarkById(MARK_ID)).thenReturn(Optional.of(mark));
+        when(markQueryService.findOrCreateOccurrence(eq(MARK_ID), isNull(), isNull(), isNull()))
+                .thenReturn(new MarkOccurrenceDto(OCCURRENCE_ID, MARK_ID, null, null, null, null,
+                        PublicationStatus.DRAFT, null, mark));
+        when(processingApi.findEmbedding(SUBMISSION_ID)).thenReturn(Optional.empty());
+        when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.APPROVED), any(), any())).thenReturn(label);
+
+        reviewService.acceptSuggestion(SUBMISSION_ID, MARK_ID, "ok");
+
+        verify(markQueryService).publishOccurrence(OCCURRENCE_ID);
     }
 
     @Test
     @DisplayName("rejects without processing and records the decision as a label")
     void rejectsWithoutProcessing() {
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(101L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.REJECTED).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
@@ -102,7 +130,7 @@ class ReviewServiceTest {
     @DisplayName("no-match keeps the submission as a candidate without provisioning a mark")
     void noMatchDoesNotProvisionMark() {
         MarkEvidenceReview label = MarkEvidenceReview.builder()
-                .id(Long.valueOf(102L)).submissionId(SUBMISSION_ID)
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
                 .decision(ReviewDecision.NO_MATCH).build();
 
         when(intakeApi.findById(SUBMISSION_ID))
@@ -116,6 +144,27 @@ class ReviewServiceTest {
         assertThat(result).isSameAs(label);
         verify(intakeApi).markProcessed(SUBMISSION_ID);
         verify(markCreationSuggestionService).recompute();
+        verifyNoInteractions(markQueryService);
+    }
+
+    @Test
+    @DisplayName("rejects a submission whose processing did not complete")
+    void rejectsWhenProcessingNotCompleted() {
+        MarkEvidenceReview label = MarkEvidenceReview.builder()
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
+                .decision(ReviewDecision.REJECTED).build();
+
+        when(intakeApi.findById(SUBMISSION_ID))
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
+        when(processingApi.findOverview(SUBMISSION_ID))
+                .thenReturn(Optional.of(new ProcessingOverview(UUID.randomUUID(), ProcessingStatus.FAILED)));
+        when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
+        when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.REJECTED), any(), any())).thenReturn(label);
+
+        MarkEvidenceReview result = reviewService.rejectAll(SUBMISSION_ID, "broken");
+
+        assertThat(result).isSameAs(label);
+        verify(intakeApi).markRejected(SUBMISSION_ID);
         verifyNoInteractions(markQueryService);
     }
 }

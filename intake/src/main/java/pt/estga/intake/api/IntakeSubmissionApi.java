@@ -1,5 +1,7 @@
 package pt.estga.intake.api;
 
+import java.util.UUID;
+
 import java.util.Optional;
 
 /**
@@ -8,9 +10,9 @@ import java.util.Optional;
  */
 public interface IntakeSubmissionApi {
 
-    Optional<SubmissionRef> findById(Long submissionId);
+    Optional<SubmissionRef> findById(UUID submissionId);
 
-    void markProcessed(Long submissionId);
+    void markProcessed(UUID submissionId);
 
-    void markRejected(Long submissionId);
+    void markRejected(UUID submissionId);
 }

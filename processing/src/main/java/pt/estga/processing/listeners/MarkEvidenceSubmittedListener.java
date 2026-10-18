@@ -1,5 +1,7 @@
 package pt.estga.processing.listeners;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,7 +33,7 @@ public class MarkEvidenceSubmittedListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void enrichMarkEvidence(MarkEvidenceSubmittedEvent event) {
-        Long submissionId = event.submissionId();
+        UUID submissionId = event.submissionId();
         log.info("Submission received, ensuring queued draft for ID: {}", submissionId);
 
         boolean needsDispatch = false;
@@ -70,7 +72,7 @@ public class MarkEvidenceSubmittedListener {
         }
     }
 
-    private void dispatch(Long submissionId) {
+    private void dispatch(UUID submissionId) {
         intakeApi.findById(submissionId).ifPresentOrElse(
                 submission -> asyncProcessingService.processAsync(submission.id()),
                 () -> log.warn("Submission {} not found for processing dispatch", submissionId));

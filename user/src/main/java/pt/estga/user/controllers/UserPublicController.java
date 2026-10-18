@@ -1,5 +1,7 @@
 package pt.estga.user.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,7 +28,7 @@ public class UserPublicController {
     @GetMapping("/{id}")
     public ResponseEntity<UserPublicDto> publicGetById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return service.findPublicById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public interface RetryableProjection {
     UUID getId();
-    Long getSubmissionId();
+    UUID getSubmissionId();
     int getRetryCount();
     Instant getLastRetryAt();
 }

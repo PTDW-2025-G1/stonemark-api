@@ -28,8 +28,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SimilarityServiceTest {
 
-    private static final Long MARK_A = Long.valueOf(10L);
-    private static final Long MARK_B = Long.valueOf(11L);
+    private static final UUID MARK_A = UUID.randomUUID();
+    private static final UUID MARK_B = UUID.randomUUID();
+    private static final UUID OCC_1 = UUID.randomUUID();
+    private static final UUID OCC_2 = UUID.randomUUID();
 
     @Mock
     private MarkEvidenceQueryService evidenceQueryService;
@@ -57,8 +59,8 @@ class SimilarityServiceTest {
 
         when(evidenceQueryService.findTopKSimilar(anyString(), anyInt(), anyDouble()))
                 .thenReturn(List.of(
-                        new MarkEvidenceDistanceDto(e1, 1L, Double.valueOf(0.9)),
-                        new MarkEvidenceDistanceDto(e2, 2L, Double.valueOf(0.8))));
+                        new MarkEvidenceDistanceDto(e1, OCC_1, Double.valueOf(0.9)),
+                        new MarkEvidenceDistanceDto(e2, OCC_2, Double.valueOf(0.8))));
         when(evidenceQueryService.findMarksByEvidenceIds(anyList()))
                 .thenReturn(List.of(
                         new EvidenceMarkDto(e1, MARK_A),
@@ -86,7 +88,7 @@ class SimilarityServiceTest {
     void discardsNonFiniteScores() {
         UUID e1 = UUID.randomUUID();
         when(evidenceQueryService.findTopKSimilar(anyString(), anyInt(), anyDouble()))
-                .thenReturn(List.of(new MarkEvidenceDistanceDto(e1, 1L, Double.valueOf(Double.NaN))));
+                .thenReturn(List.of(new MarkEvidenceDistanceDto(e1, OCC_1, Double.valueOf(Double.NaN))));
 
         assertThat(service.findSimilar(seededProcessing(), 20)).isEmpty();
     }

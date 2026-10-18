@@ -31,17 +31,17 @@ public class BookmarkService {
     private final BookmarkRepository bookmarkRepository;
     private final MarkQueryService markQueryService;
 
-    public Page<BookmarkResponse> listByUser(Long userId, Pageable pageable) {
+    public Page<BookmarkResponse> listByUser(UUID userId, Pageable pageable) {
         Page<Bookmark> page = bookmarkRepository.findAllByUserId(userId, pageable);
-        Map<Long, MarkDto> marks = resolveMarks(page.getContent());
-        Map<Long, MarkOccurrenceDto> occurrences = resolveOccurrences(page.getContent());
+        Map<UUID, MarkDto> marks = resolveMarks(page.getContent());
+        Map<UUID, MarkOccurrenceDto> occurrences = resolveOccurrences(page.getContent());
         return page.map(bookmark -> toResponse(bookmark, marks, occurrences));
     }
 
     @Transactional
-    public BookmarkResponse create(Long userId, BookmarkCreateRequest request) {
+    public BookmarkResponse create(UUID userId, BookmarkCreateRequest request) {
         BookmarkTargetType type = request.targetType();
-        Long targetId = request.targetId();
+        UUID targetId = request.targetId();
         if (type == null || targetId == null) {
             throw new IllegalArgumentException("Bookmark target type and id are required");
         }
@@ -64,12 +64,12 @@ public class BookmarkService {
     }
 
     @Transactional
-    public void delete(Long userId, UUID bookmarkId) {
+    public void delete(UUID userId, UUID bookmarkId) {
         bookmarkRepository.findByIdAndUserId(bookmarkId, userId)
                 .ifPresent(bookmarkRepository::delete);
     }
 
-    private void requireAvailable(BookmarkTargetType type, Long targetId) {
+    private void requireAvailable(BookmarkTargetType type, UUID targetId) {
         switch (type) {
             case MARK -> {
                 if (markQueryService.findPublishedMarksByIds(List.of(targetId)).isEmpty()) {
@@ -88,8 +88,8 @@ public class BookmarkService {
      * Resolves the targets of a page of bookmarks in one query per target type.
      * Targets that are missing or no longer published are absent from the maps.
      */
-    private Map<Long, MarkDto> resolveMarks(List<Bookmark> bookmarks) {
-        List<Long> ids = targetIds(bookmarks, BookmarkTargetType.MARK);
+    private Map<UUID, MarkDto> resolveMarks(List<Bookmark> bookmarks) {
+        List<UUID> ids = targetIds(bookmarks, BookmarkTargetType.MARK);
         if (ids.isEmpty()) {
             return Map.of();
         }
@@ -97,8 +97,8 @@ public class BookmarkService {
                 .collect(Collectors.toMap(MarkDto::id, Function.identity()));
     }
 
-    private Map<Long, MarkOccurrenceDto> resolveOccurrences(List<Bookmark> bookmarks) {
-        List<Long> ids = targetIds(bookmarks, BookmarkTargetType.MARK_OCCURRENCE);
+    private Map<UUID, MarkOccurrenceDto> resolveOccurrences(List<Bookmark> bookmarks) {
+        List<UUID> ids = targetIds(bookmarks, BookmarkTargetType.MARK_OCCURRENCE);
         if (ids.isEmpty()) {
             return Map.of();
         }
@@ -106,7 +106,7 @@ public class BookmarkService {
                 .collect(Collectors.toMap(MarkOccurrenceDto::id, Function.identity()));
     }
 
-    private static List<Long> targetIds(List<Bookmark> bookmarks, BookmarkTargetType type) {
+    private static List<UUID> targetIds(List<Bookmark> bookmarks, BookmarkTargetType type) {
         return bookmarks.stream()
                 .filter(bookmark -> bookmark.getTargetType() == type)
                 .map(Bookmark::getTargetId)
@@ -114,8 +114,8 @@ public class BookmarkService {
                 .toList();
     }
 
-    private static BookmarkResponse toResponse(Bookmark bookmark, Map<Long, MarkDto> marks,
-                                               Map<Long, MarkOccurrenceDto> occurrences) {
+    private static BookmarkResponse toResponse(Bookmark bookmark, Map<UUID, MarkDto> marks,
+                                               Map<UUID, MarkOccurrenceDto> occurrences) {
         MarkDto mark = bookmark.getTargetType() == BookmarkTargetType.MARK
                 ? marks.get(bookmark.getTargetId())
                 : null;

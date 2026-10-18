@@ -4,6 +4,6 @@ import java.util.UUID;
 
 public record EvidenceMarkDto(
         UUID evidenceId,
-        Long markId
+        UUID markId
 ) {
 }

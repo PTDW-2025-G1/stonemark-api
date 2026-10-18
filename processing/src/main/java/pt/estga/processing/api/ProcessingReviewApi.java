@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public interface ProcessingReviewApi {
 
-    Optional<ProcessingOverview> findOverview(Long submissionId);
+    Optional<ProcessingOverview> findOverview(UUID submissionId);
 
     List<MarkSuggestionDto> findSuggestions(UUID processingId);
 
@@ -22,12 +22,12 @@ public interface ProcessingReviewApi {
     Double maxSuggestionConfidence(UUID processingId);
 
     /** The submission's embedding, when it was processed successfully. */
-    Optional<float[]> findEmbedding(Long submissionId);
+    Optional<float[]> findEmbedding(UUID submissionId);
 
     /** Embeddings of the given submissions, for the ones that have one. */
-    List<SubmissionEmbedding> findEmbeddings(Collection<Long> submissionIds);
+    List<SubmissionEmbedding> findEmbeddings(Collection<UUID> submissionIds);
 
-    void markReviewed(Long submissionId);
+    void markReviewed(UUID submissionId);
 
     List<ProcessingModerationView> findProcessingByConfidence(double min, double max);
 }

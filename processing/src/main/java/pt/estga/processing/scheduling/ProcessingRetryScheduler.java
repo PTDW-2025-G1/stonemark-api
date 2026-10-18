@@ -1,5 +1,7 @@
 package pt.estga.processing.scheduling;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -100,7 +102,7 @@ public class ProcessingRetryScheduler {
             var batch = entries.subList(i, end);
 
             for (var p : batch) {
-                Long submissionId = p.getSubmissionId();
+                UUID submissionId = p.getSubmissionId();
                 if (submissionId == null) {
                     log.warn("Skipping processing entry {} with no submission linked", p.getId());
                     continue;
@@ -121,7 +123,7 @@ public class ProcessingRetryScheduler {
     }
 
     private void collectOrphans() {
-        List<Long> orphaned = processingRepository.findOrphanedSubmissionIds();
+        List<UUID> orphaned = processingRepository.findOrphanedSubmissionIds();
         if (orphaned.isEmpty()) return;
 
         int total = orphaned.size();

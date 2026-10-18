@@ -7,25 +7,25 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import pt.estga.file.exceptions.MediaPersistenceException;
 import pt.estga.file.exceptions.OversizeFileException;
-import pt.estga.shared.web.dtos.MessageResponseDto;
+import pt.estga.shared.web.dtos.ApiErrorResponse;
 
 @Slf4j
 @ControllerAdvice(basePackageClasses = MediaController.class)
 public class FileExceptionHandler {
 
     @ExceptionHandler(OversizeFileException.class)
-    public ResponseEntity<MessageResponseDto> handleOversizeFile(OversizeFileException ex) {
+    public ResponseEntity<ApiErrorResponse> handleOversizeFile(OversizeFileException ex) {
         log.warn("File upload rejected: {}", ex.getMessage());
         return ResponseEntity
                 .status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(MessageResponseDto.error(ex.getMessage()));
+                .body(ApiErrorResponse.of(HttpStatus.PAYLOAD_TOO_LARGE.value(), "PAYLOAD_TOO_LARGE", ex.getMessage()));
     }
 
     @ExceptionHandler(MediaPersistenceException.class)
-    public ResponseEntity<MessageResponseDto> handleMediaPersistence(MediaPersistenceException ex) {
+    public ResponseEntity<ApiErrorResponse> handleMediaPersistence(MediaPersistenceException ex) {
         log.error("Media persistence failed: {}", ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(MessageResponseDto.error("Media storage failed"));
+                .body(ApiErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), "STORAGE_ERROR", "Media storage failed"));
     }
 }

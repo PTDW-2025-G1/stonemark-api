@@ -1,5 +1,7 @@
 package pt.estga.mark.repositories;
 
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.stereotype.Repository;
 import pt.estga.mark.entities.MarkOccurrence;
@@ -11,14 +13,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence, Long> {
+public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence, UUID> {
 
-    Optional<MarkOccurrence> findByMarkIdAndMonumentId(Long markId, Long monumentId);
+    Optional<MarkOccurrence> findByMarkIdAndMonumentId(UUID markId, UUID monumentId);
 
-    List<MarkOccurrence> findByMarkId(Long markId);
+    List<MarkOccurrence> findByMarkId(UUID markId);
 
-    List<MarkOccurrence> findByMarkIdAndStatus(Long markId, PublicationStatus status);
+    List<MarkOccurrence> findByMarkIdAndStatus(UUID markId, PublicationStatus status);
+
+    List<MarkOccurrence> findByMarkIdAndLocationIsNotNull(UUID markId);
 
     @EntityGraph(attributePaths = "mark")
-    List<MarkOccurrence> findByIdInAndStatusAndDeletedAtIsNull(Collection<Long> ids, PublicationStatus status);
+    List<MarkOccurrence> findByIdInAndStatusAndDeletedAtIsNull(Collection<UUID> ids, PublicationStatus status);
 }

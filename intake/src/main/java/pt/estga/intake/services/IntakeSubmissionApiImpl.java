@@ -1,5 +1,7 @@
 package pt.estga.intake.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,24 +20,24 @@ public class IntakeSubmissionApiImpl implements IntakeSubmissionApi {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<SubmissionRef> findById(Long submissionId) {
+    public Optional<SubmissionRef> findById(UUID submissionId) {
         return submissionRepository.findById(submissionId)
                 .map(s -> new SubmissionRef(s.getId(), s.getOriginalMediaFileId(), s.getLatitude(), s.getLongitude()));
     }
 
     @Override
     @Transactional
-    public void markProcessed(Long submissionId) {
+    public void markProcessed(UUID submissionId) {
         updateStatus(submissionId, SubmissionStatus.PROCESSED);
     }
 
     @Override
     @Transactional
-    public void markRejected(Long submissionId) {
+    public void markRejected(UUID submissionId) {
         updateStatus(submissionId, SubmissionStatus.REJECTED);
     }
 
-    private void updateStatus(Long submissionId, SubmissionStatus target) {
+    private void updateStatus(UUID submissionId, SubmissionStatus target) {
         submissionRepository.findById(submissionId).ifPresent(submission -> {
             if (submission.getStatus() == target) {
                 return;

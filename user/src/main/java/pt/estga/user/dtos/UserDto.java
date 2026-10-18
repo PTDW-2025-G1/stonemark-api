@@ -1,12 +1,14 @@
 package pt.estga.user.dtos;
 
+import java.util.UUID;
+
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.user.enums.UserRole;
 
 import java.time.Instant;
 
 public record UserDto(
-        Long id,
+        UUID id,
         String firstName,
         String lastName,
         String username,

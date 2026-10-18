@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public record ProcessingStatusDto(
         UUID processingId,
-        Long submissionId,
+        UUID submissionId,
         ProcessingStatus status,
         Instant processedAt,
         Instant failedAt,

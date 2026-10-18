@@ -1,5 +1,7 @@
 package pt.estga.intake.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +32,7 @@ public class SubmissionAdminController {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) SubmissionStatus status,
             @RequestParam(required = false) SubmissionSource source,
-            @RequestParam(required = false) Long submittedById,
+            @RequestParam(required = false) UUID submittedById,
             @RequestParam(required = false) Instant submittedAfter,
             @RequestParam(required = false) Instant submittedBefore) {
         SubmissionFilter filter = new SubmissionFilter(status, source, submittedById, submittedAfter, submittedBefore);
@@ -38,7 +40,7 @@ public class SubmissionAdminController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SubmissionDto> findById(@PathVariable Long id) {
+    public ResponseEntity<SubmissionDto> findById(@PathVariable UUID id) {
         return submissionService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

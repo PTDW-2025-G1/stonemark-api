@@ -1,5 +1,7 @@
 package pt.estga.processing.services.processing;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +21,7 @@ public class SuggestionQueryService {
     private final MarkEvidenceProcessingRepository processingRepository;
     private final MarkSuggestionRepository suggestionRepository;
 
-    public Optional<List<MarkSuggestionDto>> findSuggestionsBySubmissionId(Long submissionId) {
+    public Optional<List<MarkSuggestionDto>> findSuggestionsBySubmissionId(UUID submissionId) {
         return processingRepository.findBySubmissionId(submissionId)
                 .map(p -> suggestionRepository.findByProcessingId(p.getId())
                         .stream()

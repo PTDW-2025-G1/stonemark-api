@@ -80,8 +80,11 @@ Work is split by what it takes to be wrong, once a trained Vision model exists:
   always a human decision. The system never creates a mark; it only proposes clusters
   of unmatched findings once enough of them accumulate, for a moderator to action.
 
-Until the model exists the pipeline is off (`processing.enabled=false`), so both
-paths are dormant and every submission is moderated by hand.
+The occurrence path is implemented and **off by default**
+(`review.auto-approve.enabled` plus confidence and margin thresholds). Mark creation
+is never automatic — the system only proposes clusters for a moderator to action.
+Until the model exists the pipeline is off (`processing.enabled=false`), so every
+submission is moderated by hand.
 
 ## Direction
 

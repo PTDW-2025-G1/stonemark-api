@@ -1,5 +1,9 @@
 package pt.estga.monument.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,7 +29,8 @@ public class Monument extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     private String name;
     private String protectionTitle;

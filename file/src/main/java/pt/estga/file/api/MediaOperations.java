@@ -6,9 +6,12 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface FileStorageOperations {
-
-    MediaFileDto upload(InputStream data, String originalFilename);
+/**
+ * Cross-module contract for the media catalogue and the submit staging flow.
+ * Implemented by the file module; byte-level storage stays behind
+ * {@code FileStorageService} (local filesystem today, S3 later).
+ */
+public interface MediaOperations {
 
     Optional<MediaFileDto> findById(UUID id);
 

@@ -1,5 +1,7 @@
 package pt.estga.support.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -33,7 +35,7 @@ public class ContactRequestAdminController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ContactRequest> getById(@PathVariable Long id) {
+    public ResponseEntity<ContactRequest> getById(@PathVariable UUID id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -41,14 +43,14 @@ public class ContactRequestAdminController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ContactRequest> updateStatus(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestParam ContactStatus status
     ) {
         return ResponseEntity.ok(service.updateStatus(id, status));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }

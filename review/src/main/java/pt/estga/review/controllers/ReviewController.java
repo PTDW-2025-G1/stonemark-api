@@ -1,5 +1,7 @@
 package pt.estga.review.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -45,8 +47,8 @@ public class ReviewController {
     @PostMapping("/{submissionId}/accept")
     @Operation(summary = "Accept an existing mark suggestion")
     public ResponseEntity<ReviewResponseDto> acceptSuggestion(
-            @PathVariable Long submissionId,
-            @RequestParam Long markId,
+            @PathVariable UUID submissionId,
+            @RequestParam UUID markId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
@@ -57,7 +59,7 @@ public class ReviewController {
     @PostMapping("/{submissionId}/no-match")
     @Operation(summary = "Record that no existing mark matches the submission (kept as a new-mark candidate)")
     public ResponseEntity<ReviewResponseDto> noMatch(
-            @PathVariable Long submissionId,
+            @PathVariable UUID submissionId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
@@ -68,7 +70,7 @@ public class ReviewController {
     @PostMapping("/{submissionId}/reject")
     @Operation(summary = "Reject all suggestions for this submission")
     public ResponseEntity<ReviewResponseDto> rejectAll(
-            @PathVariable Long submissionId,
+            @PathVariable UUID submissionId,
             @RequestBody(required = false) SimpleReviewRequest request) {
 
         var comment = request != null ? request.comment() : null;
@@ -77,14 +79,14 @@ public class ReviewController {
     }
 
     @GetMapping("/{submissionId}")
-    public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable Long submissionId) {
+    public ResponseEntity<ReviewDecision> getReviewStatus(@PathVariable UUID submissionId) {
         return reviewService.getReviewStatus(submissionId)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new pt.estga.shared.web.exceptions.ResourceNotFoundException("Review not found"));
     }
 
     @GetMapping("/{submissionId}/suggestions")
-    public ResponseEntity<List<MarkSuggestionDto>> getSuggestions(@PathVariable Long submissionId) {
+    public ResponseEntity<List<MarkSuggestionDto>> getSuggestions(@PathVariable UUID submissionId) {
         return ResponseEntity.ok(reviewService.getSuggestions(submissionId));
     }
 }

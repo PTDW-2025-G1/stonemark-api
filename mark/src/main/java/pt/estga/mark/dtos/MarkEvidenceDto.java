@@ -5,9 +5,9 @@ import java.util.UUID;
 public record MarkEvidenceDto(
         UUID id,
         UUID fileId,
-        Long occurrenceId,
-        Long markId,
-        Long submissionId,
+        UUID occurrenceId,
+        UUID markId,
+        UUID submissionId,
         float[] embedding
 ) {
 }

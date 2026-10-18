@@ -1,5 +1,9 @@
 package pt.estga.review.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.*;
 import lombok.*;
 import pt.estga.review.converters.ReviewDecisionConverter;
@@ -17,12 +21,13 @@ public class MarkEvidenceReview {
 
     @Id
     @GeneratedValue
-    private Long id;
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     @Column(unique = true)
-    private Long submissionId;
+    private UUID submissionId;
 
-    private Long selectedMarkId;
+    private UUID selectedMarkId;
 
     @Convert(converter = ReviewDecisionConverter.class)
     @Column(name = "decision", nullable = false, columnDefinition = "integer")
@@ -30,7 +35,7 @@ public class MarkEvidenceReview {
 
     private Instant reviewedAt;
 
-    private Long reviewedById;
+    private UUID reviewedById;
 
     String comment;
 }

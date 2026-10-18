@@ -8,7 +8,7 @@ import pt.estga.file.enums.MediaVariantType;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface MediaVariantRepository extends JpaRepository<MediaVariant, Long> {
+public interface MediaVariantRepository extends JpaRepository<MediaVariant, UUID> {
 
     boolean existsByMediaFileAndType(MediaFile mediaFile, MediaVariantType type);
 

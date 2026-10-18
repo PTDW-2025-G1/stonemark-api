@@ -38,7 +38,7 @@ public class SimilarityService {
 
         double norm = VectorUtils.l2Norm(embedding);
         if (Double.isNaN(norm) || Math.abs(norm - 1.0) > 1e-3) {
-            log.warn("Processing {} embedding has unexpected norm {:.4f} — continuing", processing.getId(), norm);
+            log.warn("Processing {} embedding has unexpected norm {} — continuing", processing.getId(), norm);
         }
 
         String vector = VectorUtils.toVectorLiteral(embedding);
@@ -56,22 +56,22 @@ public class SimilarityService {
         List<UUID> evidenceIds = valid.stream().map(MarkEvidenceDistanceDto::id).distinct().toList();
         List<EvidenceMarkDto> rows = markEvidenceQueryService.findMarksByEvidenceIds(evidenceIds);
 
-        Map<UUID, List<Long>> markIdsByEvidenceId = new LinkedHashMap<>();
+        Map<UUID, List<UUID>> markIdsByEvidenceId = new LinkedHashMap<>();
         for (EvidenceMarkDto r : rows) {
             if (r == null || r.evidenceId() == null || r.markId() == null) continue;
             markIdsByEvidenceId.computeIfAbsent(r.evidenceId(), _ -> new ArrayList<>()).add(r.markId());
         }
 
-        Map<Long, Double> markScores = new LinkedHashMap<>();
+        Map<UUID, Double> markScores = new LinkedHashMap<>();
         for (MarkEvidenceDistanceDto hit : valid) {
-            List<Long> markIds = markIdsByEvidenceId.getOrDefault(hit.id(), List.of());
-            for (Long markId : markIds) {
+            List<UUID> markIds = markIdsByEvidenceId.getOrDefault(hit.id(), List.of());
+            for (UUID markId : markIds) {
                 markScores.merge(markId, hit.similarity(), Double::sum);
             }
         }
 
         List<MarkSuggestion> result = markScores.entrySet().stream()
-                .sorted(Map.Entry.<Long, Double>comparingByValue().reversed()
+                .sorted(Map.Entry.<UUID, Double>comparingByValue().reversed()
                         .thenComparing(Map.Entry.comparingByKey()))
                 .limit(safeK)
                 .map(e -> MarkSuggestion.builder()

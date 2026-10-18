@@ -22,7 +22,7 @@ public record BookmarkResponse(
         BookmarkTargetType type,
 
         @Schema(description = "ID of the bookmarked resource.")
-        Long targetId,
+        UUID targetId,
 
         @Schema(description = "Timestamp when the bookmark was created.")
         Instant createdAt,

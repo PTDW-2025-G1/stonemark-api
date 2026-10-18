@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public record MarkEvidenceDistanceDto(
         UUID id,
-        Long occurrenceId,
+        UUID occurrenceId,
         Double similarity
 ) {
 }

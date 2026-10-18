@@ -1,5 +1,9 @@
 package pt.estga.support.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,8 +30,9 @@ import java.time.Instant;
 public class ContactRequest {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     @Column(nullable = false)
     private String name; // todo: first and last name
@@ -51,7 +56,7 @@ public class ContactRequest {
     // todo: add processedAt, processedBy
 
     @Column
-    private Long submittedById;
+    private UUID submittedById;
 
     // todo: add method isProcessed() and add more states
 

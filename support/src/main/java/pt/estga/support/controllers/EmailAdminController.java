@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pt.estga.shared.web.dtos.ApiErrorResponse;
 import pt.estga.shared.web.dtos.MessageResponseDto;
 import pt.estga.support.notification.models.Email;
 import pt.estga.support.notification.services.EmailService;
@@ -21,10 +22,11 @@ public class EmailAdminController {
     private final EmailService emailService;
 
     @PostMapping("/test")
-    public ResponseEntity<MessageResponseDto> sendTestEmail(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Object> sendTestEmail(@RequestBody Map<String, String> body) {
         String to = body.get("to");
         if (to == null || to.isBlank()) {
-            return ResponseEntity.badRequest().body(MessageResponseDto.error("Recipient email is required"));
+            return ResponseEntity.badRequest()
+                    .body(ApiErrorResponse.of(400, "BAD_REQUEST", "Recipient email is required"));
         }
 
         var email = Email.builder()

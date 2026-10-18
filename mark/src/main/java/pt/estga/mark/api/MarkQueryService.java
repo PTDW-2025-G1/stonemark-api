@@ -1,7 +1,6 @@
 package pt.estga.mark.api;
 
 import pt.estga.mark.dtos.MarkDto;
-import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 
 import java.util.Collection;
@@ -11,11 +10,7 @@ import java.util.UUID;
 
 public interface MarkQueryService {
 
-    Optional<MarkDto> findMarkById(Long id);
-
-    Optional<MarkOccurrenceDto> findOccurrenceById(Long id);
-
-    List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
+    Optional<MarkDto> findMarkById(UUID id);
 
     List<MarkDto> findDraftMarks();
 
@@ -23,23 +18,27 @@ public interface MarkQueryService {
      * Returns the published, non-deleted marks with the given ids, for callers that
      * resolve several marks at once (for example bookmarks).
      */
-    List<MarkDto> findPublishedMarksByIds(Collection<Long> ids);
+    List<MarkDto> findPublishedMarksByIds(Collection<UUID> ids);
 
     /**
      * Returns the published, non-deleted occurrences with the given ids, for callers
      * that resolve several occurrences at once (for example bookmarks).
      */
-    List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<Long> ids);
+    List<MarkOccurrenceDto> findPublishedOccurrencesByIds(Collection<UUID> ids);
 
     MarkDto createMark(String title, String description);
 
     /**
      * Returns the occurrence of the given mark at the given place, creating it when
      * none exists yet. A {@code monumentId} identifies the place when it is known
-     * and is deduplicated per mark; otherwise the coordinates are recorded on a new
-     * occurrence (both may be absent, which is a valid unlocated occurrence).
+     * and is deduplicated per mark; otherwise coordinates within a small radius of an
+     * existing occurrence of the same mark are treated as that occurrence, and both
+     * place references may be absent (a valid unlocated occurrence).
      */
-    MarkOccurrenceDto findOrCreateOccurrence(Long markId, Long monumentId, Double latitude, Double longitude);
+    MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude);
 
-    void linkFileToOccurrence(UUID fileId, Long occurrenceId, Long submissionId, float[] embedding);
+    /** Publishes an occurrence that is still a draft, so approvals become visible. */
+    void publishOccurrence(UUID occurrenceId);
+
+    void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding);
 }

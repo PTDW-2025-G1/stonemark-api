@@ -1,5 +1,7 @@
 package pt.estga.auth.config;
 
+import java.util.UUID;
+
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +19,8 @@ public class AppJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        Long userId = jwt.getClaim("user_id");
+        String rawUserId = jwt.getClaim("user_id");
+        UUID userId = rawUserId != null ? UUID.fromString(rawUserId) : null;
         String username = jwt.getClaim("preferred_username");
 
         Collection<SimpleGrantedAuthority> authorities = extractAuthorities(jwt);

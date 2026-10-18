@@ -1,5 +1,7 @@
 package pt.estga.auth.service;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,7 @@ public class PasswordService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void setPassword(Long userId, String rawPassword) {
+    public void setPassword(UUID userId, String rawPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         if (user.getPasswordHash() != null) {
@@ -26,7 +28,7 @@ public class PasswordService {
     }
 
     @Transactional
-    public void changePassword(Long userId, String oldPassword, String newPassword) {
+    public void changePassword(UUID userId, String oldPassword, String newPassword) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
         if (user.getPasswordHash() == null) {

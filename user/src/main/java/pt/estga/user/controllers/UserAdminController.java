@@ -1,5 +1,7 @@
 package pt.estga.user.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -53,7 +55,7 @@ public class UserAdminController {
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         return service.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -69,7 +71,7 @@ public class UserAdminController {
     @PatchMapping("/{id}")
     public ResponseEntity<UserDto> update(
             @Parameter(description = "ID of the user to be updated", required = true)
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Parameter(description = "Updated user details", required = true)
             @RequestBody UserDto userDto) {
         return ResponseEntity.ok(service.updateFromDto(id, userDto));
@@ -83,7 +85,7 @@ public class UserAdminController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(
             @Parameter(description = "ID of the user to be deleted", required = true)
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }

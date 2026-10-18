@@ -1,5 +1,7 @@
 package pt.estga.mark.controllers;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,17 +36,17 @@ public class MarkController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MarkDto> findById(@PathVariable Long id) {
+    public ResponseEntity<MarkDto> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MarkDto> update(@PathVariable Long id, @Valid @RequestBody MarkUpdateDto dto) {
+    public ResponseEntity<MarkDto> update(@PathVariable UUID id, @Valid @RequestBody MarkUpdateDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.deleteById(id);
         return ResponseEntity.noContent().build();
     }

@@ -11,8 +11,7 @@ import lombok.Getter;
 public enum ReviewDecision {
     APPROVED(1),
     REJECTED(2),
-    NO_MATCH(3),
-    FLAGGED(4);
+    NO_MATCH(3);
 
     private final int code;
 

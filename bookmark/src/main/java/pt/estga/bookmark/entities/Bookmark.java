@@ -40,11 +40,11 @@ public class Bookmark {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private UUID userId;
 
     @CreationTimestamp
     private Instant createdAt;
@@ -54,5 +54,5 @@ public class Bookmark {
     private BookmarkTargetType targetType;
 
     @Column(name = "target_id", nullable = false)
-    private Long targetId;
+    private UUID targetId;
 }

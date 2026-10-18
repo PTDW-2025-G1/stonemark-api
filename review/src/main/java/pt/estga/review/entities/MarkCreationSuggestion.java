@@ -40,7 +40,7 @@ public class MarkCreationSuggestion {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Enumerated(EnumType.STRING)
@@ -57,10 +57,10 @@ public class MarkCreationSuggestion {
     @CollectionTable(name = "mark_creation_suggestion_member", joinColumns = @JoinColumn(name = "suggestion_id"))
     @Column(name = "submission_id", nullable = false)
     @Builder.Default
-    private Set<Long> memberSubmissionIds = new LinkedHashSet<>();
+    private Set<UUID> memberSubmissionIds = new LinkedHashSet<>();
 
     /** The mark created from this cluster, once actioned. */
-    private Long createdMarkId;
+    private UUID createdMarkId;
 
     private Instant createdAt;
 

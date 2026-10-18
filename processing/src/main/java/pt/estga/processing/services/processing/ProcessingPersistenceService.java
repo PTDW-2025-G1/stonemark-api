@@ -40,7 +40,7 @@ public class ProcessingPersistenceService {
      * Returns null when no work should be performed (idempotency).
      */
     @Transactional
-    public MarkEvidenceProcessing createOrReuseProcessingRecord(Long submissionId) {
+    public MarkEvidenceProcessing createOrReuseProcessingRecord(UUID submissionId) {
         var overview = processingRepository.findOverviewBySubmissionId(submissionId);
         if (overview.isPresent()) {
             ProcessingStatus status = overview.get().getStatus();
@@ -85,7 +85,7 @@ public class ProcessingPersistenceService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    protected MarkEvidenceProcessing handleRace(Long submissionId) {
+    protected MarkEvidenceProcessing handleRace(UUID submissionId) {
         var found = processingRepository.findBySubmissionId(submissionId);
         if (found.isPresent()) {
             var existing = found.get();

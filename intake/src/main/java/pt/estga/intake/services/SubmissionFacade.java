@@ -1,12 +1,14 @@
 package pt.estga.intake.services;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.shared.core.utils.SecurityUtils;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -31,7 +33,7 @@ import java.util.Optional;
 @Slf4j
 public class SubmissionFacade {
 
-    private final FileStorageOperations fileStorage;
+    private final MediaOperations fileStorage;
     private final MarkEvidenceSubmissionSubmitService submitService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final SubmissionMapper submissionMapper;
@@ -70,7 +72,7 @@ public class SubmissionFacade {
         SecurityUtils.getCurrentUserId().ifPresent(submission::setSubmittedById);
 
         try {
-            Long id = submitService.submit(submission, staged.id(), file.getOriginalFilename());
+            UUID id = submitService.submit(submission, staged.id(), file.getOriginalFilename());
             return submissionMapper.toDto(submissionRepository.findById(id).orElseThrow());
         } catch (DataIntegrityViolationException duplicate) {
             discardStagedQuietly(staged);

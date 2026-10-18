@@ -1,9 +1,6 @@
 package pt.estga.mark.repositories;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import pt.estga.mark.entities.MarkEvidence;
-import pt.estga.mark.repositories.projections.EvidenceEmbeddingProjection;
 import pt.estga.mark.repositories.projections.EvidenceMarkProjection;
 import pt.estga.mark.repositories.projections.MarkEvidenceDistanceProjection;
 import pt.estga.shared.jpa.repositories.BaseRepository;
@@ -33,18 +30,6 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 			@Param("maxDistance") double maxDistance
 	);
 
-	@Query(value = """
-	SELECT
-		me.id,
-		me.occurrence_id,
-		(1.0 - (me.embedding <#> CAST(:vector AS vector))) AS similarity,
-		(me.embedding <#> CAST(:vector AS vector)) AS distance
-	FROM mark_evidence me
-	ORDER BY distance ASC, me.id ASC, me.occurrence_id ASC
-	LIMIT :k
-	""", nativeQuery = true)
-    List<MarkEvidenceDistanceProjection> findTopKSimilarEvidence(@Param("vector") String vector, @Param("k") int k);
-
 	@Query("""
 	SELECT e.id as id, m as mark FROM MarkEvidence e
 	JOIN e.occurrence o
@@ -53,9 +38,7 @@ public interface MarkEvidenceRepository extends BaseRepository<MarkEvidence, UUI
 	""")
 	List<EvidenceMarkProjection> findMarksByEvidenceIds(@Param("ids") List<UUID> ids);
 
-	Page<MarkEvidence> findAllByEmbeddingIsNotNull(Pageable pageable);
-
 	Optional<MarkEvidence> findByFileId(UUID fileId);
 
-	List<MarkEvidence> findByOccurrenceIdIn(Collection<Long> occurrenceIds);
+	List<MarkEvidence> findByOccurrenceIdIn(Collection<UUID> occurrenceIds);
 }

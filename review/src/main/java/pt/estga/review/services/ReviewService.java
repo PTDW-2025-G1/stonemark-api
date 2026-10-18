@@ -18,12 +18,12 @@ import pt.estga.processing.api.ProcessingOverview;
 import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
 import pt.estga.review.models.ResolutionResult;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
+import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.web.exceptions.ResourceNotFoundException;
 
 import java.util.List;
@@ -50,9 +50,8 @@ public class ReviewService {
      * Accepts a submission as an existing mark.
      */
     @Transactional
-    public MarkEvidenceReview acceptSuggestion(Long submissionId, Long markId, String comment) {
-        DiscoveryContext ctx = new DiscoveryContext(null, markId, null, null, null);
-        return performReview(submissionId, ReviewType.MATCH, ctx, comment);
+    public MarkEvidenceReview acceptSuggestion(UUID submissionId, UUID markId, String comment) {
+        return performReview(submissionId, ReviewType.MATCH, markId, comment);
     }
 
     /**
@@ -61,15 +60,26 @@ public class ReviewService {
      * candidates accumulate, a mark-creation suggestion is raised for moderators.
      */
     @Transactional
-    public MarkEvidenceReview noMatch(Long submissionId, String comment) {
+    public MarkEvidenceReview noMatch(UUID submissionId, String comment) {
         MarkEvidenceReview review = performReview(submissionId, ReviewType.NO_MATCH, null, comment);
         markCreationSuggestionService.recompute();
         return review;
     }
 
     @Transactional
-    public MarkEvidenceReview rejectAll(Long submissionId, String comment) {
+    public MarkEvidenceReview rejectAll(UUID submissionId, String comment) {
         return performReview(submissionId, ReviewType.REJECTION, null, comment);
+    }
+
+    /**
+     * Records an automated approval. Used by auto-approval when the system is
+     * confident and unambiguous about a match to an existing mark; it never creates
+     * a mark.
+     */
+    @Transactional
+    public MarkEvidenceReview autoApprove(UUID submissionId, UUID markId) {
+        return performReview(submissionId, ReviewType.MATCH, markId,
+                "Auto-approved: confident, unambiguous match");
     }
 
     /**
@@ -80,7 +90,7 @@ public class ReviewService {
      * gate the decision.
      */
     @Transactional
-    public MarkEvidenceReview performReview(Long submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
+    public MarkEvidenceReview performReview(UUID submissionId, ReviewType type, UUID existingMarkId, String comment) {
         SubmissionRef submission = intakeApi.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
@@ -88,7 +98,9 @@ public class ReviewService {
         boolean processed = overview != null;
         long suggestionCount = processed ? processingApi.countSuggestions(overview.processingId()) : 0L;
 
-        if (processed && overview.status() != ProcessingStatus.COMPLETED) {
+        // A submission whose processing did not complete can still be rejected, so a
+        // broken record never blocks the queue; every other action waits for it.
+        if (processed && type != ReviewType.REJECTION && overview.status() != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
         if (processed && type == ReviewType.MATCH && !allowEmptyReview && suggestionCount == 0) {
@@ -98,7 +110,7 @@ public class ReviewService {
             throw new IllegalStateException("Submission already reviewed.");
         }
 
-        ResolutionResult resolution = resolve(type, ctx);
+        ResolutionResult resolution = resolve(type, existingMarkId);
         ReviewDecision decision = switch (type) {
             case MATCH -> ReviewDecision.APPROVED;
             case NO_MATCH -> ReviewDecision.NO_MATCH;
@@ -115,14 +127,14 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<MarkSuggestionDto> getSuggestions(Long submissionId) {
+    public List<MarkSuggestionDto> getSuggestions(UUID submissionId) {
         ProcessingOverview overview = processingApi.findOverview(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Suggestions not found"));
         return processingApi.findSuggestions(overview.processingId());
     }
 
     @Transactional(readOnly = true)
-    public Optional<ReviewDecision> getReviewStatus(Long submissionId) {
+    public Optional<ReviewDecision> getReviewStatus(UUID submissionId) {
         return markEvidenceReviewRepository.findBySubmissionId(submissionId)
                 .map(MarkEvidenceReview::getDecision);
     }
@@ -135,14 +147,14 @@ public class ReviewService {
         return markEvidenceReviewRepository.findAll(pageable);
     }
 
-    private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
+    private ResolutionResult resolve(ReviewType type, UUID existingMarkId) {
         return switch (type) {
             case MATCH -> {
-                if (ctx == null || ctx.existingMarkId() == null) {
+                if (existingMarkId == null) {
                     throw new IllegalArgumentException("A mark id is required to accept a suggestion");
                 }
-                MarkDto mark = markQueryService.findMarkById(ctx.existingMarkId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Mark " + ctx.existingMarkId() + " not found"));
+                MarkDto mark = markQueryService.findMarkById(existingMarkId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Mark " + existingMarkId + " not found"));
                 yield new ResolutionResult(mark);
             }
             case NO_MATCH, REJECTION -> new ResolutionResult(null);
@@ -151,7 +163,7 @@ public class ReviewService {
 
     private void applyReviewSideEffects(SubmissionRef submission, ReviewDecision decision,
                                         ResolutionResult resolution, boolean processed) {
-        Long submissionId = submission.id();
+        UUID submissionId = submission.id();
 
         if (decision == ReviewDecision.REJECTED) {
             intakeApi.markRejected(submissionId);
@@ -169,26 +181,30 @@ public class ReviewService {
         }
 
         if (decision == ReviewDecision.APPROVED && resolution != null && resolution.mark() != null) {
-            linkEvidenceToMark(submission, resolution.mark().id());
+            linkEvidenceToMark(submission, resolution.mark());
         }
     }
 
     /**
      * Links the submission's photo to a mark occurrence, carrying the submission's
-     * coordinates onto the occurrence when present.
+     * coordinates onto the occurrence when present. When the accepting mark is already
+     * published, the occurrence is published too, so the approval has a public effect.
      *
      * <p>Deliberately not wrapped in a catch: this runs inside the review
      * transaction, so a linking failure rolls the whole decision back and a
      * submission can never be approved without its evidence being linked. The
      * embedding is optional and is absent when the submission was not processed.
      */
-    private void linkEvidenceToMark(SubmissionRef submission, Long markId) {
+    private void linkEvidenceToMark(SubmissionRef submission, MarkDto mark) {
         UUID mediaFileId = submission.originalMediaFileId();
         if (mediaFileId == null) {
             throw new IllegalStateException("Submission " + submission.id() + " has no media to link");
         }
         MarkOccurrenceDto occurrence = markQueryService.findOrCreateOccurrence(
-                markId, null, submission.latitude(), submission.longitude());
+                mark.id(), null, submission.latitude(), submission.longitude());
+        if (mark.status() == PublicationStatus.PUBLISHED && occurrence.status() != PublicationStatus.PUBLISHED) {
+            markQueryService.publishOccurrence(occurrence.id());
+        }
         float[] embedding = processingApi.findEmbedding(submission.id()).orElse(null);
         markQueryService.linkFileToOccurrence(mediaFileId, occurrence.id(), submission.id(), embedding);
         log.info("Linked evidence file {} to occurrence {} (submission {})",

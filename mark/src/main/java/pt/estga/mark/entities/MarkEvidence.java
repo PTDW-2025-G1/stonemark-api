@@ -26,7 +26,7 @@ public class MarkEvidence extends SoftDeletableEntity {
 
     @Id
     @GeneratedValue
-    @UuidGenerator
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
     private UUID id;
 
     @Column
@@ -34,7 +34,7 @@ public class MarkEvidence extends SoftDeletableEntity {
 
     /** Submission that produced this evidence, when it originated from intake. */
     @Column(name = "submission_id")
-    private Long submissionId;
+    private UUID submissionId;
 
     @Column(columnDefinition = "vector(384)")
     private float[] embedding;

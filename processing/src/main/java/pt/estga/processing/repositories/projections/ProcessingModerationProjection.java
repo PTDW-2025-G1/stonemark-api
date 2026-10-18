@@ -9,7 +9,7 @@ import java.util.UUID;
  */
 public interface ProcessingModerationProjection {
     UUID getProcessingId();
-    Long getSubmissionId();
+    UUID getSubmissionId();
     ProcessingStatus getStatus();
     Double getMaxConfidence();
 }

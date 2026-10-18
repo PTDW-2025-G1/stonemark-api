@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pt.estga.shared.core.utils.VectorUtils;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
@@ -29,7 +29,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final IntakeSubmissionApi intakeApi;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final VisionClient visionClient;
-    private final FileStorageOperations fileStorage;
+    private final MediaOperations fileStorage;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
     private final ProcessingPersistenceService persistence;
@@ -54,14 +54,14 @@ public class ProcessingServiceImpl implements ProcessingService {
     }
 
     @Override
-    public void processSubmission(Long submissionId) {
+    public void processSubmission(UUID submissionId) {
         intakeApi.findById(submissionId).ifPresentOrElse(submission -> {
             MarkEvidenceProcessing processing = null;
             long startNanos = System.nanoTime();
             try {
                 processing = persistence.createOrReuseProcessingRecord(submissionId);
                 if (processing == null) {
-                    meterRegistry.counter("processing.submissions.skipped", "reason", "already_processed_or_in_progress").increment();
+                    meterRegistry.counter("processing.submissions.skipped", "reason", notClaimedReason(submissionId)).increment();
                     return;
                 }
 
@@ -143,5 +143,15 @@ public class ProcessingServiceImpl implements ProcessingService {
                 }
             }
         }, () -> log.warn("Submission with id {} not found for processing", submissionId));
+    }
+
+    /**
+     * A dispatch that could not claim a record is either already processed/in
+     * progress or was blocked by a lock; the record's current state tells which.
+     */
+    private String notClaimedReason(UUID submissionId) {
+        return processingRepository.findBySubmissionId(submissionId)
+                .map(record -> "status_" + record.getStatus().name().toLowerCase())
+                .orElse("not_claimed");
     }
 }

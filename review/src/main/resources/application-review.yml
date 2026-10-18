@@ -6,3 +6,10 @@ review:
   mark-creation:
     min-cluster-size: 3
     max-distance: 0.15
+  # Approve confident, unambiguous matches to existing marks without a human.
+  # Requires the processing pipeline to be enabled.
+  auto-approve:
+    enabled: false
+    min-confidence: 0.9
+    min-margin: 0.1
+    interval-ms: 300000

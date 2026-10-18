@@ -1,5 +1,7 @@
 package pt.estga.intake.entities;
 
+import org.hibernate.annotations.UuidGenerator;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,8 +36,9 @@ import java.util.UUID;
 public class MarkEvidenceSubmission {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id;
 
     @Column
     private UUID originalMediaFileId;
@@ -52,7 +55,7 @@ public class MarkEvidenceSubmission {
     private SubmissionStatus status;
 
     @Column
-    private Long submittedById;
+    private UUID submittedById;
 
     @CreatedDate
     private Instant submittedAt;
