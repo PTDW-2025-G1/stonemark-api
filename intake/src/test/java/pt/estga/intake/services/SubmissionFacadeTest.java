@@ -7,7 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -38,7 +38,7 @@ class SubmissionFacadeTest {
     private static final UUID STAGED_ID = UUID.randomUUID();
 
     @Mock
-    private FileStorageOperations fileStorage;
+    private MediaOperations fileStorage;
 
     @Mock
     private MarkEvidenceSubmissionSubmitService submitService;

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.dtos.MediaFileDto;
 import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.intake.api.SubmissionRef;
@@ -51,7 +51,7 @@ class ProcessingServiceImplTest {
     @Mock
     private VisionClient visionClient;
     @Mock
-    private FileStorageOperations fileStorage;
+    private MediaOperations fileStorage;
     @Mock
     private SimilarityService similarityService;
     @Mock

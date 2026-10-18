@@ -8,7 +8,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import pt.estga.shared.core.utils.SecurityUtils;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.file.api.StagedFileRecord;
 import pt.estga.intake.dtos.SubmissionDto;
 import pt.estga.intake.entities.MarkEvidenceSubmission;
@@ -33,7 +33,7 @@ import java.util.Optional;
 @Slf4j
 public class SubmissionFacade {
 
-    private final FileStorageOperations fileStorage;
+    private final MediaOperations fileStorage;
     private final MarkEvidenceSubmissionSubmitService submitService;
     private final MarkEvidenceSubmissionRepository submissionRepository;
     private final SubmissionMapper submissionMapper;

@@ -53,7 +53,7 @@ class MediaControllerTest {
     @DisplayName("should return 404 on missing file")
     void shouldReturn404ForMissingFile() throws Exception {
         UUID id = UUID.randomUUID();
-        when(mediaService.findById(id)).thenReturn(java.util.Optional.empty());
+        when(mediaService.findEntityById(id)).thenReturn(java.util.Optional.empty());
 
         mockMvc.perform(get("/api/v1/public/media/{id}", id))
                 .andExpect(status().isNotFound());

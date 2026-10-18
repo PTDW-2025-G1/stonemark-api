@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import pt.estga.shared.core.utils.VectorUtils;
-import pt.estga.file.api.FileStorageOperations;
+import pt.estga.file.api.MediaOperations;
 import pt.estga.intake.api.IntakeSubmissionApi;
 import pt.estga.processing.entities.MarkEvidenceProcessing;
 import pt.estga.processing.entities.MarkSuggestion;
@@ -29,7 +29,7 @@ public class ProcessingServiceImpl implements ProcessingService {
     private final IntakeSubmissionApi intakeApi;
     private final MarkEvidenceProcessingRepository processingRepository;
     private final VisionClient visionClient;
-    private final FileStorageOperations fileStorage;
+    private final MediaOperations fileStorage;
     private final SimilarityService similarityService;
     private final MeterRegistry meterRegistry;
     private final ProcessingPersistenceService persistence;

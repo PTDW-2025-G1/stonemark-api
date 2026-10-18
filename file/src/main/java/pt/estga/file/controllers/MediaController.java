@@ -75,7 +75,7 @@ public class MediaController {
             @PathVariable UUID id) {
         log.info("Request to get media with id: {}", id);
 
-        MediaFile mediaFile = mediaService.findById(id)
+        MediaFile mediaFile = mediaService.findEntityById(id)
                 .orElseThrow(() -> {
                     log.warn("Media not found with id: {}", id);
                     return new pt.estga.shared.web.exceptions.FileNotFoundException("Media not found with id: " + id);
