@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `processing` module transforms raw submission evidence into ranked mark suggestions via Vision AI detection and vector similarity search. It bridges intake (submission ingestion) and review (human decision).
+The `processing` module transforms raw submission evidence into ranked mark suggestions via a shape-descriptor embedding and vector similarity search. It bridges intake (submission ingestion) and review (human decision).
 
 ## Flow
 
@@ -15,7 +15,7 @@ ProcessingServiceImpl.processSubmission() (async thread)
   ↓
 Phase A: create or reuse processing record (pessimistic lock, idempotency)
   ↓
-Phase B: Vision detection → embedding → pgvector similarity search
+Phase B: Vision service → shape descriptor → pgvector similarity search
   ↓
 Phase C: persist embedding + suggestions, mark COMPLETED
   ↓

@@ -23,7 +23,7 @@ A module's packages are its own `entities`, `repositories`, `services`, `control
 | `mark` | Marks, occurrences, evidence, embeddings, and the public catalogue. |
 | `intake` | Public photo submissions and the admin submission queue. |
 | `review` | Moderation decisions (the labels). |
-| `processing` | Vision detection, similarity search and suggestions (disabled by default). |
+| `processing` | Shape-descriptor similarity search and suggestions (disabled by default). |
 | `bookmark` | Bookmarks. |
 | `support` | Contact requests and email/notifications. |
 | `auth` | Security configuration, JWT, login/refresh, admin bootstrap. |

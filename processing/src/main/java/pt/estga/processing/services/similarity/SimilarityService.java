@@ -43,7 +43,7 @@ public class SimilarityService implements SimilarityStrategy {
         }
 
         long start = System.nanoTime();
-        int safeK = Math.max(1, Math.min(k, properties.similarity().maxK()));
+        int safeK = Math.clamp(k, 1, properties.similarity().maxK());
         double minScore = properties.similarity().minScore();
 
         List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(embedding, safeK, minScore);
@@ -76,7 +76,7 @@ public class SimilarityService implements SimilarityStrategy {
                 .map(e -> MarkSuggestion.builder()
                         .processing(processing)
                         .markId(e.getKey())
-                        .confidence(Math.min(1.0, Math.max(0.0, Math.round(e.getValue() * 1_000_000d) / 1_000_000d)))
+                        .confidence(Math.clamp(Math.round(e.getValue() * 1_000_000d) / 1_000_000d, 0.0, 1.0))
                         .build())
                 .toList();
 

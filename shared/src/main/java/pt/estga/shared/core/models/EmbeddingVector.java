@@ -7,7 +7,7 @@ package pt.estga.shared.core.models;
  * against vectors from a different model.
  *
  * @param values  the embedding components
- * @param model   identifier of the embedding model (for example {@code dinov2-vits14})
+ * @param model   identifier of the embedding model (for example {@code shape-hog-v1})
  * @param version version of the model/pipeline, bumped on any change that alters vectors
  * @param dim     dimensionality, normally {@code values.length}
  */

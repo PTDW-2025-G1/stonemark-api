@@ -17,7 +17,8 @@ poorly catalogued. StoneMark is the backend that builds that catalogue:
 - **Curate** — a moderator decides what each photo is, producing clean data and the
   training labels for later automation.
 - **Publish** — the curated catalogue of marks and their locations is served publicly.
-- **Automate (later)** — Vision detection and matching, once enough labelled data exists.
+- **Automate (later)** — matching a finding to an existing mark, and detection, once
+  enough labelled data exists.
 
 The domain model and product direction are in **[docs/OVERVIEW.md](docs/OVERVIEW.md)**.
 
@@ -31,7 +32,7 @@ The domain model and product direction are in **[docs/OVERVIEW.md](docs/OVERVIEW
 | Public read API for published marks | working |
 | Password + JWT auth, single ordered role | working |
 | Local filesystem media, one web derivative | working |
-| Vision / AI pipeline | **off by default** — no trained model yet |
+| Vision / AI pipeline | **off by default** — classic shape descriptors, no trained model |
 | Flyway migrations + DB foreign keys, deployment, ML training | deferred |
 
 The HTTP surface is in **[docs/API.md](docs/API.md)**.
@@ -49,7 +50,7 @@ One Maven module per capability, packaged by feature under `pt.estga.<module>`:
 | `mark` | Marks, occurrences, evidence, embeddings, and the public catalogue. |
 | `intake` | Public photo submissions and the admin submission queue. |
 | `review` | Moderation decisions (the labels). |
-| `processing` | Vision detection, similarity search and suggestions (disabled by default). |
+| `processing` | Shape-descriptor similarity search and suggestions (disabled by default). |
 | `bookmark` | User bookmarks. |
 | `support` | Contact requests and email/notifications. |
 | `auth` | Security configuration, JWT, login/refresh, admin bootstrap. |
