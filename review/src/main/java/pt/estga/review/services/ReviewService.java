@@ -18,7 +18,6 @@ import pt.estga.processing.api.ProcessingOverview;
 import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.processing.dtos.MarkSuggestionDto;
 import pt.estga.processing.enums.ProcessingStatus;
-import pt.estga.review.dtos.DiscoveryContext;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.enums.ReviewType;
@@ -52,8 +51,7 @@ public class ReviewService {
      */
     @Transactional
     public MarkEvidenceReview acceptSuggestion(UUID submissionId, UUID markId, String comment) {
-        DiscoveryContext ctx = new DiscoveryContext(null, markId, null, null, null);
-        return performReview(submissionId, ReviewType.MATCH, ctx, comment);
+        return performReview(submissionId, ReviewType.MATCH, markId, comment);
     }
 
     /**
@@ -81,7 +79,7 @@ public class ReviewService {
      * gate the decision.
      */
     @Transactional
-    public MarkEvidenceReview performReview(UUID submissionId, ReviewType type, DiscoveryContext ctx, String comment) {
+    public MarkEvidenceReview performReview(UUID submissionId, ReviewType type, UUID existingMarkId, String comment) {
         SubmissionRef submission = intakeApi.findById(submissionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Submission " + submissionId + " not found"));
 
@@ -101,7 +99,7 @@ public class ReviewService {
             throw new IllegalStateException("Submission already reviewed.");
         }
 
-        ResolutionResult resolution = resolve(type, ctx);
+        ResolutionResult resolution = resolve(type, existingMarkId);
         ReviewDecision decision = switch (type) {
             case MATCH -> ReviewDecision.APPROVED;
             case NO_MATCH -> ReviewDecision.NO_MATCH;
@@ -138,14 +136,14 @@ public class ReviewService {
         return markEvidenceReviewRepository.findAll(pageable);
     }
 
-    private ResolutionResult resolve(ReviewType type, DiscoveryContext ctx) {
+    private ResolutionResult resolve(ReviewType type, UUID existingMarkId) {
         return switch (type) {
             case MATCH -> {
-                if (ctx == null || ctx.existingMarkId() == null) {
+                if (existingMarkId == null) {
                     throw new IllegalArgumentException("A mark id is required to accept a suggestion");
                 }
-                MarkDto mark = markQueryService.findMarkById(ctx.existingMarkId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Mark " + ctx.existingMarkId() + " not found"));
+                MarkDto mark = markQueryService.findMarkById(existingMarkId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Mark " + existingMarkId + " not found"));
                 yield new ResolutionResult(mark);
             }
             case NO_MATCH, REJECTION -> new ResolutionResult(null);

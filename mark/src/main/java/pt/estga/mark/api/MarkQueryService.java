@@ -1,7 +1,6 @@
 package pt.estga.mark.api;
 
 import pt.estga.mark.dtos.MarkDto;
-import pt.estga.mark.dtos.MarkEvidenceDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
 
 import java.util.Collection;
@@ -12,10 +11,6 @@ import java.util.UUID;
 public interface MarkQueryService {
 
     Optional<MarkDto> findMarkById(UUID id);
-
-    Optional<MarkOccurrenceDto> findOccurrenceById(UUID id);
-
-    List<MarkEvidenceDto> findEvidenceByIds(List<UUID> ids);
 
     List<MarkDto> findDraftMarks();
 
@@ -36,8 +31,9 @@ public interface MarkQueryService {
     /**
      * Returns the occurrence of the given mark at the given place, creating it when
      * none exists yet. A {@code monumentId} identifies the place when it is known
-     * and is deduplicated per mark; otherwise the coordinates are recorded on a new
-     * occurrence (both may be absent, which is a valid unlocated occurrence).
+     * and is deduplicated per mark; otherwise coordinates within a small radius of an
+     * existing occurrence of the same mark are treated as that occurrence, and both
+     * place references may be absent (a valid unlocated occurrence).
      */
     MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude);
 
