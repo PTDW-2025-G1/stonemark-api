@@ -159,15 +159,17 @@ public class MarkCreationSuggestionService {
 
     private void reconcile(List<Cluster> clusters) {
         List<MarkCreationSuggestion> open = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.OPEN);
-        Set<Set<UUID>> dismissed = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.DISMISSED).stream()
+        List<Set<UUID>> dismissed = suggestionRepository.findByStatus(MarkCreationSuggestionStatus.DISMISSED).stream()
                 .map(suggestion -> Set.copyOf(suggestion.getMemberSubmissionIds()))
-                .collect(java.util.stream.Collectors.toSet());
+                .toList();
 
         Set<Set<UUID>> significant = new HashSet<>();
         for (Cluster cluster : clusters) {
             Set<UUID> members = Set.copyOf(cluster.members());
             significant.add(members);
-            if (dismissed.contains(members)) {
+            // A dismissed cluster stays dismissed while the same findings remain part of
+            // it, even as the cluster grows with more of them.
+            if (dismissed.stream().anyMatch(members::containsAll)) {
                 continue;
             }
             Optional<MarkCreationSuggestion> existing = open.stream()
