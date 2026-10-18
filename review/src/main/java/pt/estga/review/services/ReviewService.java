@@ -88,7 +88,9 @@ public class ReviewService {
         boolean processed = overview != null;
         long suggestionCount = processed ? processingApi.countSuggestions(overview.processingId()) : 0L;
 
-        if (processed && overview.status() != ProcessingStatus.COMPLETED) {
+        // A submission whose processing did not complete can still be rejected, so a
+        // broken record never blocks the queue; every other action waits for it.
+        if (processed && type != ReviewType.REJECTION && overview.status() != ProcessingStatus.COMPLETED) {
             throw new IllegalStateException("Processing not ready.");
         }
         if (processed && type == ReviewType.MATCH && !allowEmptyReview && suggestionCount == 0) {

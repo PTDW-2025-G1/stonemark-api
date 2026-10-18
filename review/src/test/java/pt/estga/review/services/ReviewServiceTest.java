@@ -11,7 +11,9 @@ import pt.estga.intake.api.SubmissionRef;
 import pt.estga.mark.api.MarkQueryService;
 import pt.estga.mark.dtos.MarkDto;
 import pt.estga.mark.dtos.MarkOccurrenceDto;
+import pt.estga.processing.api.ProcessingOverview;
 import pt.estga.processing.api.ProcessingReviewApi;
+import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.review.entities.MarkEvidenceReview;
 import pt.estga.review.enums.ReviewDecision;
 import pt.estga.review.repositories.MarkEvidenceReviewRepository;
@@ -116,6 +118,27 @@ class ReviewServiceTest {
         assertThat(result).isSameAs(label);
         verify(intakeApi).markProcessed(SUBMISSION_ID);
         verify(markCreationSuggestionService).recompute();
+        verifyNoInteractions(markQueryService);
+    }
+
+    @Test
+    @DisplayName("rejects a submission whose processing did not complete")
+    void rejectsWhenProcessingNotCompleted() {
+        MarkEvidenceReview label = MarkEvidenceReview.builder()
+                .id(UUID.randomUUID()).submissionId(SUBMISSION_ID)
+                .decision(ReviewDecision.REJECTED).build();
+
+        when(intakeApi.findById(SUBMISSION_ID))
+                .thenReturn(Optional.of(new SubmissionRef(SUBMISSION_ID, FILE_ID, null, null)));
+        when(processingApi.findOverview(SUBMISSION_ID))
+                .thenReturn(Optional.of(new ProcessingOverview(UUID.randomUUID(), ProcessingStatus.FAILED)));
+        when(markEvidenceReviewRepository.existsBySubmissionId(SUBMISSION_ID)).thenReturn(Boolean.FALSE);
+        when(executor.execute(eq(SUBMISSION_ID), eq(ReviewDecision.REJECTED), any(), any())).thenReturn(label);
+
+        MarkEvidenceReview result = reviewService.rejectAll(SUBMISSION_ID, "broken");
+
+        assertThat(result).isSameAs(label);
+        verify(intakeApi).markRejected(SUBMISSION_ID);
         verifyNoInteractions(markQueryService);
     }
 }
