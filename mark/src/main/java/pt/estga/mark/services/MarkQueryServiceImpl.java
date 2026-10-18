@@ -2,6 +2,7 @@ package pt.estga.mark.services;
 
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pt.estga.mark.api.MarkQueryService;
@@ -21,6 +22,7 @@ import pt.estga.shared.core.enums.PublicationStatus;
 import pt.estga.shared.core.utils.GeometryUtils;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,6 +35,10 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     private final MarkRepository markRepository;
     private final MarkOccurrenceRepository occurrenceRepository;
     private final MarkEvidenceRepository evidenceRepository;
+
+    /** Occurrences of the same mark within this distance are treated as the same finding. */
+    @Value("${mark.occurrence.dedupe-radius-meters:15}")
+    private double occurrenceDedupeRadiusMeters;
 
     @Override
     public Optional<MarkDto> findMarkById(UUID id) {
@@ -88,11 +94,24 @@ public class MarkQueryServiceImpl implements MarkQueryService {
     @Override
     @Transactional
     public MarkOccurrenceDto findOrCreateOccurrence(UUID markId, UUID monumentId, Double latitude, Double longitude) {
-        MarkOccurrence occurrence = monumentId != null
-                ? occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
-                        .orElseGet(() -> createOccurrence(markId, monumentId, null))
-                : createOccurrence(markId, null, GeometryUtils.createPoint(latitude, longitude));
-        return MarkOccurrenceMapper.toDto(occurrence);
+        if (monumentId != null) {
+            return MarkOccurrenceMapper.toDto(occurrenceRepository.findByMarkIdAndMonumentId(markId, monumentId)
+                    .orElseGet(() -> createOccurrence(markId, monumentId, null)));
+        }
+        if (latitude == null || longitude == null) {
+            return MarkOccurrenceMapper.toDto(createOccurrence(markId, null, null));
+        }
+        return occurrenceRepository.findByMarkIdAndLocationIsNotNull(markId).stream()
+                .filter(occurrence -> distanceTo(latitude, longitude, occurrence) <= occurrenceDedupeRadiusMeters)
+                .min(Comparator.comparingDouble(occurrence -> distanceTo(latitude, longitude, occurrence)))
+                .map(MarkOccurrenceMapper::toDto)
+                .orElseGet(() -> MarkOccurrenceMapper.toDto(
+                        createOccurrence(markId, null, GeometryUtils.createPoint(latitude, longitude))));
+    }
+
+    private static double distanceTo(Double latitude, Double longitude, MarkOccurrence occurrence) {
+        Point location = occurrence.getLocation();
+        return GeometryUtils.distanceMeters(latitude, longitude, location.getY(), location.getX());
     }
 
     private MarkOccurrence createOccurrence(UUID markId, UUID monumentId, Point location) {

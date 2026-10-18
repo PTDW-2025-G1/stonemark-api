@@ -21,6 +21,8 @@ public interface MarkOccurrenceRepository extends BaseRepository<MarkOccurrence,
 
     List<MarkOccurrence> findByMarkIdAndStatus(UUID markId, PublicationStatus status);
 
+    List<MarkOccurrence> findByMarkIdAndLocationIsNotNull(UUID markId);
+
     @EntityGraph(attributePaths = "mark")
     List<MarkOccurrence> findByIdInAndStatusAndDeletedAtIsNull(Collection<UUID> ids, PublicationStatus status);
 }
