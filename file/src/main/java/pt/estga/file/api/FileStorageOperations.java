@@ -8,8 +8,6 @@ import java.util.UUID;
 
 public interface FileStorageOperations {
 
-    MediaFileDto upload(InputStream data, String originalFilename);
-
     Optional<MediaFileDto> findById(UUID id);
 
     boolean existsById(UUID id);

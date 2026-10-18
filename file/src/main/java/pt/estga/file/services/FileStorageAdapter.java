@@ -27,17 +27,6 @@ public class FileStorageAdapter implements FileStorageOperations {
     private final MediaService mediaService;
 
     @Override
-    @Transactional
-    public MediaFileDto upload(InputStream data, String originalFilename) {
-        try {
-            var entity = orchestrator.orchestrateUpload(data, originalFilename);
-            return MediaFileMapper.toDto(entity);
-        } catch (java.io.IOException e) {
-            throw new pt.estga.shared.web.exceptions.FileStorageException("Failed to upload file", e);
-        }
-    }
-
-    @Override
     public StagedFileRecord stage(InputStream data, String originalFilename) {
         return stagingService.stage(data, originalFilename);
     }
