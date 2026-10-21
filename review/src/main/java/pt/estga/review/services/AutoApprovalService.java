@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import pt.estga.processing.api.ProcessingModerationView;
 import pt.estga.processing.api.ProcessingReviewApi;
 import pt.estga.processing.dtos.MarkSuggestionDto;
@@ -38,8 +37,11 @@ public class AutoApprovalService {
 
     /**
      * Approves every eligible candidate. Returns how many were approved.
+     *
+     * <p>Deliberately not transactional as a whole: each approval commits on its own
+     * (via {@link ReviewService#autoApprove}), so one failure cannot roll back the
+     * batch and a single bad candidate never blocks the rest.
      */
-    @Transactional
     public int approveEligible() {
         List<ProcessingModerationView> candidates = processingApi.findProcessingByConfidence(minConfidence, 1.0);
         int approved = 0;
@@ -54,8 +56,13 @@ public class AutoApprovalService {
             if (markId == null) {
                 continue;
             }
-            reviewService.autoApprove(candidate.submissionId(), markId);
-            approved++;
+            try {
+                reviewService.autoApprove(candidate.submissionId(), markId);
+                approved++;
+            } catch (Exception e) {
+                log.warn("Auto-approval failed for submission {}: {}",
+                        candidate.submissionId(), e.getMessage());
+            }
         }
         return approved;
     }

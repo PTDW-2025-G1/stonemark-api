@@ -15,8 +15,8 @@ StoneMark builds that catalogue:
 - **Curate** — a moderator decides what each photo is: an existing mark, a new mark,
   or nothing.
 - **Publish** — the curated catalogue of marks and where they were found is public.
-- **Automate** — moderation decisions are training labels; detection and matching can
-  be automated once enough of them exist.
+- **Automate** — matching via shape descriptors is available now; moderation
+  decisions become training labels for stronger matching later.
 
 Collection comes first: automation depends on data that does not exist yet, so it is
 kept off the critical path.
@@ -70,24 +70,26 @@ manage the catalogue, admins manage users. Contributors need no account.
 
 ## Automation
 
-Work is split by what it takes to be wrong, once a trained Vision model exists:
+Matching is done with a classic shape descriptor (no trained model): the Vision
+service turns an image into a vector, and the API ranks existing marks by cosine
+similarity. Work is split by what it takes to be wrong:
 
-- **Occurrences are detection.** Deciding whether a finding matches an existing mark
-  is a classification the system can do: above a confidence threshold the submission
-  is accepted and its occurrence linked automatically; below it, the case is queued
-  for a human. This needs only the model.
+- **Occurrences are matching.** Deciding whether a finding matches an existing mark
+  can be assisted by the descriptor: above a confidence threshold the submission is
+  accepted and its occurrence linked automatically; below it, the case is queued for a
+  human.
 - **Marks are judgement.** Deciding that a set of findings is a new *design* is
   always a human decision. The system never creates a mark; it only proposes clusters
   of unmatched findings once enough of them accumulate, for a moderator to action.
 
-The occurrence path is implemented and **off by default**
-(`review.auto-approve.enabled` plus confidence and margin thresholds). Mark creation
-is never automatic — the system only proposes clusters for a moderator to action.
-Until the model exists the pipeline is off (`processing.enabled=false`), so every
-submission is moderated by hand.
+There is no detection model: the descriptor runs on whatever image is submitted. The
+whole pipeline is **off by default** (`processing.enabled=false`), so every submission
+is moderated by hand until it is switched on. Auto-approval
+(`review.auto-approve.enabled`) is likewise off; mark creation is never automatic.
 
 ## Direction
 
 - A public catalogue UI with richer browsing and media.
-- Automated detection and matching, once a labelled corpus exists.
 - A reproducible database schema (migrations and constraints) and deployment.
+- Better matching (rotation handling, or a trained embedder) only if the descriptor
+  proves insufficient in practice.

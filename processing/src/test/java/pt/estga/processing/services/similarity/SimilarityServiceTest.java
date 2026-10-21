@@ -18,10 +18,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -57,7 +57,7 @@ class SimilarityServiceTest {
         UUID e1 = UUID.randomUUID();
         UUID e2 = UUID.randomUUID();
 
-        when(evidenceQueryService.findTopKSimilar(anyString(), anyInt(), anyDouble()))
+        when(evidenceQueryService.findTopKSimilar(any(float[].class), anyInt(), anyDouble()))
                 .thenReturn(List.of(
                         new MarkEvidenceDistanceDto(e1, OCC_1, Double.valueOf(0.9)),
                         new MarkEvidenceDistanceDto(e2, OCC_2, Double.valueOf(0.8))));
@@ -87,7 +87,7 @@ class SimilarityServiceTest {
     @DisplayName("discards non-finite similarity scores")
     void discardsNonFiniteScores() {
         UUID e1 = UUID.randomUUID();
-        when(evidenceQueryService.findTopKSimilar(anyString(), anyInt(), anyDouble()))
+        when(evidenceQueryService.findTopKSimilar(any(float[].class), anyInt(), anyDouble()))
                 .thenReturn(List.of(new MarkEvidenceDistanceDto(e1, OCC_1, Double.valueOf(Double.NaN))));
 
         assertThat(service.findSimilar(seededProcessing(), 20)).isEmpty();

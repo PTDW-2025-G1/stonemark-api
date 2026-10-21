@@ -2,7 +2,6 @@ package pt.estga.processing.vision;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpEntity;
@@ -27,45 +26,31 @@ public class VisionClient {
     private String detectionServerUrl;
 
     /**
-     * Analyzes the provided image data to verify its content and extract a feature embedding.
+     * Sends the image to the Vision server and returns its embedding with provenance.
      *
-     * @param imageInputStream The InputStream of the image to analyze.
-     * @param originalFilename The original filename of the image.
-     * @return A {@link DetectionResult} containing the outcome of the analysis.
+     * @param imageInputStream the image to analyze
+     * @param originalFilename the original filename, used to pick the media type
      */
     public DetectionResult detectMark(InputStream imageInputStream, String originalFilename) {
-        log.info("Starting detection process for file: {}", originalFilename);
+        log.debug("Sending image {} to Vision server at {}", originalFilename, detectionServerUrl + "/process");
 
-        // Determine the MediaType based on the filename
-        MediaType fileMediaType = getMediaType(originalFilename);
-        log.debug("Determined MediaType for file {}: {}", originalFilename, fileMediaType);
-
-        // Use MultipartBodyBuilder to construct the request body
         MultipartBodyBuilder builder = new MultipartBodyBuilder();
         builder.part("file", new InputStreamResource(imageInputStream))
-               .filename(originalFilename != null ? originalFilename : "image.bin") // Ensure filename is not null
-               .contentType(fileMediaType);
+                .filename(originalFilename != null ? originalFilename : "image.bin")
+                .contentType(getMediaType(originalFilename));
 
-        // Build the HttpEntity for the request
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity = new HttpEntity<>(builder.build(), headers);
 
-        HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity =
-                new HttpEntity<>(builder.build(), headers);
-
-        log.debug("Sending request to detection server at: {}", detectionServerUrl + "/process");
-
-        // Use DetectionResult directly for the response
-        ResponseEntity<DetectionResult> response = restTemplate.postForEntity(detectionServerUrl + "/process", requestEntity, DetectionResult.class);
+        ResponseEntity<DetectionResult> response =
+                restTemplate.postForEntity(detectionServerUrl + "/process", requestEntity, DetectionResult.class);
 
         DetectionResult result = response.getBody();
-
         if (result == null) {
-            log.warn("Detection response body is null. Returning a failed detection result.");
-            return new DetectionResult(false, new float[0]);
+            log.warn("Vision response body is null; returning an empty embedding");
+            return new DetectionResult(new float[0], null, null, null);
         }
-
-        log.info("Detection process completed. Mason mark detected: {}", result.isMasonMark());
         return result;
     }
 
@@ -80,14 +65,13 @@ public class VisionClient {
         }
         try {
             ResponseEntity<Void> resp = restTemplate.getForEntity(detectionServerUrl + "/health", Void.class);
-            return resp.getStatusCode() != null && resp.getStatusCode().is2xxSuccessful();
+            return resp.getStatusCode().is2xxSuccessful();
         } catch (Exception e) {
             log.debug("Vision health check failed", e);
             return false;
         }
     }
 
-    @NonNull
     private static MediaType getMediaType(String originalFilename) {
         MediaType fileMediaType = MediaType.APPLICATION_OCTET_STREAM;
         if (originalFilename != null) {

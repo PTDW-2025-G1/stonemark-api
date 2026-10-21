@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `processing` module transforms raw submission evidence into ranked mark suggestions via Vision AI detection and vector similarity search. It bridges intake (submission ingestion) and review (human decision).
+The `processing` module transforms raw submission evidence into ranked mark suggestions via a shape-descriptor embedding and vector similarity search. It bridges intake (submission ingestion) and review (human decision).
 
 ## Flow
 
@@ -15,7 +15,7 @@ ProcessingServiceImpl.processSubmission() (async thread)
   ↓
 Phase A: create or reuse processing record (pessimistic lock, idempotency)
   ↓
-Phase B: Vision detection → embedding → pgvector similarity search
+Phase B: Vision service → shape descriptor → pgvector similarity search
   ↓
 Phase C: persist embedding + suggestions, mark COMPLETED
   ↓
@@ -75,11 +75,12 @@ RECEIVED (intake)  →  PENDING (placeholder)  →  PROCESSING (acquired)
 |----------|---------|-------------|
 | `processing.vision.max-concurrency` | 4 | Max concurrent Vision API calls |
 | `processing.vision.acquire-timeout-ms` | 10000 | Semaphore acquire timeout |
-| `processing.similarity.maxK` | 20 | Max candidates returned |
-| `processing.similarity.minScore` | 0.5 | Minimum similarity threshold (maxDistance = 1 - minScore) |
+| `processing.similarity.maxK` | 200 | Max candidates returned |
+| `processing.similarity.minScore` | 0.6 | Minimum cosine similarity for a candidate to be considered |
 | `processing.retry.base-delay-ms` | 60000 | Base backoff for retry |
 | `processing.retry.max-delay-ms` | 1800000 | Max backoff (30 min) |
 | `processing.retry.batch-size` | 5 | Retry/orphan batch size |
+| `processing.retry.batch-pause-ms` | 2000 | Pause between retry batches |
 | `processing.retry.interval` | 60000 | Retry scheduler interval |
 | `processing.reaper.max-stuck-minutes` | 30 | Stuck PROCESSING threshold |
 | `processing.reaper.interval` | 3600000 | Reaper interval (1 hour) |

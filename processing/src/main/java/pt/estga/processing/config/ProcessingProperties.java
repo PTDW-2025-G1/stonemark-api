@@ -12,9 +12,5 @@ public record ProcessingProperties(Similarity similarity) {
                 throw new IllegalArgumentException("minScore must be in [0.0,1.0]: " + minScore);
             }
         }
-
-        public double maxDistance() {
-            return Math.max(0.0, 1.0 - minScore);
-        }
     }
 }

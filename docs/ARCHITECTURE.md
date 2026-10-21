@@ -23,7 +23,7 @@ A module's packages are its own `entities`, `repositories`, `services`, `control
 | `mark` | Marks, occurrences, evidence, embeddings, and the public catalogue. |
 | `intake` | Public photo submissions and the admin submission queue. |
 | `review` | Moderation decisions (the labels). |
-| `processing` | Vision detection, similarity search and suggestions (disabled by default). |
+| `processing` | Shape-descriptor similarity search and suggestions (disabled by default). |
 | `bookmark` | Bookmarks. |
 | `support` | Contact requests and email/notifications. |
 | `auth` | Security configuration, JWT, login/refresh, admin bootstrap. |
@@ -83,7 +83,9 @@ and fails the build on any violation.
 ## Persistence
 
 - PostgreSQL with PostGIS (`geometry(Point,4326)`) and pgvector (`vector(384)`
-  embeddings).
+  embeddings). Vector columns are mapped with Hibernate Vector
+  (`@JdbcTypeCode(SqlTypes.VECTOR)`), and every stored embedding carries its model and
+  version so vectors from different models are never compared silently.
 - `ddl-auto=update` in development; Flyway bootstraps the required extensions.
 - Soft delete uses `deletedAt`; reads filter deleted rows.
 

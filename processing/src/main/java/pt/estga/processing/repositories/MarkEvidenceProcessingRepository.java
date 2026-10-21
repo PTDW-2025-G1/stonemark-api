@@ -44,9 +44,6 @@ public interface MarkEvidenceProcessingRepository extends JpaRepository<MarkEvid
     @Query("UPDATE MarkEvidenceProcessing p SET p.status = :targetStatus, p.updatedAt = :now WHERE p.status = :sourceStatus AND p.updatedAt IS NOT NULL AND p.updatedAt < :cutoff AND (p.updatedAt = p.processingStartedAt OR p.processingStartedAt IS NULL)")
     int resetStuckProcessing(@Param("sourceStatus") ProcessingStatus sourceStatus, @Param("targetStatus") ProcessingStatus targetStatus, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
 
-    @Query(value = "SELECT embedding::text FROM mark_evidence_processing WHERE submission_id = :submissionId AND embedding IS NOT NULL", nativeQuery = true)
-    Optional<String> findEmbeddingTextBySubmissionId(@Param("submissionId") UUID submissionId);
-
     @Query(value = "SELECT s.id FROM mark_evidence_submission s WHERE s.status = 'RECEIVED' AND NOT EXISTS (SELECT 1 FROM mark_evidence_processing p WHERE p.submission_id = s.id)", nativeQuery = true)
     List<UUID> findOrphanedSubmissionIds();
 }

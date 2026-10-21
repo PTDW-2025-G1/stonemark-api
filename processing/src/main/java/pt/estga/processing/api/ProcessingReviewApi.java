@@ -1,6 +1,7 @@
 package pt.estga.processing.api;
 
 import pt.estga.processing.dtos.MarkSuggestionDto;
+import pt.estga.shared.core.models.EmbeddingVector;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,8 +22,8 @@ public interface ProcessingReviewApi {
 
     Double maxSuggestionConfidence(UUID processingId);
 
-    /** The submission's embedding, when it was processed successfully. */
-    Optional<float[]> findEmbedding(UUID submissionId);
+    /** The submission's embedding with its model provenance, when it was processed successfully. */
+    Optional<EmbeddingVector> findEmbedding(UUID submissionId);
 
     /** Embeddings of the given submissions, for the ones that have one. */
     List<SubmissionEmbedding> findEmbeddings(Collection<UUID> submissionIds);

@@ -73,6 +73,22 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    /**
+     * Revokes a user's tokens by bumping the token version. Previously issued refresh
+     * tokens are rejected (their version no longer matches); access tokens remain valid
+     * only until their short TTL expires.
+     */
+    @Transactional
+    public void logout(UUID userId) {
+        if (userId == null) {
+            return;
+        }
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setTokenVersion(user.getTokenVersion() + 1);
+            userRepository.save(user);
+        });
+    }
+
     private AuthResponse buildAuthResponse(User user) {
         return new AuthResponse(
                 jwtService.generateAccessToken(user),

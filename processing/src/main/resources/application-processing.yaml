@@ -1,40 +1,35 @@
-# Processing-specific application properties
-# Keep defaults aligned with SimilarityService implementation.
+# Processing pipeline configuration.
+#
+# The pipeline is opt-in: it requires a trained Vision model and an existing
+# embedding corpus. While disabled, submissions are stored and moderated manually.
+# Every key below is read by ProcessingProperties or an @Value in the module.
 processing:
   # Master switch for the AI preprocessing/categorization pipeline.
-  # Disabled for V1: it requires a trained Vision model and an existing embedding
-  # corpus. Submissions are stored and moderated manually until then.
   enabled: false
+
   similarity:
-    # Minimum similarity (confidence) required for suggestions. Range: 0.0 - 1.0
-    min-score: 0.6
-    # Bounds used during candidate sanitization: values outside this range are clamped.
-    # These are rarely changed; defaults correspond to valid similarity domain [0.0, 1.0].
-    min-similarity: 0.0
-    max-similarity: 1.0
-
-    # When true, weight contributions by similarity (more weight to higher similarity).
-    use-rank-weighting: true
-
-    # Optional parity check on startup (sample-based validation between DB similarity and Java cosine).
-    parity-check:
-      enabled: false
-      # Run parity check asynchronously on a background thread when enabled.
-      async: true
-      # Difference tolerance between DB similarity and Java cosine similarity (absolute)
-      tolerance: 0.001
-      # How many sample rows to check at startup when parity-check.enabled=true
-      sample-size: 3
-
-    # Safety limits
-    # Maximum k accepted by the service (requests higher than this are clamped).
+    # Maximum number of suggestions returned; requests above this are clamped.
     max-k: 200
+    # Minimum cosine similarity for a candidate to be considered. Range 0.0 - 1.0.
+    # The SQL distance threshold is derived as (1 - min-score).
+    min-score: 0.6
 
-    # Per-mark decay factor (0.0-1.0). When >0, additional evidences for the same mark
-    # contribute with diminishing returns: multiplier = decay^(rank-1). Use 1.0 for no decay.
-    per-mark-decay: 0.5
+  vision:
+    # Bound on concurrent Vision API calls; work above this is deferred, not dropped.
+    max-concurrency: 4
+    # How long a worker waits for a Vision permit before deferring the submission.
+    acquire-timeout-ms: 10000
 
-  # Embedding configuration
-  embedding:
-    # Expected embedding vector dimension. Set to 0 to disable dimension checks.
-    dimension: 0
+  retry:
+    # Exponential backoff base and ceiling for retrying PENDING/FAILED records.
+    base-delay-ms: 60000
+    max-delay-ms: 1800000
+    # Retry/orphan dispatch batch size and pause between batches.
+    batch-size: 5
+    batch-pause-ms: 2000
+    interval: 60000
+
+  reaper:
+    # Reset PROCESSING records stuck longer than this back to PENDING.
+    max-stuck-minutes: 30
+    interval: 3600000

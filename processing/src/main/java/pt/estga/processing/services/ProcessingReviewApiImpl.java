@@ -12,6 +12,7 @@ import pt.estga.processing.enums.ProcessingStatus;
 import pt.estga.processing.mappers.MarkSuggestionMapper;
 import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.repositories.MarkSuggestionRepository;
+import pt.estga.shared.core.models.EmbeddingVector;
 
 import java.util.Collection;
 import java.util.List;
@@ -54,8 +55,11 @@ public class ProcessingReviewApiImpl implements ProcessingReviewApi {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<float[]> findEmbedding(UUID submissionId) {
-        return processingRepository.findEmbeddingTextBySubmissionId(submissionId).map(ProcessingEmbeddingParser::parse);
+    public Optional<EmbeddingVector> findEmbedding(UUID submissionId) {
+        return processingRepository.findBySubmissionId(submissionId)
+                .filter(p -> p.getEmbedding() != null && p.getEmbedding().length > 0)
+                .map(p -> new EmbeddingVector(p.getEmbedding(), p.getEmbeddingModel(),
+                        p.getEmbeddingVersion(), p.getEmbeddingDim()));
     }
 
     @Override

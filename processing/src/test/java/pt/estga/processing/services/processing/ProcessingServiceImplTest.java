@@ -18,6 +18,7 @@ import pt.estga.processing.repositories.MarkEvidenceProcessingRepository;
 import pt.estga.processing.services.similarity.SimilarityService;
 import pt.estga.processing.vision.DetectionResult;
 import pt.estga.processing.vision.VisionClient;
+import pt.estga.shared.core.models.EmbeddingVector;
 
 import java.io.InputStream;
 import java.util.List;
@@ -132,7 +133,7 @@ class ProcessingServiceImplTest {
         when(fileStorage.findById(fileId))
                 .thenReturn(Optional.of(new MediaFileDto(fileId, "f.jpg", "mark.jpg", 10L, "UPLOADED", null)));
         when(fileStorage.openStream(fileId)).thenReturn(Optional.of(InputStream.nullInputStream()));
-        when(visionClient.detectMark(any(), anyString())).thenReturn(new DetectionResult(false, new float[0]));
+        when(visionClient.detectMark(any(), anyString())).thenReturn(new DetectionResult(new float[0], null, null, null));
 
         service.processSubmission(SUBMISSION_ID);
 
@@ -156,12 +157,12 @@ class ProcessingServiceImplTest {
                 .thenReturn(Optional.of(new MediaFileDto(fileId, "f.jpg", "mark.jpg", 10L, "UPLOADED", null)));
         when(fileStorage.openStream(fileId)).thenReturn(Optional.of(InputStream.nullInputStream()));
         when(visionClient.detectMark(any(), eq("mark.jpg")))
-                .thenReturn(new DetectionResult(true, new float[]{1f, 0f, 0f}));
+                .thenReturn(new DetectionResult(new float[]{1f, 0f, 0f}, null, null, null));
         when(similarityService.findSimilar(eq(processing), anyInt())).thenReturn(suggestions);
 
         service.processSubmission(SUBMISSION_ID);
 
         verify(similarityService).findSimilar(eq(processing), anyInt());
-        verify(persistence).finalizeSuccess(eq(processing.getId()), any(float[].class), eq(suggestions), anyLong());
+        verify(persistence).finalizeSuccess(eq(processing.getId()), any(EmbeddingVector.class), eq(suggestions), anyLong());
     }
 }

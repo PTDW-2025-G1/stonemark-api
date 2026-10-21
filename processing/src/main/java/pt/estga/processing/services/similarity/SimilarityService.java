@@ -22,12 +22,13 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class SimilarityService {
+public class SimilarityService implements SimilarityStrategy {
 
     private final MeterRegistry meterRegistry;
     private final MarkEvidenceQueryService markEvidenceQueryService;
     private final ProcessingProperties properties;
 
+    @Override
     public List<MarkSuggestion> findSimilar(MarkEvidenceProcessing processing, int k) {
         if (processing == null || processing.getEmbedding() == null || processing.getEmbedding().length == 0) {
             log.warn("Processing {} has no embedding, skipping similarity", processingId(processing));
@@ -41,13 +42,11 @@ public class SimilarityService {
             log.warn("Processing {} embedding has unexpected norm {} — continuing", processing.getId(), norm);
         }
 
-        String vector = VectorUtils.toVectorLiteral(embedding);
-
         long start = System.nanoTime();
-        int safeK = Math.max(1, Math.min(k, properties.similarity().maxK()));
-        double maxDistance = properties.similarity().maxDistance();
+        int safeK = Math.clamp(k, 1, properties.similarity().maxK());
+        double minScore = properties.similarity().minScore();
 
-        List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(vector, safeK, maxDistance);
+        List<MarkEvidenceDistanceDto> hits = markEvidenceQueryService.findTopKSimilar(embedding, safeK, minScore);
         if (hits == null || hits.isEmpty()) return List.of();
 
         List<MarkEvidenceDistanceDto> valid = filterValid(hits);
@@ -77,7 +76,7 @@ public class SimilarityService {
                 .map(e -> MarkSuggestion.builder()
                         .processing(processing)
                         .markId(e.getKey())
-                        .confidence(Math.min(1.0, Math.max(0.0, Math.round(e.getValue() * 1_000_000d) / 1_000_000d)))
+                        .confidence(Math.clamp(Math.round(e.getValue() * 1_000_000d) / 1_000_000d, 0.0, 1.0))
                         .build())
                 .toList();
 

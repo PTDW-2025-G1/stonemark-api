@@ -17,6 +17,7 @@ import pt.estga.mark.repositories.MarkEvidenceRepository;
 import pt.estga.mark.repositories.MarkOccurrenceRepository;
 import pt.estga.mark.repositories.MarkRepository;
 import pt.estga.shared.core.enums.PublicationStatus;
+import pt.estga.shared.core.models.EmbeddingVector;
 import pt.estga.shared.core.utils.GeometryUtils;
 
 import java.util.Collection;
@@ -123,11 +124,12 @@ public class MarkQueryServiceImpl implements MarkQueryService {
 
     @Override
     @Transactional
-    public void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, float[] embedding) {
+    public void linkFileToOccurrence(UUID fileId, UUID occurrenceId, UUID submissionId, EmbeddingVector embedding) {
         MarkOccurrence occurrence = occurrenceRepository.findById(occurrenceId)
                 .orElseThrow(() -> new IllegalArgumentException("Occurrence not found: " + occurrenceId));
 
         evidenceRepository.findByFileId(fileId).ifPresentOrElse(ev -> {
+            applyEmbedding(ev, embedding);
             ev.setOccurrence(occurrence);
             ev.setSubmissionId(submissionId);
             evidenceRepository.save(ev);
@@ -136,9 +138,19 @@ public class MarkQueryServiceImpl implements MarkQueryService {
                     .fileId(fileId)
                     .occurrence(occurrence)
                     .submissionId(submissionId)
-                    .embedding(embedding)
                     .build();
+            applyEmbedding(newEvidence, embedding);
             evidenceRepository.save(newEvidence);
         });
+    }
+
+    private static void applyEmbedding(MarkEvidence evidence, EmbeddingVector embedding) {
+        if (embedding == null || embedding.isEmpty()) {
+            return;
+        }
+        evidence.setEmbedding(embedding.values());
+        evidence.setEmbeddingModel(embedding.model());
+        evidence.setEmbeddingVersion(embedding.version());
+        evidence.setEmbeddingDim(embedding.dim());
     }
 }

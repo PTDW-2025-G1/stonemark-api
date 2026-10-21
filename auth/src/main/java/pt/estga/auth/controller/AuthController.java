@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +14,7 @@ import pt.estga.auth.dto.AuthResponse;
 import pt.estga.auth.dto.LoginRequest;
 import pt.estga.auth.dto.RefreshTokenRequest;
 import pt.estga.auth.service.AuthService;
+import pt.estga.shared.core.interfaces.AuthenticatedPrincipal;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -36,7 +38,10 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "Logout")
-    public ResponseEntity<Void> logout() {
+    public ResponseEntity<Void> logout(@AuthenticationPrincipal AuthenticatedPrincipal principal) {
+        if (principal != null && principal.getId() != null) {
+            authService.logout(principal.getId());
+        }
         return ResponseEntity.ok().build();
     }
 }

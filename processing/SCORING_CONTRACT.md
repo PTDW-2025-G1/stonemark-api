@@ -4,9 +4,9 @@ The `SimilarityService` produces mark suggestions from a Vision embedding using 
 
 ## Pipeline (simplified)
 
-1. Convert embedding to pgvector literal string
-2. Query `MarkEvidenceQueryService.findTopKSimilar(vector, k, maxDistance)` — pgvector cosine similarity
-3. Filter results: reject null, NaN, Infinity values
+1. Query `MarkEvidenceQueryService.findTopKSimilar(embedding, k, minSimilarity)` using Spring Data vector search over the `vector(384)` column
+2. Keep evidence at or above `minSimilarity` cosine similarity, most similar first, skipping soft-deleted rows
+3. Reject null, NaN, Infinity values
 4. Fetch mark associations: `findMarksByEvidenceIds(evidenceIds)`
 5. Group by `markId`, sum similarity contributions
 6. Sort by summed confidence descending, then by `markId` ascending (tiebreaker)
@@ -28,7 +28,7 @@ confidence is summed directly — no decay, fan-out, or rank weighting.
 - Confidence is clamped to [0.0, 1.0] and quantized to 1e-6
 - Empty or missing embedding → empty result list
 - No valid hits after filtering → empty result list
-- `maxDistance = 1.0 - minScore` (configured via `processing.similarity.minScore`)
+- Candidates below `processing.similarity.minScore` cosine similarity are excluded
 
 ## Determinism
 
